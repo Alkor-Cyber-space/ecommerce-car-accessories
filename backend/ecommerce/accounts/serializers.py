@@ -55,94 +55,42 @@ class LogoutSerializer(serializers.Serializer):
         
 class PhoneNumberValidateSerializer(serializers.Serializer):
     
-     phone_number = serializers.CharField(max_length=10)
-     code = serializers.CharField(max_length=2)
+     phone_number = serializers.CharField(max_length=13, required=True)
 
      def validate(self, attrs):
+          """
+          Validate phone number to ensure it includes a country code like +91 and is numeric.
+          E.g., +919876543210
+          """
           phone_number = attrs.get('phone_number')
-          code = attrs.get('code')
-          if not phone_number or not code:
-               raise serializers.ValidationError('Phone number and code are required.')
-          
-          # Check if the phone number is valid
-          if not re.match(r'^\d{10}$', phone_number):
-              raise serializers.ValidationError('Invalid phone number.')
+          pattern = r'^\+\d{10,15}$'  # starts with + and has 10–15 digits
+          if not re.match(pattern, phone_number):
+               raise serializers.ValidationError("Invalid phone number. Must include country code and be numeric.")
           
           return attrs
 
-class UserOTPSerializer(serializers.ModelSerializer):
-    
-     class Meta:
-          model = UserOTPS
-          fields = ['phone_number', 'otp']
-          extra_kwargs = {'otp': {'required': True}, 'phone_number': {'required': True}}
-
-     def create(self, validated_data):
-         user = UserOTPS.objects.create(**validated_data)
-         return user
+class UserOTPSerializer(serializers.Serializer):
+     phone_number = serializers.CharField(max_length=13,required=True)
+     otp = serializers.CharField(max_length=6, required=True)
      
-class UserOTPVerifySerializer(serializers.Serializer):
-     phone_number = serializers.CharField()
-     otp = serializers.CharField()
+     def validate_phone_number(self, value):
+        """
+        Validate phone number to ensure it includes a country code like +91 and is numeric.
+        E.g., +919876543210
+        """
+        pattern = r'^\+\d{10,15}$'  # starts with + and has 10–15 digits
+        if not re.match(pattern, value):
+            raise serializers.ValidationError("Invalid phone number. Must include country code and be numeric.")
+        return value
 
-     def validate(self, attrs):
-          phone = attrs.get('phone_number')
-          otp = attrs.get('otp')
-
-          if not re.match(r'^\d{10}$', phone):
-               raise serializers.ValidationError("Invalid phone number")
-
-          if not re.match(r'^\d{4,6}$', otp):
-               raise serializers.ValidationError("Invalid OTP format")
-
-          try:
-               user = CustomUser.objects.get(phone_number=phone)
-          except CustomUser.DoesNotExist:
-               raise serializers.ValidationError("User does not exist")
-
-          try:
-               user_otp = UserOTPS.objects.get(user=user)
-          except UserOTPS.DoesNotExist:
-               raise serializers.ValidationError("No OTP found for this user")
-
-          if user_otp.is_verified:
-               raise serializers.ValidationError("OTP already verified")
-          
-          # Check cooldown if limit is 0
-          if user_otp.limit == 0:
-               if user_otp.is_limit_reached_at:
-                    cooldown_time = user_otp.is_limit_reached_at + timedelta(hours=1)
-                    if datetime.now() < cooldown_time:
-                         remaining = cooldown_time - datetime.now()
-                         mins = remaining.seconds // 60
-                         raise serializers.ValidationError(
-                              f"OTP limit exceeded. Try again in {mins} minutes."
-                         )
-                    else:
-                         # Reset after cooldown
-                         user_otp.limit = 3
-                         user_otp.is_limit_reached_at = None
-                         user_otp.save()
-
-          if user_otp.is_expired or user_otp.expires_at < datetime.now():
-               user_otp.is_expired = True
-               user_otp.save()
-               raise serializers.ValidationError("OTP expired")
-
-          if user_otp.is_used:
-               raise serializers.ValidationError("OTP already used")
-
-          if not user_otp.check_code(otp):
-               user_otp.limit -= 1
-               if user_otp.limit <= 0:
-                    user_otp.is_limit_reached_at = datetime.now()
-               user_otp.save()
-               raise serializers.ValidationError("Incorrect OTP")
-
-          # OTP is correct
-          attrs['user'] = user
-          attrs['otp_record'] = user_otp
-          return attrs
+     def validate_otp(self, value):
+          """
+          Validate OTP to ensure it's exactly 6 digits.
+          """
+          if not re.fullmatch(r'\d{6}', value):
+               raise serializers.ValidationError("OTP must be a 6-digit number.")
+          return value
+     
 
 class UserOTPResendSerializer(serializers.ModelSerializer):
      class Meta:

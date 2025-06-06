@@ -12,20 +12,39 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from datetime import timedelta
 import os
+import environ
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Initialize environ
+env = environ.Env(
+    DEBUG=(bool, False)
+)
+
+# Read .env file
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+
+# Example usage
+DEBUG = env('DEBUG')
+SECRET_KEY = env('SECRET_KEY')
+
+
+# Twilio Security Datas
+
+TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN')
+TWILIO_VERIFY_SID = env('TWILIO_VERIFY_SID')
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-@yu%7#+1ce9#x^c0o7wd+b)-t4u761uzq2r+o*8%x!2s8ubw*t'
+# SECRET_KEY = 'django-insecure-@yu%7#+1ce9#x^c0o7wd+b)-t4u761uzq2r+o*8%x!2s8ubw*t'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
@@ -54,8 +73,8 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+
 ROOT_URLCONF = 'ecommerce.urls'
-# AUTH_USER_MODEL = 'accounts.CustomUser'
 
 TEMPLATES = [
     {
@@ -159,6 +178,18 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
+
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'otp_send': '3/m',
+        'otp_verify': '10/hour',
+        'anon': '10/hour',
+        'user': '100/hour'
+    }
 }
 
 SIMPLE_JWT = {
