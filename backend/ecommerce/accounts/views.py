@@ -67,7 +67,12 @@ class OTPViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     #send OTP via SMS service here
-    def send_otp(self, request):
+    def send_otp_or_resent(self, request):
+
+        purpose = request.data.get('purpose')
+
+        
+
         serializer = PhoneNumberValidateSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -124,7 +129,12 @@ class OTPViewSet(viewsets.ViewSet):
     
 
     def resent_otp(self, request):
-        # serializer = UserResendOTPSerializer(data=request.data)
-        # if serializer.is_valid():
-        #     phone_number = serializer.validated_data['phone_number']
-        ...
+        serializer = PhoneNumberValidateSerializer(data=request.data)
+
+        if serializer.is_valid():
+            phone_number = serializer.validated_data.get('phone_number')
+
+            if not phone_number:
+                return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+            otp = str(random.randint(100000, 999999))

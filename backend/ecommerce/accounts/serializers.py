@@ -107,6 +107,22 @@ class UserOTPVerifySerializer(serializers.Serializer):
 
           if user_otp.is_verified:
                raise serializers.ValidationError("OTP already verified")
+          
+          # Check cooldown if limit is 0
+          if user_otp.limit == 0:
+               if user_otp.is_limit_reached_at:
+                    cooldown_time = user_otp.is_limit_reached_at + timedelta(hours=1)
+                    if datetime.now() < cooldown_time:
+                         remaining = cooldown_time - datetime.now()
+                         mins = remaining.seconds // 60
+                         raise serializers.ValidationError(
+                              f"OTP limit exceeded. Try again in {mins} minutes."
+                         )
+                    else:
+                         # Reset after cooldown
+                         user_otp.limit = 3
+                         user_otp.is_limit_reached_at = None
+                         user_otp.save()
 
           if user_otp.is_expired or user_otp.expires_at < datetime.now():
                user_otp.is_expired = True
