@@ -54,3 +54,14 @@ class UserOTPS(models.Model):
           verbose_name = 'User OTP'
           verbose_name_plural = 'User OTPs'
           db_table = 'user_otp'
+
+
+class ThrottleLog(models.Model):
+#     user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    endpoint = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=now)
+    reason = models.TextField()
+
+    def __str__(self):
+        return f"{self.user or self.ip_address} @ {self.endpoint} - {self.timestamp}"
