@@ -14,6 +14,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
 from rest_framework.decorators import action
 
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+
 # Create your views here.
 
 class UserViewSet(viewsets.ViewSet):
@@ -59,6 +64,25 @@ class UserViewSet(viewsets.ViewSet):
         if serializer.is_valid():
             serializer.save()
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], url_path='change-password', permission_classes=[IsAuthenticated])
+    def change_password(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        user = request.user
+
+        if serializer.is_valid():
+            old_password = serializer.validated_data['old_password']
+            new_password = serializer.validated_data['new_password']
+
+            if not user.check_password(old_password):
+                return Response({'old_password': 'Wrong password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(new_password)
+            user.save()
+
+            return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
@@ -128,3 +152,46 @@ class OTPViewSet(viewsets.ViewSet):
         # if serializer.is_valid():
         #     phone_number = serializer.validated_data['phone_number']
         ...
+
+
+class PasswordResetViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['post'], url_path='forgot-password')
+    def forgot_password(self, request):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.filter(email=email).first()
+            if user:
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                reset_link = f"http://localhost:8000/reset-password/{uid}/{token}/"  # Replace with your frontend URL
+
+                send_mail(
+                    subject="Password Reset Request",
+                    message=f"Click the link to reset your password: {reset_link}",
+                    from_email="nandakishore.p.r2002@gmail.com",
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+            return Response({"message": "A reset link has been sent to this mail."})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='reset-password/(?P<uidb64>[^/.]+)/(?P<token>[^/.]+)')
+    def reset_password(self, request, uidb64=None, token=None):
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                uid = force_str(urlsafe_base64_decode(uidb64))
+                user = User.objects.get(pk=uid)
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                return Response({"error": "Invalid link"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if default_token_generator.check_token(user, token):
+                user.set_password(serializer.validated_data['new_password'])
+                user.save()
+                return Response({"message": "Password has been reset successfully."})
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
