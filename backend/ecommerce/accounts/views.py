@@ -11,9 +11,12 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsAdmin, IsVendor
 
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.throttling import ScopedRateThrottle
 from django.contrib.auth import authenticate
 from rest_framework.decorators import action
 
+from django.conf import settings
+from .twilio_services import send_otp_via_twilio, verify_otp_via_twilio
 # Create your views here.
 
 class UserViewSet(viewsets.ViewSet):
@@ -64,10 +67,23 @@ class UserViewSet(viewsets.ViewSet):
 
 class OTPViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+
+    throttle_scope_map = {
+        'send_otp': 'otp_send',
+        'verify_otp': 'otp_verify',
+    }
+
+    def get_throttles(self):
+        print("ACTION:", self.action)
+        self.throttle_scope = self.throttle_scope_map.get(self.action)
+        print("Throttle scope:", self.throttle_scope)
+        return super().get_throttles()
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     #send OTP via SMS service here
     def send_otp(self, request):
+
         serializer = PhoneNumberValidateSerializer(data=request.data)
 
         if serializer.is_valid():
@@ -75,29 +91,11 @@ class OTPViewSet(viewsets.ViewSet):
 
             if not phone_number:
                 return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
-
-            otp = str(random.randint(100000, 999999))
-
+        
             try:
-                user = User.objects.get(phone_number=phone_number)
-
-                # Get or create OTP object for user
-                user_otp, created = UserOTPS.objects.get_or_create(user=user)
-
-                # Set new OTP code
-                user_otp.set_code(otp)
-                user_otp.created_at = datetime.now()
-                user_otp.expires_at = datetime.now() + timedelta(minutes=5)
-                user_otp.is_used = False
-                user_otp.is_verified = False
-                user_otp.is_expired = False
-                user_otp.save()
-
-
-                return Response({"message": "OTP sent successfully", "otp": otp}, status=status.HTTP_200_OK)
-
-            except User.DoesNotExist:
-                return Response({"error": "User does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+                send_otp_via_twilio(phone_number=phone_number)
+                masked = '*' * (len(phone_number) - 3) + phone_number[-3:]
+                return Response({"message": f"OTP sent successfully to {masked}"}, status=status.HTTP_200_OK)
             except Exception as e:
                 return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -106,25 +104,21 @@ class OTPViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def verify_otp(self, request):
-        serializer = UserOTPVerifySerializer(data=request.data)
+        serializer = UserOTPSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.validated_data['user']
-            otp_record = serializer.validated_data['otp_record']
+            phone = serializer.validated_data['phone_number']
+            otp_code = serializer.validated_data['otp']
 
-            user.is_active = True
-            user.save()
-
-            otp_record.is_verified = True
-            otp_record.is_used = True
-            otp_record.save()
-
-            return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
-
+            try:
+                result = verify_otp_via_twilio(phone, otp_code)
+                if result == "approved":
+                    # user = CustomUser.objects.get(phone_number=phone)
+                    # user.is_active = True
+                    # user.save()
+                    return Response({"message": "OTP verified"}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-    def resent_otp(self, request):
-        # serializer = UserResendOTPSerializer(data=request.data)
-        # if serializer.is_valid():
-        #     phone_number = serializer.validated_data['phone_number']
-        ...
