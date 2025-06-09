@@ -57,7 +57,7 @@ class UserOTPS(models.Model):
 
 
 class ThrottleLog(models.Model):
-#     user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, null=True, blank=True)
+    user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, null=True, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     endpoint = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=now)
