@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/auth/',include('accounts.urls')),
     path('api/', include('vehicles.urls')),
     path('api/', include('products.urls')),
+    path('api/', include('cart_wishlist.urls')),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
