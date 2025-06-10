@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'accounts',
+    'vehicles',
 ]
 
 MIDDLEWARE = [
@@ -187,14 +188,14 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'otp_send': '3/m',
         'otp_verify': '10/hour',
-        'anon': '10/hour',
+        'anon': '100/hour',
         'user': '100/hour'
     }
 }
 
 SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'BLACKLIST_AFTER_ROTATION': True,
 }
