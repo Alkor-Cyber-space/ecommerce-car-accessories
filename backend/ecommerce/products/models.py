@@ -1,5 +1,6 @@
 from django.db import models
-
+from accounts.models import CustomUser
+from vehicles.models import VariantYear
 # Create your models here.
 
 
@@ -12,6 +13,8 @@ class Product(models.Model):
     image = models.ImageField(upload_to='products/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    compatible_varient_year = models.ManyToManyField('vehicles.VariantYear', blank=True, related_name='compatible_products')
 
     def __str__(self):
         return self.name

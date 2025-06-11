@@ -21,10 +21,15 @@ class ProductSerializer(serializers.ModelSerializer):
         source='category',
         write_only=True
     )
+    compatible_variant_year =  serializers.PrimaryKeyRelatedField(
+        queryset=VariantYear.objects.all(),
+        many=True,
+        required=False,
+    )
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'stock', 'image', 'created_at', 'updated_at', 'category', 'category_id']
+        fields = ['id', 'name', 'description', 'price', 'stock', 'image', 'created_at', 'updated_at', 'category', 'category_id','compatible_variant_year']
         
     def validate(self, attrs):
         if not attrs.get('name'):
