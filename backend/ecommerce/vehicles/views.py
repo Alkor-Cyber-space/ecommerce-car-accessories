@@ -8,7 +8,6 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 
-
 class VehicleMakeViewSet(viewsets.ModelViewSet):
     queryset = VehicleMake.objects.all()
     serializer_class = VehicleMakeSerializer
@@ -25,7 +24,7 @@ class YearViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 class VariantViewSet(viewsets.ModelViewSet):
-    queryset = variant.objects.all()
+    queryset = Variant.objects.all()
     serializer_class = VariantSerializer
     permission_classes = [IsAuthenticated]
 
@@ -35,6 +34,6 @@ class ModelYearViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
 class VariantYearViewSet(viewsets.ModelViewSet):
-    queryset = variantYear.objects.all()
+    queryset = VariantYear.objects.all()
     serializer_class = VariantYearSerializer
     permission_classes = [IsAuthenticated]

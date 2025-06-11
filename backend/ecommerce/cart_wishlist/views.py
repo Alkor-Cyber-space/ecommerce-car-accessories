@@ -18,10 +18,9 @@ class WishlistViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
-    
-    @action(detail=False, methods=['post'], url_path='remove-product/(?P<product_id>[^/.]+)')
-    def remove_from_wishlist(self, request):
-        product_id = request.data.get('product_id')
+        
+    @action(detail=False, methods=['delete'], url_path='remove-product/(?P<product_id>[^/.]+)')
+    def remove_from_wishlist(self, request, product_id=None):
         try:
             wishlist = Wishlist.objects.get(user=request.user)
             product = Product.objects.get(id=product_id)
@@ -31,6 +30,7 @@ class WishlistViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Wishlist not found.'}, status=status.HTTP_404_NOT_FOUND)
         except Product.DoesNotExist:
             return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
 
 
 # Cart ViewSet
@@ -59,8 +59,7 @@ class CartItemViewSet(viewsets.ModelViewSet):
         serializer.save(cart=cart)
     
     @action(detail=False, methods=['post'], url_path='remove-product/(?P<product_id>[^/.]+)')
-    def remove_from_cart(self, request):
-        product_id = request.data.get('product_id')
+    def remove_from_cart(self, request, product_id=None):
         try:
             cart = Cart.objects.get(user=request.user)
             cart_item = CartItem.objects.get(cart=cart, product__id=product_id)

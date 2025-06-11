@@ -41,7 +41,7 @@ class VariantSerializer(serializers.ModelSerializer):
     model = VehicleModelSerializer(read_only=True)
 
     class Meta:
-        model = variant
+        model = Variant
         fields = '__all__'
 
     def validate(self, attrs):
@@ -63,7 +63,7 @@ class ModelYearSerializer(serializers.ModelSerializer):
 
 class VariantYearSerializer(serializers.ModelSerializer):
     class Meta:
-        model = variantYear
+        model = VariantYear
         fields = '__all__'
 
     def validate(self, attrs):

@@ -24,7 +24,7 @@ class Year(models.Model):
     def __str__(self):
         return f"{self.model.name} {self.year}"
 
-class variant(models.Model):
+class Variant(models.Model):
     model = models.ForeignKey(VehicleModel, on_delete=models.CASCADE, related_name='variants')
     name = models.CharField(max_length=100)
     image = models.ImageField(upload_to='vehicles/variant', null=True, blank=True)
@@ -40,8 +40,8 @@ class ModelYear(models.Model):
     def __str__(self):
         return f"{self.model.name} {self.year.year}"
 
-class variantYear(models.Model):
-    variant = models.ForeignKey(variant, on_delete=models.CASCADE, related_name='years')
+class VariantYear(models.Model):
+    variant = models.ForeignKey(Variant, on_delete=models.CASCADE, related_name='years')
     year = models.ForeignKey(Year, on_delete=models.CASCADE, related_name='variants')
 
     def __str__(self):
