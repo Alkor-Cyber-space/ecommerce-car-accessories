@@ -1,4 +1,5 @@
 from django.db import models
+from accounts.models import CustomUser
 
 # Create your models here.
 class VehicleMake(models.Model):
@@ -46,4 +47,14 @@ class VariantYear(models.Model):
 
     def __str__(self):
         return f"{self.variant.name} {self.year.year}"
-        
+
+class SavedVehicle(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='saved_vehicles')
+    vehicle_variant_year = models.ForeignKey(VariantYear, on_delete=models.CASCADE, related_name='saved_by_users')
+    saved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'vehicle_variant_year')  # Prevent saving same vehicle twice
+
+    def __str__(self):
+        return f"{self.user.username} saved {self.vehicle_variant_year}"
