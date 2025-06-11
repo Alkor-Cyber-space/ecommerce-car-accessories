@@ -9,6 +9,7 @@ router.register(r'years', YearViewSet)
 router.register(r'variants', VariantViewSet)
 router.register(r'model-years', ModelYearViewSet)
 router.register(r'variant-years', VariantYearViewSet)
+router.register(r'saved-vehicles', SavedVehicleViewSet, basename='savedvehicles')
 
 urlpatterns = [
     path('', include(router.urls)),
