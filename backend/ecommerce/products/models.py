@@ -1,6 +1,7 @@
 from django.db import models
 from accounts.models import CustomUser
 from vehicles.models import VariantYear
+from django.core.validators import MinValueValidator, MaxValueValidator
 # Create your models here.
 
 
@@ -10,7 +11,6 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
-    image = models.ImageField(upload_to='products/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -18,6 +18,12 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+class ProductImage(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='products_image/')
+    is_main = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
@@ -30,3 +36,22 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    product =  models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.DecimalField(
+        max_digits=2,
+        decimal_places=1,
+        validators=[MinValueValidator(1.0), MaxValueValidator(5.0)]
+    )
+    comment = models.TextField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('product', 'user')
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.product.name} - {self.rating} stars"
