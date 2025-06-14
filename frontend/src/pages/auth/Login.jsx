@@ -101,12 +101,12 @@ const Login = () => {
                 </button>
 
                 <div className="flex items-center w-full">
-                    <hr className="flex-grow border-gray-600" />
+                    <hr className="flex-grow border-gray-200" />
                     <span className="mx-4 text-white text-sm">or continue with</span>
-                    <hr className="flex-grow border-gray-600" />
+                    <hr className="flex-grow border-gray-200" />
                 </div>
 
-                <div className="flex items-center justify-center w-full space-x-4">
+                <div className="flex items-center justify-center w-full space-x-4 gap-2">
                     <button className="flex items-center justify-center w-full py-3 bg-white/20 text-white rounded-md hover:bg-white/30 transition">
                         <img src={google} alt="Google" style={{ width: '24px', height: '24px' }} />
                     </button>

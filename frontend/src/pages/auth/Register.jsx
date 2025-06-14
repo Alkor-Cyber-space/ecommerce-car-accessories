@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import google from '../../assets/google.png';
 import { Link } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { registerApi } from '../../services/allAPI';
 
 const Register = () => {
     const [showOTP, setShowOTP] = useState(false);
@@ -16,13 +17,16 @@ const Register = () => {
     const [timer, setTimer] = useState(60);
     const [canResend, setCanResend] = useState(false);
     const [isVerified, setIsVerified] = useState(false);
+    const [user, setUser] = useState("User"); // default value or as per UI selection
+
 
     const [formData, setFormData] = useState({
-        fullName: '',
+        username: '',
         email: '',
         phone: '',
         password: '',
         confirmPassword: '',
+        role: 'User'
     });
 
     const [errors, setErrors] = useState({});
@@ -37,7 +41,7 @@ const Register = () => {
         const newErrors = {};
         const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z]+(?:\.[a-zA-Z]{2,})+$/;
 
-        if (!formData.fullName.trim()) newErrors.fullName = 'Full Name is required';
+        if (!formData.username.trim()) newErrors.username = 'Full Name is required';
         if (!formData.email) newErrors.email = 'Email is required';
         else if (!emailRegex.test(formData.email)) newErrors.email = 'Invalid email format';
         if (!formData.phone.trim()) newErrors.phone = 'Phone number is required';
@@ -50,21 +54,32 @@ const Register = () => {
         return newErrors;
     };
 
-    const handleRegister = () => {
+    const handleRegister = async (e) => {
+        e.preventDefault();
         const validationErrors = validate();
         if (Object.keys(validationErrors).length > 0) {
             setErrors(validationErrors);
             return;
         }
 
-        console.log('Registration Data:', formData);
-
         setLoading(true);
-        setTimeout(() => {
-            setLoading(false);
+
+        try {
+            const payload = {
+                email: formData.email,
+                username: formData.username,
+                password: formData.password,
+                phone_number: formData.phone,
+                role: formData.role,
+            };
+
+            const response = await registerApi(payload);
+            console.log("Registration Response:", response);
+
+            setErrors({});
             setShowOTP(true);
             setFormData({
-                fullName: '',
+                username: '',
                 email: '',
                 phone: '',
                 password: '',
@@ -73,8 +88,19 @@ const Register = () => {
             setTimer(60);
             setCanResend(false);
             setIsVerified(false);
-        }, 2000);
+
+        } catch (error) {
+            console.error("Registration error:", error);
+            if (error.response?.data) {
+                setErrors(error.response.data);
+            } else {
+                setErrors({ general: "Something went wrong. Please try again." });
+            }
+        } finally {
+            setLoading(false);
+        }
     };
+
 
     useEffect(() => {
         let interval;
@@ -165,13 +191,13 @@ const Register = () => {
                 {/* Full Name */}
                 <input
                     type="text"
-                    name="fullName"
-                    value={formData.fullName}
+                    name="username"
+                    value={formData.username}
                     onChange={handleChange}
                     placeholder="Full Name"
                     className="w-full p-3 rounded-md bg-black/40 border border-gray-600 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white"
                 />
-                {errors.fullName && <p className="text-red-400 text-sm">{errors.fullName}</p>}
+                {errors.username && <p className="text-red-400 text-sm">{errors.username}</p>}
 
                 {/* Email */}
                 <input
@@ -233,6 +259,18 @@ const Register = () => {
                 </div>
                 {errors.confirmPassword && <p className="text-red-400 text-sm">{errors.confirmPassword}</p>}
 
+                {/* role field */}
+                {/* <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    className="w-full p-3 rounded-md bg-black/40 border border-gray-600 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-white"
+                >
+                    <option value="">Select Role</option>
+                    <option value="user">User</option>
+                    <option value="admin">Vendor</option>
+                </select> */}
+
                 <button
                     onClick={handleRegister}
                     className="w-full py-3 bg-white/20 text-white font-semibold rounded-md hover:bg-white/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -242,12 +280,12 @@ const Register = () => {
 
 
                 <div className="flex items-center w-full">
-                    <hr className="flex-grow border-gray-600" />
+                    <hr className="flex-grow border-gray-300" />
                     <span className="mx-4 text-white text-sm">or continue with</span>
-                    <hr className="flex-grow border-gray-600" />
+                    <hr className="flex-grow border-gray-300" />
                 </div>
 
-                <div className="flex items-center justify-center w-full space-x-4">
+                <div className="flex items-center justify-center w-full space-x-4 gap-2">
                     <button className="flex items-center justify-center w-full py-3 bg-white/20 text-white rounded-md hover:bg-white/30 transition">
                         <img src={google} alt="Google" className="w-6 h-6" />
                     </button>
