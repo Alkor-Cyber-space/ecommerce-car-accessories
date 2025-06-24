@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from accounts.models import CustomUser
 from vehicles.models import VariantYear
@@ -6,6 +7,11 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 
 
 class Product(models.Model):
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='products'
+    )
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=255)
     description = models.TextField()
@@ -13,7 +19,6 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     compatible_varient_year = models.ManyToManyField('vehicles.VariantYear', blank=True, related_name='compatible_products')
 
     def __str__(self):

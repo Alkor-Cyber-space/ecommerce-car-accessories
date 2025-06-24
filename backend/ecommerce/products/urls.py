@@ -12,4 +12,5 @@ router.register(r'reviews', ReviewViewSet, basename='reviews')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('vehicle-specific/', VehicleProductSearchViewSet.as_view({'get': 'vehicle_specific'}), name='vehicle-specific-search'),
 ]

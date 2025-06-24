@@ -23,7 +23,7 @@ class Year(models.Model):
     year = models.PositiveIntegerField()
 
     def __str__(self):
-        return f"{self.model.name} {self.year}"
+        return f"{self.year}"
 
 class Variant(models.Model):
     model = models.ForeignKey(VehicleModel, on_delete=models.CASCADE, related_name='variants')

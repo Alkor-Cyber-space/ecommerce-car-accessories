@@ -1,16 +1,17 @@
 from django.forms import ValidationError
-from rest_framework import viewsets,permissions
+from rest_framework import viewsets,permissions,status
 from .models import Product, Category,Review
 from .serializers import ProductSerializer, CategorySerializer, ReviewSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError 
+from vehicles.models import VehicleMake, VehicleModel, Year, Variant, VariantYear
 
-class CategoryViewSet(viewsets.ModelViewSet):
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     @action(detail=True, methods=['get'])
     def products(self, request, pk=None):
@@ -27,23 +28,21 @@ class CategoryViewSet(viewsets.ModelViewSet):
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
-class ProductViewSet(viewsets.ModelViewSet):
+
+class ProductViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.AllowAny  ]
 
     @action(detail=False, methods=['get'], url_path='search')
     def search_products(self, request):
         """Search products by name using ?query=param"""
         query = request.query_params.get('query', None)
-        if query:
-            products = Product.objects.filter(name__icontains=query)
-        else:
-            products = Product.objects.none()  
+        products = Product.objects.filter(name__icontains=query) if query else Product.objects.none()
 
         if not products.exists():
             return Response({"message": "No product available."})
-
+        
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
     
@@ -65,3 +64,43 @@ class ReviewViewSet(viewsets.ModelViewSet):
         reviews = self.queryset.filter(product__id=product_id)
         serializer = self.get_serializer(reviews, many=True)
         return Response(serializer.data)
+
+
+class VehicleProductSearchViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.AllowAny]  # Or IsAuthenticated, as required.
+
+    @action(detail=False, methods=['get'], url_path='vehicle-specific')
+    def vehicle_specific(self, request):
+        manufacturer = request.query_params.get('manufacturer')  # Expecting VehicleMake name
+        model = request.query_params.get('model')               # Expecting VehicleModel name
+        year = request.query_params.get('year')                 # Integer
+        variant = request.query_params.get('variant')           # Expecting Variant name
+
+        if not (manufacturer and model and year and variant):
+            return Response(
+                {"error": "Please provide manufacturer, model, year, and variant as query parameters."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            make_obj = VehicleMake.objects.get(name__iexact=manufacturer)
+            model_obj = VehicleModel.objects.get(make=make_obj, name__iexact=model)
+            year_obj = Year.objects.get(year=year)
+            variant_obj = Variant.objects.get(model=model_obj, name__iexact=variant)
+            variant_year_obj = VariantYear.objects.get(variant=variant_obj, year=year_obj)
+
+            products = Product.objects.filter(compatible_varient_year=variant_year_obj).distinct()
+
+            serializer = ProductSerializer(products, many=True, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except VehicleMake.DoesNotExist:
+            return Response({"error": "Manufacturer not found."}, status=status.HTTP_404_NOT_FOUND)
+        except VehicleModel.DoesNotExist:
+            return Response({"error": "Model not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Year.DoesNotExist:
+            return Response({"error": "Year not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Variant.DoesNotExist:
+            return Response({"error": "Variant not found."}, status=status.HTTP_404_NOT_FOUND)
+        except VariantYear.DoesNotExist:
+            return Response({"error": "Variant-Year combination not found."}, status=status.HTTP_404_NOT_FOUND)
