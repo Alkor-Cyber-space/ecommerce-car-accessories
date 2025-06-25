@@ -164,3 +164,9 @@ class ResetPasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError("Password must contain at least one special character.")
 
         return data
+    
+class AddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = '__all__'
+        read_only_fields = ['user']
