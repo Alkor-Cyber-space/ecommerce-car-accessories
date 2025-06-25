@@ -64,6 +64,7 @@ class ThrottleLog(models.Model):
     def __str__(self):
         return f"{self.user or self.ip_address} @ {self.endpoint} - {self.timestamp}"
 
+
 class UserProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
     full_name = models.CharField(max_length=255)
@@ -104,3 +105,4 @@ class UserLocation(models.Model):
 
      def __str__(self):
           return f"{self.user.email} - {self.latitude}, {self.longitude}"
+
