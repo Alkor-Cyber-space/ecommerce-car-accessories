@@ -29,9 +29,10 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('admin/', admin.site.urls),
     path('api/auth/',include('accounts.urls')),
-    path('api/', include('vehicles.urls')),
-    path('api/', include('products.urls')),
+    path('api/vehicles/', include('vehicles.urls')),
+    path('api/products/', include('products.urls')),
     path('api/', include('cart_wishlist.urls')),
+    path('api/vendor/', include('vendors.urls')),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
