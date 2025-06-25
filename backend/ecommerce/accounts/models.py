@@ -7,9 +7,6 @@ from hashlib import sha256
 from datetime import datetime, timedelta
 
 
-# class CustomUser(AbstractUser):
-#     # Additional fields if needed
-#     pass
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
@@ -67,60 +64,45 @@ class ThrottleLog(models.Model):
     def __str__(self):
         return f"{self.user or self.ip_address} @ {self.endpoint} - {self.timestamp}"
 
-class Address(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='addresses')
-    line1 = models.CharField(max_length=255)
-    line2 = models.CharField(max_length=255, blank=True, null=True)
-    city = models.CharField(max_length=100)
-    state = models.CharField(max_length=100)
-    postal_code = models.CharField(max_length=20)
-    country = models.CharField(max_length=100)
-    is_primary = models.BooleanField(default=False)
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='profile')
+    full_name = models.CharField(max_length=255)
+    profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.line1}, {self.city}, {self.country}"
+        return self.user.email
+
+
+class Address(models.Model):
+     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='addresses')
+     line1 = models.CharField(max_length=255)
+     line2 = models.CharField(max_length=255, blank=True, null=True)
+     city = models.CharField(max_length=100)
+     state = models.CharField(max_length=100)
+     postal_code = models.CharField(max_length=20)
+     country = models.CharField(max_length=100)
+     is_primary = models.BooleanField(default=False)
+
+     def __str__(self):
+          return f"{self.line1}, {self.city}, {self.country}"
     
 
 class UserLocation(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='location'
-    )
-    latitude = models.DecimalField(max_digits=9, decimal_places=6)
-    longitude = models.DecimalField(max_digits=9, decimal_places=6)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    state = models.CharField(max_length=100, blank=True, null=True)
-    country = models.CharField(max_length=100, blank=True, null=True)
-    manually_selected = models.BooleanField(default=False)
-    updated_at = models.DateTimeField(auto_now=True)
+     user = models.OneToOneField(
+          settings.AUTH_USER_MODEL,
+          on_delete=models.CASCADE,
+          related_name='location'
+     )
+     latitude = models.DecimalField(max_digits=9, decimal_places=6)
+     longitude = models.DecimalField(max_digits=9, decimal_places=6)
+     city = models.CharField(max_length=100, blank=True, null=True)
+     state = models.CharField(max_length=100, blank=True, null=True)
+     country = models.CharField(max_length=100, blank=True, null=True)
+     manually_selected = models.BooleanField(default=False)
+     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"{self.user.email} - {self.latitude}, {self.longitude}"
-    
+     def __str__(self):
+          return f"{self.user.email} - {self.latitude}, {self.longitude}"
 
-class UserDevice(models.Model):
-    PLATFORM_CHOICES = [
-          ('web', 'Web'),
-          ('android', 'Android'),
-          ('ios', 'iOS'),
-          ('desktop', 'Desktop'),
-          ('tablet', 'Tablet'),
-          ('other', 'Other'),
-    ]
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='devices'
-    )
-    device_type = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
-    device_name = models.CharField(max_length=255, blank=True, null=True)
-    os = models.CharField(max_length=100, blank=True, null=True)
-    browser = models.CharField(max_length=100, blank=True, null=True)
-    ip_address = models.GenericIPAddressField(blank=True, null=True)
-    user_agent = models.TextField(blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return f"{self.user.email} - {self.device_type} "
