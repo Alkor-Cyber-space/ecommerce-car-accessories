@@ -6,7 +6,7 @@ from rest_framework import viewsets
 from django.contrib.auth.models import Group
 from .models import *
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework import status,permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsAdmin, IsVendor
 
@@ -198,3 +198,13 @@ class PasswordResetViewSet(viewsets.ViewSet):
             return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class AddressViewSet(viewsets.ModelViewSet):
+    serializer_class = AddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Address.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Automatically assign the current logged-in user
+        serializer.save(user=self.request.user)
