@@ -22,33 +22,3 @@ class VendorProductSerializer(ProductSerializer):
 class VendorCategorySerializer(CategorySerializer):
     class Meta(CategorySerializer.Meta):
         fields = CategorySerializer.Meta.fields
-
-
-class VendorVehicleMakeSerializer(VehicleMakeSerializer):
-    class Meta(VehicleMakeSerializer.Meta):
-        fields = VehicleMakeSerializer.Meta.fields
-
-
-class VendorVehicleModelSerializer(VehicleModelSerializer):
-    class Meta(VehicleModelSerializer.Meta):
-        fields = VehicleModelSerializer.Meta.fields
-
-
-class VendorYearSerializer(YearSerializer):
-    class Meta(YearSerializer.Meta):
-        fields = YearSerializer.Meta.fields
-
-
-class VendorVariantSerializer(VariantSerializer):
-    class Meta(VariantSerializer.Meta):
-        fields = VariantSerializer.Meta.fields
-
-
-class VendorModelYearSerializer(ModelYearSerializer):
-    class Meta(ModelYearSerializer.Meta):
-        fields = ModelYearSerializer.Meta.fields
-
-
-class VendorVariantYearSerializer(VariantYearSerializer):
-    class Meta(VariantYearSerializer.Meta):
-        fields = VariantYearSerializer.Meta.fields
