@@ -92,13 +92,20 @@ class VendorVariantYearViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
 
-
 class ProductBulkUploadViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated, IsVendor]
+
+    def get_or_create_category_hierarchy(self, hierarchy_str):
+        parent = None
+        for name in map(str.strip, hierarchy_str.split('>')):
+            category, _ = Category.objects.get_or_create(name=name, parent=parent)
+            parent = category
+        return parent
 
     @action(detail=False, methods=['post'], url_path='upload-csv')
     def upload_csv(self, request):
         file = request.FILES.get('file')
+        print(file)
         if not file or not file.name.endswith('.csv'):
             return Response({'error': 'Please upload a valid CSV file.'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -109,17 +116,24 @@ class ProductBulkUploadViewSet(viewsets.ViewSet):
             products_created = []
 
             for row in reader:
-                # Normalize keys to lowercase
                 row = {k.strip().lower(): v.strip() for k, v in row.items()}
 
+                category = self.get_or_create_category_hierarchy(row.get('category_hierarchy'))
+                make, _ = VehicleMake.objects.get_or_create(name=row.get('vehicle_make'))
+                model, _ = VehicleModel.objects.get_or_create(make=make, name=row.get('vehicle_model'))
+                year_obj, _ = Year.objects.get_or_create(year=int(row.get('vehicle_year')))
+                variant, _ = Variant.objects.get_or_create(model=model, name=row.get('vehicle_variant'))
+                variant_year, _ = VariantYear.objects.get_or_create(variant=variant, year=year_obj)
+
                 product = Product.objects.create(
-                    name=row.get('name'),
-                    description=row.get('description', ''),
-                    price=row.get('price'),
-                    stock=row.get('stock'),
-                    category_id=row.get('category_id'),
+                    name=row.get('product_name'),
+                    description=row.get('product_description', ''),
+                    price=row.get('product_price'),
+                    stock=row.get('product_stock'),
+                    category=category,
                     vendor=request.user
                 )
+                product.compatible_varient_year.add(variant_year)
                 products_created.append(product)
 
             return Response({'message': f'{len(products_created)} products uploaded successfully.'}, status=status.HTTP_201_CREATED)
@@ -130,6 +144,7 @@ class ProductBulkUploadViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='upload-excel')
     def upload_excel(self, request):
         file = request.FILES.get('file')
+        print(file)
         if not file or not file.name.endswith(('.xlsx', '.xls')):
             return Response({'error': 'Please upload a valid Excel file (.xlsx or .xls).'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -138,22 +153,33 @@ class ProductBulkUploadViewSet(viewsets.ViewSet):
         except Exception as e:
             return Response({'error': f'Failed to read Excel file: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
-        required_columns = {'name', 'description', 'price', 'stock', 'category_id'}
-        if not required_columns.issubset(df.columns):
+        required_columns = {'category_hierarchy', 'vehicle_make', 'vehicle_model', 'vehicle_year', 'vehicle_variant', 'product_name', 'product_description', 'product_price', 'product_stock'}
+        if not required_columns.issubset(set(df.columns.str.lower())):
             return Response({'error': f'Missing columns. Required: {required_columns}'}, status=status.HTTP_400_BAD_REQUEST)
 
         products_created = []
         for _, row in df.iterrows():
             try:
+                row = {str(k).strip().lower(): str(v).strip() for k, v in row.items()}
+
+                category = self.get_or_create_category_hierarchy(row.get('category_hierarchy'))
+                make, _ = VehicleMake.objects.get_or_create(name=row.get('vehicle_make'))
+                model, _ = VehicleModel.objects.get_or_create(make=make, name=row.get('vehicle_model'))
+                year_obj, _ = Year.objects.get_or_create(year=int(row.get('vehicle_year')))
+                variant, _ = Variant.objects.get_or_create(model=model, name=row.get('vehicle_variant'))
+                variant_year, _ = VariantYear.objects.get_or_create(variant=variant, year=year_obj)
+
                 product = Product.objects.create(
-                    name=row['name'],
-                    description=row['description'],
-                    price=row['price'],
-                    stock=row['stock'],
-                    category_id=row['category_id'],
+                    name=row.get('product_name'),
+                    description=row.get('product_description', ''),
+                    price=row.get('product_price'),
+                    stock=row.get('product_stock'),
+                    category=category,
                     vendor=request.user
                 )
+                product.compatible_varient_year.add(variant_year)
                 products_created.append(product)
+
             except Exception as e:
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
