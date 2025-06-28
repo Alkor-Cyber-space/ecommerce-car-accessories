@@ -16,18 +16,31 @@ import {
   FaBars,
   FaTimes
 } from 'react-icons/fa';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminDashboard from './AdminDashboard';
 import { RiHomeFill } from 'react-icons/ri';
 import { PiCurrencyDollarSimpleBold, PiPuzzlePieceFill } from 'react-icons/pi';
 import { AiOutlineStock } from 'react-icons/ai';
 import { MdOutlineInventory } from 'react-icons/md';
 import { IoSearchOutline } from 'react-icons/io5';
-import UserDataTable from './components/userAndVendor/UserData';
-import VendorDataTable from './components/userAndVendor/VendorData';
-import SalesReport from './components/reports/SalesReport';
-import ReturnsReport from './components/reports/ReturnsReport';
-import Transaction from './components/reports/TransactionReports';
-import TaxReport from './components/reports/TaxReport';
+// import UserDataTable from './components/userAndVendor/UserData';
+// import VendorDataTable from './components/userAndVendor/VendorData';
+// import SalesReport from './components/reports/SalesReport';
+// import ReturnsReport from './components/reports/ReturnsReport';
+// import Transaction from './components/reports/TransactionReports';
+// import TaxReport from './components/reports/TaxReport';
+// import InventoryOverview from './components/inventoryControl/InventoryOverview';
+// import StockTable from './components/inventoryControl/StockManagement';
+import UserDataTable from '../../components/admin/userAndVendor/UserData';
+import VendorDataTable from '../../components/admin/userAndVendor/VendorData';
+import SalesReport from '../../components/admin/reports/SalesReport';   
+import ReturnsReport from '../../components/admin/reports/ReturnsReport';
+import Transaction from '../../components/admin/reports/TransactionReports';
+import TaxReport from '../../components/admin/reports/TaxReport';
+import InventoryOverview from '../../components/admin/inventoryControl/InventoryOverview';
+import StockTable from '../../components/admin/inventoryControl/StockManagement';
+
+import FinancialDashboard from './FinancialDashboard';
+import AuditLogs from './AuditLogs';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -47,11 +60,11 @@ const AdminHome = () => {
       case 'Dashboard':
         return <AdminDashboard />;
       case 'Inventory':
-        return <div>Inventory Control Content</div>;
+        return <InventoryOverview/>;
       case 'Stock Management':
-        return <div>Stock Management Content</div>;
+        return <StockTable/>;
       case 'Financial Dashboard':
-        return <div>Financial Dashboard Content</div>;
+        return <FinancialDashboard/>;
       case 'Sales Report':
         return <SalesReport />;
       case 'Returns Report':
@@ -65,7 +78,7 @@ const AdminHome = () => {
       case 'Vendor Overview':
         return <VendorDataTable />;
       case 'Audit Logs':
-        return <div>Audit Logs Content</div>;
+        return <AuditLogs/>;
       case 'Role-Based Access':
         return <div>Role-Based Admin Access Content</div>;
       default:
@@ -74,7 +87,7 @@ const AdminHome = () => {
   };
 
   return (
-    <div className="flex h-screen ">
+<div className='flex-1 px-1 bg-white transition-all duration-300 '>
 
       {/* Toggle Button */}
       <button
@@ -86,7 +99,7 @@ const AdminHome = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-gray-300 p-6 overflow-y-auto z-40 transform transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 left-0 h-full w-72 bg-gray-300 p-6 overflow-y-auto scrollbar-none z-40 transform transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
         <h1 className='text-2xl font-semibold px-4 py-7'>DASHBOARD</h1>
@@ -193,7 +206,7 @@ const AdminHome = () => {
 
       {/* Main Content */}
       <div
-        className={`flex-1 p-6  bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-4'
+        className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-4'
           }`}
       >
         {renderContent()}
