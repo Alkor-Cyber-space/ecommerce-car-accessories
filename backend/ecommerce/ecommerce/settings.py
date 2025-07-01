@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'cart_wishlist',
     'vendors',
     'orders',
+    'django_celery_beat'
 ]
 
 MIDDLEWARE = [
@@ -220,3 +221,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'

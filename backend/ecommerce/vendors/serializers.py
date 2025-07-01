@@ -22,3 +22,9 @@ class VendorProductSerializer(ProductSerializer):
 class VendorCategorySerializer(CategorySerializer):
     class Meta(CategorySerializer.Meta):
         fields = CategorySerializer.Meta.fields
+
+
+class ProductStockUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'stock']

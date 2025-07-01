@@ -10,7 +10,7 @@ from vehicles.serializers import (
     VariantSerializer, ModelYearSerializer, VariantYearSerializer
 )
 from accounts.permissions import IsVendor
-from .serializers import VendorDashboardSerializer
+from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer
 import csv
 import io
 import pandas as pd
@@ -19,6 +19,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 class VendorDashboardViewSet(viewsets.ViewSet):
@@ -184,3 +186,30 @@ class ProductBulkUploadViewSet(viewsets.ViewSet):
                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'message': f'{len(products_created)} products uploaded successfully.'}, status=status.HTTP_201_CREATED)
+    
+    
+class InventoryUpdateViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+
+    @action(detail=True, methods=['patch'], url_path='update-stock')
+    def update_stock(self, request, pk=None):
+        try:
+            product = Product.objects.get(pk=pk, vendor=request.user)
+        except Product.DoesNotExist:
+            return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = ProductStockUpdateSerializer(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+
+            if product.stock < 5:
+                send_mail(
+                    subject='Low Stock Alert',
+                    message=f'Your product "{product.name}" has only {product.stock} item(s) left in stock.',
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[product.vendor.email],
+                    fail_silently=False
+                )
+
+            return Response({'message': 'Stock updated successfully.'})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

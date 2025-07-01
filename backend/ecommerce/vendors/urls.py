@@ -4,7 +4,7 @@ from .views import (
     ProductBulkUploadViewSet, VendorDashboardViewSet, VendorProductViewSet, VendorCategoryViewSet,
     VendorVehicleMakeViewSet, VendorVehicleModelViewSet,
     VendorYearViewSet, VendorVariantViewSet,
-    VendorModelYearViewSet, VendorVariantYearViewSet,
+    VendorModelYearViewSet, VendorVariantYearViewSet,InventoryUpdateViewSet
 )
 
 router = DefaultRouter()
@@ -18,6 +18,7 @@ router.register(r'variants', VendorVariantViewSet, basename='vendor-variants')
 router.register(r'model-years', VendorModelYearViewSet, basename='vendor-model-years')
 router.register(r'variant-years', VendorVariantYearViewSet, basename='vendor-variant-years')
 router.register(r'upload-products', ProductBulkUploadViewSet, basename='upload-products')
+router.register(r'inventory', InventoryUpdateViewSet, basename='inventory')
 
 
 urlpatterns = [
