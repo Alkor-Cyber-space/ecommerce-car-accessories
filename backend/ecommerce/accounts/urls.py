@@ -11,4 +11,5 @@ router.register(r'addresses', AddressViewSet, basename='addresses')
 urlpatterns = [
     path('', include(router.urls)),
     path('password/reset-password/<uidb64>/<token>/', PasswordResetViewSet.as_view({'post': 'reset_password'}), name='reset-password'),
+     path('social_auth/', FirebaseLoginAPIView.as_view(), name='firebase-login'),
 ]
