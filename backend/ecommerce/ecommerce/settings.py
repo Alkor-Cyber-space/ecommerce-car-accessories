@@ -67,7 +67,8 @@ INSTALLED_APPS = [
     'cart_wishlist',
     'vendors',
     'orders',
-    'django_celery_beat'
+    'django_celery_beat',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -197,7 +198,8 @@ REST_FRAMEWORK = {
         'otp_verify': '10/hour',
         'anon': '100/hour',
         'user': '100/hour'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 
 SIMPLE_JWT = {
