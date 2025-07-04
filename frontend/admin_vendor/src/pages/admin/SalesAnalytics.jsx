@@ -6,6 +6,7 @@ import TopProductsTable from '../../components/admin/adminDashboard/TopProducts'
 import RecentOrdersTable from '../../components/admin/adminDashboard/OrderTracking';
 import TotalProfitCard from '../../components/admin/adminDashboard/TotalProfitChart';
 import UsersOverview from '../../components/admin/adminDashboard/UserOverview';
+import TopSalesOverview from '../../components/admin/Top';
 import RefundReturnStats from '../../components/admin/adminDashboard/RefundReturnStats';
 const stats = [
   { title: "Orders Today", value: 53 },
@@ -13,7 +14,7 @@ const stats = [
   { title: "nw users", value: 20 },
   { title: "Refunds", value: 3 },
 ];
-const AdminDashboard = () => {
+const SalesAnalytics = () => {
   return (
     <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl'>
       {/* <div>
@@ -33,7 +34,7 @@ const AdminDashboard = () => {
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3  my-6 w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-3  my-6 w-full">
         {/* Sales Trends - spans 2/3 columns on large screens */}
         <div className="lg:col-span-2  text-white w-full">
           <SalesTrends />
@@ -50,18 +51,22 @@ const AdminDashboard = () => {
         </div>
       </div>
 
+
       {/* Users Overview */}
-      <div className='grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2 '>
-        <div>
-          <UsersOverview />
-        </div>
-        <div className="">
-          <RecentOrdersTable />
-        </div>
+      <div>
+        <TopSalesOverview/>
       </div>
+      {/* <div className='grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2 '>
+        <div>
+          <TopSalesOverview />
+        </div>
+        <div className=" rounded-xl  shadow">
+          <TopProductsTable />
+        </div>
+      </div> */}
 
     </div>
   )
 }
 
-export default AdminDashboard
+export default SalesAnalytics

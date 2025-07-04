@@ -49,7 +49,7 @@ const PerformanceMetrics = () => {
     const [selectedYear, setSelectedYear] = useState("2024");
 
     return (
-        <div className="space-y-10">
+        <div className="h-full bg-[#ECECF0] px-6 py-10 rounded-2xl">
             <div className="text-2xl font-semibold text-gray-800 mb-6">
                 📊 Vendor Performance Metrics
             </div>

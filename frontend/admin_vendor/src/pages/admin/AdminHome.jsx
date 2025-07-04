@@ -19,9 +19,12 @@ import {
 import AdminDashboard from './AdminDashboard';
 import { RiHomeFill } from 'react-icons/ri';
 import { PiCurrencyDollarSimpleBold, PiPuzzlePieceFill } from 'react-icons/pi';
-import { AiOutlineStock } from 'react-icons/ai';
+import { AiOutlineAppstore, AiOutlineStock } from 'react-icons/ai';
 import { MdOutlineInventory } from 'react-icons/md';
 import { IoSearchOutline } from 'react-icons/io5';
+
+import user from '../../assets/user.jpg';
+import logo from '../../assets/logo.png';
 // import UserDataTable from './components/userAndVendor/UserData';
 // import VendorDataTable from './components/userAndVendor/VendorData';
 // import SalesReport from './components/reports/SalesReport';
@@ -32,7 +35,7 @@ import { IoSearchOutline } from 'react-icons/io5';
 // import StockTable from './components/inventoryControl/StockManagement';
 import UserDataTable from '../../components/admin/userAndVendor/UserData';
 import VendorDataTable from '../../components/admin/userAndVendor/VendorData';
-import SalesReport from '../../components/admin/reports/SalesReport';   
+import SalesReport from '../../components/admin/reports/SalesReport';
 import ReturnsReport from '../../components/admin/reports/ReturnsReport';
 import Transaction from '../../components/admin/reports/TransactionReports';
 import TaxReport from '../../components/admin/reports/TaxReport';
@@ -41,6 +44,9 @@ import StockTable from '../../components/admin/inventoryControl/StockManagement'
 
 import FinancialDashboard from './FinancialDashboard';
 import AuditLogs from './AuditLogs';
+import SalesAnalytics from './SalesAnalytics';
+import RevenueTrends from './RevenueTrends';
+import AdminOverview from '../../components/userAndVendor/Adminsdata';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -59,12 +65,16 @@ const AdminHome = () => {
     switch (activeTab) {
       case 'Dashboard':
         return <AdminDashboard />;
+      case 'Sales Analytics':
+        return <SalesAnalytics />;
+      case 'Revenue Trends':
+        return <RevenueTrends />;
       case 'Inventory':
-        return <InventoryOverview/>;
+        return <InventoryOverview />;
       case 'Stock Management':
-        return <StockTable/>;
+        return <StockTable />;
       case 'Financial Dashboard':
-        return <FinancialDashboard/>;
+        return <FinancialDashboard />;
       case 'Sales Report':
         return <SalesReport />;
       case 'Returns Report':
@@ -77,8 +87,10 @@ const AdminHome = () => {
         return <UserDataTable />;
       case 'Vendor Overview':
         return <VendorDataTable />;
+        case 'Admin Overview':
+          return <AdminOverview/>
       case 'Audit Logs':
-        return <AuditLogs/>;
+        return <AuditLogs />;
       case 'Role-Based Access':
         return <div>Role-Based Admin Access Content</div>;
       default:
@@ -87,38 +99,45 @@ const AdminHome = () => {
   };
 
   return (
-<div className='flex-1 px-1 bg-white transition-all duration-300 '>
+    <div className='flex-1 px-1 bg-white transition-all duration-500 '>
 
       {/* Toggle Button */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}
-        className="fixed top-1 left-4 z-50 text-xl p-2 bg-white rounded shadow hover:bg-gray-100 transition"
+        className={`fixed top-1 z-50 text-xl p-2 rounded transition-all duration-500 ease-in-out ${showSidebar ? 'left-4' : 'left-0'
+          }`}
       >
-        {showSidebar ? <FaTimes /> : <FaBars />}
+        <div
+          className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? 'px-3 w-48' : 'w-12 justify-center'
+            }`}
+        >
+          <img src={logo} alt="Logo" className="h-8" />
+          {showSidebar && <p className="text-2xl font-semibold transition-all duration-1000">carooa</p>}
+        </div>
       </button>
+
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-gray-300 p-6 overflow-y-auto scrollbar-none z-40 transform transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed top-0 left-0 h-full w-72  p-6 overflow-y-auto scrollbar-none z-40 transform transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
-        <h1 className='text-2xl font-semibold px-4 py-7'>DASHBOARD</h1>
-        <ul className="space-y-4 text-sm">
-          <li className="relative mb-4">
-            <IoSearchOutline className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl" />
-            <input
-              type="text"
-              placeholder="Search for..."
-              className="w-full pl-10 pr-3 py-2 rounded border border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </li>
+        {/* <h1 className='text-4xl font-semibold px-4 py-7'>carooa</h1> */}
+        <ul className="space-y-4 py-10 text-md">
 
-          <li className={`cursor-pointer hover:bg-gray-400 p-2 rounded flex items-center gap-2 ${activeTab === 'Dashboard' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Dashboard')}>
-            <RiHomeFill /> Dashboard
+
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Dashboard' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Dashboard')}>
+            <AiOutlineAppstore />Dashboard
+          </li>
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Sales Analytics' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Sales Analytics')}>
+            <AiOutlineAppstore />Sales Analytics
+          </li>
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Revenue Trends' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Revenue Trends')}>
+            <AiOutlineAppstore />Revenue Trends
           </li>
 
           <li>
-            <div className="cursor-pointer hover:bg-gray-400 p-2 rounded flex justify-between items-center" onClick={() => toggleDropdown('Inventory Control')}>
+            <div className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center" onClick={() => toggleDropdown('Inventory Control')}>
               <span className="flex items-center gap-2">
                 <FaStar />Inventory Control
               </span>
@@ -126,10 +145,10 @@ const AdminHome = () => {
             </div>
             {openDropdown === 'Inventory Control' && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'Inventory' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Inventory')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl ${activeTab === 'Inventory' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Inventory')}>
                   <span className='flex gap-2 items-center'><MdOutlineInventory />Inventory Overview</span>
                 </li>
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'Stock Management' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Stock Management')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Stock Management' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Stock Management')}>
                   <span className='flex gap-2 items-center'><AiOutlineStock />Stock Management</span>
                 </li>
               </ul>
@@ -137,78 +156,101 @@ const AdminHome = () => {
           </li>
 
           <li>
-            <div className="cursor-pointer hover:bg-gray-400 p-2 rounded flex justify-between items-center" onClick={() => toggleDropdown('User & Vendor')}>
+            <div className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center" onClick={() => toggleDropdown('User & Vendor')}>
               <span className="flex items-center gap-2"><FaUsers /> User & Vendor</span>
               {openDropdown === 'User & Vendor' ? <FaChevronDown /> : <FaChevronRight />}
             </div>
             {openDropdown === 'User & Vendor' && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'User Overview' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('User Overview')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'User Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('User Overview')}>
                   <span className='flex gap-2 items-center'><FaUser />User Overview</span>
                 </li>
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'Vendor Overview' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Vendor Overview')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl   ${activeTab === 'Vendor Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Vendor Overview')}>
                   <span className='flex gap-2 items-center'><FaUserTie />Vendor Overview</span>
+                </li>
+                 <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl   ${activeTab === 'Admin Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Admin Overview')}>
+                  <span className='flex gap-2 items-center'><FaUserTie />Admins</span>
                 </li>
               </ul>
             )}
           </li>
 
-          <li className={`cursor-pointer hover:bg-gray-400 p-2 rounded flex items-center gap-2 ${activeTab === 'Financial Dashboard' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Financial Dashboard')}>
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Financial Dashboard' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Financial Dashboard')}>
             <PiCurrencyDollarSimpleBold /> Financial Dashboard
           </li>
 
           <li>
-            <div className="cursor-pointer hover:bg-gray-400 p-2 rounded flex justify-between items-center" onClick={() => toggleDropdown('Reports')}>
+            <div className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl flex justify-between items-center" onClick={() => toggleDropdown('Reports')}>
               <span className="flex items-center gap-2"><FaClipboardList /> Reports</span>
               {openDropdown === 'Reports' ? <FaChevronDown /> : <FaChevronRight />}
             </div>
             {openDropdown === 'Reports' && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'Sales Report' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Sales Report')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Sales Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Sales Report')}>
                   Sales Report
                 </li>
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'Returns Report' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Returns Report')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Returns Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Returns Report')}>
                   Returns Report
                 </li>
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'Transaction Report' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Transaction Report')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Transaction Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Transaction Report')}>
                   Transaction Report
                 </li>
-                <li className={`cursor-pointer hover:bg-gray-200 p-1 rounded ${activeTab === 'Tax Report' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Tax Report')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Tax Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Tax Report')}>
                   Tax Report
                 </li>
               </ul>
             )}
           </li>
 
-          <li className={`cursor-pointer hover:bg-gray-400 p-2 rounded flex items-center gap-2 ${activeTab === 'Audit Logs' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Audit Logs')}>
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Audit Logs' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Audit Logs')}>
             <PiPuzzlePieceFill /> Audit Logs
           </li>
 
           <hr className="my-4 border-gray-500" />
 
-          <li className={`cursor-pointer hover:bg-gray-400 p-2 rounded flex items-center gap-2 ${activeTab === 'Settings' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Settings')}>
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Settings' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Settings')}>
             <FaCog /> Settings
           </li>
 
-          <li className={`cursor-pointer hover:bg-gray-400 p-2 rounded flex items-center gap-2 ${activeTab === 'Role-Based Access' ? 'bg-white font-semibold' : ''}`} onClick={() => handleClick('Role-Based Access')}>
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Role-Based Access' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Role-Based Access')}>
             <FaUserShield /> Role-Based Admin Access
           </li>
 
-          <li className="mt-6 p-3 rounded-lg bg-gray-100 hover:bg-gray-200 cursor-pointer flex items-center gap-3">
-            <img src="" alt="Profile" className="w-10 h-10 rounded-full" />
-            <div className="text-sm">
-              <div className="font-semibold">Rohit Ravikumar</div>
-              <div className="text-gray-600">Account settings</div>
-            </div>
-          </li>
         </ul>
       </div>
 
       {/* Main Content */}
       <div
-        className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-4'
-          }`}
+        className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
       >
+        {/* 🔍 Search bar */}
+        <div className="flex items-center justify-between mb-6 ">
+          {/* Search Bar */}
+          <div className="relative w-full max-w-3xl">
+            <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
+            <input
+              type="text"
+              placeholder="Search"
+              className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
+            />
+
+          </div>
+
+          {/* Profile Info */}
+          <div className="flex w-60 items-center gap-3">
+            <img
+              src={user}
+              alt="profile"
+              className="w-17 h-17 rounded-full object-cover"
+            />
+            <div className='flex flex-col font-semibold'>
+              <div className="text-lg text-gray-700 font-medium">Rohit Ravikumar</div>
+              <span>rohitgmail.com</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Dynamic Component Render */}
         {renderContent()}
       </div>
     </div>

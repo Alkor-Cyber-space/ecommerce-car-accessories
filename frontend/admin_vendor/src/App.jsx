@@ -5,6 +5,8 @@ import VendorSignIn from './pages/auth/VendorSignin'
 import VendorDashboard from './pages/vendor/VendorDashboard'
 import VendorHome from './pages/vendor/VendorHome'
 import AdminHome from './pages/admin/AdminHome'
+import VendorProfile from './pages/vendor/VendorProfile'
+import ForgotPassword from './pages/auth/ForgotPassword'
 
 function App() {
   
@@ -15,8 +17,10 @@ function App() {
   {/* protected route --------todo */}
   <Route path='/signin' element={<AdminSignIn />} />
   <Route path="/admin" element={<AdminHome />} />
-  <Route path='/Vendor-Signin' element={<VendorSignIn />} />
+  <Route path='/login' element={<VendorSignIn />} />
   <Route path="/vendor" element={<VendorHome />} />
+  <Route path='/vendor/profile' element={<VendorProfile/>}/>
+  <Route path='/forgot-password' element={<ForgotPassword />} />
   {/* Add more routes as needed */}
 
 </Routes>

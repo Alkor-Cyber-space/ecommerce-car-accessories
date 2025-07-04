@@ -94,7 +94,7 @@ const VendorDashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState("March");
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-10 h-full bg-[#ECECF0] px-6 py-10 rounded-2xl">
       <div className="text-2xl font-semibold text-gray-800">
         👋 Welcome back, Vendor!
       </div>

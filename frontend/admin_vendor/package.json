@@ -12,6 +12,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.8.2",
     "@tailwindcss/vite": "^4.1.10",
+    "axios": "^1.10.0",
     "framer-motion": "^12.19.1",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.5.25",
