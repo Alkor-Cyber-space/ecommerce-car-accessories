@@ -6,6 +6,7 @@ from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, Ou
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import password_validation
 
+
 class CreateUserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(max_length=10, write_only=True)
 
@@ -25,15 +26,56 @@ class CreateUserSerializer(serializers.ModelSerializer):
         user.groups.add(group)
         return user
 
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True)
 
-    class Meta:
-        model = CustomUser
-        fields = ('email', 'username', 'password', 'phone_number')
+class VendorRegistrationSerializer(serializers.Serializer):
+    user = CreateUserSerializer()
+    profile = VendorProfileSerializer()
+    agreement = VendorAgreementSerializer()
 
     def create(self, validated_data):
-        return CustomUser.objects.create_user(**validated_data)
+        user_data = validated_data.pop('user')
+        profile_data = validated_data.pop('profile')
+        agreement_data = validated_data.pop('agreement')
+
+        # Create user with vendor role
+        user_serializer = CreateUserSerializer(data=user_data)
+        user_serializer.is_valid(raise_exception=True)
+        user = user_serializer.save()
+
+        # Create vendor profile
+        profile = VendorProfile.objects.create(user=user, **profile_data)
+
+        # Create agreement
+        VendorAgreement.objects.create(vendor=profile, **agreement_data)
+
+        return {
+            "user": user,
+            "profile": profile,
+        }
+
+
+class VendorProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        exclude = ['user', 'is_verified', 'submitted_at']
+
+
+class VendorAgreementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorAgreement
+        exclude = ['vendor', 'signed_at']
+
+
+
+# class RegisterSerializer(serializers.ModelSerializer):
+#     password = serializers.CharField(write_only=True)
+
+#     class Meta:
+#         model = CustomUser
+#         fields = ('email', 'username', 'password', 'phone_number')
+
+#     def create(self, validated_data):
+#         return CustomUser.objects.create_user(**validated_data)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
