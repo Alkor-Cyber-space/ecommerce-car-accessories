@@ -94,6 +94,12 @@ class UserViewSet(viewsets.ViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class VendorRegistrationViewSet(viewsets.ViewSet):
+    def create(self, request):
+        serializer = VendorRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Vendor registered successfully"}, status=201)
 
 class FirebaseLoginAPIView(APIView):
     def post(self, request):
