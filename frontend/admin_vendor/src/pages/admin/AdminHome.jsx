@@ -16,12 +16,16 @@ import {
   FaBars,
   FaTimes
 } from 'react-icons/fa';
+import { HiArrowTrendingUp } from "react-icons/hi2";
+import { GrNotification, GrUserSettings } from "react-icons/gr";
+
 import AdminDashboard from './AdminDashboard';
 import { RiHomeFill } from 'react-icons/ri';
-import { PiCurrencyDollarSimpleBold, PiPuzzlePieceFill } from 'react-icons/pi';
+import { PiCalculatorDuotone, PiCurrencyDollarSimpleBold, PiPuzzlePieceFill, PiQuestion } from 'react-icons/pi';
 import { AiOutlineAppstore, AiOutlineStock } from 'react-icons/ai';
 import { MdOutlineInventory } from 'react-icons/md';
 import { IoSearchOutline } from 'react-icons/io5';
+import { HiOutlineDocumentReport } from "react-icons/hi";
 
 import user from '../../assets/user.jpg';
 import logo from '../../assets/logo.png';
@@ -47,6 +51,7 @@ import AuditLogs from './AuditLogs';
 import SalesAnalytics from './SalesAnalytics';
 import RevenueTrends from './RevenueTrends';
 import AdminOverview from '../../components/userAndVendor/Adminsdata';
+import { BsGraphUpArrow } from 'react-icons/bs';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -87,12 +92,17 @@ const AdminHome = () => {
         return <UserDataTable />;
       case 'Vendor Overview':
         return <VendorDataTable />;
-        case 'Admin Overview':
-          return <AdminOverview/>
+      case 'Admin Overview':
+        return <AdminOverview />
       case 'Audit Logs':
         return <AuditLogs />;
-      case 'Role-Based Access':
-        return <div>Role-Based Admin Access Content</div>;
+      case 'Notifications':
+        return <div>Notifications Content</div>;
+      case 'Account Settings':
+        return <div>Account Settings Content</div>;
+      case 'Support':
+        return <div>Support Content</div>;
+
       default:
         return <div>Select a tab</div>;
     }
@@ -130,10 +140,10 @@ const AdminHome = () => {
             <AiOutlineAppstore />Dashboard
           </li>
           <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Sales Analytics' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Sales Analytics')}>
-            <AiOutlineAppstore />Sales Analytics
+            <BsGraphUpArrow />Sales Analytics
           </li>
           <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Revenue Trends' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Revenue Trends')}>
-            <AiOutlineAppstore />Revenue Trends
+            <HiArrowTrendingUp />Revenue Trends
           </li>
 
           <li>
@@ -168,7 +178,7 @@ const AdminHome = () => {
                 <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl   ${activeTab === 'Vendor Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Vendor Overview')}>
                   <span className='flex gap-2 items-center'><FaUserTie />Vendor Overview</span>
                 </li>
-                 <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl   ${activeTab === 'Admin Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Admin Overview')}>
+                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl   ${activeTab === 'Admin Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Admin Overview')}>
                   <span className='flex gap-2 items-center'><FaUserTie />Admins</span>
                 </li>
               </ul>
@@ -181,7 +191,8 @@ const AdminHome = () => {
 
           <li>
             <div className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl flex justify-between items-center" onClick={() => toggleDropdown('Reports')}>
-              <span className="flex items-center gap-2"><FaClipboardList /> Reports</span>
+              <span className="flex items-center gap-2"><HiOutlineDocumentReport />
+ Reports</span>
               {openDropdown === 'Reports' ? <FaChevronDown /> : <FaChevronRight />}
             </div>
             {openDropdown === 'Reports' && (
@@ -203,19 +214,24 @@ const AdminHome = () => {
           </li>
 
           <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Audit Logs' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Audit Logs')}>
-            <PiPuzzlePieceFill /> Audit Logs
+            {/* <PiPuzzlePieceFill />   */}
+            <PiCalculatorDuotone />Audit Logs
           </li>
 
-          <hr className="my-4 border-gray-500" />
-
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Settings' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Settings')}>
-            <FaCog /> Settings
+          {/* <hr className="my-4 border-gray-500" /> */}
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Notifications' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Notifications')}>
+            <GrNotification />
+ Notifications
           </li>
 
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Role-Based Access' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Role-Based Access')}>
-            <FaUserShield /> Role-Based Admin Access
-          </li>
 
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Account Settings' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Account Settings')}>
+            <GrUserSettings />
+ Account Settings
+          </li>
+          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Support' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Support')}>
+            <PiQuestion /> Support/Help
+          </li>
         </ul>
       </div>
 

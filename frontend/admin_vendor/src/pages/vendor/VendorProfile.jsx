@@ -1,5 +1,12 @@
 import React from "react";
-import { FaEdit, FaMapMarkerAlt, FaPhone, FaEnvelope, FaStore, FaIdCard, FaRegBuilding } from "react-icons/fa";
+import {
+  FaEdit,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaEnvelope,
+  FaStore,
+  FaRegBuilding,
+} from "react-icons/fa";
 
 const vendor = {
   name: "AutoZone Traders",
@@ -13,15 +20,25 @@ const vendor = {
   address: "123, Industrial Road, Auto Nagar, Mumbai",
   documents: {
     panCard: "/documents/pan_card.jpg",
+    aadharCard: "/documents/aadhar_card.jpg",
     gstCertificate: "/documents/gst_certificate.jpg",
+    businessRegCert: "/documents/business_reg_cert.jpg",
     shopLicense: "/documents/shop_license.jpg",
-  }
+    cancelledCheque: "/documents/cancelled_cheque.jpg",
+    bankStatement: "/documents/bank_statement.jpg",
+    itr: "/documents/itr.jpg",
+    balanceSheet: "/documents/balance_sheet.jpg",
+    vendorForm: "/documents/vendor_form.jpg",
+    ndaAgreement: "/documents/nda_agreement.jpg",
+    dealershipLetter: "/documents/dealership_letter.jpg",
+    signatoryLetter: "/documents/signatory_letter.jpg",
+  },
 };
 
 const VendorProfile = () => {
   return (
-    <div className="min-h-screen  p-8">
-      <div className="max-w-5xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-center">
           <div>
@@ -64,12 +81,12 @@ const VendorProfile = () => {
 
         {/* Documents Section */}
         <div className="border-t p-6 bg-white">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">KYC Documents</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Required Documents</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {Object.entries(vendor.documents).map(([key, value]) => (
               <div key={key} className="rounded-lg overflow-hidden border shadow-sm bg-white">
                 <div className="p-3 border-b bg-slate-50 text-center font-medium capitalize text-gray-600">
-                  {key.replace(/([A-Z])/g, ' $1')}
+                  {key.replace(/([A-Z])/g, " $1").trim()}
                 </div>
                 <img
                   src={value}
