@@ -20,7 +20,7 @@ class CustomUser(AbstractUser):
     def __str__(self):
         return self.email
 
-class vendorProfile(models.Model):
+class VendorProfile(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     # Identity Documents
