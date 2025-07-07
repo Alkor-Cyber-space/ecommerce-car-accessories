@@ -20,12 +20,25 @@ class CreateUserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         user = CustomUser(**validated_data)
         user.set_password(password)
+        if role == "Vendor":
+            user.is_active = False
         user.save()
 
         group = Group.objects.get(name=role)
         user.groups.add(group)
         return user
 
+
+class VendorProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        exclude = ['user', 'is_verified', 'submitted_at']
+
+
+class VendorAgreementSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorAgreement
+        exclude = ['vendor', 'signed_at']
 
 class VendorRegistrationSerializer(serializers.Serializer):
     user = CreateUserSerializer()
@@ -52,19 +65,6 @@ class VendorRegistrationSerializer(serializers.Serializer):
             "user": user,
             "profile": profile,
         }
-
-
-class VendorProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VendorProfile
-        exclude = ['user', 'is_verified', 'submitted_at']
-
-
-class VendorAgreementSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VendorAgreement
-        exclude = ['vendor', 'signed_at']
-
 
 
 # class RegisterSerializer(serializers.ModelSerializer):
