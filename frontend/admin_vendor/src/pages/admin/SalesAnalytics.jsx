@@ -34,7 +34,7 @@ const SalesAnalytics = () => {
           </div>
         ))}
       </div>
-    <div className="grid grid-cols-1 lg:grid-cols-3  my-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-3  bg-white  my-6 w-full p-1 border  border-[#D8D8D8] rounded-2xl shadow-lg">
         {/* Sales Trends - spans 2/3 columns on large screens */}
         <div className="lg:col-span-2  text-white w-full">
           <SalesTrends />
@@ -45,6 +45,8 @@ const SalesAnalytics = () => {
           <div className=" text-black  w-full">
             <TotalProfitCard />
           </div>
+                    <hr className='border border-[#D8D8D8]' />
+
           <div className="  w-full">
             <RefundReturnStats />
           </div>

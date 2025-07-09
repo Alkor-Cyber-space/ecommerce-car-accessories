@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiX } from 'react-icons/fi';
+import loggo from '../../assets/loggo.png'; 
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -27,12 +28,12 @@ export default function ForgotPassword() {
   return (
     <div className="min-h-screen flex">
       {/* Left Side Section */}
-      <div className="hidden md:flex md:w-1/3 bg-[#030130] justify-center items-center">
-        <h1 className="text-white text-4xl font-bold tracking-widest">carooa</h1>
+      <div className="hidden md:flex md:w-2/5 bg-[#030130] justify-center items-center">
+        <img src={loggo} alt="" className='h-70 w-70' />   
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full md:w-2/3 bg-gray-100 flex flex-col justify-center items-center p-6 relative">
+      <div className="w-full md:w-3/5 bg-gray-100 flex flex-col justify-center items-center p-6 relative">
         {/* Close Button */}
         <button
           onClick={() => navigate('/login')}

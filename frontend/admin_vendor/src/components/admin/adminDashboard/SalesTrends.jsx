@@ -37,9 +37,9 @@ const SalesTrends = () => {
     const [open, setOpen] = useState(false);
 
     return (
-        <div className="bg-white sm:p-6   text-black w-full">
+        <div className=" sm:p-6  text-black w-full">
             {/* Header Section */}
-            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center my-6 gap-4">
                 {/* Title and Value */}
                 <div>
                     <h2 className="text-base sm:text-lg text-gray-700 mb-1">Sales Trends</h2>
@@ -54,7 +54,7 @@ const SalesTrends = () => {
 
                 {/* Labels + Date Picker */}
                 <div className='flex flex-col sm:flex-row sm:items-center gap-4'>
-                    {/* Revenue & Expenses Labels */} 
+                    {/* Revenue & Expenses Labels */}
                     <div className="flex gap-5 items-center font-semibold">
                         <span className="flex items-center text-sm gap-2">
                             <div className="w-2 h-2 bg-[#5737B4] rounded-full"></div>
@@ -122,6 +122,7 @@ const SalesTrends = () => {
                                 <stop offset="95%" stopColor="#20DFDF" stopOpacity={0} />
                             </linearGradient>
                         </defs>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
 
                         <XAxis dataKey="month" stroke="#505050" />
                         <YAxis stroke="#505050" tickFormatter={(value) => `${value / 1000}K`} />

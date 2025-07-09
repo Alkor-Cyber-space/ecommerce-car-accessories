@@ -40,7 +40,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 // Chart Component
 export default function VendorsVsRevenue() {
   return (
-    <div className="bg-white border border-[#D8D8D8] p-5">
+    <div className="bg-white border-l border-[#D8D8D8] p-5">
       <h3 className="text-sm font-semibold mb-3">Vendors vs Revenue</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={vendorData} barGap={6}>

@@ -9,8 +9,8 @@ import UsersOverview from '../../components/admin/adminDashboard/UserOverview';
 import RefundReturnStats from '../../components/admin/adminDashboard/RefundReturnStats';
 const stats = [
   { title: "Orders Today", value: 53 },
-  { title: "Products sold- Today", value: "42" },
-  { title: "nw users", value: 20 },
+  { title: "Products sold - Today", value: "42" },
+  { title: "New Users", value: 20 },
   { title: "Refunds", value: 3 },
 ];
 const AdminDashboard = () => {
@@ -29,11 +29,11 @@ const AdminDashboard = () => {
         {stats.map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl  shadow p-4">
             <h4 className="text-sm text-gray-500">{stat.title}</h4>
-            <p className="text-2xl font-bold mt-3">{stat.value}</p>
+            <p className="text-3xl font-bold mt-3 text-right pr-5">{stat.value}</p>
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3  my-6 w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-3  bg-white  my-6 w-full p-1 border  border-[#D8D8D8] rounded-2xl shadow-lg">
         {/* Sales Trends - spans 2/3 columns on large screens */}
         <div className="lg:col-span-2  text-white w-full">
           <SalesTrends />
@@ -44,7 +44,9 @@ const AdminDashboard = () => {
           <div className=" text-black  w-full">
             <TotalProfitCard />
           </div>
-          <div className="  w-full">
+          <hr className='border border-[#D8D8D8]' />
+
+          <div className=" w-full">
             <RefundReturnStats />
           </div>
         </div>

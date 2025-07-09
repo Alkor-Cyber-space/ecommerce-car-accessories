@@ -39,6 +39,7 @@ import logo from '../../assets/logo.png';
 // import StockTable from './components/inventoryControl/StockManagement';
 import UserDataTable from '../../components/admin/userAndVendor/UserData';
 import VendorDataTable from '../../components/admin/userAndVendor/VendorData';
+import AdminOverview from '../../components/admin/userAndVendor/AdminsData';
 import SalesReport from '../../components/admin/reports/SalesReport';
 import ReturnsReport from '../../components/admin/reports/ReturnsReport';
 import Transaction from '../../components/admin/reports/TransactionReports';
@@ -50,7 +51,6 @@ import FinancialDashboard from './FinancialDashboard';
 import AuditLogs from './AuditLogs';
 import SalesAnalytics from './SalesAnalytics';
 import RevenueTrends from './RevenueTrends';
-import AdminOverview from '../../components/userAndVendor/Adminsdata';
 import { BsGraphUpArrow } from 'react-icons/bs';
 
 const AdminHome = () => {

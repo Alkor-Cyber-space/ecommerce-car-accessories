@@ -25,7 +25,7 @@ const TotalProfitCard = () => {
   }, []);
 
   return (
-    <div className="text-black border border-[#D8D8D8] bg-white p-3 w-full">
+    <div className="bg-white border-l border-[#D8D8D8] p-8">
       <div className="flex flex-col justify-between items-start">
         <div className="flex items-center gap-1">
           <BsGraphUpArrow className="w-3 h-3" />

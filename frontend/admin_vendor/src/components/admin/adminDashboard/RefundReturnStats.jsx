@@ -35,11 +35,11 @@ const CustomTooltip = ({ active, payload }) => {
 
 export default function RefundReturnStats() {
   return (
-    <div className="bg-white border border-[#D8D8D8] p-2">
+    <div className="bg-white border-l border-l-[#D8D8D8] p-5 h-full">
       <div className="flex justify-between items-center mb-4 p-2">
         <h2 className=" text-gray-800 flex items-center gap-1">
           <PiTimerFill />
- Refund and return statistics
+          Refund and return statistics
         </h2>
         <div className="text-green-600 font-medium bg-green-100 px-3 py-1  text-sm">
           12.6% ↓

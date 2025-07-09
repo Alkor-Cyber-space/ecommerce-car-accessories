@@ -55,7 +55,7 @@ const VendorHome = () => {
   };
 
   return (
-    <div className="flex h-screen gap-5  px-2">
+    <div className="flex min-h-screen gap-5  px-2">
       {/* Toggle Button */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}

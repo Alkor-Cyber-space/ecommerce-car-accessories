@@ -130,22 +130,22 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-
+import loggo from '../../assets/loggo.png';
 export default function VendorSignIn() {
   return (
     <div className="min-h-screen flex">
       {/* Left Section: Branding */}
-      <div className="hidden md:flex md:w-1/3 bg-[#030130] justify-center items-center">
-        <h1 className="text-white text-5xl font-extrabold tracking-widest">carooa</h1>
-      </div>
+      <div className="hidden md:flex md:w-2/5 bg-[#030130] justify-center items-center">
+        <img src={loggo} alt="" className='h-70 w-70' />   
+           </div>
 
       {/* Right Section: Login Form */}
-      <div className="w-full md:w-2/3 bg-gray-100 flex flex-col justify-center items-center px-5 py-16">
+      <div className="w-full md:w-3/5 bg-gray-100 flex flex-col justify-center items-center px-5 py-16">
         <div className="w-full max-w-[600px] space-y-10">
           <h2 className="text-5xl font-bold text-gray-800">Login</h2>
 
           <form className="space-y-4 w-full">
-        
+
             <input
               type="email"
               placeholder="Email"
