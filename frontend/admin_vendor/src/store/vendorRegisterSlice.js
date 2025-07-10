@@ -2,32 +2,30 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  // Auth (before /vendor-register flow starts)
+  // Auth
   email: '',
   phone: '',
   password: '',
   otpVerified: false,
 
-  // Progress tracking
-  currentStep: 0, // ✅ Start from Company Details
+  // Step tracking
+  currentStep: 0,
+  completedSteps: [],
   registrationStatus: 'PENDING',
 
-  // Step 0: Company
+  // Step 0
   companyDetails: null,
-
-  // Step 1: Contact
+  // Step 1
   contactDetails: null,
-
-  // Step 2: KYC
+  // Step 2
   kycDocuments: [],
-
-  // Step 3: Business
+  // Step 3
   businessDocs: null,
-
-  // Step 4: Bank
+  // Step 4
   bankDetails: null,
+  taxDocuments: null,
 
-  // Step 5: Agreements
+  // Step 5
   agreements: [],
 
   // Global state
@@ -39,7 +37,12 @@ const vendorRegisterSlice = createSlice({
   name: 'vendorRegister',
   initialState,
   reducers: {
-    // Credentials & OTP
+    // Step navigation
+    setCurrentStep: (state, action) => {
+      state.currentStep = action.payload;
+    },
+
+    // Credentials + OTP
     setCredentials: (state, action) => {
       const { email, phone, password } = action.payload;
       state.email = email;
@@ -50,48 +53,79 @@ const vendorRegisterSlice = createSlice({
       state.otpVerified = action.payload;
     },
 
-    // Step Progress
-    setCurrentStep: (state, action) => {
-      state.currentStep = action.payload;
-    },
-    setRegistrationStatus: (state, action) => {
-      state.registrationStatus = action.payload;
-    },
-
-    // Company
+    // Step 0: Company
     setCompanyDetails: (state, action) => {
       state.companyDetails = action.payload;
+      if (!state.completedSteps.includes(0)) {
+        state.completedSteps.push(0);
+      }
     },
 
-    // Contact
+    // Step 1: Contact
     setContactDetails: (state, action) => {
       state.contactDetails = action.payload;
+      if (!state.completedSteps.includes(1)) {
+        state.completedSteps.push(1);
+      }
     },
 
-    // KYC
+    // Step 2: KYC
     addKycDocument: (state, action) => {
       state.kycDocuments.push(action.payload);
+      if (!state.completedSteps.includes(2)) {
+        state.completedSteps.push(2);
+      }
     },
     removeKycDocument: (state, action) => {
       state.kycDocuments = state.kycDocuments.filter(doc => doc.id !== action.payload);
     },
 
-    // Business Docs
-    setBusinessDocs: (state, action) => {
-      state.businessDocs = action.payload;
+    // Step 3: Business Docs
+    setBusinessDoc: (state, action) => {
+      const { key, file } = action.payload;
+      if (!state.businessDocs) {
+        state.businessDocs = {};
+      }
+      state.businessDocs[key] = file;
+
+      if (
+        state.businessDocs.gstinCertificate &&
+        state.businessDocs.registrationCertificate &&
+        state.businessDocs.shopLicense &&
+        !state.completedSteps.includes(3)
+      ) {
+        state.completedSteps.push(3);
+      }
     },
 
-    // Bank
+    // Step 4: Bank Details
     setBankDetails: (state, action) => {
       state.bankDetails = action.payload;
+      if (!state.completedSteps.includes(4)) {
+        state.completedSteps.push(4);
+      }
     },
 
-    // Agreements
+    setTaxDocuments: (state, action) => {
+      state.taxDocuments = action.payload;
+      if (!state.completedSteps.includes(5)) {
+        state.completedSteps.push(5);
+      }
+    },
+
+    // Step 5: Agreements
     setAgreements: (state, action) => {
       state.agreements = action.payload;
+      if (!state.completedSteps.includes(6)) {
+        state.completedSteps.push(6);
+      }
     },
 
-    // General
+
+    // Status & Errors
+    setRegistrationStatus: (state, action) => {
+      state.registrationStatus = action.payload;
+    },
     setError: (state, action) => {
       state.error = action.payload;
     },
@@ -109,8 +143,9 @@ export const {
   setContactDetails,
   addKycDocument,
   removeKycDocument,
-  setBusinessDocs,
+  setBusinessDoc,
   setBankDetails,
+  setTaxDocuments,
   setAgreements,
   setRegistrationStatus,
   setError,

@@ -13,6 +13,9 @@ import CompanyDetails from './pages/vendor/registerforms/CompanyDetailsForm';
 import VendorRegisterLayout from './pages/vendor/registerforms/VenderRgisterLayout';
 import ContactDetailsForm from './pages/vendor/registerforms/ContactDetailsForm';
 import KYCDocumentsUpload from './pages/vendor/registerforms/KYCDocUpload';
+import BusinessDocumentsUpload from './pages/vendor/registerforms/BusinessDocumentsUpload';
+import BankTaxDetailsUpload from './pages/vendor/registerforms/BankTaxDetailsUpload';
+import AgreementsUpload from './pages/vendor/registerforms/AgreementsUpload';
 
 function App() {
   return (
@@ -30,9 +33,9 @@ function App() {
         <Route path="company-details" element={<CompanyDetails />} />
         <Route path="contact-details" element={<ContactDetailsForm />} />
         <Route path="kyc-documents" element={<KYCDocumentsUpload />} />
-        {/* <Route path="business-documents" element={<BusinessDocuments />} />
-        <Route path="bank-details" element={<BankTaxDetails />} />
-        <Route path="agreements" element={<AgreementsDocs />} /> */}
+        <Route path="business-documents" element={<BusinessDocumentsUpload />} />
+        <Route path="bank-details" element={<BankTaxDetailsUpload />} />
+        <Route path="agreements" element={<AgreementsUpload/>} />
       </Route>
 
       {/* Vendor Dashboard */}

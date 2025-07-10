@@ -1,3 +1,4 @@
+// src/pages/vendor-register/steps/CompanyDetails.jsx
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -22,23 +23,25 @@ export default function CompanyDetails() {
     }));
   };
 
-  const isFormComplete = Object.values(formData).every((value) => value.trim() !== "");
+  const isFormComplete = Object.values(formData).every((val) => val.trim() !== "");
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
     if (!isFormComplete) return;
 
     dispatch(setCompanyDetails(formData));
     dispatch(setCurrentStep(1));
-    navigate("/vendor-register/contact-details");
+
+    // Small delay to let tick mark appear visually
+    setTimeout(() => {
+      navigate("/vendor-register/contact-details");
+    }, 100); // Adjust if needed
   };
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-2xl p-8 mx-auto my-10">
         <h1 className="text-4xl font-bold text-[#232832] mb-6">Company Details</h1>
-
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input
             type="text"
@@ -49,17 +52,26 @@ export default function CompanyDetails() {
             className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
             required
           />
-          <select
-            name="vendorType"
-            value={formData.vendorType}
-            onChange={handleChange}
-            className="w-full px-4 py-3 rounded-lg bg-white font-semibold text-[#7F7F7F] focus:ring-2"
-            required
-          >
-            <option value="">Type of Vendor</option>
-            <option value="retail">Retailer</option>
-            <option value="wholesale">Wholesaler</option>
-          </select>
+          <div className="relative">
+            <select
+              name="vendorType"
+              value={formData.vendorType}
+              onChange={handleChange}
+              className={`appearance-none w-full px-4 py-3 pr-10 rounded-lg bg-white font-semibold focus:ring-2
+             ${formData.vendorType ? 'text-black' : 'text-[#7F7F7F]'}`}
+              required
+            >
+              <option value="">Type of Vendor</option>
+              <option value="retail">Retailer</option>
+              <option value="wholesale">Wholesaler</option>
+            </select>
+
+            {/* Custom dropdown icon */}
+            <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7F7F7F]">
+              ▼
+            </div>
+          </div>
+
           <input
             type="email"
             name="email"
@@ -78,7 +90,6 @@ export default function CompanyDetails() {
             className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
             required
           />
-
           <button
             type="submit"
             disabled={!isFormComplete}
