@@ -29,42 +29,47 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return user
 
 
-class VendorProfileSerializer(serializers.ModelSerializer):
+class Step1UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
     class Meta:
-        model = VendorProfile
-        exclude = ['user', 'is_verified', 'submitted_at']
-
-
-class VendorAgreementSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = VendorAgreement
-        exclude = ['vendor', 'signed_at']
-
-class VendorRegistrationSerializer(serializers.Serializer):
-    user = CreateUserSerializer()
-    profile = VendorProfileSerializer()
-    agreement = VendorAgreementSerializer()
+        model = CustomUser
+        fields = ['email', 'username', 'password', 'phone_number']
 
     def create(self, validated_data):
-        user_data = validated_data.pop('user')
-        profile_data = validated_data.pop('profile')
-        agreement_data = validated_data.pop('agreement')
+        user = CustomUser.objects.create_user(**validated_data)
+        return user
 
-        # Create user with vendor role
-        user_serializer = CreateUserSerializer(data=user_data)
-        user_serializer.is_valid(raise_exception=True)
-        user = user_serializer.save()
 
-        # Create vendor profile
-        profile = VendorProfile.objects.create(user=user, **profile_data)
+class Step2CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['company_name']
 
-        # Create agreement
-        VendorAgreement.objects.create(vendor=profile, **agreement_data)
 
-        return {
-            "user": user,
-            "profile": profile,
-        }
+class Step3ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['contact_name', 'contact_email', 'contact_address']
+
+
+class Step4KYCSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['kyc_name', 'pan_card', 'aadhar_passport_dl']
+
+
+class Step5BusinessDocsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['gst_certificate', 'business_registration_cert', 'shop_license']
+
+
+class Step6BankTaxSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['cancelled_cheque', 'bank_statement', 'it_return', 'financial_statement']
+
 
 
 # class RegisterSerializer(serializers.ModelSerializer):

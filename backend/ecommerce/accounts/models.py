@@ -19,37 +19,61 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
+# models.py
 
 class VendorProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
-    # Identity Documents
-    pan_card = models.FileField(upload_to='kyc/pan/')
-    aadhar_passport_dl = models.FileField(upload_to='kyc/id/')
+     # Step 2: Company Details
+     company_name = models.CharField(max_length=255, null=True, blank=True)
 
-    # Business Registration / License
-    gst_certificate = models.FileField(upload_to='business/gst/')
-    business_registration_cert = models.FileField(upload_to='business/registration/')
-    shop_license = models.FileField(upload_to='business/shop_license/', null=True, blank=True)
+     # Step 3: Contact Details
+     contact_name = models.CharField(max_length=255, null=True, blank=True)
+     contact_email = models.EmailField(null=True, blank=True)
+     contact_address = models.TextField(null=True, blank=True)
 
-    # Bank Details
-    cancelled_cheque = models.FileField(upload_to='bank/cheque/')
-    bank_statement = models.FileField(upload_to='bank/statement/')
+     # Step 4: KYC Documents
+     kyc_name = models.CharField(max_length=255, null=True, blank=True)
+     pan_card = models.FileField(upload_to='kyc/pan/', null=True, blank=True)
+     aadhar_passport_dl = models.FileField(upload_to='kyc/id/', null=True, blank=True)
 
-    # Financial Records
-    it_return = models.FileField(upload_to='finance/it_return/', null=True, blank=True)
-    financial_statement = models.FileField(upload_to='finance/statement/', null=True, blank=True)
+     # Step 5: Business Documents
+     gst_certificate = models.FileField(upload_to='business/gst/', null=True, blank=True)
+     business_registration_cert = models.FileField(upload_to='business/registration/', null=True, blank=True)
+     shop_license = models.FileField(upload_to='business/shop_license/', null=True, blank=True)
 
-    # Supporting Documents
-    dealership_letter = models.FileField(upload_to='supporting/dealership/', null=True, blank=True)
-    authorized_signatory_letter = models.FileField(upload_to='supporting/signatory/', null=True, blank=True)
+     # Step 6: Bank and Tax Details
+     cancelled_cheque = models.FileField(upload_to='bank/cheque/', null=True, blank=True)
+     bank_statement = models.FileField(upload_to='bank/statement/', null=True, blank=True)
+     it_return = models.FileField(upload_to='finance/it_return/', null=True, blank=True)
+     financial_statement = models.FileField(upload_to='finance/statement/', null=True, blank=True)
 
-    # Flags
-    is_verified = models.BooleanField(default=False)
-    submitted_at = models.DateTimeField(auto_now_add=True)
+     # Supporting Documents (optional)
+     dealership_letter = models.FileField(upload_to='supporting/dealership/', null=True, blank=True)
+     authorized_signatory_letter = models.FileField(upload_to='supporting/signatory/', null=True, blank=True)
 
-    def __str__(self):
-        return self.company_name
+     is_verified = models.BooleanField(default=False)
+     submitted_at = models.DateTimeField(auto_now_add=True)
+
+     def is_registration_complete(self):
+          required_fields = [
+               self.company_name,
+               self.contact_name,
+               self.contact_email,
+               self.contact_address,
+               self.kyc_name,
+               self.pan_card,
+               self.aadhar_passport_dl,
+               self.gst_certificate,
+               self.business_registration_cert,
+               self.cancelled_cheque,
+               self.bank_statement,
+          ]
+          return all(required_fields)
+
+     def __str__(self):
+          return self.user.email
+
 
 class VendorAgreement(models.Model):
     vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE)
