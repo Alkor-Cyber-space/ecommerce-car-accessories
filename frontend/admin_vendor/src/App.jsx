@@ -26,10 +26,10 @@ function App() {
       <Route path="/login" element={<VendorSignIn />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register/verifyOtp" element={<Verify />} />
+        <Route path='/register' element={<VendorRegister/>} />
 
       {/* Vendor Register Steps (Nested under /vendor-register) */}
        <Route path="/vendor-register" element={<VendorRegisterLayout/>}>
-        <Route index element={<VendorRegister/>} />
         <Route path="company-details" element={<CompanyDetails />} />
         <Route path="contact-details" element={<ContactDetailsForm />} />
         <Route path="kyc-documents" element={<KYCDocumentsUpload />} />

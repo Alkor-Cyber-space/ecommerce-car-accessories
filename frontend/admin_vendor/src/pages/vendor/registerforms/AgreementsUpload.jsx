@@ -83,24 +83,24 @@ export default function AgreementsUpload() {
 
     dispatch(setAgreements(uploadedDocs));
     dispatch(setCurrentStep(7));
-    navigate("/vendor-register/summary");
+    navigate("/login");
   };
 
   const renderUploader = (label, key) => {
     const doc = docs[key];
 
     return (
-      <div className="w-full lg:w-[300px] mb-6">
-        <label className="block h-13 w-65 font-semibold text-[#232832]">{label}</label>
-        <div className={`relative w-[300px] h-44 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
+      <div className="w-full lg:w-[350px] flex justify-center items-center flex-col ">
+        <label className="block h-13 w-75 font-semibold text-[#232832] mb-2">{label}</label>
+        <div className={`relative w-[300px] h-40 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
           ${doc.status === "uploading" ? "border-green-500 bg-green-50 border-dashed"
-              : doc.status === "failed" ? "border-red-300 bg-[#FAEAE5]"
-                : "border-dashed border-gray-300"}`}>
+            : doc.status === "failed" ? "border-red-300 bg-[#FAEAE5]"
+              : "border-dashed border-gray-300"}`}>
 
           {!doc.file ? (
-            <label className="cursor-pointer flex flex-col items-center justify-center">
+            <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
               <SlCloudUpload className="text-4xl mb-2" />
-              <span className="text-sm text-gray-500">Drag and drop here</span>
+              <span className="text-lg text-gray-500">Drag and drop here</span>
               <span className="text-[#5737B4] font-semibold">Browse Files</span>
               <input
                 type="file"
@@ -162,23 +162,37 @@ export default function AgreementsUpload() {
 
   return (
     <div className="min-h-screen bg-[#ECECF0] py-10 px-4 sm:px-10">
-      <div className="max-w-[1200px] mx-auto">
-        <h1 className="text-4xl font-bold text-[#232832] mb-10">Agreements & Supporting Documents</h1>
+      <div className="max-w-[1200px] mx-auto ">
+        <h1 className="text-4xl font-bold text-[#232832] mb-10 pl-5">Bussiness Documents</h1>
 
-        <div className="flex flex-col sm:flex-row gap-6 flex-wrap mb-10">
+        <div className="flex flex-col sm:flex-row gap-8 flex-wrap mb-5 text-lg">
           {renderUploader("Filled Vendor Registration Form", "vendorForm")}
           {renderUploader("Signed NDA / Supply Agreement / Terms & Conditions", "ndaOrAgreement")}
           {renderUploader("Authorization Letter / Dealership Certificate", "authorizationLetter")}
           {renderUploader("Authorized Signatory Letter (with seal)", "signatoryLetter")}
         </div>
 
-        <button
-          disabled={!isComplete}
-          onClick={handleSubmit}
-          className={`px-12 py-2 rounded-3xl text-white transition ${isComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"}`}
-        >
-          Save & Continue
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mt-10">
+          <button
+            type="button"
+            onClick={() => navigate("/vendor")}
+            className="px-1 sm:px-12 py-2 w-[250px] text-[#5737B4] border border-[#5737B4] font-medium  rounded-full hover:bg-[#f4f4f4] transition-all"
+          >
+            Skip for Now
+          </button>
+
+          <button
+            disabled={!isComplete}
+            onClick={handleSubmit}
+            className={`px-1 sm:px-12 py-2.5 w-[250px] text-white font-medium rounded-full transition-all ${isComplete
+                ? "bg-[#5737B4] hover:bg-[#432a91]"
+                : "bg-[#D8D8D8] cursor-not-allowed"
+              }`}
+          >
+            Save & Continue
+          </button>
+        </div>
+
       </div>
     </div>
   );

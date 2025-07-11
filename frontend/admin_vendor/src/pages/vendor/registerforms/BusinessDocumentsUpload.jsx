@@ -138,17 +138,17 @@ export default function BusinessDocumentsUpload() {
     const doc = documents[id];
 
     const borderStyles = {
-      idle: "border-dashed border-gray-300",
+      idle: " border-gray-400",
       uploading: "border-green-500 bg-green-50 border-dashed",
       success: "border-dashed border-gray-300",
-      failed: "border-dashed border-gray-300 ",
+      failed: "border-dashed border-red-300 ",
     };
 
     return (
       <div className="w-full sm:w-[300px] mb-6">
         <label className="block text-[#232832] font-semibold mb-2">{label}</label>
         <div
-          className={`relative w-[300px] h-44 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition ${borderStyles[doc.status]}`}
+          className={`relative w-[300px] h-44 border-2 border-dashed rounded-lg flex flex-col justify-center items-center text-center bg-white transition ${borderStyles[doc.status]}`}
         >
           {!doc.file ? (
             <label htmlFor={id} className="cursor-pointer flex flex-col items-center justify-center">
@@ -210,9 +210,9 @@ export default function BusinessDocumentsUpload() {
                 </div>
               ) : (
                 <div className="w-[90%]">
-                  <div className="h-2 rounded bg-gray-200 relative">
+                  <div className="h-1 rounded bg-gray-200 relative">
                     <div
-                      className="h-full rounded bg-[#5737B4]"
+                      className="h-1 rounded bg-[#5737B4]"
                       style={{ width: `${doc.progress}%` }}
                     ></div>
                   </div>
@@ -247,28 +247,33 @@ export default function BusinessDocumentsUpload() {
         <h1 className="text-4xl font-bold text-[#232832] mb-10">Business Documents</h1>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="flex flex-col sm:flex-row justify-between gap-6">
+          <div className="flex flex-col sm:flex-row justify-between gap-10 text-lg">
             {renderUploadBox("gstinCertificate", "Upload GSTIN Certificate")}
             {renderUploadBox("registrationCertificate", "Business Registration Certificate")}
             {renderUploadBox("shopLicense", "Shop & Establishment License")}
           </div>
 
-          <div className="flex justify-evenly gap-2 mt-6">
+          <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mt-10">
             <button
               type="button"
-              className="px-12 py-2 rounded-3xl text-[#5737B4] border-2 border-[#5737B4] bg-gray-200 hover:bg-gray-300 transition"
+              onClick={() => navigate("/vendor")}
+              className="px-1 sm:px-12 py-2 w-[250px] text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
             >
-              Skip for now
+              Skip for Now
             </button>
+
             <button
               type="submit"
               disabled={!isFormComplete}
-              className={`px-12 py-2 rounded-3xl text-white transition ${isFormComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"
+              className={`px-1 sm:px-12 py-2.5 w-[250px] text-white font-medium rounded-full transition-all ${isFormComplete
+                  ? "bg-[#5737B4] hover:bg-[#432a91]"
+                  : "bg-[#D8D8D8] cursor-not-allowed"
                 }`}
             >
               Save & Continue
             </button>
           </div>
+
         </form>
       </div>
     </div>

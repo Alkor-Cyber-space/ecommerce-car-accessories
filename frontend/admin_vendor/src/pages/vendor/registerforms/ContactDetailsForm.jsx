@@ -98,8 +98,8 @@ export default function ContactDetailsForm() {
           <button
             type="submit"
             disabled={!isFormComplete}
-            className={`w-full py-3 rounded-3xl text-white transition 
-              ${isFormComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-gray-400 cursor-not-allowed"}`}
+            className={`w-full py-3 rounded-3xl text-white transition mt-5
+              ${isFormComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"}`}
           >
             Save & Continue
           </button>

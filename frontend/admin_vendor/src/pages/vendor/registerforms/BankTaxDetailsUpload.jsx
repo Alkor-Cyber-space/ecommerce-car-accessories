@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { SlCloudUpload } from "react-icons/sl";
 import { RiDeleteBinLine } from "react-icons/ri";
 import {
-  setCurrentStep,
-  setBankDetails,
-  setTaxDocuments,
+    setCurrentStep,
+    setBankDetails,
+    setTaxDocuments,
 } from "../../../store/vendorRegisterSlice";
 
 
@@ -89,56 +89,58 @@ export default function BankAndTaxDetails() {
     const isTaxDocsComplete =
         taxDocs.itrReport.status === "success"; // Only IT Return is mandatory
 
-const handleSubmit = () => {
-  if (isTaxDocsComplete) {
-    // ✅ Prepare and store Bank Documents in Redux
-    const uploadedBankDocs = {};
-    Object.entries(bankDocs).forEach(([key, doc]) => {
-      if (doc.file) {
-        uploadedBankDocs[key] = {
-          name: doc.file.name,
-          size: doc.file.size,
-          type: doc.file.type,
-        };
-      }
-    });
-    dispatch(setBankDetails(uploadedBankDocs));
+    const handleSubmit = () => {
+        if (isTaxDocsComplete) {
+            // ✅ Prepare and store Bank Documents in Redux
+            const uploadedBankDocs = {};
+            Object.entries(bankDocs).forEach(([key, doc]) => {
+                if (doc.file) {
+                    uploadedBankDocs[key] = {
+                        name: doc.file.name,
+                        size: doc.file.size,
+                        type: doc.file.type,
+                    };
+                }
+            });
+            dispatch(setBankDetails(uploadedBankDocs));
 
-    // ✅ Prepare and store Tax Documents in Redux
-    const uploadedTaxDocs = {};
-    Object.entries(taxDocs).forEach(([key, doc]) => {
-      if (doc.file) {
-        uploadedTaxDocs[key] = {
-          name: doc.file.name,
-          size: doc.file.size,
-          type: doc.file.type,
-        };
-      }
-    });
-    dispatch(setTaxDocuments(uploadedTaxDocs));
+            // ✅ Prepare and store Tax Documents in Redux
+            const uploadedTaxDocs = {};
+            Object.entries(taxDocs).forEach(([key, doc]) => {
+                if (doc.file) {
+                    uploadedTaxDocs[key] = {
+                        name: doc.file.name,
+                        size: doc.file.size,
+                        type: doc.file.type,
+                    };
+                }
+            });
+            dispatch(setTaxDocuments(uploadedTaxDocs));
 
-    // ✅ Move to next step
-    dispatch(setCurrentStep(6));
-    navigate("/vendor-register/agreements");
-  }
-};
+            // ✅ Move to next step
+            dispatch(setCurrentStep(6));
+            navigate("/vendor-register/agreements");
+        }
+    };
 
 
     const renderUploader = (label, id, docs, setDocs, section) => {
         const doc = docs[id];
         return (
-            <div className="w-full sm:w-[300px] mb-6">
-                <label className="block font-semibold text-[#232832] mb-2">{label}</label>
-                <div className={`relative w-[300px] h-44 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
-          ${doc.status === "uploading" ? "border-green-500 bg-green-50 border-dashed"
-                        : doc.status === "failed" ? "border-red-300 bg-[#FAEAE5]"
-                            : "border-dashed border-gray-300"}`}>
+            <div className="flex-1 min-w-[250px] max-w-[400px]">
+                <label className="block font-semibold text-[#232832] mb-3">{label}</label>
+                <div className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
+      ${doc.status === "uploading"
+                        ? "border-green-500 bg-green-50 border-dashed border-2"
+                        : doc.status === "failed"
+                            ? "border-red-300 bg-[#FAEAE5]"
+                            : "border-dashed border-gray-500 border-2"}`}>
 
                     {!doc.file ? (
                         <label className="cursor-pointer flex flex-col items-center justify-center">
                             <SlCloudUpload className="text-4xl mb-2" />
                             <span className="text-sm text-gray-500">Drag and drop here</span>
-                            <span className="text-[#5737B4] font-semibold">Browse Files</span>
+                            <span className="text-sm text-[#5737B4] font-semibold">Browse Files</span>
                             <input
                                 type="file"
                                 accept=".pdf,.jpeg,.jpg,.png"
@@ -180,9 +182,9 @@ const handleSubmit = () => {
                                 />
                             </div>
                             <div className="w-[90%]">
-                                <div className="h-2 bg-gray-200 rounded">
+                                <div className="h-1 bg-gray-200 rounded">
                                     <div
-                                        className={`h-full rounded ${doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"}`}
+                                        className={`h-1 rounded ${doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"}`}
                                         style={{ width: `${doc.progress}%` }}
                                     />
                                 </div>
@@ -198,40 +200,106 @@ const handleSubmit = () => {
     };
 
     return (
-        <div className="min-h-screen bg-[#ECECF0] py-10 px-4 sm:px-10">
-            <div className="max-w-[1200px] mx-auto">
-                <h1 className="text-4xl font-bold text-[#232832] mb-10">Bank & Tax Documents</h1>
+        <div className="min-h-screen bg-[#ECECF0]  ">
+            <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
 
                 {!showTaxSection ? (
                     <>
-                        <h2 className="text-2xl font-semibold mb-6">Bank Details</h2>
-                        <div className="flex flex-col sm:flex-row gap-6 mb-6">
-                            {renderUploader("Cancelled Cheque", "cancelledCheque", bankDocs, setBankDocs, "bank")}
-                            {renderUploader("Bank Passbook or Statement (with IFSC, account holder name, account number)", "bankStatement", bankDocs, setBankDocs, "bank")}
+                        <h1 className="text-4xl font-bold text-[#232832] mb-10">Bank & Tax Details</h1>
+                       
+                        <div className="flex flex-col sm:flex-row gap-10">
+                            <div className="mt-18 text-xl w-full max-w-[300px] ">
+                                {renderUploader(
+                                    "Upload Cancelled Cheque",
+                                    "cancelledCheque",
+                                    bankDocs,
+                                    setBankDocs,
+                                    "bank"
+                                )}
+                            </div>
+                            <div className="mt-4 text-lg w-full max-w-[350px]">
+                                {renderUploader(
+                                    "Bank Passbook or Statement (with IFSC, account holder name, account number)",
+                                    "bankStatement",
+                                    bankDocs,
+                                    setBankDocs,
+                                    "bank"
+                                )}
+                            </div>
                         </div>
-                        <button
-                            disabled={!isBankDocsComplete}
-                            onClick={() => setShowTaxSection(true)}
-                            className={`px-10 py-2 rounded-3xl text-white transition ${isBankDocsComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"}`}
-                        >
-                            Next: Tax / Financial Records
-                        </button>
+
+                        <div className="flex flex-col sm:flex-row gap-8 justify-center items-center mt-10">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    // if skip logic is to go next without storing bank details:
+                                    dispatch(setCurrentStep(6));
+                                    navigate("/vendor-register/agreements");
+                                }}
+                                className="w-[280px] py-2 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
+                            >
+                                Skip for Now
+                            </button>
+
+                            <button
+                                disabled={!isBankDocsComplete}
+                                onClick={() => setShowTaxSection(true)}
+                                className={`w-[280px] py-2 text-white font-medium rounded-full transition-all ${isBankDocsComplete
+                                    ? "bg-[#5737B4] hover:bg-[#432a91]"
+                                    : "bg-[#D8D8D8] cursor-not-allowed"
+                                    }`}
+                            >
+                                Next: Tax / Financial Records
+                            </button>
+                        </div>
+
                     </>
                 ) : (
                     <>
-                        <h2 className="text-2xl font-semibold mb-6">Tax / Financial Records</h2>
-                        <div className="flex flex-col sm:flex-row gap-6 mb-6">
-                            {renderUploader("Latest IT Return (1 year)", "itrReport", taxDocs, setTaxDocs, "tax")}
-                            {renderUploader("P&L Statement or Balance Sheet (Optional for Small Vendors)", "plOrBalanceSheet", taxDocs, setTaxDocs, "tax")}
+                        <h1 className="text-4xl font-bold text-[#232832] mb-10">Tax / Financial Documents</h1>
+                        <div className="flex flex-col sm:flex-row gap-10">
+                            <div className="mt-10 text-xl w-full max-w-[300px]">
+                                {renderUploader(
+                                    "Latest IT Return (1 year)",
+                                    "itrReport",
+                                    taxDocs,
+                                    setTaxDocs,
+                                    "tax"
+                                )}
+                            </div>
+                            <div className="mt-4 text-lg w-full max-w-[300px]">
+                                {renderUploader(
+                                    "P&L Statement or Balance Sheet (Optional for Small Vendors)",
+                                    "plOrBalanceSheet",
+                                    taxDocs,
+                                    setTaxDocs,
+                                    "tax"
+                                )}
+                            </div>
                         </div>
 
-                        <button
-                            onClick={handleSubmit}
-                            disabled={!isTaxDocsComplete}
-                            className={`px-12 py-2 rounded-3xl text-white transition ${isTaxDocsComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"}`}
-                        >
-                            Save & Continue
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-10">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    dispatch(setCurrentStep(6));
+                                    navigate("/vendor-register/agreements");
+                                }}
+                                className="w-[280px] py-2 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
+                            >
+                                Skip for Now
+                            </button>
+                            <button
+                                onClick={handleSubmit}
+                                disabled={!isTaxDocsComplete}
+                                className={`w-[280px] py-2 rounded-full text-white font-medium transition-all ${isTaxDocsComplete
+                                    ? "bg-[#5737B4] hover:bg-[#432a91]"
+                                    : "bg-[#D8D8D8] cursor-not-allowed"
+                                    }`}
+                            >
+                                Save & Continue
+                            </button>
+                        </div>
                     </>
                 )}
             </div>
