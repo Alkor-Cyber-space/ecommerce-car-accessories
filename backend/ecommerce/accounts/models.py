@@ -62,12 +62,12 @@ class VendorProfile(models.Model):
                self.contact_email,
                self.contact_address,
                self.kyc_name,
-               self.pan_card,
-               self.aadhar_passport_dl,
-               self.gst_certificate,
-               self.business_registration_cert,
-               self.cancelled_cheque,
-               self.bank_statement,
+               bool(self.pan_card),
+               bool(self.aadhar_passport_dl),
+               bool(self.gst_certificate),
+               bool(self.business_registration_cert),
+               bool(self.cancelled_cheque),
+               bool(self.bank_statement),
           ]
           return all(required_fields)
 
@@ -123,14 +123,14 @@ class UserOTPS(models.Model):
 
 
 class ThrottleLog(models.Model):
-#     user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, null=True, blank=True)
+    # user = models.ForeignKey('CustomUser', on_delete=models.CASCADE, null=True, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     endpoint = models.CharField(max_length=255)
     timestamp = models.DateTimeField(default=now)
     reason = models.TextField()
 
     def __str__(self):
-        return f"{self.user or self.ip_address} @ {self.endpoint} - {self.timestamp}"
+        return f"{self.ip_address} @ {self.endpoint} - {self.timestamp}"
 
 
 class UserProfile(models.Model):

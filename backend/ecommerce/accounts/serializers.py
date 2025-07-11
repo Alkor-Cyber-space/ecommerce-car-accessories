@@ -29,7 +29,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         return user
 
 
-class Step1UserSerializer(serializers.ModelSerializer):
+class Step1VendorSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
