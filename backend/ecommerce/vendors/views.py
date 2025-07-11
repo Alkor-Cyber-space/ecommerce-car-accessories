@@ -9,7 +9,7 @@ from vehicles.serializers import (
     VehicleMakeSerializer, VehicleModelSerializer, YearSerializer, 
     VariantSerializer, ModelYearSerializer, VariantYearSerializer
 )
-from accounts.permissions import IsVendor
+from accounts.permissions import IsVendor,IsVendorProfileComplete
 from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer
 import csv
 import io
@@ -29,21 +29,28 @@ class VendorDashboardViewSet(viewsets.ViewSet):
     def list(self, request):
         user = request.user
 
-        total_products = Product.objects.filter(vendor=user).count()
+        try:
+            profile = user.vendorprofile
+            registration_complete = profile.is_registration_complete()
+        except VendorProfile.DoesNotExist:
+            registration_complete = False
 
+        total_products = Product.objects.filter(vendor=user).count()
         recent_products = Product.objects.filter(vendor=user).order_by('-created_at')[:5]
 
         data = {
             'total_products': total_products,
-            'recent_products': recent_products
+            'recent_products': recent_products,
+            'registration_complete': registration_complete
         }
 
         serializer = VendorDashboardSerializer(data)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor,IsVendorProfileComplete]
 
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
@@ -55,47 +62,47 @@ class VendorProductViewSet(viewsets.ModelViewSet):
 class VendorCategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor,IsVendorProfileComplete]
 
 # Vehicle Makes CRUD by Vendor
 class VendorVehicleMakeViewSet(viewsets.ModelViewSet):
     queryset = VehicleMake.objects.all()
     serializer_class = VehicleMakeSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
 # Vehicle Model CRUD by Vendor
 class VendorVehicleModelViewSet(viewsets.ModelViewSet):
     queryset = VehicleModel.objects.all()
     serializer_class = VehicleModelSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
 # Year CRUD by Vendor
 class VendorYearViewSet(viewsets.ModelViewSet):
     queryset = Year.objects.all()
     serializer_class = YearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
 # Variant CRUD by Vendor
 class VendorVariantViewSet(viewsets.ModelViewSet):
     queryset = Variant.objects.all()
     serializer_class = VariantSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
 # ModelYear CRUD by Vendor
 class VendorModelYearViewSet(viewsets.ModelViewSet):
     queryset = ModelYear.objects.all()
     serializer_class = ModelYearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
 # VariantYear CRUD by Vendor
 class VendorVariantYearViewSet(viewsets.ModelViewSet):
     queryset = VariantYear.objects.all()
     serializer_class = VariantYearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
 
 class ProductBulkUploadViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, IsVendor]
+    permission_classes = [IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
     def get_or_create_category_hierarchy(self, hierarchy_str):
         parent = None
@@ -189,7 +196,7 @@ class ProductBulkUploadViewSet(viewsets.ViewSet):
     
     
 class InventoryUpdateViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
 
     @action(detail=True, methods=['patch'], url_path='update-stock')
     def update_stock(self, request, pk=None):
