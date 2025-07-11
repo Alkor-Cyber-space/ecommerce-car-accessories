@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework import status,permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsAdmin, IsVendor
+from rest_framework.views import APIView
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.throttling import ScopedRateThrottle
@@ -21,6 +22,9 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+
+from firebase_admin import auth as firebase_auth
+from . import firebase_config 
 
 User = get_user_model()
 
@@ -90,6 +94,93 @@ class UserViewSet(viewsets.ViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+class VendorRegistrationViewSet(viewsets.ViewSet):
+    
+    @action(detail=False, methods=['post'], url_path='step1')
+    def step1_create_user(self, request):
+        serializer = Step1UserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        VendorProfile.objects.create(user=user)
+        return Response({"message": "User created successfully", "user_id": user.id}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
+    def step2_company_details(self, request, user_id):
+        profile = VendorProfile.objects.get(user_id=user_id)
+        serializer = Step2CompanySerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Company details saved"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
+    def step3_contact_details(self, request, user_id):
+        profile = VendorProfile.objects.get(user_id=user_id)
+        serializer = Step3ContactSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Contact details saved"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
+    def step4_kyc_documents(self, request, user_id):
+        profile = VendorProfile.objects.get(user_id=user_id)
+        serializer = Step4KYCSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "KYC documents uploaded"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
+    def step5_business_documents(self, request, user_id):
+        profile = VendorProfile.objects.get(user_id=user_id)
+        serializer = Step5BusinessDocsSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Business documents uploaded"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
+    def step6_bank_tax_details(self, request, user_id):
+        profile = VendorProfile.objects.get(user_id=user_id)
+        serializer = Step6BankTaxSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Bank and tax details saved"}, status=status.HTTP_200_OK)
+
+
+class FirebaseLoginAPIView(APIView):
+    def post(self, request):
+        id_token = request.data.get("idToken")
+        if not id_token:
+            return Response({'error': 'idToken is required'}, status=400)
+
+        try:
+            # Verify Firebase token
+            decoded = firebase_auth.verify_id_token(id_token)
+            email = decoded.get('email')
+            uid = decoded.get('uid')
+            name = decoded.get('name', 'User')
+            picture = decoded.get('picture', '')
+
+            # Get or create user in your backend
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={'username': name}
+            )
+
+            # Optionally: update profile picture or UID if needed
+
+            # Generate JWT token
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                }
+            })
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
 
 class OTPViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]

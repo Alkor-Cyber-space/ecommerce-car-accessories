@@ -6,6 +6,7 @@ from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, Ou
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import password_validation
 
+
 class CreateUserSerializer(serializers.ModelSerializer):
     role = serializers.CharField(max_length=10, write_only=True)
 
@@ -19,21 +20,67 @@ class CreateUserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         user = CustomUser(**validated_data)
         user.set_password(password)
+        if role == "Vendor":
+            user.is_active = False
         user.save()
 
         group = Group.objects.get(name=role)
         user.groups.add(group)
         return user
 
-class RegisterSerializer(serializers.ModelSerializer):
+
+class Step1VendorSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
     class Meta:
         model = CustomUser
-        fields = ('email', 'username', 'password', 'phone_number')
+        fields = ['email', 'username', 'password', 'phone_number']
 
     def create(self, validated_data):
-        return CustomUser.objects.create_user(**validated_data)
+        user = CustomUser.objects.create_user(**validated_data)
+        return user
+
+
+class Step2CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['company_name']
+
+
+class Step3ContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['contact_name', 'contact_email', 'contact_address']
+
+
+class Step4KYCSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['kyc_name', 'pan_card', 'aadhar_passport_dl']
+
+
+class Step5BusinessDocsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['gst_certificate', 'business_registration_cert', 'shop_license']
+
+
+class Step6BankTaxSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['cancelled_cheque', 'bank_statement', 'it_return', 'financial_statement']
+
+
+
+# class RegisterSerializer(serializers.ModelSerializer):
+#     password = serializers.CharField(write_only=True)
+
+#     class Meta:
+#         model = CustomUser
+#         fields = ('email', 'username', 'password', 'phone_number')
+
+#     def create(self, validated_data):
+#         return CustomUser.objects.create_user(**validated_data)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

@@ -67,6 +67,9 @@ INSTALLED_APPS = [
     'cart_wishlist',
     'vendors',
     'orders',
+    'django_celery_beat',
+    'drf_spectacular',
+    'adminapp',
 ]
 
 MIDDLEWARE = [
@@ -196,7 +199,8 @@ REST_FRAMEWORK = {
         'otp_verify': '10/hour',
         'anon': '100/hour',
         'user': '100/hour'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 
 SIMPLE_JWT = {
@@ -220,3 +224,6 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
+
+CELERY_BROKER_URL = 'redis://localhost:6379/0'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
