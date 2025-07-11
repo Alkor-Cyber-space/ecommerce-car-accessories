@@ -39,3 +39,19 @@ class UserListViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         user_group = Group.objects.get(name='User')
         return CustomUser.objects.filter(groups=user_group)
+
+    #@action(detail=True,methods=['post'], url_path='approve')
+    #def approve_user(self, request, pk=None):
+    #    user = self.get_objects()
+    #    user.is_active = True
+    #    user.save()
+    #    return Response({'message':'user added sucessfully'}, status=status.HTTP_200_Ok)
+
+    @action(detail=True,methods=['post'], url_path='suspend')
+    def suspend_user(self,request,pk=None):
+        user = self.get_object()
+        user.is_active = False
+        user.save()
+        return Response({'message':'user blocked successfully'}, status=status.HTTP_200_OK)
+
+
