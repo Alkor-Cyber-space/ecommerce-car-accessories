@@ -20,7 +20,7 @@ const statusStyles = {
   'Canceled': 'bg-gray-300 text-gray-700',
 };
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 7;
 
 const RecentOrdersTable = () => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -44,9 +44,9 @@ const RecentOrdersTable = () => {
         </select>
       </div>
 
-      <table className="w-full text-sm text-left border-t">
+      <table className="w-full text-sm text-left">
         <thead>
-          <tr className="text-gray-600 border-b">
+          <tr className="text-gray-600 bg-gray-100 ">
             <th className="py-2 px-2">
               <input type="checkbox" />
             </th>
@@ -58,7 +58,7 @@ const RecentOrdersTable = () => {
         </thead>
         <tbody>
           {paginatedOrders.map((order, index) => (
-            <tr key={index} className="border-b hover:bg-gray-50">
+            <tr key={index} className=" hover:bg-gray-50">
               <td className="py-2 px-2">
                 <input type="checkbox" />
               </td>

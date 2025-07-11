@@ -1,0 +1,31 @@
+// import React from 'react';
+// import GMVChart from '../components/financialdashboard/GMVChart';
+// import RevenueBreakdown from '../components/financialdashboard/RevenueBreakdown';
+// import EarningsTable from '../components/financialdashboard/EarningsTable';
+// import FeeStatsCard from '../components/financialdashboard/FeesStatsCard';
+
+// export default function FinancialDashboard() {
+//   return (
+//     <div className="p-6 bg-gray-100 min-h-screen">
+//       <h2 className="text-3xl font-semibold mb-6 text-gray-800">Financial Overview</h2>
+
+//       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-6">
+//         <div className="xl:col-span-2 bg-white rounded-2xl shadow p-4">
+//           <GMVChart />
+//         </div>
+//         <div className="bg-white rounded-2xl shadow p-4">
+//           <FeeStatsCard />
+//         </div>
+//       </div>
+
+//       <div className="bg-white rounded-2xl shadow p-4 mb-6">
+//         <RevenueBreakdown />
+//       </div>
+
+//       <div className="bg-white rounded-2xl shadow p-4">
+//         <h3 className="text-xl font-medium mb-4 text-gray-700">Earnings Table</h3>
+//         <EarningsTable />
+//       </div>
+//     </div>
+//   );
+// }

@@ -5,5 +5,7 @@ export default {
         circular: ['FlowCircular', 'sans-serif'],
       },
     },
+    plugins: [require('tailwind-scrollbar')],
+
   },
 };

@@ -95,7 +95,7 @@ class UserViewSet(viewsets.ViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class VendorRegistrationViewSet(viewsets.ViewSet):
-    
+
     @action(detail=False, methods=['post'], url_path='step1')
     def step1_create_user(self, request):
         serializer = Step1UserSerializer(data=request.data)

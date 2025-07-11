@@ -31,8 +31,6 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
 class Step1VendorSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-
-    class Meta:
         model = CustomUser
         fields = ['email', 'username', 'password', 'phone_number']
 
