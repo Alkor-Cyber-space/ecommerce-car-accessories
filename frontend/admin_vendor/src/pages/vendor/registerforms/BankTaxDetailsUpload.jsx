@@ -31,8 +31,8 @@ export default function BankAndTaxDetails() {
 
     const uploadIntervals = useRef({});
 
-    const handleFileChange = (e, section, name) => {
-        const file = e.target.files[0];
+    const handleFileChange = (eOrFile, section, name) => {
+        const file = eOrFile?.target?.files?.[0] || eOrFile;
         if (!file) return;
 
         const setDocs = section === "bank" ? setBankDocs : setTaxDocs;
@@ -44,6 +44,7 @@ export default function BankAndTaxDetails() {
 
         simulateUpload(file, section, name);
     };
+
 
     const simulateUpload = (file, section, name) => {
         const isInvalid = !allowedTypes.includes(file.type);
@@ -129,12 +130,24 @@ export default function BankAndTaxDetails() {
         return (
             <div className="flex-1 min-w-[250px] max-w-[400px]">
                 <label className="block font-semibold text-[#232832] mb-3">{label}</label>
-                <div className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
-      ${doc.status === "uploading"
-                        ? "border-green-500 bg-green-50 border-dashed border-2"
-                        : doc.status === "failed"
-                            ? "border-red-300 bg-[#FAEAE5]"
-                            : "border-dashed border-gray-500 border-2"}`}>
+                <div
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const file = e.dataTransfer.files[0];
+                        if (file) handleFileChange(file, section, id);
+                    }}
+                    className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
+    ${doc.status === "uploading"
+                            ? "border-green-500 bg-green-50 border-dashed border-2"
+                            : doc.status === "failed"
+                                ? "border-red-300 bg-[#FAEAE5]"
+                                : "border-dashed border-gray-500 border-2"}`}
+                >
 
                     {!doc.file ? (
                         <label className="cursor-pointer flex flex-col items-center justify-center">

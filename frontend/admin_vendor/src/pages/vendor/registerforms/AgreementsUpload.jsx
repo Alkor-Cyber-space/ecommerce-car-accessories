@@ -21,9 +21,8 @@ export default function AgreementsUpload() {
 
   const uploadIntervals = useRef({});
 
-  const handleFileChange = (e, key) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const handleFileChange = (eOrFile, key) => {
+  const file = eOrFile?.target?.files?.[0] || eOrFile;
 
     setDocs(prev => ({
       ...prev,
@@ -101,6 +100,16 @@ export default function AgreementsUpload() {
       <div className="flex-1 min-w-[250px] max-w-[400px]">
         <label className="block font-semibold text-[#232832] mb-3">{label}</label>
         <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+        }}
+        onDrop={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const file = e.dataTransfer.files[0];
+          if (file) handleFileChange(file, id);
+        }}
           className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
         ${doc.status === "uploading"
               ? "border-green-500 bg-green-50 border-dashed"

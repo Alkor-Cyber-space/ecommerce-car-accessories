@@ -9,6 +9,8 @@ import { RiDeleteBinLine } from "react-icons/ri";
 export default function BusinessDocumentsUpload() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [dragActive, setDragActive] = useState(false);
+
 
   const [documents, setDocuments] = useState({
     gstinCertificate: { file: null, progress: 0, status: "idle" },
@@ -22,14 +24,10 @@ export default function BusinessDocumentsUpload() {
     const { name, files } = e.target;
     const file = files[0];
     if (!file) return;
-
-    // ✅ Always set file and mark as uploading — regardless of type
     setDocuments((prev) => ({
       ...prev,
       [name]: { file, progress: 0, status: "uploading" },
     }));
-
-    // ✅ simulateUpload will handle progress + success/failure
     simulateUpload(name, file);
   };
 
@@ -104,9 +102,6 @@ export default function BusinessDocumentsUpload() {
     registrationCertificate: null,
     shopLicense: null,
   });
-
-
-
   const handleCancelUpload = (name) => {
     clearInterval(uploadIntervals.current[name]);
     delete uploadIntervals.current[name];
@@ -137,19 +132,53 @@ export default function BusinessDocumentsUpload() {
   const renderUploadBox = (id, label) => {
     const doc = documents[id];
 
-    const borderStyles = {
-      idle: " border-gray-400",
-      uploading: "border-green-500 bg-green-50 border-dashed",
-      success: "border-dashed border-gray-300",
-      failed: "border-dashed border-red-300 ",
-    };
+    // const borderStyles = {
+    //   idle: " border-gray-400",
+    //   uploading: "border-green-500 bg-green-50 border-dashed",
+    //   success: "border-dashed border-gray-300",
+    //   failed: "border-dashed border-red-300 ",
+    // };
 
     return (
       <div className="w-full sm:w-[300px] mb-6">
         <label className="block text-[#232832] font-semibold mb-2">{label}</label>
         <div
-          className={`relative w-[300px] h-44 border-2 border-dashed rounded-lg flex flex-col justify-center items-center text-center bg-white transition ${borderStyles[doc.status]}`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragActive(true);
+          }}
+          onDragLeave={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragActive(false);
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setDragActive(false);
+            const file = e.dataTransfer.files?.[0];
+            if (!file) return;
+
+            setDocuments((prev) => ({
+              ...prev,
+              [id]: { file, progress: 0, status: "uploading" },
+            }));
+
+            simulateUpload(id, file);
+          }}
+
+          className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
+    ${doc.status === "uploading"
+              ? "border-green-500 bg-green-50 border-dashed"
+              : doc.status === "failed"
+                ? "border-red-300 bg-[#FAEAE5] border-dashed"
+                : dragActive
+                  ? "border-blue-400 bg-blue-50 border-dashed"
+                  : "border-dashed border-gray-500"
+            }`}
         >
+
           {!doc.file ? (
             <label htmlFor={id} className="cursor-pointer flex flex-col items-center justify-center">
               <SlCloudUpload className="text-4xl mb-2" />
@@ -181,21 +210,17 @@ export default function BusinessDocumentsUpload() {
                     {doc.status === "uploading" ? (
                       <button
                         onClick={() => handleCancelUpload(id)}
-                        className="text-xs text-red-500 hover:underline"
-                      >
-                        Cancel
+                        className="text-xs text-red-500 hover:underline"  >Cancel
                       </button>
                     ) : (
                       <RiDeleteBinLine
                         onClick={() => handleCancelUpload(id)}
                         className="text-red-500 cursor-pointer text-3xl my-2"
-                        title="Remove"
-                      />
+                        title="Remove" />
                     )}
                   </div>
                 </div>
               )}
-
               {/* Progress or Failure */}
               {doc.status === "failed" ? (
                 <div className="flex flex-col items-center  justify-center text-center w-full py-4">
@@ -203,9 +228,7 @@ export default function BusinessDocumentsUpload() {
                   <div className="text-red-500 font-semibold text-lg">Upload Failed</div>
                   <button
                     onClick={() => handleRetry(id)}
-                    className="underline text-[#5737B4] text-sm mt-1"
-                  >
-                    Try Again
+                    className="underline text-[#5737B4] text-sm mt-1">Try Again
                   </button>
                 </div>
               ) : (
@@ -224,19 +247,12 @@ export default function BusinessDocumentsUpload() {
             </>
           )}
 
-          <input
-            type="file"
-            id={id}
-            name={id}
-            accept=".pdf,.jpeg"
-            ref={(el) => (fileInputsRef.current[id] = el)}
-            onChange={handleFileChange}
+          <input type="file" id={id} name={id} accept=".pdf,.jpeg"
             className="hidden"
-          />
-
+            ref={(el) => (fileInputsRef.current[id] = el)}
+            onChange={handleFileChange} />
         </div>
       </div>
-
     );
   };
 
@@ -266,8 +282,8 @@ export default function BusinessDocumentsUpload() {
               type="submit"
               disabled={!isFormComplete}
               className={`px-1 sm:px-12 py-2.5 w-[250px] text-white font-medium rounded-full transition-all ${isFormComplete
-                  ? "bg-[#5737B4] hover:bg-[#432a91]"
-                  : "bg-[#D8D8D8] cursor-not-allowed"
+                ? "bg-[#5737B4] hover:bg-[#432a91]"
+                : "bg-[#D8D8D8] cursor-not-allowed"
                 }`}
             >
               Save & Continue
