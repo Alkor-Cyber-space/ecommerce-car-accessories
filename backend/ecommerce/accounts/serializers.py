@@ -31,8 +31,8 @@ class CreateUserSerializer(serializers.ModelSerializer):
 
 class Step1VendorSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-        model = CustomUser
-        fields = ['email', 'username', 'password', 'phone_number']
+    model = CustomUser
+    fields = ['email', 'username', 'password', 'phone_number']
 
     def create(self, validated_data):
         user = CustomUser.objects.create_user(**validated_data)

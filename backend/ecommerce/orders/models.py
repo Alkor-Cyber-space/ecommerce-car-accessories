@@ -12,11 +12,19 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
 
+    PAYMENT_METHOD_CHOICES = [
+        ('razorpay', 'Razorpay'),
+        ('stripe', 'Stripe'),
+        ('phonepe', 'PhonePe'),
+        ('cod', 'Cash on Delivery'),
+    ]
+
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cod')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
