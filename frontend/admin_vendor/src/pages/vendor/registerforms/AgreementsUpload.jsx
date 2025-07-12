@@ -1,15 +1,16 @@
 import React, { useState, useRef } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setAgreements, setCurrentStep } from "../../../store/vendorRegisterSlice";
 import { SlCloudUpload } from "react-icons/sl";
 import { RiDeleteBinLine } from "react-icons/ri";
+import { setAgreements, setCurrentStep, setCompletedStep } from "../../../store/vendorRegisterSlice";
 
 const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
 
 export default function AgreementsUpload() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   const [docs, setDocs] = useState({
     vendorForm: { file: null, progress: 0, status: "idle" },
@@ -82,30 +83,40 @@ export default function AgreementsUpload() {
     });
 
     dispatch(setAgreements(uploadedDocs));
-    dispatch(setCurrentStep(7));
-    navigate("/login");
+    dispatch(setCompletedStep(5));
+    setLoading(true);
+
+    setTimeout(() => {
+      dispatch(setCurrentStep(6)); 
+      setLoading(false);
+      navigate("/login");
+    }, 1500);
   };
 
-  const renderUploader = (label, key) => {
-    const doc = docs[key];
+
+  const renderUploader = (label, id) => {
+    const doc = docs[id];
 
     return (
-      <div className="w-full lg:w-[350px] flex justify-center items-center flex-col ">
-        <label className="block h-13 w-75 font-semibold text-[#232832] mb-2">{label}</label>
-        <div className={`relative w-[300px] h-40 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
-          ${doc.status === "uploading" ? "border-green-500 bg-green-50 border-dashed"
-            : doc.status === "failed" ? "border-red-300 bg-[#FAEAE5]"
-              : "border-dashed border-gray-300"}`}>
-
+      <div className="flex-1 min-w-[250px] max-w-[400px]">
+        <label className="block font-semibold text-[#232832] mb-3">{label}</label>
+        <div
+          className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
+        ${doc.status === "uploading"
+              ? "border-green-500 bg-green-50 border-dashed"
+              : doc.status === "failed"
+                ? "border-red-300 bg-[#FAEAE5] border-dashed"
+                : "border-dashed border-gray-500"}`}
+        >
           {!doc.file ? (
-            <label className="cursor-pointer flex flex-col items-center justify-center gap-2">
+            <label className="cursor-pointer flex flex-col items-center justify-center">
               <SlCloudUpload className="text-4xl mb-2" />
-              <span className="text-lg text-gray-500">Drag and drop here</span>
-              <span className="text-[#5737B4] font-semibold">Browse Files</span>
+              <span className="text-sm text-gray-500">Drag and drop here</span>
+              <span className="text-sm text-[#5737B4] font-semibold">Browse Files</span>
               <input
                 type="file"
                 accept=".pdf,.jpeg,.jpg,.png"
-                onChange={(e) => handleFileChange(e, key)}
+                onChange={(e) => handleFileChange(e, id)}
                 className="hidden"
               />
             </label>
@@ -115,12 +126,12 @@ export default function AgreementsUpload() {
               <p className="text-red-500 font-medium mt-2">Upload Failed</p>
               <button
                 className="text-[#5737B4] underline text-sm"
-                onClick={() => {
+                onClick={() =>
                   setDocs(prev => ({
                     ...prev,
-                    [key]: { file: null, progress: 0, status: "idle" }
-                  }));
-                }}
+                    [id]: { file: null, progress: 0, status: "idle" }
+                  }))
+                }
               >
                 Try Again
               </button>
@@ -137,15 +148,15 @@ export default function AgreementsUpload() {
                   onClick={() =>
                     setDocs(prev => ({
                       ...prev,
-                      [key]: { file: null, progress: 0, status: "idle" }
+                      [id]: { file: null, progress: 0, status: "idle" }
                     }))
                   }
                 />
               </div>
               <div className="w-[90%]">
-                <div className="h-2 bg-gray-200 rounded">
+                <div className="h-1 bg-gray-200 rounded">
                   <div
-                    className={`h-full rounded ${doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"}`}
+                    className={`h-1 rounded ${doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"}`}
                     style={{ width: `${doc.progress}%` }}
                   />
                 </div>
@@ -161,38 +172,71 @@ export default function AgreementsUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-[#ECECF0] py-10 px-4 sm:px-10">
-      <div className="max-w-[1200px] mx-auto ">
-        <h1 className="text-4xl font-bold text-[#232832] mb-10 pl-5">Bussiness Documents</h1>
+    <div className="min-h-screen bg-[#ECECF0]">
+      <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
+        <h1 className="text-5xl font-bold text-[#232832] mb-10">Business Documents</h1>
 
-        <div className="flex flex-col sm:flex-row gap-8 flex-wrap mb-5 text-lg">
-          {renderUploader("Filled Vendor Registration Form", "vendorForm")}
-          {renderUploader("Signed NDA / Supply Agreement / Terms & Conditions", "ndaOrAgreement")}
-          {renderUploader("Authorization Letter / Dealership Certificate", "authorizationLetter")}
-          {renderUploader("Authorized Signatory Letter (with seal)", "signatoryLetter")}
+        <div className="flex flex-col sm:flex-row gap-15 flex-wrap">
+          <div className="mt-11 text-xl w-full max-w-[320px]">
+            {renderUploader("Filled Vendor Registration Form", "vendorForm")}
+          </div>
+          <div className="mt-4 text-xl w-full max-w-[320px]">
+            {renderUploader("Signed NDA / Supply Agreement / Terms & Conditions", "ndaOrAgreement")}
+          </div>
+          <div className="mt-4 text-xl w-full max-w-[320px]">
+            {renderUploader("Authorization Letter / Dealership Certificate", "authorizationLetter")}
+          </div>
+          <div className="mt-1 text-xl w-full max-w-[360px]">
+            {renderUploader("Authorized Signatory Letter (with seal)", "signatoryLetter")}
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center mt-10">
+        <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mt-10">
           <button
             type="button"
-            onClick={() => navigate("/vendor")}
-            className="px-1 sm:px-12 py-2 w-[250px] text-[#5737B4] border border-[#5737B4] font-medium  rounded-full hover:bg-[#f4f4f4] transition-all"
+            onClick={() => navigate("/login")}
+            className="w-[280px] py-2.5 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
           >
             Skip for Now
           </button>
-
           <button
-            disabled={!isComplete}
             onClick={handleSubmit}
-            className={`px-1 sm:px-12 py-2.5 w-[250px] text-white font-medium rounded-full transition-all ${isComplete
+            disabled={!isComplete || loading}
+            className={`w-[280px] py-2.5 rounded-full text-white font-medium transition-all ${isComplete && !loading
                 ? "bg-[#5737B4] hover:bg-[#432a91]"
                 : "bg-[#D8D8D8] cursor-not-allowed"
               }`}
           >
-            Save & Continue
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  ></path>
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              "Save & Continue"
+            )}
           </button>
-        </div>
 
+        </div>
       </div>
     </div>
   );

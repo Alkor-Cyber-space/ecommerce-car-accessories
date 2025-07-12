@@ -244,7 +244,7 @@ export default function BusinessDocumentsUpload() {
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
-        <h1 className="text-4xl font-bold text-[#232832] mb-10">Business Documents</h1>
+        <h1 className="text-5xl font-bold text-[#232832] mb-10">Business Documents</h1>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="flex flex-col sm:flex-row justify-between gap-10 text-lg">
@@ -256,7 +256,7 @@ export default function BusinessDocumentsUpload() {
           <div className="flex flex-col sm:flex-row gap-5 justify-center items-center mt-10">
             <button
               type="button"
-              onClick={() => navigate("/vendor")}
+              onClick={() => navigate("/login")}
               className="px-1 sm:px-12 py-2 w-[250px] text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
             >
               Skip for Now

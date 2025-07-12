@@ -49,7 +49,7 @@ export default function StepIndicator() {
               <div key={idx} className="flex items-center justify-center gap-2 flex-1">
                 {/* Circle */}
                 <div
-                  className={`w-6 h-6 md:w-8 md:h-8 rounded-full border-2 flex items-center justify-center 
+                  className={`w-6 h-6 md:w-8 md:h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center 
                   ${isCompleted ? 'bg-[#21A537] text-white' : isActive ? 'border-[#5737B4]' : 'border-gray-300'}`}
                 >
                   {isCompleted ? '✓' : ''}

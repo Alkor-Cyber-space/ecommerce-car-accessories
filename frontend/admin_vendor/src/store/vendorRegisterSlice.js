@@ -27,6 +27,7 @@ const initialState = {
 
   // Step 5
   agreements: [],
+  completedSteps: [], 
 
   // Global state
   error: null,
@@ -121,6 +122,12 @@ const vendorRegisterSlice = createSlice({
       }
     },
 
+    setCompletedStep: (state, action) => {
+    if (!state.completedSteps.includes(action.payload)) {
+      state.completedSteps.push(action.payload);
+    }
+  },
+
 
     // Status & Errors
     setRegistrationStatus: (state, action) => {
@@ -147,6 +154,7 @@ export const {
   setBankDetails,
   setTaxDocuments,
   setAgreements,
+  setCompletedStep ,
   setRegistrationStatus,
   setError,
   setLoading,

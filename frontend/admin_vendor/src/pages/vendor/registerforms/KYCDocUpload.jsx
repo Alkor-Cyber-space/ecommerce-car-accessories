@@ -51,14 +51,11 @@ export default function KYCDocumentsUpload() {
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-4xl p-8 mx-auto my-10">
-        <h1 className="text-4xl font-bold text-[#232832] mb-6">KYC Documents</h1>
+        <h1 className="text-5xl font-bold text-[#232832] mb-6">KYC Documents</h1>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           {/* PAN Card Upload */}
           <div className="relative w-[600px]">
-            {/* <label className="block text-[#232832] font-semibold mb-2">
-    Upload 
-  </label> */}
 
             <label className="w-full px-4 py-3 border border-gray-300 bg-white rounded-lg text-gray-500 font-medium cursor-pointer block text-left hover:bg-gray-100 transition">
               {panCard ? panCard.name : "PAN Card"}
@@ -74,10 +71,6 @@ export default function KYCDocumentsUpload() {
 
           {/* Aadhar / Passport / Driving License Upload */}
           <div className="relative w-full">
-            {/* <label className="block text-[#232832] font-semibold mb-2">
-    Upload Aadhar / Passport / Driving License
-  </label> */}
-
             <label className="w-full px-4 py-3 border border-gray-300 bg-white rounded-lg text-gray-500 font-medium cursor-pointer block text-left hover:bg-gray-100 transition">
               {identityProof ? identityProof.name : "Aadhar / Passport / Driving License"}
               <input

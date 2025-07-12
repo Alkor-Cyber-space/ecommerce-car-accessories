@@ -41,7 +41,7 @@ export default function CompanyDetails() {
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-2xl p-8 mx-auto my-10">
-        <h1 className="text-4xl font-bold text-[#232832] mb-6">Company Details</h1>
+        <h1 className="text-5xl font-bold text-[#232832] mb-6">Company Details</h1>
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input
             type="text"

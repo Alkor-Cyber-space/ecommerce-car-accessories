@@ -143,7 +143,7 @@ export default function BankAndTaxDetails() {
                             <span className="text-sm text-[#5737B4] font-semibold">Browse Files</span>
                             <input
                                 type="file"
-                                accept=".pdf,.jpeg,.jpg,.png"
+                                accept=".pdf,.jpeg"
                                 onChange={(e) => handleFileChange(e, section, id)}
                                 className="hidden"
                             />
@@ -205,8 +205,8 @@ export default function BankAndTaxDetails() {
 
                 {!showTaxSection ? (
                     <>
-                        <h1 className="text-4xl font-bold text-[#232832] mb-10">Bank & Tax Details</h1>
-                       
+                        <h1 className="text-5xl font-bold text-[#232832] mb-10">Bank & Tax Details</h1>
+
                         <div className="flex flex-col sm:flex-row gap-10">
                             <div className="mt-18 text-xl w-full max-w-[300px] ">
                                 {renderUploader(
@@ -256,7 +256,7 @@ export default function BankAndTaxDetails() {
                     </>
                 ) : (
                     <>
-                        <h1 className="text-4xl font-bold text-[#232832] mb-10">Tax / Financial Documents</h1>
+                        <h1 className="text-5xl font-bold text-[#232832] mb-10">Tax / Financial Documents</h1>
                         <div className="flex flex-col sm:flex-row gap-10">
                             <div className="mt-10 text-xl w-full max-w-[300px]">
                                 {renderUploader(
@@ -283,7 +283,7 @@ export default function BankAndTaxDetails() {
                                 type="button"
                                 onClick={() => {
                                     dispatch(setCurrentStep(6));
-                                    navigate("/vendor-register/agreements");
+                                    navigate("/login");
                                 }}
                                 className="w-[280px] py-2 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
                             >
