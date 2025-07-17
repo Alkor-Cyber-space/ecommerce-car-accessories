@@ -1,4 +1,3 @@
-// src/pages/vendor-register/steps/ContactDetailsForm.jsx
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -8,11 +7,17 @@ export default function ContactDetailsForm() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    contactPersonName: "",
-    designation: "",
-    contactNumber: "",
-    contactEmail: "",
+  // 🔁 Load from localStorage on init
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("vendorContactDetails");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          contactPersonName: "",
+          designation: "",
+          contactNumber: "",
+          contactEmail: "",
+        };
   });
 
   const handleChange = (e) => {
@@ -29,8 +34,12 @@ export default function ContactDetailsForm() {
     e.preventDefault();
     if (!isFormComplete) return;
 
+    // ✅ Save to Redux
     dispatch(setContactDetails(formData));
     dispatch(setCurrentStep(2));
+
+    // 💾 Save to localStorage
+    localStorage.setItem("vendorContactDetails", JSON.stringify(formData));
 
     setTimeout(() => {
       navigate("/vendor-register/kyc-documents");
@@ -59,7 +68,7 @@ export default function ContactDetailsForm() {
               value={formData.designation}
               onChange={handleChange}
               className={`appearance-none w-full px-4 py-3 pr-10 rounded-lg bg-white font-semibold focus:ring-2 
-      ${formData.designation ? 'text-black' : 'text-[#7F7F7F]'}`}
+              ${formData.designation ? "text-black" : "text-[#7F7F7F]"}`}
               required
             >
               <option value="">Select Designation</option>
@@ -69,7 +78,6 @@ export default function ContactDetailsForm() {
               <option value="marketing_exec">Marketing Executive</option>
             </select>
 
-            {/* Custom arrow icon */}
             <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7F7F7F]">
               ▼
             </div>

@@ -1,5 +1,4 @@
-// src/pages/vendor-register/steps/KYCDocumentsUpload.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { addKycDocument, setCurrentStep } from "../../../store/vendorRegisterSlice";
@@ -8,12 +7,40 @@ export default function KYCDocumentsUpload() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  // Load metadata from localStorage
   const [panCard, setPanCard] = useState(null);
   const [identityProof, setIdentityProof] = useState(null);
 
-  const handleFileChange = (e, setter) => {
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem("vendorKycDocuments"));
+    if (saved) {
+      if (saved.panCard) setPanCard(saved.panCard);
+      if (saved.identityProof) setIdentityProof(saved.identityProof);
+    }
+  }, []);
+
+  const handleFileChange = (e, setter, key) => {
     const file = e.target.files[0];
-    if (file) setter(file);
+    if (!file) return;
+
+    // Save metadata only
+    const fileData = {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    };
+
+    setter(fileData);
+
+    // Save to localStorage
+    const current = JSON.parse(localStorage.getItem("vendorKycDocuments")) || {};
+    localStorage.setItem(
+      "vendorKycDocuments",
+      JSON.stringify({
+        ...current,
+        [key]: fileData,
+      })
+    );
   };
 
   const isFormComplete = panCard && identityProof;
@@ -22,31 +49,16 @@ export default function KYCDocumentsUpload() {
     e.preventDefault();
     if (!isFormComplete) return;
 
-    // Dispatch each document to Redux
-    dispatch(addKycDocument({
-      id: "pan",
-      name: panCard.name,
-      size: panCard.size,
-      type: panCard.type,
-    }));
-
-    dispatch(addKycDocument({
-      id: "identity",
-      name: identityProof.name,
-      size: identityProof.size,
-      type: identityProof.type,
-    }));
-
+    // Dispatch to Redux
+    dispatch(addKycDocument({ id: "pan", ...panCard }));
+    dispatch(addKycDocument({ id: "identity", ...identityProof }));
     dispatch(setCurrentStep(3));
 
+    // Proceed
     setTimeout(() => {
       navigate("/vendor-register/business-documents");
     }, 100);
   };
-
-  // preview 
-  // const previewUrl = URL.createObjectURL(file);
-
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
@@ -56,27 +68,25 @@ export default function KYCDocumentsUpload() {
         <form className="space-y-6" onSubmit={handleSubmit}>
           {/* PAN Card Upload */}
           <div className="relative w-[600px]">
-
             <label className="w-full px-4 py-3 border border-gray-300 bg-white rounded-lg text-gray-500 font-medium cursor-pointer block text-left hover:bg-gray-100 transition">
               {panCard ? panCard.name : "PAN Card"}
               <input
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleFileChange(e, setPanCard)}
+                onChange={(e) => handleFileChange(e, setPanCard, "panCard")}
                 className="hidden"
               />
             </label>
           </div>
 
-
-          {/* Aadhar / Passport / Driving License Upload */}
-          <div className="relative w-full">
+          {/* Aadhar / Passport / Driving License */}
+          <div className="relative w-[600px]">
             <label className="w-full px-4 py-3 border border-gray-300 bg-white rounded-lg text-gray-500 font-medium cursor-pointer block text-left hover:bg-gray-100 transition">
               {identityProof ? identityProof.name : "Aadhar / Passport / Driving License"}
               <input
                 type="file"
                 accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleFileChange(e, setIdentityProof)}
+                onChange={(e) => handleFileChange(e, setIdentityProof, "identityProof")}
                 className="hidden"
               />
             </label>

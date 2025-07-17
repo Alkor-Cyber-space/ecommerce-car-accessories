@@ -1,9 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { SlCloudUpload } from "react-icons/sl";
 import { RiDeleteBinLine } from "react-icons/ri";
-import { setAgreements, setCurrentStep, setCompletedStep } from "../../../store/vendorRegisterSlice";
+import { setAgreements, setCurrentStep, setCompletedStep, resetVendorRegistration } from "../../../store/vendorRegisterSlice";
 
 const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
 
@@ -21,12 +21,41 @@ export default function AgreementsUpload() {
 
   const uploadIntervals = useRef({});
 
-const handleFileChange = (eOrFile, key) => {
-  const file = eOrFile?.target?.files?.[0] || eOrFile;
+  // ✅ Restore saved agreements when coming back
+  useEffect(() => {
+    const saved = localStorage.getItem("vendorAgreements");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      const restored = {
+        vendorForm: parsed.vendorForm
+          ? { file: parsed.vendorForm, progress: 100, status: "success" }
+          : { file: null, progress: 0, status: "idle" },
 
-    setDocs(prev => ({
+        ndaOrAgreement: parsed.ndaOrAgreement
+          ? { file: parsed.ndaOrAgreement, progress: 100, status: "success" }
+          : { file: null, progress: 0, status: "idle" },
+
+        authorizationLetter: parsed.authorizationLetter
+          ? { file: parsed.authorizationLetter, progress: 100, status: "success" }
+          : { file: null, progress: 0, status: "idle" },
+
+        signatoryLetter: parsed.signatoryLetter
+          ? { file: parsed.signatoryLetter, progress: 100, status: "success" }
+          : { file: null, progress: 0, status: "idle" },
+      };
+
+      setDocs(restored);
+      console.log("📥 Restored agreements from localStorage", restored);
+    }
+  }, []);
+
+  const handleFileChange = (eOrFile, key) => {
+    const file = eOrFile?.target?.files?.[0] || eOrFile;
+    if (!file) return;
+
+    setDocs((prev) => ({
       ...prev,
-      [key]: { file, progress: 0, status: "uploading" }
+      [key]: { file, progress: 0, status: "uploading" },
     }));
 
     simulateUpload(file, key);
@@ -40,58 +69,85 @@ const handleFileChange = (eOrFile, key) => {
       progress += 10;
 
       if (progress <= 50) {
-        setDocs(prev => ({
+        setDocs((prev) => ({
           ...prev,
-          [key]: { ...prev[key], progress, status: "uploading" }
+          [key]: { ...prev[key], progress, status: "uploading" },
         }));
       }
 
       if (isInvalid && progress >= 50) {
         clearInterval(uploadIntervals.current[key]);
-        setDocs(prev => ({
+        setDocs((prev) => ({
           ...prev,
-          [key]: { ...prev[key], progress: 50, status: "failed" }
+          [key]: { ...prev[key], progress: 50, status: "failed" },
         }));
         return;
       }
 
       if (!isInvalid && progress >= 100) {
         clearInterval(uploadIntervals.current[key]);
-        setDocs(prev => ({
+
+        const fileData = {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        };
+
+        setDocs((prev) => ({
           ...prev,
-          [key]: { ...prev[key], progress: 100, status: "success" }
+          [key]: { file: fileData, progress: 100, status: "success" },
         }));
+
+        // ✅ Save only meta to localStorage
+        const existing = JSON.parse(localStorage.getItem("vendorAgreements") || "{}");
+        localStorage.setItem(
+          "vendorAgreements",
+          JSON.stringify({ ...existing, [key]: fileData })
+        );
       }
     }, 150);
 
     uploadIntervals.current[key] = intervalId;
   };
 
-  const isComplete = Object.values(docs).every(doc => doc.status === "success");
+  const handleRemove = (key) => {
+    // Stop ongoing upload
+    clearInterval(uploadIntervals.current[key]);
+    delete uploadIntervals.current[key];
+
+    // Remove from state
+    setDocs((prev) => ({
+      ...prev,
+      [key]: { file: null, progress: 0, status: "idle" },
+    }));
+
+    // Remove from localStorage
+    const existing = JSON.parse(localStorage.getItem("vendorAgreements") || "{}");
+    delete existing[key];
+    localStorage.setItem("vendorAgreements", JSON.stringify(existing));
+  };
+
+  const isComplete = Object.values(docs).every((doc) => doc.status === "success");
 
   const handleSubmit = () => {
     const uploadedDocs = {};
     Object.entries(docs).forEach(([key, doc]) => {
-      if (doc.file) {
-        uploadedDocs[key] = {
-          name: doc.file.name,
-          size: doc.file.size,
-          type: doc.file.type,
-        };
-      }
+      if (doc.file) uploadedDocs[key] = doc.file;
     });
+    console.log("📤 Submitting agreements:", uploadedDocs);
 
+    // Save to Redux
     dispatch(setAgreements(uploadedDocs));
     dispatch(setCompletedStep(5));
     setLoading(true);
 
     setTimeout(() => {
-      dispatch(setCurrentStep(6)); 
+      dispatch(setCurrentStep(6));
       setLoading(false);
       navigate("/login");
+      dispatch(resetVendorRegistration());
     }, 1500);
   };
-
 
   const renderUploader = (label, id) => {
     const doc = docs[id];
@@ -100,22 +156,23 @@ const handleFileChange = (eOrFile, key) => {
       <div className="flex-1 min-w-[250px] max-w-[400px]">
         <label className="block font-semibold text-[#232832] mb-3">{label}</label>
         <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const file = e.dataTransfer.files[0];
-          if (file) handleFileChange(file, id);
-        }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileChange(file, id);
+          }}
           className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
         ${doc.status === "uploading"
               ? "border-green-500 bg-green-50 border-dashed"
               : doc.status === "failed"
                 ? "border-red-300 bg-[#FAEAE5] border-dashed"
-                : "border-dashed border-gray-500"}`}
+                : "border-dashed border-gray-500"
+            }`}
         >
           {!doc.file ? (
             <label className="cursor-pointer flex flex-col items-center justify-center">
@@ -135,12 +192,7 @@ const handleFileChange = (eOrFile, key) => {
               <p className="text-red-500 font-medium mt-2">Upload Failed</p>
               <button
                 className="text-[#5737B4] underline text-sm"
-                onClick={() =>
-                  setDocs(prev => ({
-                    ...prev,
-                    [id]: { file: null, progress: 0, status: "idle" }
-                  }))
-                }
+                onClick={() => handleRemove(id)}
               >
                 Try Again
               </button>
@@ -150,22 +202,20 @@ const handleFileChange = (eOrFile, key) => {
               <div className="flex justify-between items-center w-[90%] mb-2">
                 <div className="text-sm truncate max-w-[180px]">
                   <p className="text-[#232832] font-medium">{doc.file.name}</p>
-                  <p className="text-xs text-gray-500">{(doc.file.size / 1024).toFixed(0)}kb</p>
+                  <p className="text-xs text-gray-500">
+                    {doc.file?.size ? `${(doc.file.size / 1024).toFixed(0)}kb` : "--kb"}
+                  </p>
                 </div>
                 <RiDeleteBinLine
                   className="text-red-500 cursor-pointer text-xl"
-                  onClick={() =>
-                    setDocs(prev => ({
-                      ...prev,
-                      [id]: { file: null, progress: 0, status: "idle" }
-                    }))
-                  }
+                  onClick={() => handleRemove(id)}
                 />
               </div>
               <div className="w-[90%]">
                 <div className="h-1 bg-gray-200 rounded">
                   <div
-                    className={`h-1 rounded ${doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"}`}
+                    className={`h-1 rounded ${doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"
+                      }`}
                     style={{ width: `${doc.progress}%` }}
                   />
                 </div>
@@ -183,17 +233,23 @@ const handleFileChange = (eOrFile, key) => {
   return (
     <div className="min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
-        <h1 className="text-5xl font-bold text-[#232832] mb-10">Business Documents</h1>
+        <h1 className="text-5xl font-bold text-[#232832] mb-10">Agreements & Supporting Docs</h1>
 
         <div className="flex flex-col sm:flex-row gap-15 flex-wrap">
           <div className="mt-11 text-xl w-full max-w-[320px]">
             {renderUploader("Filled Vendor Registration Form", "vendorForm")}
           </div>
           <div className="mt-4 text-xl w-full max-w-[320px]">
-            {renderUploader("Signed NDA / Supply Agreement / Terms & Conditions", "ndaOrAgreement")}
+            {renderUploader(
+              "Signed NDA / Supply Agreement / Terms & Conditions",
+              "ndaOrAgreement"
+            )}
           </div>
           <div className="mt-4 text-xl w-full max-w-[320px]">
-            {renderUploader("Authorization Letter / Dealership Certificate", "authorizationLetter")}
+            {renderUploader(
+              "Authorization Letter / Dealership Certificate",
+              "authorizationLetter"
+            )}
           </div>
           <div className="mt-1 text-xl w-full max-w-[360px]">
             {renderUploader("Authorized Signatory Letter (with seal)", "signatoryLetter")}
@@ -244,7 +300,6 @@ const handleFileChange = (eOrFile, key) => {
               "Save & Continue"
             )}
           </button>
-
         </div>
       </div>
     </div>

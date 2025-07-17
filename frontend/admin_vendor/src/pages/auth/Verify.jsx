@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // also add useNavigate
 import { useDispatch } from 'react-redux';
-import { setOtpVerified, setCurrentStep } from '../../store/vendorRegisterSlice'; // import your actions
+import { setOtpVerified, setCurrentStep, resetVendorRegistration } from '../../store/vendorRegisterSlice'; // import your actions
 import loggo from '../../assets/loggo.png';
 
 export default function Verify() {
@@ -41,11 +41,19 @@ export default function Verify() {
       console.log("✅ OTP verified successfully");
       dispatch(setOtpVerified(true));
       dispatch(setCurrentStep(0));
+       localStorage.setItem("vendorOtpVerified", "true");
+    dispatch(resetVendorRegistration()); 
+
       navigate("/vendor-register/company-details");
     } else {
       alert("❌ Invalid OTP. Try again.");
     }
   };
+
+//   To expire OTP status after some time,
+
+// Or to clear it after logout/reset.
+
 
   return (
     <div className="min-h-screen flex">

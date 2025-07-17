@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { SlCloudUpload } from "react-icons/sl";
@@ -8,7 +8,6 @@ import {
     setBankDetails,
     setTaxDocuments,
 } from "../../../store/vendorRegisterSlice";
-
 
 const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
 
@@ -28,8 +27,31 @@ export default function BankAndTaxDetails() {
         plOrBalanceSheet: { file: null, progress: 0, status: "idle" },
     });
 
-
     const uploadIntervals = useRef({});
+
+    // ✅ RESTORE FROM LOCALSTORAGE ON LOAD
+    useEffect(() => {
+        const restoreDocs = (key, fields, setDocs) => {
+            const saved = localStorage.getItem(key);
+            if (!saved) return;
+
+            const parsed = JSON.parse(saved);
+            const isValid = (f) => f && typeof f === "object" && f.name;
+
+            const restored = {};
+            Object.keys(fields).forEach((field) => {
+                restored[field] = isValid(parsed[field])
+                    ? { file: parsed[field], progress: 100, status: "success" }
+                    : { file: null, progress: 0, status: "idle" };
+            });
+
+            setDocs(restored);
+            console.log(`✅ Restored ${key} from localStorage`, restored);
+        };
+
+        restoreDocs("vendorBankDocuments", bankDocs, setBankDocs);
+        restoreDocs("vendorTaxDocuments", taxDocs, setTaxDocs);
+    }, []);
 
     const handleFileChange = (eOrFile, section, name) => {
         const file = eOrFile?.target?.files?.[0] || eOrFile;
@@ -44,7 +66,6 @@ export default function BankAndTaxDetails() {
 
         simulateUpload(file, section, name);
     };
-
 
     const simulateUpload = (file, section, name) => {
         const isInvalid = !allowedTypes.includes(file.type);
@@ -77,7 +98,6 @@ export default function BankAndTaxDetails() {
                     [name]: { ...prev[name], progress: 100, status: "success" },
                 }));
             }
-
         }, 200);
 
         uploadIntervals.current[name] = intervalId;
@@ -87,8 +107,7 @@ export default function BankAndTaxDetails() {
         bankDocs.cancelledCheque.status === "success" &&
         bankDocs.bankStatement.status === "success";
 
-    const isTaxDocsComplete =
-        taxDocs.itrReport.status === "success"; // Only IT Return is mandatory
+    const isTaxDocsComplete = taxDocs.itrReport.status === "success";
 
     const handleSubmit = () => {
         if (isTaxDocsComplete) {
@@ -104,6 +123,8 @@ export default function BankAndTaxDetails() {
                 }
             });
             dispatch(setBankDetails(uploadedBankDocs));
+            localStorage.setItem("vendorBankDocuments", JSON.stringify(uploadedBankDocs));
+            console.log("✅ Bank Documents saved:", uploadedBankDocs);
 
             // ✅ Prepare and store Tax Documents in Redux
             const uploadedTaxDocs = {};
@@ -117,13 +138,14 @@ export default function BankAndTaxDetails() {
                 }
             });
             dispatch(setTaxDocuments(uploadedTaxDocs));
+            localStorage.setItem("vendorTaxDocuments", JSON.stringify(uploadedTaxDocs));
+            console.log("✅ Tax Documents saved:", uploadedTaxDocs);
 
             // ✅ Move to next step
             dispatch(setCurrentStep(6));
             navigate("/vendor-register/agreements");
         }
     };
-
 
     const renderUploader = (label, id, docs, setDocs, section) => {
         const doc = docs[id];
@@ -148,7 +170,6 @@ export default function BankAndTaxDetails() {
                                 ? "border-red-300 bg-[#FAEAE5]"
                                 : "border-dashed border-gray-500 border-2"}`}
                 >
-
                     {!doc.file ? (
                         <label className="cursor-pointer flex flex-col items-center justify-center">
                             <SlCloudUpload className="text-4xl mb-2" />
@@ -182,7 +203,9 @@ export default function BankAndTaxDetails() {
                             <div className="flex justify-between items-center w-[90%] mb-2">
                                 <div className="text-sm truncate max-w-[180px]">
                                     <p className="text-[#232832] font-medium">{doc.file.name}</p>
-                                    <p className="text-xs text-gray-500">{(doc.file.size / 1024).toFixed(0)}kb</p>
+                                    <p className="text-xs text-gray-500">
+                                        {(doc.file.size / 1024).toFixed(0)}kb
+                                    </p>
                                 </div>
                                 <RiDeleteBinLine
                                     className="text-red-500 cursor-pointer text-xl"
@@ -213,9 +236,8 @@ export default function BankAndTaxDetails() {
     };
 
     return (
-        <div className="min-h-screen bg-[#ECECF0]  ">
+        <div className="min-h-screen bg-[#ECECF0]">
             <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
-
                 {!showTaxSection ? (
                     <>
                         <h1 className="text-5xl font-bold text-[#232832] mb-10">Bank & Tax Details</h1>
@@ -245,7 +267,6 @@ export default function BankAndTaxDetails() {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    // if skip logic is to go next without storing bank details:
                                     dispatch(setCurrentStep(6));
                                     navigate("/vendor-register/agreements");
                                 }}
@@ -257,19 +278,21 @@ export default function BankAndTaxDetails() {
                             <button
                                 disabled={!isBankDocsComplete}
                                 onClick={() => setShowTaxSection(true)}
-                                className={`w-[280px] py-2 text-white font-medium rounded-full transition-all ${isBankDocsComplete
-                                    ? "bg-[#5737B4] hover:bg-[#432a91]"
-                                    : "bg-[#D8D8D8] cursor-not-allowed"
-                                    }`}
+                                className={`w-[280px] py-2 text-white font-medium rounded-full transition-all ${
+                                    isBankDocsComplete
+                                        ? "bg-[#5737B4] hover:bg-[#432a91]"
+                                        : "bg-[#D8D8D8] cursor-not-allowed"
+                                }`}
                             >
                                 Next: Tax / Financial Records
                             </button>
                         </div>
-
                     </>
                 ) : (
                     <>
-                        <h1 className="text-5xl font-bold text-[#232832] mb-10">Tax / Financial Documents</h1>
+                        <h1 className="text-5xl font-bold text-[#232832] mb-10">
+                            Tax / Financial Documents
+                        </h1>
                         <div className="flex flex-col sm:flex-row gap-10">
                             <div className="mt-10 text-xl w-full max-w-[300px]">
                                 {renderUploader(
@@ -305,10 +328,11 @@ export default function BankAndTaxDetails() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={!isTaxDocsComplete}
-                                className={`w-[280px] py-2 rounded-full text-white font-medium transition-all ${isTaxDocsComplete
-                                    ? "bg-[#5737B4] hover:bg-[#432a91]"
-                                    : "bg-[#D8D8D8] cursor-not-allowed"
-                                    }`}
+                                className={`w-[280px] py-2 rounded-full text-white font-medium transition-all ${
+                                    isTaxDocsComplete
+                                        ? "bg-[#5737B4] hover:bg-[#432a91]"
+                                        : "bg-[#D8D8D8] cursor-not-allowed"
+                                }`}
                             >
                                 Save & Continue
                             </button>

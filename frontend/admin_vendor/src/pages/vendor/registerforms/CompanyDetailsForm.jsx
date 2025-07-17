@@ -1,18 +1,25 @@
-// src/pages/vendor-register/steps/CompanyDetails.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setCompanyDetails, setCurrentStep } from "../../../store/vendorRegisterSlice";
+import { IoIosArrowDropleftCircle } from "react-icons/io";
+
 
 export default function CompanyDetails() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    companyName: "",
-    vendorType: "",
-    email: "",
-    phone: "",
+  // 🔁 Load saved data from localStorage (if exists)
+  const [formData, setFormData] = useState(() => {
+    const saved = localStorage.getItem("vendorCompanyDetails");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          companyName: "",
+          vendorType: "",
+          email: "",
+          phone: "",
+        };
   });
 
   const handleChange = (e) => {
@@ -29,17 +36,20 @@ export default function CompanyDetails() {
     e.preventDefault();
     if (!isFormComplete) return;
 
+    // ✅ Dispatch to Redux
     dispatch(setCompanyDetails(formData));
     dispatch(setCurrentStep(1));
 
-    // Small delay to let tick mark appear visually
+    // 💾 Save to localStorage
+    localStorage.setItem("vendorCompanyDetails", JSON.stringify(formData));
     setTimeout(() => {
       navigate("/vendor-register/contact-details");
-    }, 100); // Adjust if needed
+    }, 100);
   };
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
+  
       <div className="w-full max-w-2xl p-8 mx-auto my-10">
         <h1 className="text-5xl font-bold text-[#232832] mb-6">Company Details</h1>
         <form className="space-y-4" onSubmit={handleSubmit}>
@@ -58,7 +68,7 @@ export default function CompanyDetails() {
               value={formData.vendorType}
               onChange={handleChange}
               className={`appearance-none w-full px-4 py-3 pr-10 rounded-lg bg-white font-semibold focus:ring-2
-             ${formData.vendorType ? 'text-black' : 'text-[#7F7F7F]'}`}
+              ${formData.vendorType ? "text-black" : "text-[#7F7F7F]"}`}
               required
             >
               <option value="">Type of Vendor</option>
@@ -66,7 +76,7 @@ export default function CompanyDetails() {
               <option value="wholesale">Wholesaler</option>
             </select>
 
-            {/* Custom dropdown icon */}
+            {/* Dropdown Icon */}
             <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7F7F7F]">
               ▼
             </div>
