@@ -5,7 +5,7 @@ from .models import Order
 from .serializers import OrderSerializer
 from rest_framework.decorators import action
 from rest_framework import status
-from payment.stripe_payment import create_payment_intent
+from payment.stripe_payment import initiate_payment_intent
 
 
 class CheckoutViewSet(viewsets.ViewSet):

@@ -10,7 +10,7 @@ from decimal import Decimal
 
 # Create your views here.
 
-strip.api_key = settings.STRIP_TEST_SECRET_KEY
+strip.api_key = settings.STRIPE_TEST_SECRET_KEY
 
 @csrf_exempt
 def stripe_webhook(request):
