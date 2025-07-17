@@ -4,7 +4,9 @@ from .views import *  # make sure this is your custom viewset
 
 router = routers.DefaultRouter()
 router.register(r'user', UserViewSet, basename='user')
-router.register(r'register', VendorRegistrationViewSet, basename='vendor-registration')
+
+router.register(r'vendor', VendorRegistrationViewSet, basename='vendor-registration')
+
 router.register('otp', OTPViewSet, basename='otp')
 router.register(r'password', PasswordResetViewSet, basename='password')
 router.register(r'addresses', AddressViewSet, basename='addresses')
