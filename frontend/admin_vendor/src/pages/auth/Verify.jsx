@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // also add useNavigate
+import { useDispatch } from 'react-redux';
+import { setOtpVerified, setCurrentStep, resetVendorRegistration } from '../../store/vendorRegisterSlice'; // import your actions
 import loggo from '../../assets/loggo.png';
 
 export default function Verify() {
+  const dispatch = useDispatch(); // ✅ this line fixes the error
+  const navigate = useNavigate(); // ✅ to navigate to next step
+
   const [otp, setOtp] = useState(["", "", "", ""]);
 
   const handleChange = (value, index) => {
-    if (!/^\d*$/.test(value)) return; // Only digits
+    if (!/^\d*$/.test(value)) return;
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto-focus next box
+    // Auto-focus next
     if (value && index < 3) {
       const nextInput = document.getElementById(`otp-${index + 1}`);
       if (nextInput) nextInput.focus();
@@ -22,30 +27,53 @@ export default function Verify() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!isOtpComplete) return;
+
+    if (!isOtpComplete) {
+      alert("Please enter the complete OTP");
+      return;
+    }
+
     const code = otp.join("");
     console.log("Submitted OTP:", code);
-    // TODO: Add verification logic here
+
+    // ✅ Mock OTP check
+    if (code === "1234") {
+      console.log("✅ OTP verified successfully");
+      dispatch(setOtpVerified(true));
+      dispatch(setCurrentStep(0));
+       localStorage.setItem("vendorOtpVerified", "true");
+    dispatch(resetVendorRegistration()); 
+
+      navigate("/vendor-register/company-details");
+    } else {
+      alert("❌ Invalid OTP. Try again.");
+    }
   };
+
+//   To expire OTP status after some time,
+
+// Or to clear it after logout/reset.
+
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Section: Branding */}
+      {/* Left Section */}
       <div className="hidden md:flex md:w-2/5 bg-[#030130] justify-center items-center">
-        <img src={loggo} alt="" className='h-70 w-70' />   
+        <img src={loggo} alt="Logo" className="h-70 w-70" />
       </div>
 
-      {/* Right Section: Verification Form */}
+      {/* Right Section */}
       <div className="w-full md:w-3/5 bg-[#ECECF0] flex flex-col justify-center items-center px-5 py-16">
         <div className="w-full max-w-[600px] space-y-6">
-          <h1 className="text-4xl font-bold text-[#232832] tracking-wide">Verify Your Contact Details</h1>
+          <h1 className="text-4xl font-bold text-[#232832] tracking-wide">
+            Verify Your Contact Details
+          </h1>
           <p className="text-[#505050] text-sm">
-            We've sent a 4-digit code to your email. Enter it below to continue
+            We've sent a 4-digit code to your email. Enter it below to continue.
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-6 w-full">
-            {/* OTP Inputs */}
-            <div className="flex  gap-4">
+            <div className="flex gap-4">
               {otp.map((digit, index) => (
                 <input
                   key={index}
@@ -54,7 +82,7 @@ export default function Verify() {
                   maxLength="1"
                   value={digit}
                   onChange={(e) => handleChange(e.target.value, index)}
-                  className="w-12 h-12 text-center text-xl text-[#7F7F7F] rounded-lg  focus:outline-none focus:ring-2 focus:ring-blue-900 bg-white"
+                  className="w-12 h-12 text-center text-xl text-[#7F7F7F] rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900 bg-white"
                 />
               ))}
             </div>
@@ -73,8 +101,10 @@ export default function Verify() {
           </form>
 
           <p className="text-center text-sm text-slate-500">
-            Didn't receive the code?{' '}
-            <Link to="#" className="text-blue-600 hover:underline">Resend</Link>
+            Didn't receive the code?{" "}
+            <Link to="#" className="text-blue-600 hover:underline">
+              Resend
+            </Link>
           </p>
         </div>
       </div>
