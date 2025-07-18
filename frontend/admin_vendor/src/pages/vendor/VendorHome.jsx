@@ -10,16 +10,10 @@ import { useNavigate } from "react-router-dom";
 import VendorDashboard from "./VendorDashboard";
 import PerformanceMetrics from "../../components/vendor/perfomanceMetrics/PerformanceMetrics";
 import VendorProfile from "./VendorProfile";
-// import ProductManager from "../components/vendor/ProductManager";
-// import Orders from "../components/vendor/Orders";
-// import Returns from "../components/vendor/Returns";
-// import Promotions from "../components/vendor/Promotions";
-// import Settlements from "../components/vendor/Settlements";
-// import Performance from "../components/vendor/Performance";
-// import VendorProfile from "../components/vendor/VendorProfile";
-
 import logo from "../../assets/logo.png";
+import user from "../../assets/user.jpg";
 import ProductList from "../../components/vendor/products/manageProduct";
+import { IoSearchOutline } from "react-icons/io5";
 
 const VendorHome = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -86,7 +80,7 @@ const VendorHome = () => {
           </li>
 
           {/* Product Management */}
-          <li>
+          {/* <li>
             <div
               className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
               onClick={() => toggleDropdown("Products")}
@@ -104,6 +98,12 @@ const VendorHome = () => {
                 </li>
               </ul>
             )}
+          </li> */}
+               <li
+            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Product Manager" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
+            onClick={() => handleClick("Product Manager")}
+          >
+           <FaBoxOpen /> Product Management
           </li>
 
           <li
@@ -164,6 +164,32 @@ const VendorHome = () => {
       <div
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
       >
+                {/* 🔍 Search bar */}
+                <div className="flex items-center justify-between mb-6 ">
+                  {/* Search Bar */}
+                  <div className="relative w-full max-w-3xl">
+                    <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
+                    <input
+                      type="text"
+                      placeholder="Search"
+                      className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
+                    />
+        
+                  </div>
+        
+                  {/* Profile Info */}
+                  <div className="flex w-60 items-center gap-3">
+                    <img
+                      src={user}
+                      alt="profile"
+                      className="w-17 h-17 rounded-full object-cover"
+                    />
+                    <div className='flex flex-col font-semibold'>
+                      <div className="text-lg text-gray-700 font-medium">Rohit Ravikumar</div>
+                      <span>rohitgmail.com</span>
+                    </div>
+                  </div>
+                </div>
         {renderContent()}
       </div>
     </div>

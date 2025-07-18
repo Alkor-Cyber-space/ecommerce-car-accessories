@@ -16,6 +16,9 @@ import KYCDocumentsUpload from './pages/vendor/registerforms/KYCDocUpload';
 import BusinessDocumentsUpload from './pages/vendor/registerforms/BusinessDocumentsUpload';
 import BankTaxDetailsUpload from './pages/vendor/registerforms/BankTaxDetailsUpload';
 import AgreementsUpload from './pages/vendor/registerforms/AgreementsUpload';
+import ProductLayout from './pages/vendor/ProductsLayout';
+import ProductList from './components/vendor/products/manageProduct';
+import AddProduct from './components/vendor/products/AddProduct';
 
 function App() {
   return (
@@ -26,21 +29,28 @@ function App() {
       <Route path="/login" element={<VendorSignIn />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/register/verifyOtp" element={<Verify />} />
-        <Route path='/register' element={<VendorRegister/>} />
+      <Route path='/register' element={<VendorRegister />} />
 
       {/* Vendor Register Steps (Nested under /vendor-register) */}
-       <Route path="/vendor-register" element={<VendorRegisterLayout/>}>
+      <Route path="/vendor-register" element={<VendorRegisterLayout />}>
         <Route path="company-details" element={<CompanyDetails />} />
         <Route path="contact-details" element={<ContactDetailsForm />} />
         <Route path="kyc-documents" element={<KYCDocumentsUpload />} />
         <Route path="business-documents" element={<BusinessDocumentsUpload />} />
         <Route path="bank-details" element={<BankTaxDetailsUpload />} />
-        <Route path="agreements" element={<AgreementsUpload/>} />
+        <Route path="agreements" element={<AgreementsUpload />} />
       </Route>
 
       {/* Vendor Dashboard */}
-      <Route path="/vendor" element={<VendorHome />} />
+      <Route path="/vendor" element={<VendorHome />} >
+        <Route path="products" element={<ProductLayout />}>
+        <Route index element={<ProductList />} />
+        {/* <Route path="add" element={<AddProduct />} /> */}
+      </Route>
+      </Route>
       <Route path="/vendor/profile" element={<VendorProfile />} />
+            <Route path="/vendor/add" element={<AddProduct />} />
+
     </Routes>
   );
 }
