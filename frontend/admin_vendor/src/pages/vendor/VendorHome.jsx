@@ -20,6 +20,7 @@ import VendorProfile from "./VendorProfile";
 
 import logo from "../../assets/logo.png";
 import ProductList from "../../components/vendor/products/manageProduct";
+import ReturnsRefundsTable from "../../components/vendor/ReturnsRefundsTable";
 
 const VendorHome = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -45,7 +46,7 @@ const VendorHome = () => {
       case "Dashboard": return <VendorDashboard />;
       case "Product Manager": return <ProductList />;
       case "Orders": return <Orders />;
-      case "Returns": return <Returns />;
+      case "Returns": return <ReturnsRefundsTable/>;
       case "Promotions": return <Promotions />;
       case "Settlements": return <Settlements />;
       case "Performance": return <PerformanceMetrics />;
