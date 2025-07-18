@@ -21,6 +21,7 @@ from rest_framework.response import Response
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
+from accounts.models import VendorProfile
 
 
 class VendorDashboardViewSet(viewsets.ViewSet):
@@ -30,7 +31,7 @@ class VendorDashboardViewSet(viewsets.ViewSet):
         user = request.user
 
         try:
-            profile = user.vendorprofile
+            profile = user.vendor_profile
             registration_complete = profile.is_registration_complete()
         except VendorProfile.DoesNotExist:
             registration_complete = False

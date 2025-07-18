@@ -12,6 +12,7 @@ from vehicles.serializers import (
 class VendorDashboardSerializer(serializers.Serializer):
     total_products = serializers.IntegerField()
     recent_products = ProductSerializer(many=True)
+    registration_complete = serializers.BooleanField()
 
 class VendorProductSerializer(ProductSerializer):
     class Meta(ProductSerializer.Meta):

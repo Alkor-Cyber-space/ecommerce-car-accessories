@@ -22,7 +22,7 @@ class CustomUser(AbstractUser):
 # models.py
 
 class VendorProfile(models.Model):
-     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='vendor_profile')
 
      # Step 2: Company Details
      company_name = models.CharField(max_length=255, null=True, blank=True)
