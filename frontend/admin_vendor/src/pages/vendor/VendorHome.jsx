@@ -1,152 +1,62 @@
 import React, { useState } from "react";
+import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import {
   FaBoxOpen, FaListAlt, FaTruckLoading, FaChartBar,
   FaTags, FaUserCircle, FaChevronRight, FaChevronDown,
-  FaSignOutAlt, FaBars, FaTimes
+  FaSignOutAlt
 } from "react-icons/fa";
 import { MdOutlineDashboard } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
-
-import VendorDashboard from "./VendorDashboard";
-import PerformanceMetrics from "../../components/vendor/perfomanceMetrics/PerformanceMetrics";
-import VendorProfile from "./VendorProfile";
+import { IoSearchOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
 import user from "../../assets/user.jpg";
-import ProductList from "../../components/vendor/products/manageProduct";
-import { IoSearchOutline } from "react-icons/io5";
 
 const VendorHome = () => {
-  const [activeTab, setActiveTab] = useState("Dashboard");
-  const [openDropdown, setOpenDropdown] = useState("");
   const [showSidebar, setShowSidebar] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const toggleDropdown = (name) => {
-    setOpenDropdown(openDropdown === name ? "" : name);
-  };
-
-  const handleClick = (tab) => {
-    setActiveTab(tab);
-  };
+  const activePath = location.pathname;
 
   const handleLogout = () => {
     localStorage.removeItem("user");
     navigate("/vendor");
   };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "Dashboard": return <VendorDashboard />;
-      case "Product Manager": return <ProductList />;
-      case "Orders": return <Orders />;
-      case "Returns": return <Returns />;
-      case "Promotions": return <Promotions />;
-      case "Settlements": return <Settlements />;
-      case "Performance": return <PerformanceMetrics />;
-      case "Profile": return <VendorProfile />;
-      default: return <div>Select an option</div>;
-    }
-  };
+const SidebarItem = ({ to, label, icon, activePath }) => (
+  <li>
+    <Link
+      to={to}
+      className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 
+        ${activePath === to ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
+    >
+      {icon} {label}
+    </Link>
+  </li>
+);
 
   return (
-    <div className="flex min-h-screen gap-5  px-2">
+    <div className="flex min-h-screen gap-5 px-2">
       {/* Toggle Button */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}
-        className={`fixed top-1 z-50 text-xl p-2 rounded transition-all duration-500 ease-in-out ${showSidebar ? 'left-4' : 'left-0'
-          }`}
+        className={`fixed top-1 z-50 text-xl p-2 rounded transition-all duration-500 ease-in-out ${showSidebar ? 'left-4' : 'left-0'}`}
       >
-        <div
-          className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? 'px-3 w-48' : 'w-12 justify-center'
-            }`}
-        >
+        <div className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? 'px-3 w-48' : 'w-12 justify-center'}`}>
           <img src={logo} alt="Logo" className="h-8" />
-          {showSidebar && <p className="text-2xl font-semibold transition-all duration-1000">carooa</p>}
+          {showSidebar && <p className="text-2xl font-semibold">carooa</p>}
         </div>
       </button>
 
       {/* Sidebar */}
-      <div
-        className={`fixed top-0 left-0 h-full w-72 bg-white text-slate-800 p-6 overflow-y-auto z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}
-      >
-        {/* <h2 className="text-2xl font-bold text-[#5737B4] px-4 py-8">Vendor Panel</h2> */}
+      <div className={`fixed top-0 left-0 h-full w-72 bg-white text-slate-800 p-6 overflow-y-auto z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}>
         <ul className="space-y-4 text-md py-10 font-medium">
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Dashboard" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Dashboard")}
-          >
-            <MdOutlineDashboard /> Dashboard
-          </li>
-
-          {/* Product Management */}
-          {/* <li>
-            <div
-              className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
-              onClick={() => toggleDropdown("Products")}
-            >
-              <span className="flex items-center gap-2"><FaBoxOpen /> Products</span>
-              {openDropdown === "Products" ? <FaChevronDown /> : <FaChevronRight />}
-            </div>
-            {openDropdown === "Products" && (
-              <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li
-                  className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl ${activeTab === "Product Manager" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-                  onClick={() => handleClick("Product Manager")}
-                >
-                  Manage Products
-                </li>
-              </ul>
-            )}
-          </li> */}
-               <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Product Manager" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Product Manager")}
-          >
-           <FaBoxOpen /> Product Management
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Orders" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Orders")}
-          >
-            <FaListAlt /> Orders
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Returns" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Returns")}
-          >
-            <FaTruckLoading /> Returns & Refunds
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Promotions" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Promotions")}
-          >
-            <FaTags /> Promotions
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Settlements" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Settlements")}
-          >
-            💰 Settlements
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Performance" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Performance")}
-          >
-            <FaChartBar /> Performance Metrics
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Profile" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Profile")}
-          >
-            <FaUserCircle /> Vendor Profile
-          </li>
+          <SidebarItem to="/vendor/dashboard" label="Dashboard" icon={<MdOutlineDashboard />} activePath={activePath} />
+          <SidebarItem to="/vendor/products" label="Product Management" icon={<FaBoxOpen />} activePath={activePath} />
+          <SidebarItem to="/vendor/orders" label="Orders" icon={<FaListAlt />} activePath={activePath} />
+          <SidebarItem to="/vendor/returns" label="Returns & Refunds" icon={<FaTruckLoading />} activePath={activePath} />
+          <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
+          <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
+          <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />
+          <SidebarItem to="/vendor/profile" label="Vendor Profile" icon={<FaUserCircle />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 
@@ -159,41 +69,33 @@ const VendorHome = () => {
         </ul>
       </div>
 
-
       {/* Main Content */}
-      <div
-        className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
-      >
-                {/* 🔍 Search bar */}
-                <div className="flex items-center justify-between mb-6 ">
-                  {/* Search Bar */}
-                  <div className="relative w-full max-w-3xl">
-                    <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
-                    <input
-                      type="text"
-                      placeholder="Search"
-                      className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
-                    />
-        
-                  </div>
-        
-                  {/* Profile Info */}
-                  <div className="flex w-60 items-center gap-3">
-                    <img
-                      src={user}
-                      alt="profile"
-                      className="w-17 h-17 rounded-full object-cover"
-                    />
-                    <div className='flex flex-col font-semibold'>
-                      <div className="text-lg text-gray-700 font-medium">Rohit Ravikumar</div>
-                      <span>rohitgmail.com</span>
-                    </div>
-                  </div>
-                </div>
-        {renderContent()}
+      <div className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}>
+        {/* Search Bar */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="relative w-full max-w-3xl">
+            <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
+            <input
+              type="text"
+              placeholder="Search"
+              className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
+            />
+          </div>
+          <div className="flex w-60 items-center gap-3">
+            <img src={user} alt="profile" className="w-17 h-17 rounded-full object-cover" />
+            <div className='flex flex-col font-semibold'>
+              <div className="text-lg text-gray-700 font-medium">Rohit Ravikumar</div>
+              <span>rohitgmail.com</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Render Child Routes */}
+        <Outlet />
       </div>
     </div>
   );
 };
+
 
 export default VendorHome;

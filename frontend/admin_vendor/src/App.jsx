@@ -19,6 +19,7 @@ import AgreementsUpload from './pages/vendor/registerforms/AgreementsUpload';
 import ProductLayout from './pages/vendor/ProductsLayout';
 import ProductList from './components/vendor/products/manageProduct';
 import AddProduct from './components/vendor/products/AddProduct';
+import ProductView from './components/vendor/products/ProductView';
 
 function App() {
   return (
@@ -43,14 +44,20 @@ function App() {
 
       {/* Vendor Dashboard */}
       <Route path="/vendor" element={<VendorHome />} >
+      <Route path='dashboard' element={<VendorDashboard/>}/>
+      <Route path='profile' element={<VendorProfile/>} />
         <Route path="products" element={<ProductLayout />}>
-        <Route index element={<ProductList />} />
-        {/* <Route path="add" element={<AddProduct />} /> */}
-      </Route>
-      </Route>
-      <Route path="/vendor/profile" element={<VendorProfile />} />
-            <Route path="/vendor/add" element={<AddProduct />} />
+          <Route index element={<ProductList />} />
+          <Route path="add" element={<AddProduct />} />
+          <Route path="1" element={<ProductView />} />
+          {/* <Route path="product/:productId" element={<ProductView />} /> */}
 
+        </Route>
+      </Route>
+      {/* <Route path="/vendor/profile" element={<VendorProfile />} />
+      <Route path='/vendor/Products' element={<ProductList/>}/>
+      <Route path="/vendor/add" element={<AddProduct />} />
+ */}
     </Routes>
   );
 }

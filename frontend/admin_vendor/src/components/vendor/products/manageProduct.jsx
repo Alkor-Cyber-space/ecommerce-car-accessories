@@ -5,6 +5,7 @@ import { CiBadgeDollar } from "react-icons/ci";
 import { PiToolboxLight } from 'react-icons/pi';
 import { IoIosArrowDown } from "react-icons/io";
 import { BsSearch } from "react-icons/bs";
+import { useNavigate } from "react-router-dom";
 
 const dummyProducts = [
   {
@@ -69,6 +70,7 @@ const ProductList = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  const navigate = useNavigate()
 
   useEffect(() => {
     setProducts(dummyProducts);
@@ -97,8 +99,7 @@ const ProductList = () => {
   ];
 
   return (
-   <div className="bg-[#ECECF0] px-4 sm:px-6 py-8 rounded-2xl">
-      <h1 className="text-2xl font-bold mb-6">Product Management</h1>
+    <div>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -153,7 +154,9 @@ const ProductList = () => {
               </div>
             )}
           </div>
-          <button className="bg-[#5737B4] text-white px-4 py-2 rounded-md shadow hover:bg-[#442f96] text-sm font-medium w-full sm:w-auto">
+          <button
+            onClick={() => navigate("add")}
+            className="bg-[#5737B4] text-white px-4 py-2 rounded-md shadow hover:bg-[#442f96] text-sm font-medium w-full sm:w-auto">
             Add New Product +
           </button>
         </div>
@@ -162,7 +165,7 @@ const ProductList = () => {
       {/* Table */}
       <div className="overflow-x-auto bg-white py-8 px-4 sm:px-6 rounded-xl">
         <table className="min-w-full text-sm">
-          <thead className="text-gray-700 text-left">
+          <thead className="text-gray-700 text-left ">
             <tr>
               <th className="p-3"><input type="checkbox" /></th>
               <th className="p-3">SI.No</th>
@@ -177,10 +180,12 @@ const ProductList = () => {
           <tbody>
             {paginatedItems.length ? (
               paginatedItems.map((product, index) => (
-                <tr key={product.id} className="hover:bg-gray-50">
+                <tr key={product.id} className="hover:bg-gray-50 cursor-pointer">
                   <td className="p-3"><input type="checkbox" /></td>
                   <td className="p-3">{startIndex + index + 1}</td>
-                  <td className="p-3 font-medium text-[#5737B4]">{product.name}</td>
+                  <td
+                    onClick={() => navigate(`/vendor/products/1}`)}
+                    className="p-3 font-medium text-[#5737B4]">{product.name}</td>
                   <td className="p-3">{product.category}</td>
                   <td className="p-3">₹{product.price}</td>
                   <td className="p-3">{product.stock}</td>
@@ -207,31 +212,32 @@ const ProductList = () => {
         </table>
 
         {/* Pagination */}
-        <div className="mt-6 flex flex-wrap justify-end items-center gap-2 text-sm">
+
+      </div>
+      <div className="mt-6 flex flex-wrap justify-end items-center gap-2 text-sm">
+        <button
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 rounded disabled:opacity-50  hover:bg-gray-200"
+        >
+          Prev
+        </button>
+        {[...Array(totalPages)].map((_, index) => (
           <button
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
+            key={index}
+            onClick={() => handlePageChange(index + 1)}
+            className={`px-3 py-1  rounded ${currentPage === index + 1 ? "bg-white text-black" : "hover:bg-blue-100"}`}
           >
-            Prev
+            {index + 1}
           </button>
-          {[...Array(totalPages)].map((_, index) => (
-            <button
-              key={index}
-              onClick={() => handlePageChange(index + 1)}
-              className={`px-3 py-1 border rounded ${currentPage === index + 1 ? "bg-blue-600 text-white" : "hover:bg-blue-100"}`}
-            >
-              {index + 1}
-            </button>
-          ))}
-          <button
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
-          >
-            Next
-          </button>
-        </div>
+        ))}
+        <button
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1  rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
+        >
+          Next
+        </button>
       </div>
     </div>
   );
