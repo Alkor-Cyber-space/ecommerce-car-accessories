@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 
-const users = [
+const usersData = [
   {
     id: 1,
     name: 'Amit Sharma',
@@ -21,44 +21,54 @@ const users = [
     status: 'Blocked',
     joined: '2024-10-01',
   },
-  // Add more users here...
 ];
 
 export default function UserDataTable() {
-  return (
-    <div className="p-4 sm:p-6 bg-white rounded-xl shadow-md">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">Users Overview</h2>
+  const [users, setUsers] = useState(usersData);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
 
+  const filteredUsers = users.filter(user => {
+    return (
+      (statusFilter ? user.status === statusFilter : true) &&
+      (locationFilter ? user.location === locationFilter : true)
+    );
+  });
+
+  return (
+    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
+      <h1 className="text-[#232832] text-xl font-bold">Users Overview</h1>
+      
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left text-gray-600">
-          <thead className="bg-gray-100 text-gray-700 uppercase text-xs">
+        <table className="min-w-full bg-white rounded-md text-sm shadow">
+          <thead className="text-gray-600">
             <tr>
-              <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Phone</th>
-              <th className="px-4 py-3">Location</th>
-              <th className="px-4 py-3">Role</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Joined On</th>
+              <th className="py-4 text-left px-2">#</th>
+              <th className="py-4 text-left px-2">Name</th>
+              <th className="py-4 text-left px-2">Email</th>
+              <th className="py-4 text-left px-2">Phone</th>
+              <th className="py-4 text-left px-2">Location</th>
+              <th className="py-4 text-left px-2">Role</th>
+              <th className="py-4 text-left px-2">Status</th>
+              <th className="py-4 text-left px-2">Joined On</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((user, index) => (
-              <tr key={user.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{index + 1}</td>
-                <td className="px-4 py-3">{user.name}</td>
-                <td className="px-4 py-3">{user.email}</td>
-                <td className="px-4 py-3">{user.phone}</td>
-                <td className="px-4 py-3">{user.location}</td>
-                <td className="px-4 py-3">{user.role}</td>
-                <td className="px-4 py-3">
+            {filteredUsers.map((user, index) => (
+              <tr key={user.id} className="text-left hover:bg-gray-50">
+                <td className="py-2 px-2 font-medium">{index + 1}</td>
+                <td className="py-2 px-2">{user.name}</td>
+                <td className="py-2 px-2">{user.email}</td>
+                <td className="py-2 px-2">{user.phone}</td>
+                <td className="py-2 px-2">{user.location}</td>
+                <td className="py-2 px-2">{user.role}</td>
+                <td className="py-2 px-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium 
                     ${user.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
                     {user.status}
                   </span>
                 </td>
-                <td className="px-4 py-3">{user.joined}</td>
+                <td className="py-2 px-2">{user.joined}</td>
               </tr>
             ))}
           </tbody>

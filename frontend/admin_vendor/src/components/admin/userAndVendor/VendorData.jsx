@@ -27,6 +27,8 @@ const initialVendors = [
 
 export default function VendorDataTable() {
   const [vendors, setVendors] = useState(initialVendors);
+  const [statusFilter, setStatusFilter] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
 
   const handleStatusChange = (id, newStatus) => {
     const updated = vendors.map(vendor =>
@@ -35,57 +37,66 @@ export default function VendorDataTable() {
     setVendors(updated);
   };
 
-  return (
-    <div className="p-4 sm:p-6 bg-white rounded-xl shadow-md">
-      <h2 className="text-2xl font-semibold mb-4 text-gray-800">Vendors Overview</h2>
 
+
+  const filteredVendors = vendors.filter(vendor => {
+    return (
+      (statusFilter ? vendor.status === statusFilter : true) &&
+      (locationFilter ? vendor.location === locationFilter : true)
+    );
+  });
+
+  return (
+    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
+      <h1 className="text-[#232832] text-xl font-bold">Vendors Overview</h1>
+
+      
       <div className="overflow-x-auto">
-        <table className="min-w-full text-sm text-left text-gray-700">
-          <thead className="bg-gray-100 text-xs uppercase">
+        <table className="min-w-full bg-white rounded-md text-sm shadow">
+          <thead className="text-gray-600">
             <tr>
-              <th className="px-4 py-3">#</th>
-              <th className="px-4 py-3">Vendor Name</th>
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Phone</th>
-              <th className="px-4 py-3">Business Name</th>
-              <th className="px-4 py-3">Location</th>
-              <th className="px-4 py-3">KYC Document</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Joined On</th>
+              <th className="py-4 text-left px-2">#</th>
+              <th className="py-4 text-left px-2">Vendor Name</th>
+              <th className="py-4 text-left px-2">Email</th>
+              <th className="py-4 text-left px-2">Phone</th>
+              <th className="py-4 text-left px-2">Business Name</th>
+              <th className="py-4 text-left px-2">Location</th>
+              <th className="py-4 text-left px-2">KYC Document</th>
+              <th className="py-4 text-left px-2">Status</th>
+              <th className="py-4 text-left px-2">Joined On</th>
             </tr>
           </thead>
           <tbody>
-            {vendors.map((vendor, index) => (
-              <tr key={vendor.id} className="border-b hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium">{index + 1}</td>
-                <td className="px-4 py-3">{vendor.name}</td>
-                <td className="px-4 py-3">{vendor.email}</td>
-                <td className="px-4 py-3">{vendor.phone}</td>
-                <td className="px-4 py-3">{vendor.businessName}</td>
-                <td className="px-4 py-3">{vendor.location}</td>
-                <td className="px-4 py-3 text-blue-600 underline cursor-pointer">
+            {filteredVendors.map((vendor, index) => (
+              <tr key={vendor.id} className="text-left hover:bg-gray-50">
+                <td className="py-2 px-2 font-medium">{index + 1}</td>
+                <td className="py-2 px-2">{vendor.name}</td>
+                <td className="py-2 px-2">{vendor.email}</td>
+                <td className="py-2 px-2">{vendor.phone}</td>
+                <td className="py-2 px-2">{vendor.businessName}</td>
+                <td className="py-2 px-2">{vendor.location}</td>
+                <td className="py-2 px-2 text-blue-600 underline cursor-pointer">
                   <a href="#" onClick={() => alert('Preview or download KYC')}>
                     {vendor.kycDocument}
                   </a>
                 </td>
-                <td className="px-4 py-3">
+                <td className="py-2 px-2">
                   <select
                     value={vendor.status}
                     onChange={(e) => handleStatusChange(vendor.id, e.target.value)}
-                    className={`text-xs px-2 py-1 rounded border focus:outline-none ${
-                      vendor.status === 'Approved'
+                    className={`text-xs px-2 py-1 rounded border focus:outline-none 
+                      ${vendor.status === 'Approved'
                         ? 'bg-green-100 text-green-700'
                         : vendor.status === 'Pending'
                         ? 'bg-yellow-100 text-yellow-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}
+                        : 'bg-red-100 text-red-700'}`}
                   >
                     <option value="Approved">Approved</option>
                     <option value="Pending">Pending</option>
                     <option value="Rejected">Rejected</option>
                   </select>
                 </td>
-                <td className="px-4 py-3">{vendor.joined}</td>
+                <td className="py-2 px-2">{vendor.joined}</td>
               </tr>
             ))}
           </tbody>

@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-// import jsPDF from "jspdf";
-// import "jspdf-autotable";
 
 export default function SalesReport() {
   const [salesData, setSalesData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
 
   useEffect(() => {
     const data = [
@@ -34,6 +34,18 @@ export default function SalesReport() {
         commission: 120,
         earnings: 1080,
       },
+      {
+        date: "2025-06-22",
+        orderId: "#ORD1025",
+        product: "Car Battery",
+        vendor: "CarPower",
+        buyer: "James Brown",
+        qty: 3,
+        price: 4200,
+        total: 12600,
+        commission: 1260,
+        earnings: 11340,
+      },
     ];
     setSalesData(data);
     setFilteredData(data);
@@ -44,12 +56,10 @@ export default function SalesReport() {
       const itemDate = new Date(item.date);
       const from = startDate ? new Date(startDate) : null;
       const to = endDate ? new Date(endDate) : null;
-      return (
-        (!from || itemDate >= from) &&
-        (!to || itemDate <= to)
-      );
+      return (!from || itemDate >= from) && (!to || itemDate <= to);
     });
     setFilteredData(filtered);
+    setCurrentPage(1); // Reset to first page when filtering
   };
 
   const formatINR = (amount) => `₹${amount.toLocaleString("en-IN")}`;
@@ -57,65 +67,29 @@ export default function SalesReport() {
   const getTotalRevenue = () =>
     filteredData.reduce((acc, item) => acc + item.total, 0);
 
-//   const downloadPDF = () => {
-//     const doc = new jsPDF();
-//     doc.setFontSize(16);
-//     doc.text("Sales Report - Car Accessories", 14, 20);
-//     doc.setFontSize(11);
-//     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 28);
+  // Pagination logic
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-//     const headers = [
-//       "Date", "Order ID", "Product", "Vendor", "Buyer", "Qty",
-//       "Price", "Total", "Commission", "Earnings"
-//     ];
-
-//     const rows = filteredData.map((item) => [
-//       item.date,
-//       item.orderId,
-//       item.product,
-//       item.vendor,
-//       item.buyer,
-//       item.qty,
-//       formatINR(item.price),
-//       formatINR(item.total),
-//       formatINR(item.commission),
-//       formatINR(item.earnings),
-//     ]);
-
-//     // Add summary row
-//     rows.push([
-//       "", "", "", "", "", "", "", formatINR(getTotalRevenue()), "", "Total Revenue"
-//     ]);
-
-//     doc.autoTable({
-//       startY: 35,
-//       head: [headers],
-//       body: rows,
-//       theme: "striped",
-//       styles: { fontSize: 10, overflow: "linebreak", cellPadding: 2 },
-//       headStyles: { fillColor: [41, 128, 185] },
-//       columnStyles: {
-//         5: { halign: "right" },
-//         6: { halign: "right" },
-//         7: { halign: "right" },
-//         8: { halign: "right" },
-//         9: { halign: "right" },
-//       },
-//     });
-
-//     doc.save("Sales_Report_Car_Accessories.pdf");
-//   };
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-bold">Sales Report</h1>
+    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
+      <h1 className="text-[#232832] text-xl font-bold">Sales Report</h1>
 
-      <div className="flex gap-4 items-end">
+      <div className="flex flex-wrap gap-4 items-end">
         <div>
           <label className="block text-sm font-medium">Start Date</label>
           <input
             type="date"
-            className="border px-3 py-1 rounded"
+            className="px-3 py-1 rounded w-full"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
           />
@@ -124,63 +98,98 @@ export default function SalesReport() {
           <label className="block text-sm font-medium">End Date</label>
           <input
             type="date"
-            className="border px-3 py-1 rounded"
+            className="px-3 py-1 rounded w-full"
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
           />
         </div>
         <button
           onClick={filterDataByDate}
-          className="bg-gray-800 text-white px-4 py-2 rounded"
+          className="bg-gray-800 text-white px-4 py-2 rounded whitespace-nowrap"
         >
           Apply Filter
         </button>
       </div>
 
-      <table className="w-full border text-sm">
-        <thead>
-          <tr className="bg-gray-200 text-left">
-            <th className="border px-2 py-1">Date</th>
-            <th className="border px-2 py-1">Order ID</th>
-            <th className="border px-2 py-1">Product</th>
-            <th className="border px-2 py-1">Vendor</th>
-            <th className="border px-2 py-1">Buyer</th>
-            <th className="border px-2 py-1 text-right">Qty</th>
-            <th className="border px-2 py-1 text-right">Price</th>
-            <th className="border px-2 py-1 text-right">Total</th>
-            <th className="border px-2 py-1 text-right">Commission</th>
-            <th className="border px-2 py-1 text-right">Earnings</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.map((item, index) => (
-            <tr key={index}>
-              <td className="border px-2 py-1">{item.date}</td>
-              <td className="border px-2 py-1">{item.orderId}</td>
-              <td className="border px-2 py-1">{item.product}</td>
-              <td className="border px-2 py-1">{item.vendor}</td>
-              <td className="border px-2 py-1">{item.buyer}</td>
-              <td className="border px-2 py-1 text-right">{item.qty}</td>
-              <td className="border px-2 py-1 text-right">{formatINR(item.price)}</td>
-              <td className="border px-2 py-1 text-right">{formatINR(item.total)}</td>
-              <td className="border px-2 py-1 text-right">{formatINR(item.commission)}</td>
-              <td className="border px-2 py-1 text-right">{formatINR(item.earnings)}</td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white rounded-md text-sm shadow">
+          <thead className="text-gray-600">
+            <tr>
+              <th className="py-4 text-left px-2">Date</th>
+              <th className="py-4 text-left px-2">Order ID</th>
+              <th className="py-4 text-left px-2">Product</th>
+              <th className="py-4 text-left px-2">Vendor</th>
+              <th className="py-4 text-left px-2">Buyer</th>
+              <th className="py-4 text-left px-2">Qty</th>
+              <th className="py-4 text-left px-2">Price</th>
+              <th className="py-4 text-left px-2">Total</th>
+              <th className="py-4 text-left px-2">Commission</th>
+              <th className="py-4 text-left px-2">Earnings</th>
             </tr>
-          ))}
-          <tr className="font-bold bg-gray-100">
-            <td colSpan="7" className="border px-2 py-1 text-left">Total Revenue</td>
-            <td className="border px-2 py-1 text-right">{formatINR(getTotalRevenue())}</td>
-            {/* <td colSpan="2" className="border px-2 py-1 text-right">—</td> */}
-          </tr>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {paginatedData.map((item, index) => (
+              <tr key={index} className="text-left">
+                <td className="py-2 px-2">{item.date}</td>
+                <td className="py-2 px-2">{item.orderId}</td>
+                <td className="py-2 px-2">{item.product}</td>
+                <td className="py-2 px-2">{item.vendor}</td>
+                <td className="py-2 px-2">{item.buyer}</td>
+                <td className="py-2 px-2">{item.qty}</td>
+                <td className="py-2 px-2">{formatINR(item.price)}</td>
+                <td className="py-2 px-2">{formatINR(item.total)}</td>
+                <td className="py-2 px-2">{formatINR(item.commission)}</td>
+                <td className="py-2 px-2">{formatINR(item.earnings)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="font-semibold border-t border-gray-200">
+              <td className="py-2 px-2 text-left">Total Revenue</td>
+              <td className="py-2 px-2"></td>
+              <td className="py-2 px-2"></td>
+              <td className="py-2 px-2"></td>
+              <td className="py-2 px-2"></td>
+              <td className="py-2 px-2"></td>
+              <td className="py-2 px-2"></td>
+              <td className="py-2 px-2">{formatINR(getTotalRevenue())}</td>
+              <td className="py-2 px-2"></td>
+              <td className="py-2 px-2"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
 
-      {/* <button
-        className="bg-blue-600 text-white px-4 py-2 rounded"
-        onClick={downloadPDF}
-      >
-        Download PDF
-      </button> */}
+      {/* Pagination */}
+      <div className="flex justify-end gap-2 mt-4">
+        <button
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
+        >
+          Prev
+        </button>
+
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => goToPage(i + 1)}
+            className={`px-3 py-1 border border-gray-300 rounded ${
+              currentPage === i + 1 ? "bg-[#5737B4] text-white" : "bg-gray-200"
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+
+        <button
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
+        >
+          Next
+        </button>
+      </div>
     </div>
   );
 }
