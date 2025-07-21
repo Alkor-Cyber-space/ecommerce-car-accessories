@@ -16,6 +16,7 @@ import KYCDocumentsUpload from './pages/vendor/registerforms/KYCDocUpload';
 import BusinessDocumentsUpload from './pages/vendor/registerforms/BusinessDocumentsUpload';
 import BankTaxDetailsUpload from './pages/vendor/registerforms/BankTaxDetailsUpload';
 import AgreementsUpload from './pages/vendor/registerforms/AgreementsUpload';
+import OrderDetailView from './pages/vendor/orders/OrderDetailView';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
       {/* Vendor Dashboard */}
       <Route path="/vendor" element={<VendorHome />} />
       <Route path="/vendor/profile" element={<VendorProfile />} />
+       <Route path='/vendor/orders/1' element={<OrderDetailView/>}/>
     </Routes>
   );
 }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 
 const products = [
   { name: "Wheel Rim Refund", refundId: "RR4001", customer: "Arjun Nair", reason: "Damaged on delivery", status: "Approved", price: "₹4,499" },
@@ -17,17 +17,47 @@ const products = [
 ];
 
 const ReturnsRefundsTable = () => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const itemsPerPage = 5;
+
+  const totalItems = products.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentItems = products.slice(startIndex, endIndex);
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
+  };
+
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
+
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Returns & Refunds</h2>
-        <select className="border px-3 py-2 rounded-md text-[#5737B4]">
-          <option>Download Report</option>
-          <option>Download Us</option>
-          <option>Pdf</option>
-          <option>Excel</option>
-        </select>
+       <div className="relative  sm:w-auto">
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="bg-[#5737B4] flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#fff] border border-[#5737B4] rounded ">
+                          Download Report
+
+                        </button>
+                        {showDropdown && (
+                            <div className="absolute z-10 mt-2 w-30 rounded-md shadow-lg bg-white">
+                                <ul className="py-1 text-sm text-gray-700">
+                                    <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Excel</li>
+                                    <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as</li>
+
+                                </ul>
+                            </div>
+                        )}
+            </div>
       </div>
 
       {/* Products Table */}
@@ -45,7 +75,7 @@ const ReturnsRefundsTable = () => {
             </tr>
           </thead>
           <tbody>
-            {products.map((product, idx) => (
+            {currentItems.map((product, idx) => (
               <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
                 <td className="p-3">
                   <input type="checkbox" />
@@ -81,9 +111,26 @@ const ReturnsRefundsTable = () => {
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-end items-center mt-4 gap-2 text-sm">
-        <span className="text-gray-500">1</span>
-        <span className="text-gray-500">1</span>
+      <div className="flex justify-between items-center mt-4 text-sm">
+        <span className="text-black font-medium text-500">
+          Showing {endIndex} of {totalItems}
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={handlePrev}
+            disabled={currentPage === 1}
+            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={currentPage === totalPages}
+            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
