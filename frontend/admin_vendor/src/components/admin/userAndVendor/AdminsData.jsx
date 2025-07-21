@@ -77,8 +77,10 @@ export default function AdminOverview() {
             <FaPlus /> Add Super Admin
           </button>
         </div>
-        <div className="relative w-full md:w-[250px]">
-            <BsSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
+        
+      </div>
+      <div className="relative w-full md:w-[50%]">
+            <BsSearch className=" absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search admins..."
@@ -87,7 +89,6 @@ export default function AdminOverview() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-      </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white rounded-md text-sm shadow">

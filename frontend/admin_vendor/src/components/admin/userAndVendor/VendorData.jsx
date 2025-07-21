@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BsSearch } from "react-icons/bs";
 
 const initialVendors = [
   {
@@ -29,6 +30,8 @@ export default function VendorDataTable() {
   const [vendors, setVendors] = useState(initialVendors);
   const [statusFilter, setStatusFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
+  const [search, setSearch] = useState('');
+
 
   const handleStatusChange = (id, newStatus) => {
     const updated = vendors.map(vendor =>
@@ -50,6 +53,16 @@ export default function VendorDataTable() {
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
       <h1 className="text-[#232832] text-xl font-bold">Vendors Overview</h1>
 
+      <div className="relative w-full md:w-[50%]">
+                        <BsSearch className=" absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          placeholder="Search admins..."
+                          className="bg-white px-5 py-2 rounded-3xl w-full"
+                          value={search}
+                          onChange={(e) => setSearch(e.target.value)}
+                        />
+                      </div>
       
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white rounded-md text-sm shadow">

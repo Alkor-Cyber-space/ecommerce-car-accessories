@@ -133,7 +133,7 @@ export default function StockTable() {
           </thead>
           <tbody>
             {filteredData.map((item) => (
-              <tr key={item.id} className="text-left hover:bg-gray-50">
+              <tr key={item.id} className="text-center hover:bg-gray-50">
                 <td className="py-2 px-2">
                   <img src={item.image} alt={item.name} className="w-10 h-10 rounded" />
                 </td>
