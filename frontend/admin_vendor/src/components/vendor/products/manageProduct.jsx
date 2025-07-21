@@ -99,7 +99,8 @@ const ProductList = () => {
   ];
 
   return (
-    <div>
+    <>
+        <h1 className="text-2xl font-bold mb-6">Product Management</h1>
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
@@ -239,7 +240,7 @@ const ProductList = () => {
           Next
         </button>
       </div>
-    </div>
+    </>
   );
 };
 export default ProductList;

@@ -6,6 +6,7 @@ import { addProduct } from '../../../store/productSlice'
 import { RiArrowLeftRightFill } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
 import { IoIosArrowDown } from "react-icons/io";
+import { Link } from "react-router-dom";
 
 // tags component
 const TagInput = ({ value, onChange }) => {
@@ -65,9 +66,14 @@ const AddProduct = () => {
 
     const handleSave = (e) => {
         e.preventDefault();
-        if (!isFormComplete) return;
+        if (!isFormComplete) {
+            console.warn("Form is incomplete");
+            return;
+        }
         dispatch(addProduct(productData));
-    }
+        console.log("Product submitted:", productData); // ✅ Add log
+    };
+
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -110,8 +116,44 @@ const AddProduct = () => {
 
     return (
         <>
-            <div className="flex justify-end items-end gap-4 mb-4">
-                <div className="flex items-center gap-4">
+
+            <div className="flex justify-between items-end gap-4 mb-4">
+                <h1 className="text-2xl font-bold ">
+                    <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
+                        Product Management
+                    </Link>
+                    / Add Product
+                </h1>
+                <div className="flex md:flex-row lg:flex-row sm:flex-col gap-2 my-3 items-center">
+                    <div className="sm:flex gap-2">
+                        <span className="text-sm font-medium text-[#5737B4]">Product Active</span>
+                        <div
+                            onClick={() => dispatch(toggleActive())}
+                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                        >
+                            <div
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-8" : "translate-x-0"}`}
+                            />
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => setShowDropdown(!showDropdown)}
+                        className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition">
+                        Bulk Upload
+                        <IoIosArrowDown />
+
+                    </button>
+                    {showDropdown && (
+                        <div className="absolute z-10 mt-2 w-35 rounded-md shadow-lg bg-white">
+                            <ul className="py-1 text-sm text-gray-700">
+                                <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
+                                <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as</li>
+
+                            </ul>
+                        </div>
+                    )}
+                </div>
+                {/* <div className="flex sm:flex-col items-center gap-4">
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">Product Active</span>
                         <div
@@ -122,29 +164,30 @@ const AddProduct = () => {
                                 className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-8" : "translate-x-0"}`}
                             />
                         </div>
-                    </div>
-                    <div className="relative  sm:w-auto">
-                        <button
-                            onClick={() => setShowDropdown(!showDropdown)}
-                            className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition">
-                            Bulk Upload
-                            <IoIosArrowDown />
+                        <div className="relative  sm:w-auto">
+                            <button
+                                onClick={() => setShowDropdown(!showDropdown)}
+                                className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition">
+                                Bulk Upload
+                                <IoIosArrowDown />
 
-                        </button>
-                        {showDropdown && (
-                            <div className="absolute z-10 mt-2 w-35 rounded-md shadow-lg bg-white">
-                                <ul className="py-1 text-sm text-gray-700">
-                                    <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
-                                    <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as</li>
+                            </button>
+                            {showDropdown && (
+                                <div className="absolute z-10 mt-2 w-35 rounded-md shadow-lg bg-white">
+                                    <ul className="py-1 text-sm text-gray-700">
+                                        <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
+                                        <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as</li>
 
-                                </ul>
-                            </div>
-                        )}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
-                </div>
+
+                </div> */}
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col lg:flex-row gap-6 mt-3">
                 {/* Left Column */}
                 <div className="flex flex-col gap-6 flex-1">
                     {/* Basic Information */}
@@ -163,7 +206,7 @@ const AddProduct = () => {
                     {/* Price */}
                     <div className="bg-white rounded-xl p-6 space-y-4 shadow">
                         <h2 className="text-lg font-semibold">Price</h2>
-                        <div className="flex gap-4 flex-col sm:flex-row">
+                        <div className="flex gap-4 flex-col ">
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Minimum Quantity</label>
                                 <input name="minQty" value={formData.minQty || ''} onChange={handleChange} type="number" className="border rounded px-4 py-2 mt-1" placeholder="0" />
@@ -178,7 +221,7 @@ const AddProduct = () => {
                     {/* Others */}
                     <div className="bg-white rounded-xl p-6 space-y-4 shadow">
                         <h2 className="text-lg font-semibold">Others</h2>
-                        <div className="flex gap-4 flex-col sm:flex-row">
+                        <div className="flex gap-4 flex-col ">
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Sizes Available</label>
                                 <input name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="S, M, L..." />
@@ -221,7 +264,7 @@ const AddProduct = () => {
                 </div>
 
                 {/* Right Column */}
-                <div className="flex flex-col gap-6 w-full lg:w-[35%]">
+                <div className="flex flex-col gap-6 w-full lg:w-[45%]">
                     {/* Product Images */}
                     <div className="bg-white rounded-xl p-6 shadow">
                         <h2 className="text-lg font-semibold mb-4">Product Images</h2>

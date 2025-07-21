@@ -20,6 +20,7 @@ import ProductLayout from './pages/vendor/ProductsLayout';
 import ProductList from './components/vendor/products/manageProduct';
 import AddProduct from './components/vendor/products/AddProduct';
 import ProductView from './components/vendor/products/ProductView';
+import EditProduct from './components/vendor/products/EditProduct';
 
 function App() {
   return (
@@ -50,8 +51,9 @@ function App() {
           <Route index element={<ProductList />} />
           <Route path="add" element={<AddProduct />} />
           <Route path="1" element={<ProductView />} />
+          <Route path="edit/1" element={<EditProduct />} />
+          
           {/* <Route path="product/:productId" element={<ProductView />} /> */}
-
         </Route>
       </Route>
       {/* <Route path="/vendor/profile" element={<VendorProfile />} />
