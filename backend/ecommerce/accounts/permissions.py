@@ -15,7 +15,7 @@ class IsVendorProfileComplete(BasePermission):
           if not user.is_authenticated:
                return False
           try:
-               profile = user.VendorProfile  
+               profile = user.vendor_profile  
                return profile.is_registration_complete()
           except VendorProfile.DoesNotExist:
                return False

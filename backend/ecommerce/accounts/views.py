@@ -22,6 +22,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.utils.encoding import force_bytes, force_str
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from .serializers import *
 
 from firebase_admin import auth as firebase_auth
 from . import firebase_config 
@@ -145,7 +146,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         return Response({"message": "Bank and tax details saved"}, status=status.HTTP_200_OK)
 
 
-class FirebaseLoginAPIView(APIView):
+class GoogleLoginAPIView(APIView):
     def post(self, request):
         id_token = request.data.get("idToken")
         if not id_token:
