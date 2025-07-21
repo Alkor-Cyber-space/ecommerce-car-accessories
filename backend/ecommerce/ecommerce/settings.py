@@ -227,3 +227,8 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
+
+
+STRIPE_TEST_SECRET_KEY = env('STRIPE_TEST_SECRET_KEY')
+STRIPE_TEST_PUBLISHABLE_KEY = env('STRIPE_TEST_PUBLISHABLE_KEY')
+# STRIPE_TEST_WEBHOOK_KEY = env('STRIPE_TEST_WEBHOOK_KEY')  # Uncomment if you have a webhook key

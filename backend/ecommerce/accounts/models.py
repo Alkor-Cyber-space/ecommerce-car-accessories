@@ -22,7 +22,7 @@ class CustomUser(AbstractUser):
 # models.py
 
 class VendorProfile(models.Model):
-     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='vendor_profile')
 
      # Step 2: Company Details
      company_name = models.CharField(max_length=255, null=True, blank=True)
@@ -74,50 +74,6 @@ class VendorProfile(models.Model):
      def __str__(self):
           return self.user.email
 
-
-class VendorAgreement(models.Model):
-    vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE)
-
-    registration_form = models.FileField(upload_to='agreements/form/')
-    nda_agreement = models.FileField(upload_to='agreements/nda/')
-    terms_conditions = models.FileField(upload_to='agreements/terms/')
-
-    signed_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Agreements - {self.vendor.user.email}"
-
-
-class VendorProfile(models.Model):
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    # Identity Documents
-    pan_card = models.FileField(upload_to='kyc/pan/')
-    aadhar_passport_dl = models.FileField(upload_to='kyc/id/')
-
-    # Business Registration / License
-    gst_certificate = models.FileField(upload_to='business/gst/')
-    business_registration_cert = models.FileField(upload_to='business/registration/')
-    shop_license = models.FileField(upload_to='business/shop_license/', null=True, blank=True)
-
-    # Bank Details
-    cancelled_cheque = models.FileField(upload_to='bank/cheque/')
-    bank_statement = models.FileField(upload_to='bank/statement/')
-
-    # Financial Records
-    it_return = models.FileField(upload_to='finance/it_return/', null=True, blank=True)
-    financial_statement = models.FileField(upload_to='finance/statement/', null=True, blank=True)
-
-    # Supporting Documents
-    dealership_letter = models.FileField(upload_to='supporting/dealership/', null=True, blank=True)
-    authorized_signatory_letter = models.FileField(upload_to='supporting/signatory/', null=True, blank=True)
-
-    # Flags
-    is_verified = models.BooleanField(default=False)
-    submitted_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.company_name
 
 class VendorAgreement(models.Model):
     vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE)
