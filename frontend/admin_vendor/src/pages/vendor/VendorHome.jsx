@@ -19,7 +19,7 @@ const VendorHome = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("user");
-    navigate("/vendor");
+    navigate("/vendor/login");
   };
 const SidebarItem = ({ to, label, icon, activePath }) => (
   <li>
