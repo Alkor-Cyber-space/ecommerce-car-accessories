@@ -12,8 +12,11 @@ export const store = configureStore({
     middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['productForm/updateImage'],
+        ignoredActions: ['productForm/updateImage',"productForm/updateField"],
         ignoredPaths: ['productForm.images'],
+         isSerializable: (value) => {
+          return typeof value !== "object" || value instanceof File || value instanceof Blob;
+        },
       },
     }),
 })

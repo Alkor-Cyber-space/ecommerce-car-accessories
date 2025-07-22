@@ -1,39 +1,71 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import car from "../../../assets/car.jpeg";
 import {
     updateField,
     updateTags,
-    resetForm,
+    toggleActive,
+    updateImage
 } from "../../../store/productFormSlice";
 import { updateProduct } from "../../../store/productSlice";
+import { RiArrowLeftRightFill } from "react-icons/ri";
+import { RxCross2 } from "react-icons/rx";
+import { toast } from "react-toastify";
 
 export default function EditProduct() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const formData = useSelector((state) => state.productForm);
+    const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
+    const inputRefs = useRef([]);
 
     const [localFormData, setLocalFormData] = useState(formData);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setLocalFormData((prev) => ({ ...prev, [name]: value }));
-        console.log(setLocalFormData)
-        
+
     };
+    const handleReplace = (index) => {
+        inputRefs.current[index]?.click();
+    };
+
+    const handleFileChange = (e, index) => {
+        const file = e.target.files[0];
+
+        if (!file || !file.type.startsWith("image/")) {
+            // Don't dispatch anything if no valid file selected
+            return;
+        }
+
+        const updated = [...imagePreviews];
+        updated[index] = URL.createObjectURL(file);
+        setImagePreviews(updated);
+
+        const keys = ["main", "close", "other1", "other2", "other3", "other4"];
+        const key = keys[index];
+
+        dispatch(updateImage({ key, file }));
+    };
+
 
     const handleSave = () => {
         dispatch(updateProduct(localFormData));
         console.log("updated", localFormData)
-        
-        navigate("/vendor/products");
+        toast.success("Product Detail Updated Successffully")
+        setTimeout(() => {
+            navigate('/vendor/products');
+        }, 3000);
     };
 
     const handleDelete = () => {
         // Assuming `formData.id` or `localFormData.id` exists
         // dispatch(deleteProduct(localFormData.id));
-        navigate("/vendor/products");
+        toast.success("Product Removed  Successffully")
+        setTimeout(() => {
+            navigate('/vendor/products');
+        }, 2000);
     };
 
     const handleCancel = () => {
@@ -50,6 +82,17 @@ export default function EditProduct() {
                     </Link>
                     / Edit Product
                 </h1>
+                <div className="sm:flex gap-2 tems-center">
+                    <span className="text-md font-medium text-[#5737B4]">Product Active</span>
+                    <div
+                        onClick={() => dispatch(toggleActive())}
+                        className={`w-12 h-7 sm:w-14 sm:h:7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                    >
+                        <div
+                            className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "lg:translate-x-7 sm:translate-x-7 translate-x-7" : "translate-x-0"}`}
+                        />
+                    </div>
+                </div>
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
@@ -169,10 +212,49 @@ export default function EditProduct() {
                         <h2 className="text-lg font-semibold mb-4">Product Images</h2>
                         <div className="grid grid-cols-2 gap-4">
                             {[...Array(6)].map((_, i) => (
-                                <div key={i} className="flex flex-col gap-1">
+                                <div key={i} className="flex flex-col gap-1 group">
                                     <label className="text-sm font-medium text-gray-700">Image {i + 1}</label>
-                                    <div className="relative h-32 w-full rounded-lg overflow-hidden border border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400 text-sm cursor-pointer">
-                                        <img src={car} alt="" className="object-cover h-full w-full rounded-lg" />
+                                    <div
+                                        className="relative h-32 w-full rounded-lg overflow-hidden border border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400 text-sm cursor-pointer group"
+                                    >
+                                        {/* Image preview or placeholder */}
+                                        {imagePreviews[i] ? (
+                                            <img src={imagePreviews[i]} alt={`Preview ${i + 1}`} className="object-cover h-full w-full rounded-lg" />
+                                        ) : (
+                                            <span>No image</span>
+                                        )}
+
+                                        {/* Hover Overlay */}
+                                        <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center gap-4 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                            {/* Replace Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleReplace(i)}
+                                                className="flex flex-col items-center text-white"
+                                            >
+                                                <RiArrowLeftRightFill className="w-6 h-6 mb-1" />
+                                                <span className="text-sm font-medium">Replace</span>
+                                            </button>
+
+                                            {/* Delete Button */}
+                                            <button
+                                                type="button"
+                                                // onClick={() => handleDelete(i)}
+                                                className="flex flex-col items-center text-white"
+                                            >
+                                                <RxCross2 className="w-6 h-6 mb-1" />
+                                                <span className="text-sm font-medium">Delete</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Hidden File Input */}
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            ref={(el) => (inputRefs.current[i] = el)}
+                                            onChange={(e) => handleFileChange(e, i)}
+                                        />
                                     </div>
                                 </div>
                             ))}

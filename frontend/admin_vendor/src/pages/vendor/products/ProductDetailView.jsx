@@ -4,12 +4,14 @@ import { RiArrowLeftRightFill } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
 import { toggleActive } from "../../../store/productFormSlice";
 import { useDispatch, useSelector } from "react-redux";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FiEdit3 } from "react-icons/fi";
 import car from '../../../assets/car.jpeg'
-export default function ProductView({ product }) {
+
+export default function ProductDetailView({ product }) {
     const dispatch = useDispatch();
     const formData = useSelector((state) => state.productForm);
+    const navigate = useNavigate()
 
 
     return (
@@ -33,7 +35,9 @@ export default function ProductView({ product }) {
                             />
                         </div>
                     </div>
-                    <button className="flex items-center justify-between gap-2 border border-[#5737B4] text-[#5737B4] rounded-md  px-3 py-1">Edit Product  <FiEdit3 /></button>
+                    <button 
+                    onClick={()=> navigate('edit')}
+                    className="flex items-center justify-between gap-2 border border-[#5737B4] text-[#5737B4] rounded-md  px-3 py-1">Edit Product  <FiEdit3 /></button>
                 </div>
 
             </div>
@@ -96,7 +100,7 @@ export default function ProductView({ product }) {
                 </div>
 
                 {/* Right Column */}
-                <div className="flex flex-col gap-6 w-full lg:w-[35%]">
+                <div className="flex flex-col gap-6 w-full lg:w-[45%]">
                     {/* Product Images */}
                     <div className="bg-white rounded-xl p-6 shadow">
                         <h2 className="text-lg font-semibold mb-4">Product Images</h2>

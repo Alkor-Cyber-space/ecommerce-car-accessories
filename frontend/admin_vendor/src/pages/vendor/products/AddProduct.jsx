@@ -1,12 +1,13 @@
 import React, { useRef, useState } from "react";
 import { GoPlus } from "react-icons/go";
 import { useDispatch, useSelector } from "react-redux";
-import { updateField, toggleActive, updateTags, updateImage } from "../../../store/productFormSlice";
+import { updateField, toggleActive, updateTags, updateImage, resetForm } from "../../../store/productFormSlice";
 import { addProduct } from '../../../store/productSlice'
 import { RiArrowLeftRightFill } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
 import { IoIosArrowDown } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 // tags component
 const TagInput = ({ value, onChange }) => {
@@ -60,9 +61,19 @@ const AddProduct = () => {
     const [showDropdown, setShowDropdown] = useState(false);
 
     const tags = useSelector((state) => state.productForm.tags);
+    const images = formData.images || {};
+    const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
+    const atLeastOneImageSelected = imageKeys.some((key) => images[key]);
 
-    const isFormComplete = Object.values(formData).every((value) => value !== "");
-    const productData = useSelector((state) => state.productForm);
+    const isFormComplete =
+        formData.name &&
+        formData.description &&
+        formData.price &&
+        formData.category &&
+        tags.length > 0 && // ✅ ensure at least 1 tag
+        atLeastOneImageSelected; const productData = useSelector((state) => state.productForm);
+
+    const navigate = useNavigate()
 
     const handleSave = (e) => {
         e.preventDefault();
@@ -71,7 +82,13 @@ const AddProduct = () => {
             return;
         }
         dispatch(addProduct(productData));
-        console.log("Product submitted:", productData); // ✅ Add log
+        console.log("Product submitted:", productData);
+        toast.success("Product Added Successffully")
+        dispatch(resetForm());
+        setImagePreviews([null, null, null, null, null, null]);
+        setTimeout(() => {
+            navigate('/vendor/products');
+        }, 3000);
     };
 
 
@@ -80,6 +97,10 @@ const AddProduct = () => {
         console.log(name, value);
 
         dispatch(updateField({ field: name, value }));
+        console.log("Dispatching updateField:", {
+            value,
+            type: typeof value,
+        });
     };
 
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
@@ -98,10 +119,9 @@ const AddProduct = () => {
         const key = imageKeys[index];
         if (key) {
             dispatch(updateImage({ key, file }));
+            console.log("Saving image to Redux:", key, file);
         }
     };
-    console.log("Images in Redux:", formData.images);
-
 
     const handleDrop = (e, index) => {
         e.preventDefault();
@@ -118,7 +138,7 @@ const AddProduct = () => {
         <>
 
             <div className="flex justify-between items-end gap-4 mb-4">
-                <h1 className="text-2xl font-bold ">
+                <h1 className="text-2xl font-bold my-3">
                     <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
                         Product Management
                     </Link>
@@ -132,26 +152,29 @@ const AddProduct = () => {
                             className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
                         >
                             <div
-                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-8" : "translate-x-0"}`}
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "lg:translate-x-8 sm:translate-x-5 translate-x-8" : "translate-x-0"}`}
                             />
                         </div>
                     </div>
-                    <button
-                        onClick={() => setShowDropdown(!showDropdown)}
-                        className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition">
-                        Bulk Upload
-                        <IoIosArrowDown />
+                    <div className="relative inline-block text-left">
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition"
+                        >
+                            Bulk Upload
+                            <IoIosArrowDown />
+                        </button>
 
-                    </button>
-                    {showDropdown && (
-                        <div className="absolute z-10 mt-2 w-35 rounded-md shadow-lg bg-white">
-                            <ul className="py-1 text-sm text-gray-700">
-                                <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
-                                <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as</li>
+                        {showDropdown && (
+                            <div className="absolute left-0 mt-2 w-35 rounded-md shadow-lg bg-white z-10">
+                                <ul className="py-1 text-sm text-gray-700">
+                                    <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
+                                    <span className="w-30 h-full">(only .csv % .svg files can upload)</span>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
 
-                            </ul>
-                        </div>
-                    )}
                 </div>
                 {/* <div className="flex sm:flex-col items-center gap-4">
                     <div className="flex items-center gap-2">
@@ -224,7 +247,7 @@ const AddProduct = () => {
                         <div className="flex gap-4 flex-col ">
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Sizes Available</label>
-                                <input name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="S, M, L..." />
+                                <input name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" />
                             </div>
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Manufacturing Date</label>
@@ -354,7 +377,9 @@ const AddProduct = () => {
 
             {/* Buttons */}
             <div className="flex justify-end gap-4 mt-10">
-                <button className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">Cancel</button>
+                <button
+                onClick={()=> navigate('/vendor/products')}
+                 className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">Cancel</button>
                 <button
                     onClick={(e) => handleSave(e)}
                     disabled={!isFormComplete}

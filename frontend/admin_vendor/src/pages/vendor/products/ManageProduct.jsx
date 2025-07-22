@@ -11,16 +11,14 @@ const dummyProducts = [
   {
     id: 1,
     name: "Car Floor Mats",
-    image: "https://via.placeholder.com/80",
     category: "Interior Accessories",
     price: 999,
     stock: 20,
-    status: "Active",
+    status: "Live",
   },
   {
     id: 2,
     name: "LED Headlights",
-    image: "https://via.placeholder.com/80",
     category: "Lighting",
     price: 3599,
     stock: 0,
@@ -33,7 +31,7 @@ const dummyProducts = [
     category: "Maintenance",
     price: 499,
     stock: 3,
-    status: "Active",
+    status: "Draft",
   },
   {
     id: 4,
@@ -42,7 +40,7 @@ const dummyProducts = [
     category: "Interior Accessories",
     price: 799,
     stock: 15,
-    status: "Active",
+    status: "Live",
   },
   {
     id: 5,
@@ -51,7 +49,7 @@ const dummyProducts = [
     category: "Accessories",
     price: 199,
     stock: 25,
-    status: "Active",
+    status: "Live",
   },
   {
     id: 6,
@@ -60,10 +58,9 @@ const dummyProducts = [
     category: "Exterior",
     price: 1499,
     stock: 5,
-    status: "Active",
+    status: "Draft",
   },
 ];
-
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -100,10 +97,10 @@ const ProductList = () => {
 
   return (
     <>
-        <h1 className="text-2xl font-bold mb-6">Product Management</h1>
+      <h1 className="text-2xl font-bold mb-6">Product Management</h1>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-10">
         {stats.map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl shadow p-4">
             <div className="flex items-center gap-2">
@@ -124,7 +121,7 @@ const ProductList = () => {
       {/* Search & Actions */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         {/* Search */}
-        <div className="relative w-full md:w-[60%]">
+        <div className="relative w-full lg:w-[60%] md:w-[50%] ">
           <BsSearch className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -185,20 +182,26 @@ const ProductList = () => {
                   <td className="p-3"><input type="checkbox" /></td>
                   <td className="p-3">{startIndex + index + 1}</td>
                   <td
-                    onClick={() => navigate(`/vendor/products/1}`)}
+                    onClick={() => navigate(`1`)}
                     className="p-3 font-medium text-[#5737B4]">{product.name}</td>
                   <td className="p-3">{product.category}</td>
                   <td className="p-3">₹{product.price}</td>
                   <td className="p-3">{product.stock}</td>
                   <td className="p-3">
-                    <span className={`px-2 py-1 rounded text-sm font-semibold ${product.status === "Active"
-                      ? "bg-green-100 text-green-800"
-                      : "bg-red-100 text-red-800"}`}>
+                    <span className={`px-2 py-1 rounded text-sm font-semibold ${product.status === "Live"
+                        ? "bg-[#05C16833] text-green-800"
+                        : product.status === "Draft"
+                          ? "bg-[#AEB9E133] text-[#6989F9]"
+                          : "bg-red-100 text-[#FF5A65]"
+                      }`}>
                       {product.status}
                     </span>
+
                   </td>
                   <td className="p-3">
-                    <button className="text-xl text-gray-600 hover:text-blue-800">
+                    <button
+                      onClick={() => navigate("1/edit")}
+                      className="text-xl text-gray-600 hover:text-blue-800">
                       <FiEdit3 />
                     </button>
                   </td>

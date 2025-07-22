@@ -28,12 +28,21 @@ const productFormSlice = createSlice({
   reducers: {
     updateField: (state, action) => {
       const { field, value } = action.payload;
+       if (
+        typeof value !== "string" &&
+        typeof value !== "number" &&
+        typeof value !== "boolean" &&
+        value !== null
+      ) {
+        console.warn("Rejected non-serializable field value:", value);
+        return;
+      }
       state[field] = value;
     },
     updateImage: (state, action) => {
-  const { key, file } = action.payload;
-  state.images[key] = file;
-},
+      const { key, file } = action.payload;
+      state.images[key] = file;
+    },
 
     updateTags: (state, action) => {
       state.tags = action.payload;
