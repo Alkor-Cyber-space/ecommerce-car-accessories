@@ -56,7 +56,7 @@ const SidebarItem = ({ to, label, icon, activePath }) => (
           <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
           <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
           <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />
-          <SidebarItem to="/vendor/profile" label="Vendor Profile" icon={<FaUserCircle />} activePath={activePath} />
+          <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 
