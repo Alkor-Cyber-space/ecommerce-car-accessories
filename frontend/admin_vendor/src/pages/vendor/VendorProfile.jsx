@@ -5,6 +5,10 @@ import { RiDeleteBinLine } from 'react-icons/ri';
 
 const VendorProfile = () => {
 
+  // edit modal---
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editSection, setEditSection] = useState(null); // 'business' | 'location' | 'bank'
+
   const fileInputRef = useRef(null);
   // const [fileName, setFileName] = useState('PANfile.pdf');
 
@@ -23,40 +27,42 @@ const VendorProfile = () => {
   };
 
   // file change , also update time---------------
-//   const fileInputRef = useRef(null);
-const [replaceIndex, setReplaceIndex] = useState(null);
+  //   const fileInputRef = useRef(null);
+  const [replaceIndex, setReplaceIndex] = useState(null);
 
-const handleFileChange = (e) => {
-  const file = e.target.files[0];
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
 
-  if (file && replaceIndex !== null) {
-    const updatedDocs = [...documents];
+    if (file && replaceIndex !== null) {
+      const updatedDocs = [...documents];
 
-    const timestamp = new Date().toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: true,
-    });
+      const timestamp = new Date().toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+      });
+      console.log(timestamp);
 
-    // Update the selected document
-    updatedDocs[replaceIndex].fileName = file.name;
-    updatedDocs[replaceIndex].uploadedAt = timestamp;
 
-    // Update state
-    setDocuments(updatedDocs);
-    setReplaceIndex(null);
+      // Update the selected document
+      updatedDocs[replaceIndex].fileName = file.name;
+      updatedDocs[replaceIndex].uploadedAt = timestamp;
 
-    // Console logs for debugging
-    console.log("📄 File Replaced:");
-    console.log("→ New File Name:", file.name);
-    console.log("→ Updated At:", timestamp);
-    console.log("→ Updated Document Entry:", updatedDocs[replaceIndex]);
-    console.log("→ Full Documents State:", updatedDocs);
-  }
-};
+      // Update state
+      setDocuments(updatedDocs);
+      setReplaceIndex(null);
+
+      // Console logs for debugging
+      console.log("📄 File Replaced:");
+      console.log("→ New File Name:", file.name);
+      console.log("→ Updated At:", timestamp);
+      console.log("→ Updated Document Entry:", updatedDocs[replaceIndex]);
+      console.log("→ Full Documents State:", updatedDocs);
+    }
+  };
 
   return (
     <div className="bg-[#ECECF0] px-8 py-10 rounded-2xl min-h-screen">
@@ -68,7 +74,12 @@ const handleFileChange = (e) => {
         <div className="bg-white rounded-lg px-5 py-6 shadow">
           <div className="flex justify-between items-center">
             <h2 className="font-semibold text-lg">Business Details</h2>
-            <FiEdit3 size={20} className="cursor-pointer" />
+            <FiEdit3 size={20}
+              onClick={() => {
+                setEditSection('business');
+                setIsEditModalOpen(true);
+              }}
+              className="cursor-pointer" />
           </div>
           <div className="grid grid-cols-2 gap-y-5 mt-4">
             <p className="font-semibold">Name</p>
@@ -85,14 +96,19 @@ const handleFileChange = (e) => {
         <div className="bg-white rounded-lg px-5 py-6  shadow">
           <div className="flex justify-between items-center">
             <h2 className="font-semibold text-lg">Location Details</h2>
-            <FiEdit3 size={20} className="cursor-pointer" />
+            <FiEdit3 size={20}
+              onClick={() => {
+                setEditSection('location');
+                setIsEditModalOpen(true);
+              }}
+              className="cursor-pointer" />
           </div>
           <div className=" grid grid-cols-2 mt-4 space-y-1">
             <p className="font-semibold">Pick Up Location</p>
             <div className='space-y-2'>
               <p>ABC Technologies Edathala, Kakkanad - Kochi</p>
               <p>Near Pulliparambu Kaavu Temple</p>
-              <button className="text-blue-600 mt-2 text-sm underline">
+              <button className="text-[#5737B4] mt-2 text-md ">
                 Use My Current Location
               </button>
             </div>
@@ -103,7 +119,12 @@ const handleFileChange = (e) => {
       <div className="bg-white lg:w-[49.5%] md:w-full rounded-lg px-5 py-6 shadow mt-6">
         <div className="flex justify-between items-center">
           <h2 className="font-semibold text-lg">Bank Details</h2>
-          <FiEdit3 size={20} className="cursor-pointer" />
+          <FiEdit3 size={20}
+            onClick={() => {
+              setEditSection('bank');
+              setIsEditModalOpen(true);
+            }}
+            className="cursor-pointer" />
         </div>
         <div className="grid grid-cols-2 gap-y-5 mt-4">
           <p className="font-semibold">Account Number</p>
@@ -174,23 +195,23 @@ const handleFileChange = (e) => {
             <span className='w-30 font-medium'>Business Registration</span>
             <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
             <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
-            <div 
-             onClick={() => {
-            setReplaceIndex(index);
-            fileInputRef.current.click();
-          }}
-            className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div
+              onClick={() => {
+                setReplaceIndex();
+                fileInputRef.current.click();
+              }}
+              className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
             <div className='flex gap-5'>
               <div><FaEye size={22} /></div>
               <div><RiDeleteBinLine size={22} /></div>
             </div>
-             <input
-    type="file"
-    ref={fileInputRef}
-    className="hidden"
-    onChange={handleFileChange}
-    accept=".pdf,.jpg,.jpeg,.png"
-  />
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+              accept=".pdf,.jpg,.jpeg,.png"
+            />
           </div>
           <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
             <p className="text-green-600 font-medium">✓ Verified</p>
@@ -321,6 +342,8 @@ const handleFileChange = (e) => {
           Save
         </button>
       </div>
+
+
       <input
         type="file"
         accept=".pdf,.jpg,.jpeg,.png"
@@ -328,8 +351,123 @@ const handleFileChange = (e) => {
         className="hidden"
         onChange={handleReplaceDoc}
       />
+
+      {/* modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded p-6 w-full max-w-md shadow-lg relative">
+            <button
+              className="absolute top-2 right-2 text-gray-600"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-semibold mb-4">
+              Edit {editSection === 'business' ? 'Business Details' :
+                editSection === 'location' ? 'Location Details' :
+                  'Bank Details'}
+            </h2>
+
+            {/* You can conditionally render forms based on section */}
+            {editSection === 'business' && (
+              <>
+                <input type="text" placeholder="Name" className="input-class" />
+                <input type="email" placeholder="Email" className="input-class" />
+                <input type="tel" placeholder="Phone" className="input-class" />
+                <input type="text" placeholder="GSTIN" className="input-class" />
+              </>
+            )}
+
+            {editSection === 'location' && (
+              <>
+                <input type="text" placeholder="Pick Up Location" className="input-class" />
+                <input type="text" placeholder="Nearby Landmark" className="input-class" />
+              </>
+            )}
+
+            {editSection === 'bank' && (
+              <>
+                <input type="text" placeholder="Account Number" className="input-class" />
+                <input type="text" placeholder="Bank Name" className="input-class" />
+                <input type="text" placeholder="IFSC" className="input-class" />
+                <input type="text" placeholder="UPI" className="input-class" />
+              </>
+            )}
+
+            <button
+              onClick={() => setIsEditModalOpen(false)}
+              className="mt-4 bg-[#5737B4] text-white px-4 py-2 rounded"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
+
   );
 };
 
+
 export default VendorProfile;
+
+      // {/* maaped */}
+     
+      // {documents.map((doc, index) => (
+      //   <div key={index} className="flex justify-between items-center bg-white p-5 rounded shadow sm:gap-5">
+
+      //     {/* Status */}
+      //     <p className={`font-medium ${doc.status === "verified" ? "text-green-600" :
+      //         doc.status === "pending" ? "text-yellow-500" :
+      //           "text-red-500"
+      //       }`}>
+      //       {doc.status === "verified" ? "✓ Verified" :
+      //         doc.status === "pending" ? "⌛ Pending" :
+      //           "✗ Rejected"}
+      //     </p>
+
+      //     {/* Title */}
+      //     <p className="font-medium">{doc.title}</p>
+
+      //     {/* File Name */}
+      //     <span className="underline text-sm text-blue-600 cursor-pointer">{doc.fileName}</span>
+
+      //     {/* Uploaded Time */}
+      //     <p className="text-sm text-gray-700">
+      //       <span className='font-medium text-gray-900'>Uploaded At :</span> {doc.uploadedAt}
+      //     </p>
+
+      //     {/* Replace Document */}
+      //     <div
+      //       onClick={() => {
+      //         setReplaceIndex(index);
+      //         fileInputRef.current.click();
+      //       }}
+      //       className="text-[#5737B4] cursor-pointer text-md"
+      //     >
+      //       Replace Document
+      //     </div>
+
+      //     {/* Actions */}
+      //     <div className='flex gap-4'>
+      //       {/* View */}
+      //       <div onClick={() => handleViewDoc(doc.fileUrl)} className="cursor-pointer">
+      //         <FaEye size={22} />
+      //       </div>
+
+      //       {/* Reject */}
+      //       <div onClick={() => handleRejectDoc(index)} className="cursor-pointer text-red-600">
+      //         <RxCross2 size={22} />
+      //       </div>
+
+      //       {/* Delete */}
+      //       <div onClick={() => handleDeleteDoc(index)} className="cursor-pointer text-gray-600">
+      //         <RiDeleteBinLine size={22} />
+      //       </div>
+      //     </div>
+      //   </div>
+      // ))}
+      
+
