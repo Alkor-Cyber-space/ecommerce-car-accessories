@@ -1,0 +1,395 @@
+import React, { useRef, useState } from "react";
+import { GoPlus } from "react-icons/go";
+import { useDispatch, useSelector } from "react-redux";
+import { updateField, toggleActive, updateTags, updateImage, resetForm } from "../../../store/productFormSlice";
+import { addProduct } from '../../../store/productSlice'
+import { RiArrowLeftRightFill } from "react-icons/ri";
+import { RxCross2 } from "react-icons/rx";
+import { IoIosArrowDown } from "react-icons/io";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+
+// tags component
+const TagInput = ({ value, onChange }) => {
+    const [input, setInput] = useState("");
+
+    const addTag = (e) => {
+        if ((e.key === "Enter" || e.key === ",") && input.trim()) {
+            e.preventDefault();
+            const newTags = [...value, input.trim()];
+            onChange(newTags);
+            console.log(newTags);
+
+            setInput("");
+        }
+    };
+
+    const removeTag = (index) => {
+        const updated = [...value];
+        updated.splice(index, 1);
+        onChange(updated);
+    };
+
+    return (
+        <div className="border rounded px-2 py-2 w-full mt-2  flex flex-wrap items-center gap-2">
+            {value.map((tag, idx) => (
+                <span
+                    key={idx}
+                    className="flex items-center gap-1 bg-[#ECECF0] text-[#505050] text-lg font-medium px-2 py-1 "
+                >
+                    {tag}
+                    <button onClick={() => removeTag(idx)}>
+                        <RxCross2 className="w-4 h-4" />
+                    </button>
+                </span>
+            ))}
+            <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={addTag}
+                className="flex-grow outline-none text-sm px-2 py-1"
+            />
+        </div>
+    );
+};
+// Add Product component
+const AddProduct = () => {
+    const dispatch = useDispatch();
+    const formData = useSelector((state) => state.productForm);
+    const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+    const [showDropdown, setShowDropdown] = useState(false);
+
+    const tags = useSelector((state) => state.productForm.tags);
+    const images = formData.images || {};
+    const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
+    const atLeastOneImageSelected = imageKeys.some((key) => images[key]);
+
+    const isFormComplete =
+        formData.name &&
+        formData.description &&
+        formData.price &&
+        formData.category &&
+        tags.length > 0 && // ✅ ensure at least 1 tag
+        atLeastOneImageSelected; const productData = useSelector((state) => state.productForm);
+
+    const navigate = useNavigate()
+
+    const handleSave = (e) => {
+        e.preventDefault();
+        if (!isFormComplete) {
+            console.warn("Form is incomplete");
+            return;
+        }
+        dispatch(addProduct(productData));
+        console.log("Product submitted:", productData);
+        toast.success("Product Added Successffully")
+        dispatch(resetForm());
+        setImagePreviews([null, null, null, null, null, null]);
+        setTimeout(() => {
+            navigate('/vendor/products');
+        }, 3000);
+    };
+
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        console.log(name, value);
+
+        dispatch(updateField({ field: name, value }));
+        console.log("Dispatching updateField:", {
+            value,
+            type: typeof value,
+        });
+    };
+
+    const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
+    const [dragActiveIndex, setDragActiveIndex] = useState(null);
+    const inputRefs = useRef([]);
+
+    const handleFile = (file, index) => {
+        if (!file || !allowedTypes.includes(file.type)) return;
+
+        // Preview image in UI
+        const newPreviews = [...imagePreviews];
+        newPreviews[index] = URL.createObjectURL(file);
+        setImagePreviews(newPreviews);
+
+        // Save file to Redux
+        const key = imageKeys[index];
+        if (key) {
+            dispatch(updateImage({ key, file }));
+            console.log("Saving image to Redux:", key, file);
+        }
+    };
+
+    const handleDrop = (e, index) => {
+        e.preventDefault();
+        setDragActiveIndex(null);
+        const file = e.dataTransfer.files[0];
+        handleFile(file, index);
+    };
+
+    const handleBrowse = (index) => {
+        if (inputRefs.current[index]) inputRefs.current[index].click();
+    };
+
+    return (
+        <>
+
+            <div className="flex justify-between items-end gap-4 mb-4">
+                <h1 className="text-2xl font-bold my-3">
+                    <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
+                        Product Management
+                    </Link>
+                    / Add Product
+                </h1>
+                <div className="flex md:flex-row lg:flex-row sm:flex-col gap-2 my-3 items-center">
+                    <div className="sm:flex gap-2">
+                        <span className="text-sm font-medium text-[#5737B4]">Product Active</span>
+                        <div
+                            onClick={() => dispatch(toggleActive())}
+                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                        >
+                            <div
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "lg:translate-x-8 sm:translate-x-5 translate-x-8" : "translate-x-0"}`}
+                            />
+                        </div>
+                    </div>
+                    <div className="relative inline-block text-left">
+                        <button
+                            onClick={() => setShowDropdown(!showDropdown)}
+                            className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition"
+                        >
+                            Bulk Upload
+                            <IoIosArrowDown />
+                        </button>
+
+                        {showDropdown && (
+                            <div className="absolute left-0 mt-2 w-35 rounded-md shadow-lg bg-white z-10">
+                                <ul className="py-1 text-sm text-gray-700">
+                                    <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
+                                    <span className="w-30 h-full">(only .csv % .svg files can upload)</span>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
+
+                </div>
+                {/* <div className="flex sm:flex-col items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">Product Active</span>
+                        <div
+                            onClick={() => dispatch(toggleActive())}
+                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                        >
+                            <div
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-8" : "translate-x-0"}`}
+                            />
+                        </div>
+                        <div className="relative  sm:w-auto">
+                            <button
+                                onClick={() => setShowDropdown(!showDropdown)}
+                                className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition">
+                                Bulk Upload
+                                <IoIosArrowDown />
+
+                            </button>
+                            {showDropdown && (
+                                <div className="absolute z-10 mt-2 w-35 rounded-md shadow-lg bg-white">
+                                    <ul className="py-1 text-sm text-gray-700">
+                                        <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
+                                        <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as</li>
+
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                </div> */}
+            </div>
+
+            <div className="flex flex-col lg:flex-row gap-6 mt-3">
+                {/* Left Column */}
+                <div className="flex flex-col gap-6 flex-1">
+                    {/* Basic Information */}
+                    <div className="bg-white rounded-xl p-6 space-y-4 shadow">
+                        <h2 className="text-lg font-semibold">Basic Information</h2>
+                        <div className="flex flex-col">
+                            <label className="font-medium">Product Name</label>
+                            <input name="name" value={formData.name || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" />
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="font-medium">Description</label>
+                            <textarea name="description" value={formData.description || ''} onChange={handleChange} className="border rounded px-4 py-2 mt-1" />
+                        </div>
+                    </div>
+
+                    {/* Price */}
+                    <div className="bg-white rounded-xl p-6 space-y-4 shadow">
+                        <h2 className="text-lg font-semibold">Price</h2>
+                        <div className="flex gap-4 flex-col ">
+                            <div className="flex flex-col flex-1">
+                                <label className="font-medium">Minimum Quantity</label>
+                                <input name="minQty" value={formData.minQty || ''} onChange={handleChange} type="number" className="border rounded px-4 py-2 mt-1" placeholder="0" />
+                            </div>
+                            <div className="flex flex-col flex-1">
+                                <label className="font-medium">Unit Price</label>
+                                <input name="price" value={formData.price || ''} onChange={handleChange} type="number" className="border rounded px-4 py-2 mt-1" placeholder="₹" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Others */}
+                    <div className="bg-white rounded-xl p-6 space-y-4 shadow">
+                        <h2 className="text-lg font-semibold">Others</h2>
+                        <div className="flex gap-4 flex-col ">
+                            <div className="flex flex-col flex-1">
+                                <label className="font-medium">Sizes Available</label>
+                                <input name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" />
+                            </div>
+                            <div className="flex flex-col flex-1">
+                                <label className="font-medium">Manufacturing Date</label>
+                                <input name="manufactureDate" value={formData.manufactureDate || ''} onChange={handleChange} type="date" className="border rounded px-4 py-2 mt-1" />
+                            </div>
+                        </div>
+                        <div className="flex flex-col">
+                            <label className="font-medium">Product Category</label>
+                            <select
+                                name="category"
+                                value={formData.category || ''}
+                                onChange={handleChange}
+                                className="border rounded px-4 py-2 mt-1 bg-white"
+                            >
+                                <option value=""></option>
+                                <option value="Exterior Accessories">Exterior Accessories</option>
+                                <option value="Interior Accessories">Interior Accessories</option>
+                                <option value="Lighting & Electrical">Lighting & Electrical</option>
+                                <option value="Engine & Mechanical Parts">Engine & Mechanical Parts</option>
+                                <option value="Tyre & Wheels">Tyre & Wheels</option>
+                                <option value="Car Care & Cleaning">Car Care & Cleaning</option>
+                                <option value="Electronics & Infotainment">Electronics & Infotainment</option>
+                                <option value="Tools & Maintenance">Tools & Maintenance</option>
+                                <option value="Performance Parts">Performance Parts</option>
+                                <option value="Security & Safety">Security & Safety</option>
+                                <option value="Documentation & Compliance">Documentation & Compliance</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Stock */}
+                    <div className="bg-white rounded-xl p-6 shadow">
+                        <h2 className="text-lg font-semibold mb-2">Available Stock</h2>
+                        <label className="text-sm font-medium">Stock Number</label>
+                        <input name="stock" value={formData.stock || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 w-full mt-1" />
+                    </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="flex flex-col gap-6 w-full lg:w-[45%]">
+                    {/* Product Images */}
+                    <div className="bg-white rounded-xl p-6 shadow">
+                        <h2 className="text-lg font-semibold mb-4">Product Images</h2>
+                        <div className="grid grid-cols-2 gap-4">
+                            {["Main Image", "Close View", "Other Image 1", "Other Image 2", "Other Image 3", "Other Image 4"].map((label, index) => (
+                                <div key={index} className="flex flex-col gap-2">
+                                    <label className="text-sm font-medium text-gray-700">{label}</label>
+                                    <div
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                            setDragActiveIndex(index);
+                                        }}
+                                        onDragLeave={() => setDragActiveIndex(null)}
+                                        onDrop={(e) => handleDrop(e, index)}
+                                        onClick={() => handleBrowse(index)}
+                                        className={`border-2 border-dashed rounded-lg h-32 flex flex-col items-center justify-center text-center  cursor-pointer transition relative overflow-hidden ${dragActiveIndex === index ? "border-blue-500 bg-blue-50" : "border-gray-400"}`}
+                                    >
+                                        {imagePreviews[index] ? (
+                                            <div className="relative w-full h-full group">
+                                                <img
+                                                    src={imagePreviews[index]}
+                                                    alt="Preview"
+                                                    className="w-full h-full object-cover rounded-lg"
+                                                />
+
+                                                {/* Overlay shown only on hover */}
+                                                <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center gap-4 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                                    {/* Replace Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            inputRefs.current[index]?.click();
+                                                        }}
+                                                        className="flex flex-col items-center text-white"
+                                                    >
+                                                        <RiArrowLeftRightFill className="w-6 h-6 mb-1" />
+                                                        <span className="text-sm font-medium">Replace</span>
+                                                    </button>
+
+                                                    {/* Delete Button */}
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            const newPreviews = [...imagePreviews];
+                                                            newPreviews[index] = null;
+                                                            setImagePreviews(newPreviews);
+                                                        }}
+                                                        className="flex flex-col items-center text-white"
+                                                    >
+                                                        <RxCross2 className="w-6 h-6 mb-1" />
+                                                        <span className="text-sm font-medium">Delete</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="z-10 flex flex-col items-center">
+                                                <GoPlus className="text-3xl text-gray-500 mb-1" />
+                                                <span className="text-sm text-gray-500">Drag and drop here</span>
+                                                <span className="text-sm text-[#5737B4] font-semibold underline">Browse Files</span>
+                                            </div>
+                                        )}
+
+                                        <input
+                                            type="file"
+                                            accept="image/jpeg,image/png,image/jpg"
+                                            ref={(el) => (inputRefs.current[index] = el)}
+                                            onChange={(e) => handleFile(e.target.files[0], index)}
+                                            className="hidden"
+
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Tags */}
+                    <div className="bg-white rounded-xl p-6 shadow">
+                        <h2 className="text-lg font-semibold mb-2">Tags</h2>
+                        <label className="text-sm">Type and search</label>
+                        <TagInput value={tags} onChange={(newTags) => dispatch(updateTags(newTags))} />
+                    </div>
+                </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end gap-4 mt-10">
+                <button
+                onClick={()=> navigate('/vendor/products')}
+                 className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">Cancel</button>
+                <button
+                    onClick={(e) => handleSave(e)}
+                    disabled={!isFormComplete}
+                    className={`px-16 py-2 rounded-md text-sm font-medium transition ${isFormComplete ? "bg-[#5737B4] text-white hover:bg-[#442f96]" : "bg-[#D8D8D8] text-white cursor-not-allowed"}`}
+                >
+                    Save
+                </button>
+            </div>
+        </>
+    );
+};
+
+export default AddProduct;

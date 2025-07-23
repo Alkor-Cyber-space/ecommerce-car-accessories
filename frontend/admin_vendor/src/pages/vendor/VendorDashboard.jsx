@@ -1,198 +1,91 @@
-import React, { useState } from "react";
-import {
-  FaBoxOpen,
-  FaClipboardList,
-  FaMoneyBillWave,
-  FaTags,
-  FaBell,
-  FaCogs
-} from "react-icons/fa";
-import {
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
-} from "recharts";
-import RevenueChart from "../../components/vendor/RevenueChart";
-import WeeklyOrderChart from "../../components/vendor/OrdrerChart";
+import React from 'react';
 
-const cards = [
-  {
-    title: "Total Products",
-    count: 132,
-    icon: <FaBoxOpen className="text-blue-500 text-2xl" />,
-    bg: "bg-blue-50",
-  },
-  {
-    title: "Pending Orders",
-    count: 18,
-    icon: <FaClipboardList className="text-yellow-500 text-2xl" />,
-    bg: "bg-yellow-50",
-  },
-  {
-    title: "Revenue This Month",
-    count: "$14,320",
-    icon: <FaMoneyBillWave className="text-green-500 text-2xl" />,
-    bg: "bg-green-50",
-  },
-  {
-    title: "Active Promotions",
-    count: 5,
-    icon: <FaTags className="text-pink-500 text-2xl" />,
-    bg: "bg-pink-50",
-  },
+import SalesTrends from '../../components/admin/adminDashboard/SalesTrends';
+import RegisteredUsersChart from '../../components/admin/adminDashboard/RegisteredUsersChart';
+import TopProductsTable from '../../components/admin/adminDashboard/TopProducts';
+import RecentOrdersTable from '../../components/admin/adminDashboard/OrderTracking';
+import TotalProfitCard from '../../components/admin/adminDashboard/TotalProfitChart';
+import UsersOverview from '../../components/admin/adminDashboard/UserOverview';
+import RefundReturnStats from '../../components/admin/adminDashboard/RefundReturnStats';
+import { IoPricetagOutline } from 'react-icons/io5';
+import { CiBadgeDollar } from "react-icons/ci";
+import { FiArrowUpRight } from 'react-icons/fi';
+import { PiToolboxLight } from 'react-icons/pi';
+
+const stats = [
+  { icon: <IoPricetagOutline />, title: "Total Sales", value: "50.8K" },
+  { icon: <PiToolboxLight />, title: "Total Orders", value: "200" },
+  { icon: <CiBadgeDollar />, title: "Revenue Summary", value: "50.8K" },
 ];
-
-const monthWiseBarData = {
-  January: [
-    { name: 'Week 1', orders: 22 },
-    { name: 'Week 2', orders: 30 },
-    { name: 'Week 3', orders: 28 },
-    { name: 'Week 4', orders: 34 },
-  ],
-  February: [
-    { name: 'Week 1', orders: 18 },
-    { name: 'Week 2', orders: 25 },
-    { name: 'Week 3', orders: 20 },
-    { name: 'Week 4', orders: 26 },
-  ],
-  March: [
-    { name: 'Week 1', orders: 30 },
-    { name: 'Week 2', orders: 45 },
-    { name: 'Week 3', orders: 38 },
-    { name: 'Week 4', orders: 50 },
-  ]
-};
-
-
-const pieData = [
-  { name: 'Electronics', value: 40 },
-  { name: 'Car Care', value: 30 },
-  { name: 'Accessories', value: 20 },
-  { name: 'Others', value: 10 },
-];
-
-const pieColors = ["#6366f1", "#f97316", "#10b981", "#facc15"];
-
-const notifications = [
-  "2 new orders placed",
-  "Product 'Alloy Wheels' stock is low",
-  "3 returns pending approval",
-  "New promotion approved"
-];
-
-const VendorDashboard = () => {
-  const [selectedMonth, setSelectedMonth] = useState("March");
-
+const AdminDashboard = () => {
   return (
-    <div className="space-y-10 h-full bg-[#ECECF0] px-6 py-10 rounded-2xl">
-      <div className="text-2xl font-semibold text-gray-800">
-        👋 Welcome back, Vendor!
+    <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl'>
+      {/* <div>
+        <h1 className='text-3xl'>Welcome back, Rohit Ravikumar</h1>
+        <span className='text-sm'>Measure your advertising ROI and report website traffic.</span>
+      </div> */}
+      <div className='flex justify-between items-center'>
+        <h1 className='text-2xl font-semibold'>Dashboard</h1>
+        <button className='bg-[#5737B4] text-white px-4 py-2 rounded-md'>Download report</button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {cards.map((card, index) => (
-          <div
-            key={index}
-            className={`p-4 rounded-xl shadow-md border ${card.bg} flex items-center gap-4`}
-          >
-            <div className="p-3 bg-white rounded-full shadow">
-              {card.icon}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-9 ">
+        {stats.map((stat, i) => (
+          <div key={i} className="bg-white rounded-2xl  shadow p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xl ">
+                {stat.icon}
+              </span>
+              <h4 className="text-sm font-semibold text-gray-500">{stat.title}</h4>
             </div>
-            <div>
-              <div className="text-sm text-gray-500">{card.title}</div>
-              <div className="text-xl font-bold text-gray-800">{card.count}</div>
+            <div className='flex text-center items-center'>
+              <p className="text-3xl font-bold mt-2 text-center pr-2">{stat.value}</p>
+              <div className="flex items-center gap-1 text-green-600 text-sm sm:text-base mt-1 bg-[#e6fff0] px-2 py-1 rounded">
+                24.6%
+                <FiArrowUpRight className="w-4 h-4" />
+              </div>
             </div>
           </div>
         ))}
       </div>
-  {/* Bar Chart */}
-        {/* <div className="bg-white p-6 rounded-xl shadow-md">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-800">Weekly Order Volume</h2>
-            <select
-              value={selectedMonth}
-              onChange={(e) => setSelectedMonth(e.target.value)}
-              className="border border-gray-300 rounded px-3 py-1 text-sm"
-            >
-              {Object.keys(monthWiseBarData).map((month) => (
-                <option key={month} value={month}>{month}</option>
-              ))}
-            </select>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthWiseBarData[selectedMonth]}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="orders" fill="#6366f1" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div> */}
-      {/* Charts Section */}
-      <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6">
-  <div className="md:col-span-2 lg:col-span-3">
-    <RevenueChart />
-  </div>
-
-  {/* Pie Chart: span 2 of 5 columns */}
-  <div className="md:col-span-1 lg:col-span-2 bg-white p-6 rounded-xl shadow-md">
-    <h2 className="text-lg font-semibold text-gray-800 mb-4">Sales by Category</h2>
-    <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={pieData}
-          dataKey="value"
-          nameKey="name"
-          cx="50%"
-          cy="50%"
-          outerRadius={100}
-          fill="#8884d8"
-          label
-        >
-          {pieData.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-          ))}
-        </Pie>
-        <Tooltip />
-        <Legend verticalAlign="bottom" height={36} />
-      </PieChart>
-    </ResponsiveContainer>
-  </div>
-</div>
-
-
-      {/* Notifications + Revenue Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-md">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <FaBell className="text-yellow-500" /> Notifications
-          </h2>
-          <ul className="space-y-2 text-sm text-gray-700">
-            {notifications.map((note, idx) => (
-              <li key={idx} className="bg-yellow-50 p-3 rounded-md shadow-sm">
-                {note}
-              </li>
-            ))}
-          </ul>
+      <div className="grid grid-cols-1 lg:grid-cols-3  bg-white  my-6 w-full p-1 border  border-[#D8D8D8] rounded-2xl shadow-lg">
+        {/* Sales Trends - spans 2/3 columns on large screens */}
+        <div className="lg:col-span-2  text-white w-full">
+          <SalesTrends />
         </div>
 
-        <WeeklyOrderChart selectedMonth={selectedMonth}
-          setSelectedMonth={setSelectedMonth}
-          monthWiseBarData={monthWiseBarData} />
-      </div>
-    </div>
-  );
-};
+        {/* Right side (stacked vertically) */}
+        <div className="flex flex-col w-full lg:col-span-1">
+          <div className=" text-black  w-full">
+            <TotalProfitCard />
+          </div>
+          <hr className='border border-[#D8D8D8]' />
 
-export default VendorDashboard;
+          <div className=" w-full">
+            <RefundReturnStats />
+          </div>
+        </div>
+      </div>
+
+      {/* Users Overview */}
+       <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-800">Users Overview</h2>
+        <button className="text-sm bg-[#5737B4] text-white px-4 py-1.5 rounded-full">
+          Download Report
+        </button>
+      </div>
+      <div className='grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2 '>
+        
+        <div>
+          <UsersOverview />
+        </div>
+        <div className="">
+          <RecentOrdersTable />
+        </div>
+      </div>
+
+    </div>
+  )
+}
+
+export default AdminDashboard

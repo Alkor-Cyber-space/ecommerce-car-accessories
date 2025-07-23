@@ -10,6 +10,8 @@ const productsSlice = createSlice({
   reducers: {
     addProduct: (state, action) => {
       state.products.push(action.payload);
+      console.log("Product Added:", action.payload); // ✅ Console log here
+
     },
     updateProduct: (state, action) => {
       const index = state.products.findIndex(p => p.id === action.payload.id);
