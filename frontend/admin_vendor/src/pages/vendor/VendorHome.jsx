@@ -6,7 +6,7 @@ import {
   FaSignOutAlt
 } from "react-icons/fa";
 import { MdOutlineDashboard } from "react-icons/md";
-import { IoSearchOutline } from "react-icons/io5";
+import { IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
 import user from "../../assets/user.jpg";
 
@@ -21,17 +21,17 @@ const VendorHome = () => {
     localStorage.removeItem("user");
     navigate("/vendor/login");
   };
-const SidebarItem = ({ to, label, icon, activePath }) => (
-  <li>
-    <Link
-      to={to}
-      className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 
+  const SidebarItem = ({ to, label, icon, activePath }) => (
+    <li>
+      <Link
+        to={to}
+        className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 
         ${activePath === to ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-    >
-      {icon} {label}
-    </Link>
-  </li>
-);
+      >
+        {icon} {label}
+      </Link>
+    </li>
+  );
 
   return (
     <div className="flex min-h-screen gap-5 px-2">
@@ -53,6 +53,7 @@ const SidebarItem = ({ to, label, icon, activePath }) => (
           <SidebarItem to="/vendor/products" label="Product Management" icon={<FaBoxOpen />} activePath={activePath} />
           <SidebarItem to="/vendor/orders" label="Orders" icon={<FaListAlt />} activePath={activePath} />
           <SidebarItem to="/vendor/returns" label="Returns & Refunds" icon={<FaTruckLoading />} activePath={activePath} />
+          <SidebarItem to="/vendor/reviews" label="Ratings & Reviews" icon={<IoStarHalf />} activePath={activePath} />
           <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
           <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
           <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />

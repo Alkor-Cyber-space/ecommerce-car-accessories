@@ -97,10 +97,10 @@ const ProductList = () => {
 
   return (
     <>
-      <h1 className="text-2xl font-bold mb-6">Product Management</h1>
+      <h1 className="text-2xl font-semibold mb-6">Product Management</h1>
 
       {/* Stat Cards */}
-<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 mb-10">
         {stats.map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl shadow p-4">
             <div className="flex items-center gap-2">
@@ -189,10 +189,10 @@ const ProductList = () => {
                   <td className="p-3">{product.stock}</td>
                   <td className="p-3">
                     <span className={`px-2 py-1 rounded text-sm font-semibold ${product.status === "Live"
-                        ? "bg-[#05C16833] text-green-800"
-                        : product.status === "Draft"
-                          ? "bg-[#AEB9E133] text-[#6989F9]"
-                          : "bg-red-100 text-[#FF5A65]"
+                      ? "bg-[#05C16833] text-green-800"
+                      : product.status === "Draft"
+                        ? "bg-[#AEB9E133] text-[#6989F9]"
+                        : "bg-red-100 text-[#FF5A65]"
                       }`}>
                       {product.status}
                     </span>

@@ -35,6 +35,8 @@ import CombinedChartPanel from './pages/admin/RevenueTrends';
 import UserDataTable from './components/admin/userAndVendor/UserData';
 import VendorDataTable from './components/admin/userAndVendor/VendorData';
 import AdminOverview from './components/admin/userAndVendor/AdminsData';
+import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
+import RevenueChart from './components/vendor/RevenueChart';
 
 function App() {
   return (
@@ -83,10 +85,13 @@ function App() {
             <Route path="add" element={<AddProduct />} />
             <Route path="1" element={<ProductDetailView />} />
             <Route path="1/edit" element={<EditProduct />} />
-
             {/* <Route path="product/:productId" element={<ProductView />} /> */}
           </Route>
+          <Route path='reviews' element={<RatingAndReviewLayout />} />
+          <Route path='orders' element={<RevenueChart />} />
+
         </Route>
+
         {/* <Route path="/vendor/profile" element={<VendorProfile />} />
         <Route path='/vendor/Products' element={<ProductList/>}/>
         <Route path="/vendor/add" element={<AddProduct />} />
