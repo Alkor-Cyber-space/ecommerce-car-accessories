@@ -18,6 +18,7 @@ import BankTaxDetailsUpload from './pages/vendor/registerforms/BankTaxDetailsUpl
 import AgreementsUpload from './pages/vendor/registerforms/AgreementsUpload';
 import OrderDetailView from './pages/vendor/orders/OrderDetailView';
 
+
 function App() {
   return (
     <Routes>
@@ -41,8 +42,10 @@ function App() {
 
       {/* Vendor Dashboard */}
       <Route path="/vendor" element={<VendorHome />} />
+      <Route path="/vendor/orders" element={<OrderDetailView />} />
       <Route path="/vendor/profile" element={<VendorProfile />} />
        <Route path='/vendor/orders/1' element={<OrderDetailView/>}/>
+
     </Routes>
   );
 }

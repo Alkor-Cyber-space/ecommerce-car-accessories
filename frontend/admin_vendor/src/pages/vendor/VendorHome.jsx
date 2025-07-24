@@ -114,7 +114,7 @@ const VendorHome = () => {
             className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Orders" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
             onClick={() => handleClick("Orders")}
           >
-            <FaListAlt /> Orders
+            <FaListAlt /> Order Management
           </li>
 
           <li

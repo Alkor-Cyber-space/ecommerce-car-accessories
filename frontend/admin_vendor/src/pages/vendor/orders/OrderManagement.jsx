@@ -1,60 +1,44 @@
 import React, { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPen, faArrowUp, faArrowDown,} from "@fortawesome/free-solid-svg-icons";
+
+const products = [
+  { name: "Wheel Rim Refund", refundId: "RR4001", customer: "Arjun Nair", reason: "Damaged on delivery", status: "Approved", price: "₹4,499" },
+  { name: "LED Light Return", refundId: "RR4523", customer: "Riya Sharma", reason: "Wrong item received", status: "Pending", price: "₹2,699" },
+  { name: "Seat Cover Refund", refundId: "RR0233", customer: "Karthik Menon", reason: "Item not as described", status: "Expired", price: "₹1,449" },
+  { name: "Brake Pad Return", refundId: "RR1007", customer: "Divya Singh", reason: "Product quality issue", status: "Returned", price: "₹5,699" },
+  { name: "Wiper Refund", refundId: "RR6523", customer: "Aditya Roy", reason: "Missing parts", status: "Received", price: "₹999" },
+  { name: "Dashboard Camera", refundId: "RR8201", customer: "Sneha Joshi", reason: "Not compatible with vehicle", status: "Approved", price: "₹3,499" },
+  { name: "Sunshade", refundId: "RR1098", customer: "Rohan Das", reason: "Changed mind", status: "Returned", price: "₹599" },
+  { name: "Tyre Inflator Return", refundId: "RR3301", customer: "Anjali Verma", reason: "Defective product", status: "Pending", price: "₹2,299" },
+  { name: "LED Fog Light", refundId: "RR7323", customer: "Nikhil Rao", reason: "Packaging damaged", status: "Expired", price: "₹1,899" },
+  { name: "Rearview Mirror", refundId: "RR4529", customer: "Meera Pillai", reason: "Wrong color sent", status: "Received", price: "₹1,199" },
+  { name: "Floor Mat Set", refundId: "RR5621", customer: "Vikram Shetty", reason: "Late delivery", status: "Approved", price: "₹1,799" },
+  { name: "Car Charger Return", refundId: "RR6790", customer: "Isha Kapoor", reason: "Doesn't work", status: "Returned", price: "₹649" },
+  { name: "Mobile Holder Refund", refundId: "RR3443", customer: "Aryan Thomas", reason: "Duplicate order", status: "Received", price: "₹349" }
+];
 
 const OrderManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages] = useState(5);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [showDropdown, setShowDropdown] = useState(false);
+  const itemsPerPage = 5;
 
-  const orders = [
-    { id: "12325566", date: "20 May 2025", time: "3:50 PM", buyer: "Rahul Mehta", order: "Alloy Wheel X2R15", quantity: 2, status: "Order Placed" },
-    { id: "12323566", date: "20 May 2025", time: "5:50 PM", buyer: "Priya Nair", order: "LED Headlamp Pro", quantity: 1, status: "Delivered" },
-    { id: "2328566", date: "20 May 2025", time: "8:30 PM", buyer: "Arjun Kapoor", order: "Car Seat Cover Duo", quantity: 3, status: "Cancelled" },
-    { id: "2823566", date: "20 May 2025", time: "3:30 PM", buyer: "Sneha Sharma", order: "Brake Pad RZ", quantity: 1, status: "Out for Delivery" },
-    { id: "2987566", date: "21 May 2025", time: "9:15 AM", buyer: "Kunal Verma", order: "Dashboard Polish Kit", quantity: 2, status: "Delivered" },
-    { id: "3122451", date: "21 May 2025", time: "11:00 AM", buyer: "Anjali Menon", order: "Car Perfume Set", quantity: 4, status: "Order Placed" },
-    { id: "3223471", date: "21 May 2025", time: "1:45 PM", buyer: "Farhan Khan", order: "Rear View Mirror X", quantity: 1, status: "Returned" },
-    { id: "3324502", date: "21 May 2025", time: "2:30 PM", buyer: "Neha Gupta", order: "Tyre Inflator Compact", quantity: 1, status: "Delivered" },
-    { id: "3427854", date: "21 May 2025", time: "4:10 PM", buyer: "Amit Joshi", order: "Windshield Washer Fluid", quantity: 5, status: "Out for Delivery" },
-    { id: "3529823", date: "21 May 2025", time: "6:50 PM", buyer: "Ritika Das", order: "Sun Shade XL", quantity: 2, status: "Order Placed" },
-  ];
+  const totalItems = products.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
 
-  const requestSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentItems = products.slice(startIndex, endIndex);
+
+  const handlePrev = () => {
+    if (currentPage > 1) setCurrentPage(currentPage - 1);
   };
 
-  const getSortIcon = (key) => {
-
-  if (sortConfig.key !== key) {
-
-    return(
-
-      <span className="ml-1 text-black-400 text-sm">↑↓</span>
-
-    );
-
-  }
+  const handleNext = () => {
+    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+  };
 
   return (
-
-    <span className="ml-1 text-black-600 text-sm">
-
-      {sortConfig.direction === 'asc' ? '↑' : '↓'}
-
-    </span>
-
-  );
-
-};
-
-  return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      {/* Header Section */}
+    <div className="p-6 bg-gray-100 min-h-screen">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">Order Management</h2>
         <button className="bg-purple-600 text-white text-sm px-4 py-2 rounded hover:bg-purple-700 flex items-center">
@@ -62,13 +46,16 @@ const OrderManagement = () => {
         </button>
       </div>
 
-      {/* Search Form Section */}
-      <div className="bg-white p-6 rounded-lg shadow-sm mb-8">
+      {/* Filter Form */}
+      <div className="bg-white w-4xl py-4 px-6 rounded-lg shadow-sm mb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
-              <input type="text" className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
@@ -85,169 +72,109 @@ const OrderManagement = () => {
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Buyer Name</label>
-              <input type="text" className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              <input
+                type="text"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date - From</label>
-                <input type="date" className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date - To</label>
-                <input type="date" className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <input
+                  type="date"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
               </div>
             </div>
           </div>
         </div>
 
         <div className="mt-8 flex justify-end space-x-4">
-          <button className="border border-gray-300 text-gray-700 px-6 py-2 text-sm rounded-md hover:bg-gray-50 transition-colors">
+          <button className="border border-gray-300 text-gray-700 px-6 py-2 text-sm rounded-md hover:bg-gray-50">
             Reset
           </button>
-          <button className="bg-purple-600 text-white px-6 py-2 text-sm rounded-md hover:bg-purple-700 transition-colors">
+          <button className="bg-purple-600 text-white px-6 py-2 text-sm rounded-md hover:bg-purple-700">
             Search
           </button>
         </div>
       </div>
 
-      {/* Orders Table Section */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
+      {/* Products Table */}
+      <div className="overflow-auto">
+        <table className="min-w-full bg-white rounded-md shadow text-sm">
+          <thead className="text-gray-600">
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider">
-                Order ID
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider cursor-pointer"
-                onClick={() => requestSort('date')}
-              >
-                <div className="flex items-center">
-                  Order Date & Time
-                  {getSortIcon('date')}
-                </div>
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider cursor-pointer"
-                onClick={() => requestSort('buyer')}
-              >
-                <div className="flex items-center">
-                  Buyer Name
-                  {getSortIcon('buyer')}
-                </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider">
-                Product
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider cursor-pointer"
-                onClick={() => requestSort('quantity')}
-              >
-                <div className="flex items-center">
-                  Qty
-                  {getSortIcon('quantity')}
-                </div>
-              </th>
-              <th 
-                className="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider cursor-pointer"
-                onClick={() => requestSort('status')}
-              >
-                <div className="flex items-center">
-                  Status
-                  {getSortIcon('status')}
-                </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-black-500 uppercase tracking-wider">
-                Actions
-              </th>
+              <th className="p-3 text-left"></th>
+              <th className="p-3 text-left">Product Name</th>
+              <th className="p-3 text-left">Customer</th>
+              <th className="p-3 text-left">Reason</th>
+              <th className="p-3 text-left">Status</th>
+              <th className="p-3 text-left">Price</th>
+              <th className="p-3 text-left">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr key={order.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-[#5737B4]">
-                  {order.id}
+          <tbody>
+            {currentItems.map((product, idx) => (
+              <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+                <td className="p-3">
+                  <input type="checkbox" />
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  <div>
-                    <div className="font-medium">Date: {order.date}</div>
-                    <div>Time: {order.time}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {order.buyer}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-[#5737B4]">
-                  {order.order}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  {order.quantity}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    order.status === "Order Placed" ? "bg-green-100 text-green-600" :
-                    order.status === "Delivered" ? "bg-yellow-100 text-yellow-600" :
-                    order.status === "Cancelled" ? "bg-red-100 text-red-600" :
-                    order.status === "Out for Delivery" ? "bg-blue-100 text-blue-600" :
-                    order.status === "Returned" ? "bg-purple-100 text-purple-600" :
-                    "bg-gray-100 text-gray-600"
-                  }`}>
-                    {order.status}
+                <td className="p-3 text-indigo-600 font-medium">{product.name}</td>
+                <td className="p-3">{product.customer}</td>
+                <td className="p-3">{product.reason}</td>
+                <td className="p-3">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      product.status === "Approved"
+                        ? "bg-green-100 text-green-600"
+                        : product.status === "Pending"
+                        ? "bg-yellow-100 text-yellow-600"
+                        : product.status === "Expired"
+                        ? "bg-red-100 text-red-600"
+                        : product.status === "Received"
+                        ? "bg-blue-100 text-blue-600"
+                        : product.status === "Returned"
+                        ? "bg-purple-100 text-purple-600"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {product.status}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                  <div className="flex items-center space-x-3">
-                    <button className="text-gray-500 hover:text-purple-600">
-                      <FontAwesomeIcon icon={faPen} />
-                    </button>
-                    <button className="text-purple-600 hover:text-purple-800 flex items-center">
-                      
-                      View More
-                    </button>
-                  </div>
-                </td>
+                <td className="p-3">{product.price}</td>
+                <td className="p-3 text-gray-500 hover:text-black cursor-pointer">✏️</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Pagination Section */}
-      <div className="flex justify-end items-center py-4 bg-gray-100 text-sm font-medium text-gray-800 mt-4">
-        <div className="flex items-center space-x-2">
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-4 text-sm">
+        <span className="text-black font-medium text-500">
+          Showing {endIndex} of {totalItems}
+        </span>
+        <div className="flex gap-2">
           <button
-            onClick={() => setCurrentPage(1)}
+            onClick={handlePrev}
             disabled={currentPage === 1}
-            className={`px-2 text-lg ${currentPage === 1 ? "text-gray-400" : "hover:text-purple-600"}`}
+            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
           >
-            «
+            Prev
           </button>
           <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className={`px-2 text-lg ${currentPage === 1 ? "text-gray-400" : "hover:text-purple-600"}`}
-          >
-            ‹
-          </button>
-          <span className="px-3 py-1 rounded-md bg-white shadow text-purple-600">
-            {currentPage}
-          </span>
-          <span className="text-gray-600">
-            of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            onClick={handleNext}
             disabled={currentPage === totalPages}
-            className={`px-2 text-lg ${currentPage === totalPages ? "text-gray-400" : "hover:text-purple-600"}`}
+            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
           >
-            
-          </button>
-          <button
-            onClick={() => setCurrentPage(totalPages)}
-            disabled={currentPage === totalPages}
-            className={`px-2 text-lg ${currentPage === totalPages ? "text-gray-400" : "hover:text-purple-600"}`}
-          >
-            »
+            Next
           </button>
         </div>
       </div>
