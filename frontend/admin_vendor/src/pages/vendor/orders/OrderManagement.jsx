@@ -1,4 +1,8 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { FiEdit3 } from "react-icons/fi";
+import { PiPencilSimpleLineLight } from "react-icons/pi";
+
 
 const products = [
   { name: "Wheel Rim Refund", refundId: "RR4001", customer: "Arjun Nair", reason: "Damaged on delivery", status: "Approved", price: "₹4,499" },
@@ -20,6 +24,7 @@ const OrderManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDropdown, setShowDropdown] = useState(false);
   const itemsPerPage = 5;
+  
 
   const totalItems = products.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -149,7 +154,14 @@ const OrderManagement = () => {
                   </span>
                 </td>
                 <td className="p-3">{product.price}</td>
-                <td className="p-3 text-gray-500 hover:text-black cursor-pointer">✏️</td>
+                <td className="flex p-3 gap-2 text-gray-500 hover:text-black cursor-pointer">
+  <Link to={`/vendor/orders/2`}>
+    <PiPencilSimpleLineLight className="w-5 h-4 mb-2 text-gray-700" />
+  </Link>
+  <Link to={`/vendor/orders/1`} className="flex items-center text-[#5737B4] font-semibold">
+    View More
+  </Link>
+</td>
               </tr>
             ))}
           </tbody>

@@ -1,6 +1,7 @@
 import React from 'react';
 import bmw from '../../../assets/bmw.jpg';
-import { Link } from 'react-router-dom';
+import{ Link } from 'react-router-dom';
+
 
 
 
@@ -16,6 +17,10 @@ const orderHistory = [
   { label: 'Refund Initiated', date: '24 May 2025', status: 'pending' },
   { label: 'Refunded', date: '24 May 2025', status: 'pending' },
 ];
+
+    const handleClick = (tab) => {
+    setActiveTab(tab);
+  };
 
 const orderItems = [
   {
@@ -41,7 +46,9 @@ const orderItems = [
   }
 ];
 
-const OrderDetailView = () => {
+
+
+const OrderDetailEdit = () => {
   const subtotal = orderItems.reduce((acc, item) => acc + item.quantity * item.price, 0);
   const discount = 34;
   const delivery = 14;
@@ -53,9 +60,25 @@ const OrderDetailView = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-lg font-semibold text-[#3C3C3C]">
-          <span className="text-[#5737B4] font-bold text-3xl">Order Management</span> / Order ID : <span className="text-black">12323566</span>
+        <span className="text-[#5737B4] font-bold text-3xl">Order Management</span> / Edit Order ID : <span className="text-black">12323566</span>
         </h1>
+        <div className="flex items-end gap-6">
+            {/* <div className="p-2 pr-19 px-9 justify-left rounded text-[#5737B4] text-[#5737B4] font-medium border border-[#5737B4]">      
+                Actions 
+            </div> */}
+            <div>
+              <select className="w-full border border-purple-500 rounded-md px-5 py-2 text-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <option>Actions</option>
+                <option>Approved</option>
+                <option>Pending</option>
+                <option>Returned</option>
+                <option>Expired</option>
+              </select>
+            </div>
+            
+
         <button className="bg-[#5737B4] hover:bg-[#432d9c] text-white px-4 py-2 rounded">Print Invoice</button>
+      </div>
       </div>
       <p className="text-sm text-gray-600 mb-6">Date : 20 May 2025 , Time : 3:30 PM</p>
 
@@ -177,10 +200,6 @@ const OrderDetailView = () => {
   </table>
 </div>
 
-
-
-
-
       {/* Back Button */}
       <div className="mt-6">
         <Link to="/vendor/order">
@@ -191,4 +210,4 @@ const OrderDetailView = () => {
   );
 };
 
-export default OrderDetailView;
+export default OrderDetailEdit;

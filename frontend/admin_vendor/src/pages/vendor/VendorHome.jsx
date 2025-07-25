@@ -163,7 +163,7 @@ const VendorHome = () => {
         </ul>
       </div>
 
-
+            
       {/* Main Content */}
       <div
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}

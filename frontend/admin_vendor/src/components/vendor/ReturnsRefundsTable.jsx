@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import bmw from '../../assets/bmw.jpg'
+import { PiCreditCardBold } from "react-icons/pi";
+
 
 
 const ReturnsRefundsTable = () => {
@@ -234,9 +236,7 @@ const ReturnsRefundsTable = () => {
               {/* <span>Payment Method:</span> <span className="ml-2">{order.refundMethod}</span> */}
               <p className="fl">Amount Total : <span>₹ 410000</span> </p>
               <div className="ml-5">
-              <p className="pr-113 flex gap-3">PaymentMethod : <span className="flex gap-3"><svg className="w-5 h-5 mt-1 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M2 4h20a2 2 0 012 2v1H0V6a2 2 0 012-2zm-2 5v9a2 2 0 002 2h20a2 2 0 002-2V9H0zm6 3a1 1 0 100 2h4a1 1 0 100-2H6z" />
-        </svg>{order.refundMethod}</span> </p>
+              <p className="pr-113 flex gap-3">PaymentMethod : <span className="flex gap-3"><PiCreditCardBold className="w-5 h-5 mt-1" /></span>{order.refundMethod} </p>
               </div>
               
             </div>
@@ -285,9 +285,7 @@ const ReturnsRefundsTable = () => {
                       {order.refundStatus}
                     </span>
                     <div className="ml-5">
-              <p className="pr-90 flex gap-3">Refund Method : <span className="flex gap-3"><svg className="w-5 h-5 mt-1 text-gray-700" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M2 4h20a2 2 0 012 2v1H0V6a2 2 0 012-2zm-2 5v9a2 2 0 002 2h20a2 2 0 002-2V9H0zm6 3a1 1 0 100 2h4a1 1 0 100-2H6z" />
-        </svg>{order.refundMethod}</span> </p>
+              <p className="pr-90 flex gap-3">Refund Method : <span className="flex gap-3"><PiCreditCardBold className="w-5 h-5 mt-1" /></span>{order.refundMethod}  </p>
               </div>
                   </div>
                   <div className="flex justify-end items-end">
