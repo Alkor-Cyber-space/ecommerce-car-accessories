@@ -3,31 +3,51 @@ import { useDispatch, useSelector } from 'react-redux';
 import { setCredentials, setCurrentStep } from '../../store/vendorRegisterSlice';
 import { useNavigate, Link } from 'react-router-dom';
 import loggo from '../../assets/loggo.png';
+import { vendorRegisterApi } from '../../services/allAPI';
 
 export default function VendorRegister() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const {
+    username = "",
+    email = "",
+    phone = "",
+    password = ""
+  } = useSelector((state) => state.vendorRegister);
 
-  const { email, phone, password } = useSelector((state) => state.vendorRegister);
   const [confirmPassword, setConfirmPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
   // 🔁 Load from localStorage on mount
   useEffect(() => {
-    const savedData = JSON.parse(localStorage.getItem('vendorRegister'));
-    if (savedData) {
-      const { email, phone, password, rememberMe } = savedData;
-      dispatch(setCredentials({ email, phone, password }));
-      setRememberMe(rememberMe);
+    try {
+      const savedData = JSON.parse(localStorage.getItem('vendorRegister'));
+      if (
+        savedData &&
+        typeof savedData.username === 'string' &&
+        typeof savedData.email === 'string' &&
+        typeof savedData.phone === 'string' &&
+        typeof savedData.password === 'string'
+      ) {
+        dispatch(setCredentials({
+          username: savedData.username,
+          email: savedData.email,
+          phone: savedData.phone,
+          password: savedData.password
+        }));
+        setRememberMe(!!savedData.rememberMe);
+      }
+    } catch (err) {
+      console.error("Failed to parse vendorRegister from localStorage", err);
     }
   }, [dispatch]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!email || !phone || !password || !confirmPassword) {
+    if (!username || !email || !phone || !password || !confirmPassword) {
       return setError('All fields are required.');
     }
 
@@ -35,24 +55,29 @@ export default function VendorRegister() {
       return setError('Passwords do not match.');
     }
 
-    // ✅ Dispatch to Redux
-    dispatch(setCredentials({ email, phone, password }));
+    try {
+      // ✅ API Call
+      const result = await vendorRegisterApi({ username, email, phone_number: phone, password });
+      console.log("Step 1 success:", result);
 
-    // ✅ Save to localStorage if Remember Me is checked
-    if (rememberMe) {
-      localStorage.setItem(
-        'vendorRegister',
-        JSON.stringify({ email, phone, password, rememberMe: true })
-      );
-    } else {
-      localStorage.removeItem('vendorRegister');
+      // ✅ Save to Redux + LocalStorage
+      console.log("Dispatching credentials", { email, phone, password });
+
+      dispatch(setCredentials({ username, email, phone, password }));
+
+      if (rememberMe) {
+        localStorage.setItem('vendorRegister', JSON.stringify({ username, email, phone, password, rememberMe: true }));
+      } else {
+        localStorage.removeItem('vendorRegister');
+      }
+
+      dispatch(setCurrentStep(2));
+      navigate('/register/verifyOtp');
+    } catch (err) {
+      console.error(err);
+      setError(err?.detail || err?.message || "Something went wrong.");
     }
-
-    // ✅ Go to next step
-    dispatch(setCurrentStep(2));
-    navigate('/register/verifyOtp');
   };
-
   return (
     <div className="min-h-screen flex">
       {/* Left Section: Branding */}
@@ -67,10 +92,20 @@ export default function VendorRegister() {
 
           <form onSubmit={handleSubmit} className="space-y-4 w-full">
             <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) =>
+                dispatch(setCredentials({ username: e.target.value, email, phone, password }))
+              }
+              className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none focus:ring-0"
+            />
+
+            <input
               type="email"
               placeholder="Email"
               value={email}
-              onChange={(e) => dispatch(setCredentials({ email: e.target.value, phone, password }))}
+              onChange={(e) => dispatch(setCredentials({ username, email: e.target.value, phone, password }))}
               className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none focus:ring-0"
             />
 
@@ -78,14 +113,14 @@ export default function VendorRegister() {
               type="tel"
               placeholder="Phone"
               value={phone}
-              onChange={(e) => dispatch(setCredentials({ email, phone: e.target.value, password }))}
+              onChange={(e) => dispatch(setCredentials({ username, email, phone: e.target.value, password }))}
               className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none focus:ring-2 "
             />
             <input
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => dispatch(setCredentials({ email, phone, password: e.target.value }))}
+              onChange={(e) => dispatch(setCredentials({ username, email, phone, password: e.target.value }))}
               className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none focus:ring-2 "
             />
             <input

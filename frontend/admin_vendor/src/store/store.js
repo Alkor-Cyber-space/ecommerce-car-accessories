@@ -14,6 +14,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: ['productForm/updateImage',"productForm/updateField"],
         ignoredPaths: ['productForm.images'],
+
          isSerializable: (value) => {
           return typeof value !== "object" || value instanceof File || value instanceof Blob;
         },

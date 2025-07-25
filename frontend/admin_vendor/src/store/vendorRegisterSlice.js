@@ -91,7 +91,8 @@ const vendorRegisterSlice = createSlice({
 
     // ✅ Credentials + OTP
     setCredentials: (state, action) => {
-      const { email, phone, password } = action.payload;
+      const { username, email, phone, password } = action.payload;
+      state.username = username,
       state.email = email;
       state.phone = phone;
       state.password = password;
@@ -142,28 +143,32 @@ const vendorRegisterSlice = createSlice({
     },
 
     // ✅ Step 3: Business Docs
-    setBusinessDoc: (state, action) => {
-      const { key, file } = action.payload;
-      if (!state.businessDocs) {
-        state.businessDocs = {};
-      }
-      state.businessDocs[key] = file;
+  setBusinessDoc: (state, action) => {
+  const { key, file } = action.payload;
+  if (!state.businessDocs) {
+    state.businessDocs = {};
+  }
+  state.businessDocs[key] = {
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    preview: URL.createObjectURL(file), // optional
+  };
 
-      // ✅ Check all required docs uploaded
-      if (
-        state.businessDocs.gstinCertificate &&
-        state.businessDocs.registrationCertificate &&
-        state.businessDocs.shopLicense &&
-        !state.completedSteps.includes(3)
-      ) {
-        state.completedSteps.push(3);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
-    },
-
+  if (
+    state.businessDocs.gstinCertificate &&
+    state.businessDocs.registrationCertificate &&
+    state.businessDocs.shopLicense &&
+    !state.completedSteps.includes(3)
+  ) {
+    state.completedSteps.push(3);
+    localStorage.setItem(
+      "vendor_completed_steps",
+      JSON.stringify(state.completedSteps)
+    );
+  }
+}
+,
     // ✅ Step 4: Bank Details
     setBankDetails: (state, action) => {
       state.bankDetails = action.payload;
