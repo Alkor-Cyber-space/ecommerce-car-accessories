@@ -53,6 +53,12 @@ const AdminDashboard = () => {
       </div>
 
       {/* Users Overview */}
+       <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-gray-800">Users Overview</h2>
+        <button className="text-sm bg-[#5737B4] text-white px-4 py-1.5 rounded-full">
+          Download Report
+        </button>
+      </div>
       <div className='grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2 '>
         <div>
           <UsersOverview />

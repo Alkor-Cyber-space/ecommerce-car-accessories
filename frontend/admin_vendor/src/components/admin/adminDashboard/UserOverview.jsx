@@ -32,12 +32,7 @@ export default function UsersOverview() {
   return (
     <div className="bg-white rounded-[1rem] p-9 shadow border border-[#D8D8D8] max-w-xl w-full">
       {/* Title */}
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-800">Users Overview</h2>
-        <button className="text-sm bg-[#5737B4] text-white px-4 py-1.5 rounded-full">
-          Download Report
-        </button>
-      </div>
+     
 
       {/* Chart */}
       <div className="flex flex-col items-center">

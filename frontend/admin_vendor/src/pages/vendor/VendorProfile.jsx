@@ -1,105 +1,473 @@
-import React from "react";
-import {
-  FaEdit,
-  FaMapMarkerAlt,
-  FaPhone,
-  FaEnvelope,
-  FaStore,
-  FaRegBuilding,
-} from "react-icons/fa";
-
-const vendor = {
-  name: "AutoZone Traders",
-  owner: "Rahul Verma",
-  email: "vendor@autozone.com",
-  phone: "+91 98765 43210",
-  location: "Mumbai, Maharashtra, India",
-  businessType: "Car Spare Parts Retailer",
-  gstNumber: "27AAAPL1234C1ZV",
-  registrationId: "REG-2023-0192",
-  address: "123, Industrial Road, Auto Nagar, Mumbai",
-  documents: {
-    panCard: "/documents/pan_card.jpg",
-    aadharCard: "/documents/aadhar_card.jpg",
-    gstCertificate: "/documents/gst_certificate.jpg",
-    businessRegCert: "/documents/business_reg_cert.jpg",
-    shopLicense: "/documents/shop_license.jpg",
-    cancelledCheque: "/documents/cancelled_cheque.jpg",
-    bankStatement: "/documents/bank_statement.jpg",
-    itr: "/documents/itr.jpg",
-    balanceSheet: "/documents/balance_sheet.jpg",
-    vendorForm: "/documents/vendor_form.jpg",
-    ndaAgreement: "/documents/nda_agreement.jpg",
-    dealershipLetter: "/documents/dealership_letter.jpg",
-    signatoryLetter: "/documents/signatory_letter.jpg",
-  },
-};
+import React, { useRef, useState } from 'react';
+import { FaEye } from 'react-icons/fa';
+import { FiEdit3 } from "react-icons/fi";
+import { RiDeleteBinLine } from 'react-icons/ri';
 
 const VendorProfile = () => {
+
+  // edit modal---
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editSection, setEditSection] = useState(null); // 'business' | 'location' | 'bank'
+
+  const fileInputRef = useRef(null);
+  // const [fileName, setFileName] = useState('PANfile.pdf');
+
+  const handleReplaceDoc = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      console.log('Selected file:', file);
+      // You can update state or dispatch to Redux here
+      // setFileName(file.name);
+
+      // Example: Upload API logic here
+      // const formData = new FormData();
+      // formData.append("document", file);
+      // await axios.post("/upload-endpoint", formData);
+    }
+  };
+
+  // file change , also update time---------------
+  //   const fileInputRef = useRef(null);
+  const [replaceIndex, setReplaceIndex] = useState(null);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file && replaceIndex !== null) {
+      const updatedDocs = [...documents];
+
+      const timestamp = new Date().toLocaleString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+      });
+      console.log(timestamp);
+
+
+      // Update the selected document
+      updatedDocs[replaceIndex].fileName = file.name;
+      updatedDocs[replaceIndex].uploadedAt = timestamp;
+
+      // Update state
+      setDocuments(updatedDocs);
+      setReplaceIndex(null);
+
+      // Console logs for debugging
+      console.log("📄 File Replaced:");
+      console.log("→ New File Name:", file.name);
+      console.log("→ Updated At:", timestamp);
+      console.log("→ Updated Document Entry:", updatedDocs[replaceIndex]);
+      console.log("→ Full Documents State:", updatedDocs);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-6xl mx-auto bg-white shadow-2xl rounded-2xl overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Vendor Profile</h1>
-            <p className="text-sm text-blue-100">Manage and review your business information</p>
+    <div className="bg-[#ECECF0] px-8 py-10 rounded-2xl min-h-screen">
+      <h1 className="text-2xl text-[#5737B4] font-semibold">Profile & KYC</h1>
+      <p className="my-1">Manage your business details and documents.</p>
+
+      {/* Business Details Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+        <div className="bg-white rounded-lg px-5 py-6 shadow">
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold text-lg">Business Details</h2>
+            <FiEdit3 size={20}
+              onClick={() => {
+                setEditSection('business');
+                setIsEditModalOpen(true);
+              }}
+              className="cursor-pointer" />
           </div>
-          <button className="bg-white text-blue-600 hover:bg-blue-100 px-4 py-2 rounded-md flex items-center gap-2 font-medium">
-            <FaEdit /> Edit Profile
-          </button>
-        </div>
-
-        {/* Info Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white">
-          {[
-            { label: "Business Name", value: vendor.name, icon: <FaStore className="text-blue-500" /> },
-            { label: "Owner", value: vendor.owner },
-            { label: "Email", value: vendor.email, icon: <FaEnvelope className="text-gray-500" /> },
-            { label: "Phone", value: vendor.phone, icon: <FaPhone className="text-green-600" /> },
-            { label: "Location", value: vendor.location, icon: <FaMapMarkerAlt className="text-red-500" /> },
-            { label: "Business Type", value: vendor.businessType },
-            { label: "GST Number", value: vendor.gstNumber, icon: <FaRegBuilding className="text-indigo-600" /> },
-            { label: "Registration ID", value: vendor.registrationId },
-          ].map((item, i) => (
-            <div key={i} className="bg-slate-50 p-4 rounded-lg shadow flex items-start gap-3">
-              {item.icon && <div className="text-2xl mt-1">{item.icon}</div>}
-              <div>
-                <h4 className="text-sm text-gray-400">{item.label}</h4>
-                <p className="text-lg font-medium text-gray-800">{item.value}</p>
-              </div>
-            </div>
-          ))}
-
-          <div className="md:col-span-2">
-            <div className="bg-slate-50 p-4 rounded-lg shadow">
-              <h4 className="text-sm text-gray-400">Business Address</h4>
-              <p className="text-lg font-medium text-gray-800">{vendor.address}</p>
-            </div>
+          <div className="grid grid-cols-2 gap-y-5 mt-4">
+            <p className="font-semibold">Name</p>
+            <p>ABC Technologies</p>
+            <p className="font-semibold">Email</p>
+            <p>rahimtest4@gmail.com</p>
+            <p className="font-semibold">Phone</p>
+            <p>+91 8876546231</p>
+            <p className="font-semibold">GSTIN</p>
+            <p>37526509nhaghtu</p>
           </div>
         </div>
 
-        {/* Documents Section */}
-        <div className="border-t p-6 bg-white">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Required Documents</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {Object.entries(vendor.documents).map(([key, value]) => (
-              <div key={key} className="rounded-lg overflow-hidden border shadow-sm bg-white">
-                <div className="p-3 border-b bg-slate-50 text-center font-medium capitalize text-gray-600">
-                  {key.replace(/([A-Z])/g, " $1").trim()}
-                </div>
-                <img
-                  src={value}
-                  alt={key}
-                  className="w-full h-40 object-cover"
-                />
-              </div>
-            ))}
+        <div className="bg-white rounded-lg px-5 py-6  shadow">
+          <div className="flex justify-between items-center">
+            <h2 className="font-semibold text-lg">Location Details</h2>
+            <FiEdit3 size={20}
+              onClick={() => {
+                setEditSection('location');
+                setIsEditModalOpen(true);
+              }}
+              className="cursor-pointer" />
+          </div>
+          <div className=" grid grid-cols-2 mt-4 space-y-1">
+            <p className="font-semibold">Pick Up Location</p>
+            <div className='space-y-2'>
+              <p>ABC Technologies Edathala, Kakkanad - Kochi</p>
+              <p>Near Pulliparambu Kaavu Temple</p>
+              <button className="text-[#5737B4] mt-2 text-md ">
+                Use My Current Location
+              </button>
+            </div>
           </div>
         </div>
       </div>
+      {/* Bank Details */}
+      <div className="bg-white lg:w-[49.5%] md:w-full rounded-lg px-5 py-6 shadow mt-6">
+        <div className="flex justify-between items-center">
+          <h2 className="font-semibold text-lg">Bank Details</h2>
+          <FiEdit3 size={20}
+            onClick={() => {
+              setEditSection('bank');
+              setIsEditModalOpen(true);
+            }}
+            className="cursor-pointer" />
+        </div>
+        <div className="grid grid-cols-2 gap-y-5 mt-4">
+          <p className="font-semibold">Account Number</p>
+          <p>2113456789012</p>
+          <p className="font-semibold">Bank Name</p>
+          <p>HDFC Bank</p>
+          <p className="font-semibold">IFSC</p>
+          <p>HDFC0006234</p>
+          <p className="font-semibold">UPI</p>
+          <p>abc@hdfcbank</p>
+        </div>
+      </div>
+      {/* KYC Uploads */}
+      <div className="mt-6">
+        <h2 className="font-semibold text-lg mb-3">KYC Uploads</h2>
+        <div className="space-y-4">
+          <div className="flex justify-between items-center bg-white p-5 rounded shadow sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <p className='font-medium'>PAN Card</p>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div
+              onClick={() => fileInputRef.current.click()}
+              className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+
+          </div>
+
+          <div className="flex justify-between items-center bg-white p-5 rounded shadow sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className=' font-medium'>Passport <br /> / Aadhaar / License</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div
+              onClick={() => fileInputRef.current.click()}
+
+              className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Business Documents */}
+      <div className=" mt-6">
+        <h2 className="font-semibold text-lg mb-3">Business Documents</h2>
+        <div className="space-y-4">
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-yellow-600 font-medium">⏳Pending</p>
+            <span className='font-medium'>GSTIN Certificate</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">GSTNCertificatepdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div
+              onClick={() => fileInputRef.current.click()}
+              className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className='w-30 font-medium'>Business Registration</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div
+              onClick={() => {
+                setReplaceIndex();
+                fileInputRef.current.click();
+              }}
+              className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+              accept=".pdf,.jpg,.jpeg,.png"
+            />
+          </div>
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className='font-medium'>Shop &Establishment <br /> License</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Bank % tax DEtails */}
+      <div className=" mt-6">
+        <h2 className="font-semibold text-lg mb-3">Bank & Tax Details</h2>
+        <div className="space-y-4">
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-yellow-600 font-medium">⏳Pending</p>
+            <span className=' font-medium'>Cancelled Cheque</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">GSTNCertificatepdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className='font-medium'>Bank Passbook <br /> / Statement</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      {/* Tax Financial Records */}
+      <div className=" mt-6">
+        <h2 className="font-semibold text-lg mb-3">Tax Financial Records</h2>
+        <div className="space-y-4">
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className='font-medium'>IT Return</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className=' font-medium'>P&L Statement/<br />Balance Sheet</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* agreements & Supporting */}
+      <div className=" mt-6">
+        <h2 className="font-semibold text-lg mb-3">Agreements & Supporting Documents </h2>
+        <div className="space-y-4">
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-yellow-600 font-medium">⏳Pending</p>
+            <span className=' font-medium '>Filled Vendor <br />Registration Form</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">GSTNCertificatepdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className='md:w-60 sm:w-30 font-medium'>Signed NPA/Supply Agreement/Terms and Condition</span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className='w-60 font-medium'>Authorization Letter/ Dealership Certificate/ </span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
+            <p className="text-green-600 font-medium">✓ Verified</p>
+            <span className='w-60 font-medium'>Authorized Signatory Letter  </span>
+            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+            <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
+            <div className="text-[#5737B4] cursor-pointer text-md">Replace Document</div>
+            <div className='flex gap-5'>
+              <div><FaEye size={22} /></div>
+              <div><RiDeleteBinLine size={22} /></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end gap-4 mt-10">
+        <button
+          className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">Cancel</button>
+        <button
+          className={`px-16 py-2 bg-[#5737B4] rounded-md text-sm text-white font-medium transition`}
+        >
+          Save
+        </button>
+      </div>
+
+
+      <input
+        type="file"
+        accept=".pdf,.jpg,.jpeg,.png"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={handleReplaceDoc}
+      />
+
+      {/* modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+          <div className="bg-white rounded p-6 w-full max-w-md shadow-lg relative">
+            <button
+              className="absolute top-2 right-2 text-gray-600"
+              onClick={() => setIsEditModalOpen(false)}
+            >
+              ✕
+            </button>
+
+            <h2 className="text-xl font-semibold mb-4">
+              Edit {editSection === 'business' ? 'Business Details' :
+                editSection === 'location' ? 'Location Details' :
+                  'Bank Details'}
+            </h2>
+
+            {/* You can conditionally render forms based on section */}
+            {editSection === 'business' && (
+              <>
+                <input type="text" placeholder="Name" className="input-class" />
+                <input type="email" placeholder="Email" className="input-class" />
+                <input type="tel" placeholder="Phone" className="input-class" />
+                <input type="text" placeholder="GSTIN" className="input-class" />
+              </>
+            )}
+
+            {editSection === 'location' && (
+              <>
+                <input type="text" placeholder="Pick Up Location" className="input-class" />
+                <input type="text" placeholder="Nearby Landmark" className="input-class" />
+              </>
+            )}
+
+            {editSection === 'bank' && (
+              <>
+                <input type="text" placeholder="Account Number" className="input-class" />
+                <input type="text" placeholder="Bank Name" className="input-class" />
+                <input type="text" placeholder="IFSC" className="input-class" />
+                <input type="text" placeholder="UPI" className="input-class" />
+              </>
+            )}
+
+            <button
+              onClick={() => setIsEditModalOpen(false)}
+              className="mt-4 bg-[#5737B4] text-white px-4 py-2 rounded"
+            >
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
+
   );
 };
 
+
 export default VendorProfile;
+
+      // {/* maaped */}
+     
+      // {documents.map((doc, index) => (
+      //   <div key={index} className="flex justify-between items-center bg-white p-5 rounded shadow sm:gap-5">
+
+      //     {/* Status */}
+      //     <p className={`font-medium ${doc.status === "verified" ? "text-green-600" :
+      //         doc.status === "pending" ? "text-yellow-500" :
+      //           "text-red-500"
+      //       }`}>
+      //       {doc.status === "verified" ? "✓ Verified" :
+      //         doc.status === "pending" ? "⌛ Pending" :
+      //           "✗ Rejected"}
+      //     </p>
+
+      //     {/* Title */}
+      //     <p className="font-medium">{doc.title}</p>
+
+      //     {/* File Name */}
+      //     <span className="underline text-sm text-blue-600 cursor-pointer">{doc.fileName}</span>
+
+      //     {/* Uploaded Time */}
+      //     <p className="text-sm text-gray-700">
+      //       <span className='font-medium text-gray-900'>Uploaded At :</span> {doc.uploadedAt}
+      //     </p>
+
+      //     {/* Replace Document */}
+      //     <div
+      //       onClick={() => {
+      //         setReplaceIndex(index);
+      //         fileInputRef.current.click();
+      //       }}
+      //       className="text-[#5737B4] cursor-pointer text-md"
+      //     >
+      //       Replace Document
+      //     </div>
+
+      //     {/* Actions */}
+      //     <div className='flex gap-4'>
+      //       {/* View */}
+      //       <div onClick={() => handleViewDoc(doc.fileUrl)} className="cursor-pointer">
+      //         <FaEye size={22} />
+      //       </div>
+
+      //       {/* Reject */}
+      //       <div onClick={() => handleRejectDoc(index)} className="cursor-pointer text-red-600">
+      //         <RxCross2 size={22} />
+      //       </div>
+
+      //       {/* Delete */}
+      //       <div onClick={() => handleDeleteDoc(index)} className="cursor-pointer text-gray-600">
+      //         <RiDeleteBinLine size={22} />
+      //       </div>
+      //     </div>
+      //   </div>
+      // ))}
+      
+

@@ -91,8 +91,9 @@ const vendorRegisterSlice = createSlice({
 
     // ✅ Credentials + OTP
     setCredentials: (state, action) => {
-      const { email, phone, password } = action.payload;
-      state.email = email;
+      const { username, email, phone, password } = action.payload;
+      state.username = username,
+        state.email = email;
       state.phone = phone;
       state.password = password;
     },
@@ -147,9 +148,13 @@ const vendorRegisterSlice = createSlice({
       if (!state.businessDocs) {
         state.businessDocs = {};
       }
-      state.businessDocs[key] = file;
+      state.businessDocs[key] = {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        preview: URL.createObjectURL(file), // optional
+      };
 
-      // ✅ Check all required docs uploaded
       if (
         state.businessDocs.gstinCertificate &&
         state.businessDocs.registrationCertificate &&
@@ -162,8 +167,8 @@ const vendorRegisterSlice = createSlice({
           JSON.stringify(state.completedSteps)
         );
       }
-    },
-
+    }
+    ,
     // ✅ Step 4: Bank Details
     setBankDetails: (state, action) => {
       state.bankDetails = action.payload;

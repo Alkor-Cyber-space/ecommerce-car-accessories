@@ -52,6 +52,7 @@ import AuditLogs from './AuditLogs';
 import SalesAnalytics from './SalesAnalytics';
 import RevenueTrends from './RevenueTrends';
 import { BsGraphUpArrow } from 'react-icons/bs';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -65,6 +66,21 @@ const AdminHome = () => {
   const toggleDropdown = (menuName) => {
     setOpenDropdown(openDropdown === menuName ? '' : menuName);
   };
+  const location = useLocation();
+
+  const activePath = location.pathname;
+
+  const SidebarItem = ({ to, label, icon, activePath }) => (
+    <li>
+      <Link
+        to={to}
+        className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 
+        ${activePath === to ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
+      >
+        {icon} {label}
+      </Link>
+    </li>
+  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -132,107 +148,80 @@ const AdminHome = () => {
         className={`fixed top-0 left-0 h-full w-72  p-6 overflow-y-auto scrollbar-none z-40 transform transition-transform duration-300 ease-in-out ${showSidebar ? 'translate-x-0' : '-translate-x-full'
           }`}
       >
-        {/* <h1 className='text-4xl font-semibold px-4 py-7'>carooa</h1> */}
-        <ul className="space-y-4 py-10 text-md">
-
-
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Dashboard' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Dashboard')}>
-            <AiOutlineAppstore />Dashboard
-          </li>
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Sales Analytics' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Sales Analytics')}>
-            <BsGraphUpArrow />Sales Analytics
-          </li>
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Revenue Trends' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Revenue Trends')}>
-            <HiArrowTrendingUp />Revenue Trends
-          </li>
-
+        <ul className="space-y-4 text-md py-10 ">
+          <SidebarItem to="/admin/dashboard" label="Dashboard" icon={<AiOutlineAppstore />} activePath={activePath} />
+          <SidebarItem to="/admin/sales-analytics" label="Sales Analytics" icon={<BsGraphUpArrow />} activePath={activePath} />
+          <SidebarItem to="/admin/revenue-trends" label="Revenue Trends" icon={<HiArrowTrendingUp />} activePath={activePath} />
+          
           <li>
-            <div className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center" onClick={() => toggleDropdown('Inventory Control')}>
+            <div
+              className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
+              onClick={() => toggleDropdown("Inventory Control")}
+            >
               <span className="flex items-center gap-2">
-                <FaStar />Inventory Control
+                <FaStar /> Inventory Control
               </span>
-              {openDropdown === 'Inventory Control' ? <FaChevronDown /> : <FaChevronRight />}
+              {openDropdown === "Inventory Control" ? <FaChevronDown /> : <FaChevronRight />}
             </div>
-            {openDropdown === 'Inventory Control' && (
+            {openDropdown === "Inventory Control" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl ${activeTab === 'Inventory' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Inventory')}>
-                  <span className='flex gap-2 items-center'><MdOutlineInventory />Inventory Overview</span>
-                </li>
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Stock Management' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Stock Management')}>
-                  <span className='flex gap-2 items-center'><AiOutlineStock />Stock Management</span>
-                </li>
+                <SidebarItem to="/admin/inventory/overview" label="Inventory Overview" activePath={activePath} />
+                <SidebarItem to="/admin/inventory/stock" label="Stock Management" activePath={activePath} />
               </ul>
             )}
           </li>
 
           <li>
-            <div className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center" onClick={() => toggleDropdown('User & Vendor')}>
-              <span className="flex items-center gap-2"><FaUsers /> User & Vendor</span>
-              {openDropdown === 'User & Vendor' ? <FaChevronDown /> : <FaChevronRight />}
+            <div
+              className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
+              onClick={() => toggleDropdown("User & Vendor")}
+            >
+              <span className="flex items-center gap-2">
+                <FaUsers /> User & Vendor
+              </span>
+              {openDropdown === "User & Vendor" ? <FaChevronDown /> : <FaChevronRight />}
             </div>
-            {openDropdown === 'User & Vendor' && (
+            {openDropdown === "User & Vendor" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'User Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('User Overview')}>
-                  <span className='flex gap-2 items-center'><FaUser />User Overview</span>
-                </li>
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl   ${activeTab === 'Vendor Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Vendor Overview')}>
-                  <span className='flex gap-2 items-center'><FaUserTie />Vendor Overview</span>
-                </li>
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl   ${activeTab === 'Admin Overview' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white ' : ''}`} onClick={() => handleClick('Admin Overview')}>
-                  <span className='flex gap-2 items-center'><FaUserTie />Admins</span>
-                </li>
+                <SidebarItem to="/admin/users" label="User Overview" activePath={activePath} />
+                <SidebarItem to="/admin/vendors" label="Vendor Overview" activePath={activePath} />
+                <SidebarItem to="/admin/admins" label="Admin Overview" activePath={activePath} />
               </ul>
             )}
           </li>
 
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Financial Dashboard' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Financial Dashboard')}>
-            <PiCurrencyDollarSimpleBold /> Financial Dashboard
-          </li>
+          <SidebarItem to="/admin/settlements" label="Financial Dashboard" icon={<PiCurrencyDollarSimpleBold />} activePath={activePath} />
 
           <li>
-            <div className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl flex justify-between items-center" onClick={() => toggleDropdown('Reports')}>
-              <span className="flex items-center gap-2"><HiOutlineDocumentReport />
- Reports</span>
-              {openDropdown === 'Reports' ? <FaChevronDown /> : <FaChevronRight />}
+            <div
+              className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
+              onClick={() => toggleDropdown("Reports")}
+            >
+              <span className="flex items-center gap-2">
+                <HiOutlineDocumentReport /> Reports
+              </span>
+              {openDropdown === "Reports" ? <FaChevronDown /> : <FaChevronRight />}
             </div>
-            {openDropdown === 'Reports' && (
+            {openDropdown === "Reports" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Sales Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Sales Report')}>
-                  Sales Report
-                </li>
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Returns Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Returns Report')}>
-                  Returns Report
-                </li>
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Transaction Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Transaction Report')}>
-                  Transaction Report
-                </li>
-                <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl ${activeTab === 'Tax Report' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Tax Report')}>
-                  Tax Report
-                </li>
+                <SidebarItem to="/admin/reports/sales" label="Sales Report" activePath={activePath} />
+                <SidebarItem to="/admin/reports/returns" label="Returns Report" activePath={activePath} />
+                <SidebarItem to="/admin/reports/transactions" label="Transaction Report" activePath={activePath} />
+                <SidebarItem to="/admin/reports/tax" label="Tax Report" activePath={activePath} />
               </ul>
             )}
           </li>
 
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === 'Audit Logs' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Audit Logs')}>
-            {/* <PiPuzzlePieceFill />   */}
-            <PiCalculatorDuotone />Audit Logs
-          </li>
+          <SidebarItem to="/admin/performance" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
+          <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />
+          <SidebarItem to="/admin/profile" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
+          <SidebarItem to="/admin/profile" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
 
-          {/* <hr className="my-4 border-gray-500" /> */}
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Notifications' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Notifications')}>
-            <GrNotification />
- Notifications
-          </li>
-
-
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Account Settings' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Account Settings')}>
-            <GrUserSettings />
- Account Settings
-          </li>
-          <li className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2  rounded-3xl  flex items-center gap-2 ${activeTab === 'Support' ? 'bg-[#5737B4] rounded-3xl px-4 shadow-xl text-white' : ''}`} onClick={() => handleClick('Support')}>
-            <PiQuestion /> Support/Help
-          </li>
+          <hr className="my-4 border-gray-300" />
         </ul>
+
+    
+
       </div>
 
       {/* Main Content */}
@@ -267,7 +256,7 @@ const AdminHome = () => {
         </div>
 
         {/* Dynamic Component Render */}
-        {renderContent()}
+        <Outlet />
       </div>
     </div>
   );

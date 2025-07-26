@@ -1,11 +1,11 @@
-import { Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+// auth
 import AdminSignIn from './pages/auth/AdminSignin';
 import VendorSignIn from './pages/auth/VendorSignin';
-import VendorDashboard from './pages/vendor/VendorDashboard';
-import VendorHome from './pages/vendor/VendorHome';
-import AdminHome from './pages/admin/AdminHome';
-import VendorProfile from './pages/vendor/VendorProfile';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import VendorRegister from './pages/auth/vendorRegister';
 import Verify from './pages/auth/Verify';
@@ -20,33 +20,91 @@ import OrderDetailView from './pages/vendor/orders/OrderDetailView';
 import OrderDetailEdit from './pages/vendor/orders/OrderDetailEdit';
 import OrderManagement from './pages/vendor/orders/OrderManagement';
 
+// admin routes
+import AdminHome from './pages/admin/AdminHome';
+
+// vendor routes
+import VendorHome from './pages/vendor/VendorHome';
+import VendorDashboard from './pages/vendor/VendorDashboard';
+import VendorProfile from './pages/vendor/VendorProfile';
+import ProductLayout from './pages/vendor/ProductsLayout';
+import AddProduct from './pages/vendor/products/AddProduct';
+import ProductDetailView from './pages/vendor/products/ProductDetailView';
+import EditProduct from './pages/vendor/products/EditProduct';
+import ProductList from './pages/vendor/products/ManageProduct';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import SalesAnalytics from './pages/admin/SalesAnalytics';
+import CombinedChartPanel from './pages/admin/RevenueTrends';
+import UserDataTable from './components/admin/userAndVendor/UserData';
+import VendorDataTable from './components/admin/userAndVendor/VendorData';
+import AdminOverview from './components/admin/userAndVendor/AdminsData';
+import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
+import RevenueChart from './components/vendor/RevenueChart';
+
 function App() {
   return (
-    <Routes>
-      {/* Auth & Admin */}
-      <Route path="/signin" element={<AdminSignIn />} />
-      <Route path="/admin" element={<AdminHome />} />
-      <Route path="/login" element={<VendorSignIn />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/register/verifyOtp" element={<Verify />} />
-        <Route path='/register' element={<VendorRegister/>} />
+    <>
+      <Routes>
+        {/* Auth & Admin */}
+        <Route path="/signin" element={<AdminSignIn />} />
+        {/* <Route path="/admin" element={<AdminHome />} /> */}
+        <Route path="/login" element={<VendorSignIn />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/register/verifyOtp" element={<Verify />} />
+        <Route path='/register' element={<VendorRegister />} />
 
-      {/* Vendor Register Steps (Nested under /vendor-register) */}
-       <Route path="/vendor-register" element={<VendorRegisterLayout/>}>
-        <Route path="company-details" element={<CompanyDetails />} />
-        <Route path="contact-details" element={<ContactDetailsForm />} />
-        <Route path="kyc-documents" element={<KYCDocumentsUpload />} />
-        <Route path="business-documents" element={<BusinessDocumentsUpload />} />
-        <Route path="bank-details" element={<BankTaxDetailsUpload />} />
-        <Route path="agreements" element={<AgreementsUpload/>} />
-      </Route>
+        <Route path="/admin" element={<AdminHome />}>
+          <Route index element={<Navigate to="dashboard" />} />
+          <Route path="dashboard" element={<AdminDashboard />} />
+          <Route path="sales-analytics" element={<SalesAnalytics />} />
+          <Route path="revenue-trends" element={<CombinedChartPanel />} />
+          <Route path="users" element={<UserDataTable />} />
+          <Route path="vendors" element={<VendorDataTable />} />
+          <Route path="admins" element={<AdminOverview />} />
+          <Route path="Sales Report" element={<UserDataTable />} />
+          <Route path="vendors" element={<VendorDataTable />} />
+          <Route path="admins" element={<AdminOverview />} />
 
+
+        </Route>
+
+        {/* Vendor Register Steps (Nested under /vendor-register) */}
+        <Route path="/vendor-register" element={<VendorRegisterLayout />}>
+          <Route path="company-details" element={<CompanyDetails />} />
+          <Route path="contact-details" element={<ContactDetailsForm />} />
+          <Route path="kyc-documents" element={<KYCDocumentsUpload />} />
+          <Route path="business-documents" element={<BusinessDocumentsUpload />} />
+          <Route path="bank-details" element={<BankTaxDetailsUpload />} />
+          <Route path="agreements" element={<AgreementsUpload />} />
+        </Route>
+
+        {/* Vendor Dashboard */}
+        <Route path="/vendor" element={<VendorHome />} >
+          <Route path='dashboard' element={<VendorDashboard />} />
+          <Route path='profile' element={<VendorProfile />} />
+          <Route path="products" element={<ProductLayout />}>
+            <Route index element={<ProductList />} />
+            <Route path="add" element={<AddProduct />} />
+            <Route path="1" element={<ProductDetailView />} />
+            <Route path="1/edit" element={<EditProduct />} />
+            {/* <Route path="product/:productId" element={<ProductView />} /> */}
+          </Route>
+          <Route path='reviews' element={<RatingAndReviewLayout />} />
+          <Route path='orders' element={<RevenueChart />} />
+
+        </Route>
+
+        {/* <Route path="/vendor/profile" element={<VendorProfile />} />
+        <Route path='/vendor/Products' element={<ProductList/>}/>
+        <Route path="/vendor/add" element={<AddProduct />} />
+   */}
+      </Routes>
+      <ToastContainer position="top-right" autoClose={3000} />
+
+    </>
       {/* Vendor Dashboard */}
-      <Route path="/vendor" element={<VendorHome />} />
       <Route path="/vendor/orders" element={<OrderDetailView />} />
-      <Route path="/vendor/profile" element={<VendorProfile />} />
        <Route path='/vendor/order' element={<OrderManagement/>}/>
-
        <Route path='/vendor/orders/1' element={<OrderDetailView/>}/>
        <Route path='/vendor/orders/2' element={<OrderDetailEdit/>}/>'
 

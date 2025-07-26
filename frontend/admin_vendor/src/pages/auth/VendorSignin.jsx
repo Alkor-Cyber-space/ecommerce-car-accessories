@@ -129,9 +129,21 @@
 // }
 
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import loggo from '../../assets/loggo.png';
 export default function VendorSignIn() {
+  const navigate = useNavigate()
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // validate credentials
+    const success = true; // replace with real validation
+    if (success) {
+        // ✅ navigate after event, not during render
+        navigate("/vendor/dashboard");
+    }
+};
   return (
     <div className="min-h-screen flex">
       {/* Left Section: Branding */}
@@ -167,6 +179,7 @@ export default function VendorSignIn() {
 
             <button
               type="submit"
+              onClick={handleSubmit}
               className="w-full bg-[#5737B4] text-white py-3 rounded-2xl hover:opacity-90"
             >
               <h2 className="text-lg font-semibold">Login</h2>
