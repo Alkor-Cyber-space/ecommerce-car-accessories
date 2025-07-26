@@ -8,66 +8,79 @@ from django.contrib.auth import password_validation
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
-    role = serializers.CharField(max_length=10, write_only=True)
-
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'password', 'role')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ('id', 'username', 'email', 'password')
+        extra_kwargs = {
+            'password': {'write_only': True},
+        }
 
     def create(self, validated_data):
-        role = validated_data.pop('role', 'User')
         password = validated_data.pop('password')
         user = CustomUser(**validated_data)
         user.set_password(password)
-        if role == "Vendor":
-            user.is_active = False
         user.save()
 
-        group = Group.objects.get(name=role)
-        user.groups.add(group)
+        # Assign to "User" group by default
+        user_group, _ = Group.objects.get_or_create(name='User')
+        user.groups.add(user_group)
+
         return user
 
 
-class Step1VendorSerializer(serializers.ModelSerializer):
+class VendorRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-    model = CustomUser
-    fields = ['email', 'username', 'password', 'phone_number']
+
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'username', 'password']
 
     def create(self, validated_data):
         user = CustomUser.objects.create_user(**validated_data)
+
+        # Assign user to 'Vendor' group
+        vendor_group, created = Group.objects.get_or_create(name='Vendor')
+        user.groups.add(vendor_group)
+
         return user
 
-
-class Step2CompanySerializer(serializers.ModelSerializer):
+class Step1CompanySerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorProfile
-        fields = ['company_name']
+        fields = ['company_name', 'type_of_vendor', 'company_email', 'company_number']
 
 
-class Step3ContactSerializer(serializers.ModelSerializer):
+
+class Step2ContactSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorProfile
-        fields = ['contact_name', 'contact_email', 'contact_address']
+        fields = ['contact_name', 'contact_email', 'contact_number', 'designation']
 
 
-class Step4KYCSerializer(serializers.ModelSerializer):
+
+class Step3KYCSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorProfile
-        fields = ['kyc_name', 'pan_card', 'aadhar_passport_dl']
+        fields = ['pan_card', 'aadhar_passport_dl']
 
 
-class Step5BusinessDocsSerializer(serializers.ModelSerializer):
+class Step4BusinessDocsSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorProfile
         fields = ['gst_certificate', 'business_registration_cert', 'shop_license']
 
 
-class Step6BankTaxSerializer(serializers.ModelSerializer):
+
+class Step5BankTaxSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorProfile
         fields = ['cancelled_cheque', 'bank_statement', 'it_return', 'financial_statement']
 
+
+class Step6AgreementsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = ['dealership_letter', 'authorized_signatory_letter', 'vendor_registration_form', 'signed_terms_and_con']
 
 
 # class RegisterSerializer(serializers.ModelSerializer):
