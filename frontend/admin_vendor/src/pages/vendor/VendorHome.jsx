@@ -20,6 +20,9 @@ import VendorProfile from "./VendorProfile";
 
 import logo from "../../assets/logo.png";
 import ProductList from "../../components/vendor/products/manageProduct";
+import ReturnsRefundsTable from "../../components/vendor/ReturnsRefundsTable";
+import OrderManagement from "./orders/OrderManagement";
+
 
 const VendorHome = () => {
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -44,8 +47,9 @@ const VendorHome = () => {
     switch (activeTab) {
       case "Dashboard": return <VendorDashboard />;
       case "Product Manager": return <ProductList />;
-      case "Orders": return <Orders />;
-      case "Returns": return <Returns />;
+      case "Orders": return <OrderManagement />;
+      // case "Order Management": return <OderManagement/>
+      case "Returns": return <ReturnsRefundsTable/>;
       case "Promotions": return <Promotions />;
       case "Settlements": return <Settlements />;
       case "Performance": return <PerformanceMetrics />;
@@ -110,7 +114,7 @@ const VendorHome = () => {
             className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Orders" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
             onClick={() => handleClick("Orders")}
           >
-            <FaListAlt /> Orders
+            <FaListAlt /> Order Management
           </li>
 
           <li
@@ -159,7 +163,7 @@ const VendorHome = () => {
         </ul>
       </div>
 
-
+            
       {/* Main Content */}
       <div
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
