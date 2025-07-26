@@ -41,6 +41,7 @@ import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
 import RevenueChart from './components/vendor/RevenueChart';
 
+
 function App() {
   return (
     <>
@@ -90,7 +91,14 @@ function App() {
             {/* <Route path="product/:productId" element={<ProductView />} /> */}
           </Route>
           <Route path='reviews' element={<RatingAndReviewLayout />} />
-          <Route path='orders' element={<RevenueChart />} />
+          <Route path='orders' element={<OrderManagement />} >
+
+          </Route>
+       <Route path='/vendor/order' element={<OrderManagement/>}/>
+             <Route path="/vendor/orders" element={<OrderDetailView />} />
+
+       <Route path='/vendor/orders/1' element={<OrderDetailView/>}/>
+       <Route path='/vendor/orders/2' element={<OrderDetailEdit/>}/>
 
         </Route>
 
@@ -102,13 +110,7 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
 
     </>
-      {/* Vendor Dashboard */}
-      <Route path="/vendor/orders" element={<OrderDetailView />} />
-       <Route path='/vendor/order' element={<OrderManagement/>}/>
-       <Route path='/vendor/orders/1' element={<OrderDetailView/>}/>
-       <Route path='/vendor/orders/2' element={<OrderDetailEdit/>}/>'
-
-    </Routes>
+     
   );
 }
 

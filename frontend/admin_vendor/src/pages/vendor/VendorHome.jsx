@@ -10,9 +10,6 @@ import { IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
 
 import user from "../../assets/user.jpg";
-import ProductList from "../../components/vendor/products/manageProduct";
-import ReturnsRefundsTable from "../../components/vendor/ReturnsRefundsTable";
-import OrderManagement from "./orders/OrderManagement";
 
 
 const VendorHome = () => {
@@ -27,7 +24,6 @@ const VendorHome = () => {
     navigate("/vendor/login");
   };
 
-  };
   const SidebarItem = ({ to, label, icon, activePath }) => (
     <li>
       <Link
@@ -64,77 +60,7 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
           <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
           <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />
-          <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} /
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Dashboard" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Dashboard")}
-          >
-            <MdOutlineDashboard /> Dashboard
-          </li>
-
-          {/* Product Management */}
-          <li>
-            <div
-              className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
-              onClick={() => toggleDropdown("Products")}
-            >
-              <span className="flex items-center gap-2"><FaBoxOpen /> Products</span>
-              {openDropdown === "Products" ? <FaChevronDown /> : <FaChevronRight />}
-            </div>
-            {openDropdown === "Products" && (
-              <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li
-                  className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl ${activeTab === "Product Manager" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-                  onClick={() => handleClick("Product Manager")}
-                >
-                  Manage Products
-                </li>
-              </ul>
-            )}
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Orders" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Orders")}
-          >
-            <FaListAlt /> Order Management
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Returns" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Returns")}
-          >
-            <FaTruckLoading /> Returns & Refunds
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Promotions" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Promotions")}
-          >
-            <FaTags /> Promotions
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Settlements" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Settlements")}
-          >
-            💰 Settlements
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Performance" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Performance")}
-          >
-            <FaChartBar /> Performance Metrics
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Profile" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Profile")}
-          >
-            <FaUserCircle /> Vendor Profile
-          </li>
+          <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 
