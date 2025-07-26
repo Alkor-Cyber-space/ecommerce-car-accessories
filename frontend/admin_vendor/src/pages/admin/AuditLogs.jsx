@@ -42,61 +42,61 @@ export default function AuditLogs() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
       <h1 className="text-2xl font-bold">Audit Logs</h1>
 
       {/* Search input */}
-      <div className="flex gap-2 items-center">
+      <div className="flex gapy-4 text-left px-2 items-center">
         <input
-          className="border px-4 py-2 rounded w-1/2"
+          className=" bg-white px-4 py-2 rounded w-1/2"
           placeholder="Search by user, action, or IP..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
         <button
           onClick={() => setSearch("")}
-          className="bg-gray-200 px-4 py-2 rounded"
+          className="border-2 border-[#5737B4] text-[#5737B4] hover:bg-[#5737B4] hover:text-white active:bg-[#5737B4] active:text-white px-4 py-2 rounded transition duration-300"
         >
           Clear
         </button>
       </div>
 
       {/* Logs table */}
-      <div className="bg-white shadow rounded p-4">
-        <table className="w-full text-left border-collapse">
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white rounded-md text-sm shadow">
           <thead>
-            <tr className="bg-gray-100">
+            <tr >
               <th
-                className="p-2 border cursor-pointer"
+                className="py-4 text-left px-2  cursor-pointer"
                 onClick={() => handleSort("date")}
               >
                 Date{" "}
                 {sortBy === "date" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
               </th>
-              <th className="p-2 border">User</th>
+              <th className="py-4 text-left px-2 ">User</th>
               <th
-                className="p-2 border cursor-pointer"
+                className="py-4 text-left px-2  cursor-pointer"
                 onClick={() => handleSort("action")}
               >
                 Action{" "}
                 {sortBy === "action" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
               </th>
-              <th className="p-2 border">IP Address</th>
+              <th className="py-4 text-left px-2 ">IP Address</th>
             </tr>
           </thead>
           <tbody>
             {filteredLogs.length > 0 ? (
               filteredLogs.map((log, idx) => (
                 <tr key={idx} className="hover:bg-gray-50">
-                  <td className="p-2 border">{log.date}</td>
-                  <td className="p-2 border">{log.user}</td>
-                  <td className="p-2 border">{log.action}</td>
-                  <td className="p-2 border">{log.ip}</td>
+                  <td className="py-4 text-left px-2 ">{log.date}</td>
+                  <td className="py-4 text-left px-2 ">{log.user}</td>
+                  <td className="py-4 text-left px-2 ">{log.action}</td>
+                  <td className="py-4 text-left px-2 ">{log.ip}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td className="p-2 border text-center" colSpan="4">
+                <td className="py-4 text-left px-2  text-center" colSpan="4">
                   No results found.
                 </td>
               </tr>
