@@ -16,6 +16,9 @@ import KYCDocumentsUpload from './pages/vendor/registerforms/KYCDocUpload';
 import BusinessDocumentsUpload from './pages/vendor/registerforms/BusinessDocumentsUpload';
 import BankTaxDetailsUpload from './pages/vendor/registerforms/BankTaxDetailsUpload';
 import AgreementsUpload from './pages/vendor/registerforms/AgreementsUpload';
+import OrderDetailView from './pages/vendor/orders/OrderDetailView';
+import OrderDetailEdit from './pages/vendor/orders/OrderDetailEdit';
+import OrderManagement from './pages/vendor/orders/OrderManagement';
 
 // admin routes
 import AdminHome from './pages/admin/AdminHome';
@@ -40,7 +43,6 @@ import RevenueChart from './components/vendor/RevenueChart';
 
 function App() {
   return (
-
     <>
       <Routes>
         {/* Auth & Admin */}
@@ -100,6 +102,13 @@ function App() {
       <ToastContainer position="top-right" autoClose={3000} />
 
     </>
+      {/* Vendor Dashboard */}
+      <Route path="/vendor/orders" element={<OrderDetailView />} />
+       <Route path='/vendor/order' element={<OrderManagement/>}/>
+       <Route path='/vendor/orders/1' element={<OrderDetailView/>}/>
+       <Route path='/vendor/orders/2' element={<OrderDetailEdit/>}/>'
+
+    </Routes>
   );
 }
 
