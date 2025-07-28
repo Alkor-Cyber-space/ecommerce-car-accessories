@@ -76,7 +76,7 @@ export default function EditProduct() {
     return (
         <div className="bg-[#ECECF0] min-h-screen">
             <div className="flex justify-between mb-3">
-                <h1 className="text-2xl font-bold mb-6">
+                <h1 className="text-2xl font-semibold mb-6">
                     <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
                         Product Management
                     </Link>

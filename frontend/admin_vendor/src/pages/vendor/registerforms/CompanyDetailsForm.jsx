@@ -3,6 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setCompanyDetails, setCurrentStep } from "../../../store/vendorRegisterSlice";
 import { IoIosArrowDropleftCircle } from "react-icons/io";
+import { companyDetailsApi } from "../../../services/allAPI";
 
 
 export default function CompanyDetails() {
@@ -15,12 +16,14 @@ export default function CompanyDetails() {
     return saved
       ? JSON.parse(saved)
       : {
-          companyName: "",
-          vendorType: "",
-          email: "",
-          phone: "",
+          company_name: "",
+          type_of_vendor: "",
+          company_email: "",
+          company_number: "",
         };
   });
+ 
+ const vendorId = localStorage.getItem("vendorId"); // adjust source if needed
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,21 +35,31 @@ export default function CompanyDetails() {
 
   const isFormComplete = Object.values(formData).every((val) => val.trim() !== "");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormComplete) return;
 
-    // ✅ Dispatch to Redux
-    dispatch(setCompanyDetails(formData));
-    dispatch(setCurrentStep(1));
+    try {
+      const res = await companyDetailsApi(formData, vendorId);
+      console.log("API response:", res);
 
-    // 💾 Save to localStorage
-    localStorage.setItem("vendorCompanyDetails", JSON.stringify(formData));
-    setTimeout(() => {
-      navigate("/vendor-register/contact-details");
-    }, 100);
+      toast.success("✅ Company details saved!");
+
+      // Save locally
+      localStorage.setItem("vendorCompanyDetails", JSON.stringify(formData));
+
+      // Save to Redux
+      dispatch(setCompanyDetails(formData));
+      dispatch(setCurrentStep(1));
+
+      setTimeout(() => {
+        navigate("/vendor-register/contact-details");
+      }, 200);
+    } catch (err) {
+      console.error("API error:", err);
+      toast.error(`❌ Failed to save company details: ${err?.message || "Try again"}`);
+    }
   };
-
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
   
@@ -55,24 +68,24 @@ export default function CompanyDetails() {
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input
             type="text"
-            name="companyName"
+            name="company_name"
             placeholder="Company/Business Name"
-            value={formData.companyName}
+            value={formData.company_name}
             onChange={handleChange}
             className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
             required
           />
           <div className="relative">
             <select
-              name="vendorType"
-              value={formData.vendorType}
+              name="type_of_vendor"
+              value={formData.type_of_vendor}
               onChange={handleChange}
               className={`appearance-none w-full px-4 py-3 pr-10 rounded-lg bg-white font-semibold focus:ring-2
-              ${formData.vendorType ? "text-black" : "text-[#7F7F7F]"}`}
+              ${formData.type_of_vendor ? "text-black" : "text-[#7F7F7F]"}`}
               required
             >
               <option value="">Type of Vendor</option>
-              <option value="retail">Retailer</option>
+              <option value="business">Business</option>
               <option value="wholesale">Wholesaler</option>
             </select>
 
@@ -84,18 +97,18 @@ export default function CompanyDetails() {
 
           <input
             type="email"
-            name="email"
+            name="company_email"
             placeholder="Email"
-            value={formData.email}
+            value={formData.company_email}
             onChange={handleChange}
             className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
             required
           />
           <input
             type="tel"
-            name="phone"
+            name="company_number"
             placeholder="+91 9876543210"
-            value={formData.phone}
+            value={formData.company_number}
             onChange={handleChange}
             className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
             required

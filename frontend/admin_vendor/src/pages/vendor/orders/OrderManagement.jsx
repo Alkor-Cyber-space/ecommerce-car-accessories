@@ -24,7 +24,7 @@ const OrderManagement = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [showDropdown, setShowDropdown] = useState(false);
   const itemsPerPage = 5;
-  
+
 
   const totalItems = products.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -42,11 +42,11 @@ const OrderManagement = () => {
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className=" bg-[#ECECF0] rounded-2xl min-h-screen px-4 sm:px-6 py-8">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">Order Management</h2>
-        <button className="bg-purple-600 text-white text-sm px-4 py-2 rounded hover:bg-purple-700 flex items-center">
+        <button className="bg-[#5737B4] text-white text-sm px-4 py-2 rounded  flex items-center">
           Download Report
         </button>
       </div>
@@ -59,12 +59,12 @@ const OrderManagement = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
-              <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500">
+              <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5737B4]">
                 <option>Select Status</option>
                 <option>Approved</option>
                 <option>Pending</option>
@@ -79,7 +79,7 @@ const OrderManagement = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">Buyer Name</label>
               <input
                 type="text"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -87,14 +87,14 @@ const OrderManagement = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date - From</label>
                 <input
                   type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Date - To</label>
                 <input
                   type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
                 />
               </div>
             </div>
@@ -105,7 +105,7 @@ const OrderManagement = () => {
           <button className="border border-gray-300 text-gray-700 px-6 py-2 text-sm rounded-md hover:bg-gray-50">
             Reset
           </button>
-          <button className="bg-purple-600 text-white px-6 py-2 text-sm rounded-md hover:bg-purple-700">
+          <button className="bg-[#5737B4] text-white px-6 py-2 text-sm rounded-md hover:bg-[#5737B4]">
             Search
           </button>
         </div>
@@ -136,32 +136,31 @@ const OrderManagement = () => {
                 <td className="p-3">{product.reason}</td>
                 <td className="p-3">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      product.status === "Approved"
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${product.status === "Approved"
                         ? "bg-green-100 text-green-600"
                         : product.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-600"
-                        : product.status === "Expired"
-                        ? "bg-red-100 text-red-600"
-                        : product.status === "Received"
-                        ? "bg-blue-100 text-blue-600"
-                        : product.status === "Returned"
-                        ? "bg-purple-100 text-purple-600"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
+                          ? "bg-yellow-100 text-yellow-600"
+                          : product.status === "Expired"
+                            ? "bg-red-100 text-red-600"
+                            : product.status === "Received"
+                              ? "bg-blue-100 text-blue-600"
+                              : product.status === "Returned"
+                                ? "bg-purple-100 text-purple-600"
+                                : "bg-gray-100 text-gray-600"
+                      }`}
                   >
                     {product.status}
                   </span>
                 </td>
                 <td className="p-3">{product.price}</td>
-                <td className="flex p-3 gap-2 text-gray-500 hover:text-black cursor-pointer">
-  <Link to={`/vendor/orders/2`}>
-    <PiPencilSimpleLineLight className="w-5 h-4 mb-2 text-gray-700" />
-  </Link>
-  <Link to={`/vendor/orders/1`} className="flex items-center text-[#5737B4] font-semibold">
-    View More
-  </Link>
-</td>
+                <td className="flex p-3 gap-4 text-gray-500 hover:text-black cursor-pointer">
+                  <Link to={`/vendor/orders/edit-order`}>
+                    <PiPencilSimpleLineLight className="text-lg mb-2 text-gray-700" />
+                  </Link>
+                  <Link to={`/vendor/orders/order-detail`} className="flex items-center text-[#5737B4] font-semibold">
+                    View More
+                  </Link>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -170,7 +169,7 @@ const OrderManagement = () => {
 
       {/* Pagination */}
       <div className="flex justify-between items-center mt-4 text-sm">
-        <span className="text-black font-medium text-500">
+        <span className="text-[#505050] font-medium ">
           Showing {endIndex} of {totalItems}
         </span>
         <div className="flex gap-2">

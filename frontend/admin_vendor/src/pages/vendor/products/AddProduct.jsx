@@ -136,15 +136,14 @@ const AddProduct = () => {
 
     return (
         <>
-
             <div className="flex justify-between items-end gap-4 mb-4">
-                <h1 className="text-2xl font-bold my-3">
+                <h1 className="text-2xl font-semibold mb-3">
                     <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
                         Product Management
                     </Link>
                     / Add Product
                 </h1>
-                <div className="flex md:flex-row lg:flex-row sm:flex-col gap-2 my-3 items-center">
+                <div className="flex md:flex-row lg:flex-row sm:flex-col gap-2 mb-3 items-center">
                     <div className="sm:flex gap-2">
                         <span className="text-sm font-medium text-[#5737B4]">Product Active</span>
                         <div
