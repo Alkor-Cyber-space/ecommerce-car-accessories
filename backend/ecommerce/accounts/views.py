@@ -55,7 +55,7 @@ class UserViewSet(viewsets.ViewSet):
             if not user:
                 user = User.objects.filter(username=email_or_username).first()
             if user:
-                user = authenticate(request, username=user.email, password=password)
+                user = authenticate(request, email=user.email, password=password)
         except User.DoesNotExist:
             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         if user:
@@ -111,7 +111,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         user = serializer.save()
 
         # Deactivate vendor until verification
-        user.is_active = False
+        user.is_active = True
         user.save()
 
         # Create vendor profile
@@ -124,20 +124,22 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
 
+        print("Email or Username:", email_or_username)
+
         if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-        try:
-            user = User.objects.filter(email=email_or_username).first()
-            if not user:
-                user = User.objects.filter(username=email_or_username).first()
-            if user:
-                user = authenticate(request, username=user.email, password=password)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        user = User.objects.filter(email=email_or_username).first()
+        if not user:
+            user = User.objects.filter(username=email_or_username).first()
 
-        if user and hasattr(user, 'vendorprofile'):
+        if user:
+            print(user.email, user.username)
+            user = authenticate(request, username=user.email, password=password)
+        print("Authenticated User:", user)
+        print("Has Vendor Profile:", hasattr(user, 'vendorprofile'))
+        # if user and hasattr(user, 'vendorprofile'):
+        if user:
             refresh = RefreshToken.for_user(user)
             return Response({
                 "access": str(refresh.access_token),
@@ -145,6 +147,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid vendor credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
     @action(detail=False, methods=['post'], url_path='step1/(?P<user_id>[^/.]+)')

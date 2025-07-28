@@ -212,6 +212,12 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
+# AUTHENTICATION_BACKENDS = [
+#     'accounts.auth_backend.EmailBackend',  
+#     'django.contrib.auth.backends.ModelBackend',  # Optional fallback
+# ]
+
+
 EMAIL_BACKEND = env('EMAIL_BACKEND')
 EMAIL_HOST = env('EMAIL_HOST')
 EMAIL_PORT = env('EMAIL_PORT')

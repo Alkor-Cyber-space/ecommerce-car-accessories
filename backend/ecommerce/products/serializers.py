@@ -36,9 +36,12 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at',
+            'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at',"manufacturing_date","tag","size",
             'category', 'category_id', 'images', 'compatible_variant_year'
         ]
+        extra_kwargs = {
+            'size': {'required': False, 'allow_null': True, 'allow_blank': True},
+        }
         
     def validate(self, attrs):
         if not attrs.get('name'):
