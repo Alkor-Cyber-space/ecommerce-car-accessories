@@ -40,6 +40,9 @@ import VendorDataTable from './components/admin/userAndVendor/VendorData';
 import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
 import RevenueChart from './components/vendor/RevenueChart';
+import Notification from './pages/vendor/Notification';
+
+
 
 
 function App() {
@@ -94,7 +97,8 @@ function App() {
           <Route path='orders' element={<OrderManagement />} >
 
           </Route>
-       <Route path='/vendor/order' element={<OrderManagement/>}/>
+             <Route path='notification' element={<Notification />}/>
+             <Route path='/vendor/order' element={<OrderManagement/>}/>
              <Route path="/vendor/orders" element={<OrderDetailView />} />
 
        <Route path='/vendor/orders/1' element={<OrderDetailView/>}/>
