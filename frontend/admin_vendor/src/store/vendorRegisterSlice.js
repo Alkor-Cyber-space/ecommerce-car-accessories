@@ -147,7 +147,6 @@ const vendorRegisterSlice = createSlice({
         name: file.name,
         size: file.size,
         type: file.type,
-        preview: URL.createObjectURL(file), // optional
       };
 
       if (

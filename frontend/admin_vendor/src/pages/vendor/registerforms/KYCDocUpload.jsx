@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { addKycDocument, setCurrentStep } from "../../../store/vendorRegisterSlice";
+import { uploadKYCDocumentsApi } from "../../../services/allAPI";
 
 export default function KYCDocumentsUpload() {
   const dispatch = useDispatch();
@@ -45,19 +46,33 @@ export default function KYCDocumentsUpload() {
 
   const isFormComplete = panCard && identityProof;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormComplete) return;
+    const vendorId = localStorage.getItem("vendorId");
 
-    // Dispatch to Redux
-    dispatch(addKycDocument({ id: "pan", ...panCard }));
-    dispatch(addKycDocument({ id: "identity", ...identityProof }));
-    dispatch(setCurrentStep(3));
+    if (!vendorId) {
+      toast.error("Vendor ID missing");
+      return;
+    }
+    try {
+      const response = await uploadKYCDocumentsApi(vendorId)
+      console.log(response.data);
 
-    // Proceed
-    setTimeout(() => {
-      navigate("/vendor-register/business-documents");
-    }, 100);
+      dispatch(addKycDocument({ id: "pan", ...panCard }));
+      dispatch(addKycDocument({ id: "identity", ...identityProof }));
+      dispatch(setCurrentStep(3));
+
+      // Proceed
+      setTimeout(() => {
+        navigate("/vendor-register/business-documents");
+      }, 100);
+
+    } catch (error) {
+      console.error("Error uploading KYC documents:", error);
+      toast.error("Failed to upload KYC documents. Try again.");
+      return;
+    }
   };
 
   return (

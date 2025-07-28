@@ -1,29 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setCompanyDetails, setCurrentStep } from "../../../store/vendorRegisterSlice";
-import { IoIosArrowDropleftCircle } from "react-icons/io";
 import { companyDetailsApi } from "../../../services/allAPI";
-
+import { toast } from "react-toastify";
 
 export default function CompanyDetails() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // 🔁 Load saved data from localStorage (if exists)
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("vendorCompanyDetails");
     return saved
       ? JSON.parse(saved)
       : {
-          company_name: "",
-          type_of_vendor: "",
-          company_email: "",
-          company_number: "",
-        };
+        company_name: "",
+        type_of_vendor: "",
+        company_email: "",
+        company_number: "",
+      };
   });
- 
- const vendorId = localStorage.getItem("vendorId"); // adjust source if needed
+
+  const [loading, setLoading] = useState(false);
+  const vendorId = localStorage.getItem("vendorId");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -38,17 +37,20 @@ export default function CompanyDetails() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormComplete) return;
-
+    setLoading(true);
     try {
       const res = await companyDetailsApi(formData, vendorId);
       console.log("API response:", res);
-
-      toast.success("✅ Company details saved!");
-
-      // Save locally
+      // pass data from backend
+      if (res?.data?.email && Array.isArray(res.data.email)) {
+        const emailError = res.data.email[0];
+        toast.error(` ${emailError}`);
+        setLoading(false);
+        return;
+      }
+      toast.success(" Company details saved!");
       localStorage.setItem("vendorCompanyDetails", JSON.stringify(formData));
-
-      // Save to Redux
+      localStorage.setItem("vendorId", vendorId);
       dispatch(setCompanyDetails(formData));
       dispatch(setCurrentStep(1));
 
@@ -57,14 +59,18 @@ export default function CompanyDetails() {
       }, 200);
     } catch (err) {
       console.error("API error:", err);
-      toast.error(`❌ Failed to save company details: ${err?.message || "Try again"}`);
+      toast.error(` Failed to save company details: ${err?.message || "Try again"}`);
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
-  
       <div className="w-full max-w-2xl p-8 mx-auto my-10">
         <h1 className="text-5xl font-bold text-[#232832] mb-6">Company Details</h1>
+
+
         <form className="space-y-4" onSubmit={handleSubmit}>
           <input
             type="text"
@@ -75,6 +81,7 @@ export default function CompanyDetails() {
             className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
             required
           />
+
           <div className="relative">
             <select
               name="type_of_vendor"
@@ -89,7 +96,6 @@ export default function CompanyDetails() {
               <option value="wholesale">Wholesaler</option>
             </select>
 
-            {/* Dropdown Icon */}
             <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7F7F7F]">
               ▼
             </div>
@@ -113,13 +119,17 @@ export default function CompanyDetails() {
             className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
             required
           />
+
           <button
             type="submit"
-            disabled={!isFormComplete}
+            disabled={!isFormComplete || loading}
             className={`w-full py-3 rounded-3xl text-white transition mt-5 
-              ${isFormComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"}`}
+              ${isFormComplete && !loading
+                ? "bg-[#5737B4] hover:bg-[#432a91]"
+                : "bg-[#D8D8D8] cursor-not-allowed"
+              }`}
           >
-            Save & Continue
+            {loading ? "Saving..." : "Save & Continue"}
           </button>
         </form>
       </div>

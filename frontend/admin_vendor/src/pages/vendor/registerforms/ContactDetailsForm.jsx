@@ -2,10 +2,13 @@ import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setContactDetails, setCurrentStep } from "../../../store/vendorRegisterSlice";
+import { contactDetailsApi } from "../../../services/allAPI";
+import { toast } from "react-toastify";
 
 export default function ContactDetailsForm() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   // 🔁 Load from localStorage on init
   const [formData, setFormData] = useState(() => {
@@ -13,11 +16,11 @@ export default function ContactDetailsForm() {
     return saved
       ? JSON.parse(saved)
       : {
-          contactPersonName: "",
-          designation: "",
-          contactNumber: "",
-          contactEmail: "",
-        };
+        contactPersonName: "",
+        designation: "",
+        contactNumber: "",
+        contactEmail: "",
+      };
   });
 
   const handleChange = (e) => {
@@ -30,21 +33,49 @@ export default function ContactDetailsForm() {
 
   const isFormComplete = Object.values(formData).every((val) => val.trim() !== "");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!isFormComplete) return;
 
-    // ✅ Save to Redux
-    dispatch(setContactDetails(formData));
-    dispatch(setCurrentStep(2));
+    const vendorId = localStorage.getItem("vendorId");
 
-    // 💾 Save to localStorage
-    localStorage.setItem("vendorContactDetails", JSON.stringify(formData));
+    if (!vendorId) {
+      toast.error("Vendor ID missing");
+      return;
+    }
+    setLoading(true);
 
-    setTimeout(() => {
-      navigate("/vendor-register/kyc-documents");
-    }, 100);
+    try {
+      const response = await contactDetailsApi(vendorId, formData);
+      console.log(response);
+      // if (response?.data?.email && Array.isArray(response.data.email)) {
+      //         const emailError = response.data.email[0];
+      //         toast.error(` ${emailError}`);
+      //         setLoading(false);
+      //         return;
+      //       }
+
+      if (response?.status === 200 || response?.status === 201) {
+
+        dispatch(setContactDetails(formData));
+        dispatch(setCurrentStep(2));
+        localStorage.setItem("vendorContactDetails", JSON.stringify(formData));
+
+        setTimeout(() => {
+          navigate("/vendor-register/kyc-documents");
+        }, 200);
+      } else {
+        toast.error("Failed to save contact details. Try again.");
+      }
+    } catch (error) {
+      console.error("API Error:", error);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
@@ -105,12 +136,13 @@ export default function ContactDetailsForm() {
 
           <button
             type="submit"
-            disabled={!isFormComplete}
+            disabled={!isFormComplete || loading}
             className={`w-full py-3 rounded-3xl text-white transition mt-5
-              ${isFormComplete ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"}`}
+    ${isFormComplete && !loading ? "bg-[#5737B4] hover:bg-[#432a91]" : "bg-[#D8D8D8] cursor-not-allowed"}`}
           >
-            Save & Continue
+            {loading ? "Saving..." : "Save & Continue"}
           </button>
+
         </form>
       </div>
     </div>

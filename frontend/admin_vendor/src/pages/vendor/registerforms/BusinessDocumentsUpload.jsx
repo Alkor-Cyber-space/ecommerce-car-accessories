@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { setBusinessDoc, setCurrentStep } from "../../../store/vendorRegisterSlice";
 import { SlCloudUpload } from "react-icons/sl";
 import { RiDeleteBinLine } from "react-icons/ri";
+import { uploadBussinessDocApi } from "../../../services/allAPI";
 
 const allowedTypes = ["application/pdf", "image/jpeg"];
 
@@ -19,35 +20,31 @@ export default function BusinessDocumentsUpload() {
   });
 
   const uploadIntervals = useRef({});
-  // const fileInputsRef = useRef({
-  //   gstinCertificate: null,
-  //   registrationCertificate: null,
-  //   shopLicense: null,
-  // });
+
 
   // ✅ Restore saved docs when user comes back
   useEffect(() => {
     const saved = localStorage.getItem("vendorBusinessDocuments");
     if (saved) {
       const parsed = JSON.parse(saved);
-     const isValidFile = (f) => f && typeof f === "object" && f.name;
+      const isValidFile = (f) => f && typeof f === "object" && f.name;
 
-const restored = {
-  gstinCertificate: isValidFile(parsed.gstinCertificate)
-    ? { file: parsed.gstinCertificate, progress: 100, status: "success" }
-    : { file: null, progress: 0, status: "idle" },
+      const restored = {
+        gstinCertificate: isValidFile(parsed.gstinCertificate)
+          ? { file: parsed.gstinCertificate, progress: 100, status: "success" }
+          : { file: null, progress: 0, status: "idle" },
 
-  registrationCertificate: isValidFile(parsed.registrationCertificate)
-    ? { file: parsed.registrationCertificate, progress: 100, status: "success" }
-    : { file: null, progress: 0, status: "idle" },
+        registrationCertificate: isValidFile(parsed.registrationCertificate)
+          ? { file: parsed.registrationCertificate, progress: 100, status: "success" }
+          : { file: null, progress: 0, status: "idle" },
 
-  shopLicense: isValidFile(parsed.shopLicense)
-    ? { file: parsed.shopLicense, progress: 100, status: "success" }
-    : { file: null, progress: 0, status: "idle" },
-};
+        shopLicense: isValidFile(parsed.shopLicense)
+          ? { file: parsed.shopLicense, progress: 100, status: "success" }
+          : { file: null, progress: 0, status: "idle" },
+      };
 
       setDocuments(restored);
-      console.log("📥 Restored Business Docs from localStorage", restored);
+      console.log(" Restored Business Docs from localStorage", restored);
     }
   }, []);
 
@@ -57,7 +54,7 @@ const restored = {
 
     setDocuments((prev) => ({
       ...prev,
-      [key]: { file, progress: 0, status: "uploading" },
+      [key]: { file, progress: 0, status: "uploading" }, // ✅ keep actual File in state
     }));
 
     simulateUpload(file, key);
@@ -89,7 +86,7 @@ const restored = {
       if (!isInvalid && progress >= 100) {
         clearInterval(uploadIntervals.current[key]);
 
-        const fileData = {
+        const fileMeta = {
           name: file.name,
           size: file.size,
           type: file.type,
@@ -97,23 +94,26 @@ const restored = {
 
         setDocuments((prev) => ({
           ...prev,
-          [key]: { file: fileData, progress: 100, status: "success" },
+          [key]: { ...prev[key], progress: 100, status: "success" }, // ✅ keep File object
         }));
 
         // ✅ Save only metadata to localStorage
         const existing = JSON.parse(localStorage.getItem("vendorBusinessDocuments") || "{}");
         localStorage.setItem(
           "vendorBusinessDocuments",
-          JSON.stringify({ ...existing, [key]: fileData })
+          JSON.stringify({ ...existing, [key]: fileMeta })
         );
-
-        // ✅ Update Redux
-        dispatch(setBusinessDoc({ key, file: fileData }));
       }
     }, 200);
+    // chnageeeeeeeeeeeeeeeee to flename
+      dispatch(setBusinessDoc({ key, file: file }));
+            dispatch(setCurrentStep(4));
+      
+
 
     uploadIntervals.current[key] = intervalId;
   };
+
 
   const handleRemove = (key) => {
     // Stop any ongoing upload
@@ -134,21 +134,36 @@ const restored = {
 
   const isComplete = Object.values(documents).every((doc) => doc.status === "success");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isComplete) return;
 
-    const uploadedDocs = {};
+    const vendorId = localStorage.getItem("vendorId");
+    const formData = new FormData();
+
     Object.entries(documents).forEach(([key, doc]) => {
-      if (doc.file) uploadedDocs[key] = doc.file;
+      if (doc?.file instanceof File) {
+        formData.append(key, doc.file); // ✅ Send actual file to backend
+      }
     });
 
-    console.log("📤 Submitting Business Docs:", uploadedDocs);
+    try {
+      const response = await uploadBussinessDocApi(vendorId, formData);
+      console.log("Business documents uploaded successfully:", response.data);
 
-    // Already saved in localStorage, just move step
-    dispatch(setCurrentStep(4));
-    setTimeout(() => navigate("/vendor-register/bank-details"), 100);
+      const uploadedDocs = {};
+      Object.entries(documents).forEach(([key, doc]) => {
+        if (doc.file) uploadedDocs[key] = doc.file;
+      });
+      console.log("📤 Submitting Business Docs:", uploadedDocs);
+
+      dispatch(setCurrentStep(4));
+      setTimeout(() => navigate("/vendor-register/bank-details"), 100);
+    } catch (error) {
+      console.error("Error submitting business documents:", error);
+    }
   };
+
 
   const renderUploader = (label, id) => {
     const doc = documents[id];
@@ -172,14 +187,13 @@ const restored = {
             if (file) handleFileChange(file, id);
           }}
           className={`relative w-full h-45 border-2 rounded-lg flex flex-col justify-center items-center text-center bg-white transition
-            ${
-              doc.status === "uploading"
-                ? "border-green-500 bg-green-50 border-dashed"
-                : doc.status === "failed"
+            ${doc.status === "uploading"
+              ? "border-green-500 bg-green-50 border-dashed"
+              : doc.status === "failed"
                 ? "border-red-300 bg-[#FAEAE5] border-dashed"
                 : dragActive
-                ? "border-blue-400 bg-blue-50 border-dashed"
-                : "border-dashed border-gray-500"
+                  ? "border-blue-400 bg-blue-50 border-dashed"
+                  : "border-dashed border-gray-500"
             }`}
         >
           {!doc.file ? (
@@ -243,9 +257,8 @@ const restored = {
               <div className="w-[90%]">
                 <div className="h-1 rounded bg-gray-200 relative">
                   <div
-                    className={`h-1 rounded ${
-                      doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"
-                    }`}
+                    className={`h-1 rounded ${doc.status === "success" ? "bg-[#5737B4]" : "bg-red-500"
+                      }`}
                     style={{ width: `${doc.progress}%` }}
                   ></div>
                 </div>
@@ -284,11 +297,10 @@ const restored = {
             <button
               type="submit"
               disabled={!isComplete}
-              className={`px-1 sm:px-12 py-2.5 w-[250px] text-white font-medium rounded-full transition-all ${
-                isComplete
+              className={`px-1 sm:px-12 py-2.5 w-[250px] text-white font-medium rounded-full transition-all ${isComplete
                   ? "bg-[#5737B4] hover:bg-[#432a91]"
                   : "bg-[#D8D8D8] cursor-not-allowed"
-              }`}
+                }`}
             >
               Save & Continue
             </button>
