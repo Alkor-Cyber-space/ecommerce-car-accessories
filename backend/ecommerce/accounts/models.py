@@ -90,20 +90,6 @@ class VendorProfile(models.Model):
           return self.user.email
 
 
-class VendorAgreement(models.Model):
-    vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE)
-
-    registration_form = models.FileField(upload_to='agreements/form/')
-    nda_agreement = models.FileField(upload_to='agreements/nda/')
-    terms_conditions = models.FileField(upload_to='agreements/terms/')
-
-    signed_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Agreements - {self.vendor.user.email}"
-
-
-
 class UserOTPS(models.Model):
      user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="reverse_Userotp_details")
      hashed_code = models.CharField(max_length=100, blank=False, null=False)
