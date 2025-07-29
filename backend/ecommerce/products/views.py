@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError 
 from vehicles.models import VehicleMake, VehicleModel, Year, Variant, VariantYear
+from rest_framework.views import APIView
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
@@ -29,21 +30,35 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [permissions.AllowAny  ]
+class ProductListAPIView(APIView):
+    """
+    Return all products.
+    """
+    permission_classes = [permissions.AllowAny]
 
-    @action(detail=False, methods=['get'], url_path='search')
-    def search_products(self, request):
-        """Search products by name using ?query=param"""
+    def get(self, request):
+        products = Product.objects.all()
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class ProductSearchAPIView(APIView):
+    """
+    Search products by name using ?query=
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
         query = request.query_params.get('query', None)
-        products = Product.objects.filter(name__icontains=query) if query else Product.objects.none()
+        if not query:
+            return Response({"message": "Query parameter is required."}, status=400)
 
+        products = Product.objects.filter(name__icontains=query)
         if not products.exists():
             return Response({"message": "No product available."})
         
         serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response(serializer.data)
         return Response(serializer.data)
     
 

@@ -19,6 +19,15 @@ class Product(models.Model):
     stock = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    size = models.CharField(max_length=50, null=True, blank=True)
+    manufacturing_date = models.DateField(null=True, blank=True)
+    tag = models.CharField(max_length=100, null=True, blank=True)
+    is_available = models.BooleanField(default=True)
+    is_featured = models.BooleanField(default=False)
+    is_new = models.BooleanField(default=False)
+    is_best_seller = models.BooleanField(default=False)
+    is_top_rated = models.BooleanField(default=False)
+    is_popular = models.BooleanField(default=False)
     compatible_varient_year = models.ManyToManyField('vehicles.VariantYear', blank=True, related_name='compatible_products')
 
     def __str__(self):

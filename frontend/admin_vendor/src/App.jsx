@@ -16,9 +16,6 @@ import KYCDocumentsUpload from './pages/vendor/registerforms/KYCDocUpload';
 import BusinessDocumentsUpload from './pages/vendor/registerforms/BusinessDocumentsUpload';
 import BankTaxDetailsUpload from './pages/vendor/registerforms/BankTaxDetailsUpload';
 import AgreementsUpload from './pages/vendor/registerforms/AgreementsUpload';
-import OrderDetailView from './pages/vendor/orders/OrderDetailView';
-import OrderDetailEdit from './pages/vendor/orders/OrderDetailEdit';
-import OrderManagement from './pages/vendor/orders/OrderManagement';
 
 // admin routes
 import AdminHome from './pages/admin/AdminHome';
@@ -39,8 +36,15 @@ import UserDataTable from './components/admin/userAndVendor/UserData';
 import VendorDataTable from './components/admin/userAndVendor/VendorData';
 import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
-import RevenueChart from './components/vendor/RevenueChart';
+
 import AccountSettings from './pages/vendor/AccountSettings';
+
+import ReturnsRefundsTable from './components/vendor/ReturnsRefundsTable';
+import OrderDetailView from './pages/vendor/orders/OrderDetailView';
+import OrderDetailEdit from './pages/vendor/orders/OrderDetailEdit';
+import OrderManagement from './pages/vendor/orders/OrderManagement';
+import OrdersLayout from './pages/vendor/orders/OrdersLayout';
+
 
 
 function App() {
@@ -91,22 +95,25 @@ function App() {
             <Route path="1/edit" element={<EditProduct />} />
             {/* <Route path="product/:productId" element={<ProductView />} /> */}
           </Route>
+          <Route path='returns' element={<ReturnsRefundsTable />} />
           <Route path='reviews' element={<RatingAndReviewLayout />} />
+
           <Route path='orders' element={<OrderManagement />} >
           </Route>
           <Route path='account-settings' element={<AccountSettings />}></Route>
           <Route path='/vendor/order' element={<OrderManagement />} />
           <Route path="/vendor/orders" element={<OrderDetailView />} />
 
-          <Route path='/vendor/orders/1' element={<OrderDetailView />} />
-          <Route path='/vendor/orders/2' element={<OrderDetailEdit />} />
-          <Route ></Route>
+          <Route path='orders' element={<OrdersLayout />} >
+            <Route index element={<OrderManagement />} />
+
+            <Route path='order-detail' element={<OrderDetailView />} />
+            <Route path='edit-order' element={<OrderDetailEdit />} />
+
+          </Route>
         </Route>
 
-        {/* <Route path="/vendor/profile" element={<VendorProfile />} />
-        <Route path='/vendor/Products' element={<ProductList/>}/>
-        <Route path="/vendor/add" element={<AddProduct />} />
-   */}
+
       </Routes>
       <ToastContainer position="top-right" autoClose={3000} />
 
