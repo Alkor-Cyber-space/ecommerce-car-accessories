@@ -10,6 +10,7 @@ import { IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
 
 import user from "../../assets/user.jpg";
+import { RiUserSettingsLine } from "react-icons/ri";
 
 
 const VendorHome = () => {
@@ -61,6 +62,8 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
           <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />
           <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} />
+          <SidebarItem to="/vendor/account-settings" label="Account Settings" icon={<RiUserSettingsLine />} activePath={activePath} />
+          
 
           <hr className="my-4 border-gray-300" />
 
