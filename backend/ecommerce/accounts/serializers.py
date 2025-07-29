@@ -49,6 +49,20 @@ class Step1CompanySerializer(serializers.ModelSerializer):
         model = VendorProfile
         fields = ['company_name', 'type_of_vendor', 'company_email', 'company_number']
 
+    def validate_company_name(self, value):
+        if VendorProfile.objects.filter(company_name=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This company nam already exist.")
+        return value
+
+    def validate_company_email(self, value):
+        if VendorProfile.objects.filter(company_email=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This company email is already used.")
+        return value
+
+    def validate_company_number(self, value):
+        if VendorProfile.objects.filter(company_number=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This company number is already used.")
+        return value
 
 
 class Step2ContactSerializer(serializers.ModelSerializer):
@@ -56,7 +70,15 @@ class Step2ContactSerializer(serializers.ModelSerializer):
         model = VendorProfile
         fields = ['contact_name', 'contact_email', 'contact_number', 'designation']
 
+    def validate_contact_email(self, value):
+        if VendorProfile.objects.filter(contact_email=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This contact email is already used.")
+        return value
 
+    def validate_contact_number(self, value):
+        if VendorProfile.objects.filter(contact_number=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This contact number is already used.")
+        return value
 
 class Step3KYCSerializer(serializers.ModelSerializer):
     class Meta:

@@ -15,4 +15,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('password/reset-password/<uidb64>/<token>/', PasswordResetViewSet.as_view({'post': 'reset_password'}), name='reset-password'),
     path('social_auth/', GoogleLoginAPIView.as_view(), name='google-login'),
+    path('save-fcm-token/', SaveFCMTokenView.as_view(), name='save_fcm_token'),
 ]
