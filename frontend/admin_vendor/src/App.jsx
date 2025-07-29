@@ -36,6 +36,10 @@ import UserDataTable from './components/admin/userAndVendor/UserData';
 import VendorDataTable from './components/admin/userAndVendor/VendorData';
 import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
+
+import AccountSettings from './pages/vendor/AccountSettings';
+import RevenueChart from './components/vendor/RevenueChart';
+
 import Notification from './pages/vendor/Notification';
 
 
@@ -98,15 +102,29 @@ function App() {
           </Route>
           <Route path='returns' element={<ReturnsRefundsTable />} />
           <Route path='reviews' element={<RatingAndReviewLayout />} />
+
+          <Route path='orders' element={<OrderManagement />} >
+          </Route>
+          <Route path='account-settings' element={<AccountSettings />}></Route>
+          <Route path='/vendor/order' element={<OrderManagement />} />
+          <Route path="/vendor/orders" element={<OrderDetailView />} />
+
           <Route path='orders' element={<OrdersLayout />} >
             <Route index element={<OrderManagement />} />
             <Route path='order-detail' element={<OrderDetailView />} />
             <Route path='edit-order' element={<OrderDetailEdit />} />
           </Route>
+
              <Route path='notification' element={<Notification />}/>
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
         </Route>
+
+
+
+        </Route>
+
+
       </Routes>
 
       <ToastContainer position="top-right" autoClose={3000} />

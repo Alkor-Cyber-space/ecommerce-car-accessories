@@ -7,6 +7,9 @@ from products.models import Product
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from firebase_admin.messaging import Message
+from accounts.send_push_notification import send_push_notification
+from accounts.models import FCMToken
 
 # Create your views here.
 class WishlistViewSet(viewsets.ModelViewSet):
@@ -18,6 +21,13 @@ class WishlistViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+        # If token exists, send notification
+        send_push_notification(
+            user=self.request.user,
+            title="Wishlist Updated",
+            body="A product has been added to your wishlist.",
+            data={"type": "wishlist_update"}
+        )
         
     @action(detail=False, methods=['delete'], url_path='remove-product/(?P<product_id>[^/.]+)')
     def remove_from_wishlist(self, request, product_id=None):
@@ -25,6 +35,12 @@ class WishlistViewSet(viewsets.ModelViewSet):
             wishlist = Wishlist.objects.get(user=request.user)
             product = Product.objects.get(id=product_id)
             wishlist.products.remove(product)
+            send_push_notification(
+                user=self.request.user,
+                title="Product Removed",
+                body=f"{product.name} was removed from your wishlist.",
+                data={"type": "wishlist_update"}
+            )
             return Response({'message': 'Product removed from wishlist.'}, status=status.HTTP_200_OK)
         except Wishlist.DoesNotExist:
             return Response({'error': 'Wishlist not found.'}, status=status.HTTP_404_NOT_FOUND)

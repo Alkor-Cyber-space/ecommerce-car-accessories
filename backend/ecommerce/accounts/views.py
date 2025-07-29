@@ -36,6 +36,11 @@ class UserViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
+        email = request.data.get('email')
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -106,6 +111,11 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
     def register_vendor(self, request):
+        email = request.data.get('email')
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = VendorRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -124,8 +134,6 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
 
-        print("Email or Username:", email_or_username)
-
         if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -140,13 +148,18 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         print("Has Vendor Profile:", hasattr(user, 'vendorprofile'))
         # if user and hasattr(user, 'vendorprofile'):
         if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }, status=status.HTTP_200_OK)
+            # Check if user is in Vendor group
+            if user.groups.filter(name='Vendor').exists():
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Only Vendor users can login here."}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({"error": "Invalid vendor credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 
@@ -159,7 +172,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step1CompanySerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Company details saved"}, status=status.HTTP_200_OK)
+        return Response({"message": "Company details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
     def step2_contact_details(self, request, user_id):
@@ -170,7 +183,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step2ContactSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Contact details saved"}, status=status.HTTP_200_OK)
+        return Response({"message": "Contact details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
     def step3_kyc_documents(self, request, user_id):
@@ -181,7 +194,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step3KYCSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "KYC documents uploaded"}, status=status.HTTP_200_OK)
+        return Response({"message": "KYC documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
     def step4_business_documents(self, request, user_id):
@@ -192,7 +205,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step4BusinessDocsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Business documents uploaded"}, status=status.HTTP_200_OK)
+        return Response({"message": "Business documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
     def step5_bank_tax_details(self, request, user_id):
@@ -203,7 +216,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step5BankTaxSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Bank and tax details saved"}, status=status.HTTP_200_OK)
+        return Response({"message": "Bank and tax details saved","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
     def step6_supporting_documents(self, request, user_id):
@@ -215,7 +228,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Supporting documents uploaded and vendor activated"}, status=status.HTTP_200_OK)
+        return Response({"message": "Supporting documents uploaded and vendor activated","data": serializer.data}, status=status.HTTP_200_OK)
 
 
 
@@ -375,4 +388,13 @@ class AddressViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+class SaveFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        token = request.data.get('token')
+        print(token)
+        if token:
+            FCMToken.objects.update_or_create(user=request.user, defaults={'token': token})
+            return Response({"message": "Token saved"})
+        return Response({"error": "No token provided"}, status=400)

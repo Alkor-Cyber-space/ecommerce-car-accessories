@@ -11,6 +11,7 @@ import { IoNotificationsOutline, IoSearchOutline, IoStarHalf, IoStarOutline } fr
 import logo from "../../assets/logo.png";
 
 import user from "../../assets/user.jpg";
+import { RiUserSettingsLine } from "react-icons/ri";
 
 
 const VendorHome = () => {
@@ -65,6 +66,8 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/notification" label="Notifications" icon={ <MdNotificationsNone />} activePath={activePath} />
           <SidebarItem to="/vendor/support-help" label="Support/Help" icon={ <FaRegQuestionCircle />} activePath={activePath} />
 
+          <SidebarItem to="/vendor/account-settings" label="Account Settings" icon={<RiUserSettingsLine />} activePath={activePath} />
+          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <IoNotificationsOutline />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 
