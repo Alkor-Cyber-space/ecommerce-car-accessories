@@ -148,13 +148,18 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         print("Has Vendor Profile:", hasattr(user, 'vendorprofile'))
         # if user and hasattr(user, 'vendorprofile'):
         if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }, status=status.HTTP_200_OK)
+            # Check if user is in Vendor group
+            if user.groups.filter(name='Vendor').exists():
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Only Vendor users can login here."}, status=status.HTTP_403_FORBIDDEN)
         else:
-            return Response({"error": "Invalid vendor credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 
@@ -383,4 +388,13 @@ class AddressViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
 
+class SaveFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
 
+    def post(self, request):
+        token = request.data.get('token')
+        print(token)
+        if token:
+            FCMToken.objects.update_or_create(user=request.user, defaults={'token': token})
+            return Response({"message": "Token saved"})
+        return Response({"error": "No token provided"}, status=400)
