@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { AlertTriangle } from "lucide-react";
 import audi from "../../assets/Audi.jpg";
+import { FiAlertTriangle } from "react-icons/fi";
 
 const notifications = [
   {
@@ -117,7 +117,7 @@ const Notification = () => {
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 flex items-center justify-center">
                     {item.isAlert ? (
-                      <AlertTriangle className="w-5 h-5 text-black" />
+                      <FiAlertTriangle className="w-5 h-5 text-black" />
                     ) : (
                       <img
                         src={audi}

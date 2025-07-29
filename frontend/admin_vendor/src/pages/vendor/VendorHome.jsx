@@ -3,9 +3,10 @@ import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import {
   FaBoxOpen, FaListAlt, FaTruckLoading, FaChartBar,
   FaTags, FaUserCircle, FaChevronRight, FaChevronDown,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaRegQuestionCircle
 } from "react-icons/fa";
-import { MdOutlineDashboard } from "react-icons/md";
+import { MdNotificationsNone, MdOutlineDashboard } from "react-icons/md";
 import { IoNotificationsOutline, IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
 
@@ -61,7 +62,8 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
           <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />
           <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} />
-          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <IoNotificationsOutline />} activePath={activePath} />
+          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <MdNotificationsNone />} activePath={activePath} />
+          <SidebarItem to="/vendor/support-help" label="Support/Help" icon={ <FaRegQuestionCircle />} activePath={activePath} />
 
 
           <hr className="my-4 border-gray-300" />

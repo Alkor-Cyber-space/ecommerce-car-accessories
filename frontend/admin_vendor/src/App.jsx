@@ -36,7 +36,6 @@ import UserDataTable from './components/admin/userAndVendor/UserData';
 import VendorDataTable from './components/admin/userAndVendor/VendorData';
 import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
-import RevenueChart from './components/vendor/RevenueChart';
 import Notification from './pages/vendor/Notification';
 
 
@@ -45,6 +44,8 @@ import OrderDetailView from './pages/vendor/orders/OrderDetailView';
 import OrderDetailEdit from './pages/vendor/orders/OrderDetailEdit';
 import OrderManagement from './pages/vendor/orders/OrderManagement';
 import OrdersLayout from './pages/vendor/orders/OrdersLayout';
+import SupportHelp from './pages/vendor/SupportHelp';
+import CreateTicket from './pages/vendor/CreateTicket';
 
 
 
@@ -54,7 +55,6 @@ function App() {
       <Routes>
         {/* Auth & Admin */}
         <Route path="/signin" element={<AdminSignIn />} />
-        {/* <Route path="/admin" element={<AdminHome />} /> */}
         <Route path="/login" element={<VendorSignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/register/verifyOtp" element={<Verify />} />
@@ -100,26 +100,15 @@ function App() {
           <Route path='reviews' element={<RatingAndReviewLayout />} />
           <Route path='orders' element={<OrdersLayout />} >
             <Route index element={<OrderManagement />} />
-
             <Route path='order-detail' element={<OrderDetailView />} />
             <Route path='edit-order' element={<OrderDetailEdit />} />
-
           </Route>
              <Route path='notification' element={<Notification />}/>
-             <Route path='/vendor/order' element={<OrderManagement/>}/>
-             <Route path="/vendor/orders" element={<OrderDetailView />} />
-
-
-          <Route path='/vendor/orders/1' element={<OrderDetailView />} />
-          <Route path='/vendor/orders/2' element={<OrderDetailEdit />} /> */}
-
+             <Route path='support-help' element={<SupportHelp />}/> 
+             <Route path='createticket' element={<CreateTicket />}/>
         </Route>
-
-        {/* <Route path="/vendor/profile" element={<VendorProfile />} />
-        <Route path='/vendor/Products' element={<ProductList/>}/>
-        <Route path="/vendor/add" element={<AddProduct />} />
-   */}
       </Routes>
+
       <ToastContainer position="top-right" autoClose={3000} />
 
     </>
