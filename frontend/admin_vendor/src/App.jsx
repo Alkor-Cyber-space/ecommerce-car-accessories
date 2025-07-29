@@ -37,7 +37,11 @@ import VendorDataTable from './components/admin/userAndVendor/VendorData';
 import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
 
+
 import AccountSettings from './pages/vendor/AccountSettings';
+import RevenueChart from './components/vendor/RevenueChart';
+import Notification from './pages/vendor/Notification';
+
 
 import ReturnsRefundsTable from './components/vendor/ReturnsRefundsTable';
 import OrderDetailView from './pages/vendor/orders/OrderDetailView';
@@ -111,6 +115,9 @@ function App() {
             <Route path='edit-order' element={<OrderDetailEdit />} />
 
           </Route>
+
+             <Route path='notification' element={<Notification />}/>
+
         </Route>
 
 

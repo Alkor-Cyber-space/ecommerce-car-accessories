@@ -6,7 +6,7 @@ import {
   FaSignOutAlt
 } from "react-icons/fa";
 import { MdOutlineDashboard } from "react-icons/md";
-import { IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
+import { IoNotificationsOutline, IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
 
 import user from "../../assets/user.jpg";
@@ -64,6 +64,8 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} />
           <SidebarItem to="/vendor/account-settings" label="Account Settings" icon={<RiUserSettingsLine />} activePath={activePath} />
           
+
+          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <IoNotificationsOutline />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 
