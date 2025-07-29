@@ -36,6 +36,14 @@ class UserViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
+        email = request.data.get('email')
+        username = request.data.get('username')
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "A user with this username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
         serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -106,6 +114,15 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
     def register_vendor(self, request):
+        email = request.data.get('email')
+        username = request.data.get('username')
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "A user with this username already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+
         serializer = VendorRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -123,8 +140,6 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
-
-        print("Email or Username:", email_or_username)
 
         if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
