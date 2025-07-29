@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
     username = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
     is_admin_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
@@ -22,18 +22,25 @@ class CustomUser(AbstractUser):
 # models.py
 
 class VendorProfile(models.Model):
+
+     VENDOR_TYPE = [
+          ('business','business')
+     ]
+
      user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='vendor_profile')
 
      # Step 2: Company Details
      company_name = models.CharField(max_length=255, null=True, blank=True)
+     type_of_vendor = models.CharField(max_length=20, choices=VENDOR_TYPE, default='business')
+     company_email = models.EmailField(null=True,blank=True)
+     company_number = models.IntegerField(null=True,blank=True)
 
      # Step 3: Contact Details
      contact_name = models.CharField(max_length=255, null=True, blank=True)
      contact_email = models.EmailField(null=True, blank=True)
-     contact_address = models.TextField(null=True, blank=True)
-
+     contact_number = models.IntegerField(null=True, blank=True)
+     designation = models.CharField(null=True, blank=True)
      # Step 4: KYC Documents
-     kyc_name = models.CharField(max_length=255, null=True, blank=True)
      pan_card = models.FileField(upload_to='kyc/pan/', null=True, blank=True)
      aadhar_passport_dl = models.FileField(upload_to='kyc/id/', null=True, blank=True)
 
@@ -48,9 +55,11 @@ class VendorProfile(models.Model):
      it_return = models.FileField(upload_to='finance/it_return/', null=True, blank=True)
      financial_statement = models.FileField(upload_to='finance/statement/', null=True, blank=True)
 
-     # Supporting Documents (optional)
+     # step 8 Supporting Documents (optional)
      dealership_letter = models.FileField(upload_to='supporting/dealership/', null=True, blank=True)
      authorized_signatory_letter = models.FileField(upload_to='supporting/signatory/', null=True, blank=True)
+     vendor_registration_form = models.FileField(upload_to='supporting/regform/', null=True, blank=True)
+     signed_terms_and_con = models.FileField(upload_to='supporting/termsandcondition/', null=True, blank=True)
 
      is_verified = models.BooleanField(default=False)
      submitted_at = models.DateTimeField(auto_now_add=True)
@@ -58,35 +67,27 @@ class VendorProfile(models.Model):
      def is_registration_complete(self):
           required_fields = [
                self.company_name,
+               self.company_email,
+               self.company_number,
                self.contact_name,
                self.contact_email,
-               self.contact_address,
-               self.kyc_name,
-               bool(self.pan_card),
-               bool(self.aadhar_passport_dl),
-               bool(self.gst_certificate),
-               bool(self.business_registration_cert),
-               bool(self.cancelled_cheque),
-               bool(self.bank_statement),
+               self.contact_number,
+               self.designation,
+               self.pan_card,
+               self.aadhar_passport_dl,
+               self.gst_certificate,
+               self.business_registration_cert,
+               self.shop_license,
+               self.cancelled_cheque,
+               self.bank_statement,
+               self.it_return,
+               self.financial_statement,
           ]
           return all(required_fields)
 
+
      def __str__(self):
           return self.user.email
-
-
-class VendorAgreement(models.Model):
-    vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE)
-
-    registration_form = models.FileField(upload_to='agreements/form/')
-    nda_agreement = models.FileField(upload_to='agreements/nda/')
-    terms_conditions = models.FileField(upload_to='agreements/terms/')
-
-    signed_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"Agreements - {self.vendor.user.email}"
-
 
 
 class UserOTPS(models.Model):

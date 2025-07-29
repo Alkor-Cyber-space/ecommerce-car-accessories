@@ -8,13 +8,12 @@ const savedCurrentStep = parseInt(localStorage.getItem("vendor_current_step") ||
 const initialState = {
   // Auth
   email: "",
-  phone: "",
   password: "",
   otpVerified: false,
 
   // Step tracking
-  currentStep: savedCurrentStep,       // ✅ Load last visited step
-  completedSteps: savedSteps,          // ✅ Load completed ticks
+  currentStep: savedCurrentStep,       
+  completedSteps: savedSteps,         
   registrationStatus: "PENDING",
 
   // Step 0
@@ -41,10 +40,8 @@ const vendorRegisterSlice = createSlice({
   name: "vendorRegister",
   initialState,
   reducers: {
-    // ✅ Reset everything for a NEW vendor registration
     resetVendorRegistration: (state) => {
       state.email = "";
-      state.phone = "";
       state.password = "";
       state.otpVerified = false;
 
@@ -60,7 +57,6 @@ const vendorRegisterSlice = createSlice({
       state.taxDocuments = null;
       state.agreements = [];
 
-      // ✅ Clear localStorage too
       localStorage.removeItem("vendor_current_step");
       localStorage.removeItem("vendor_completed_steps");
       localStorage.removeItem("vendorCompanyDetails");
@@ -89,12 +85,11 @@ const vendorRegisterSlice = createSlice({
       }
     },
 
-    // ✅ Credentials + OTP
+    //  Credentials + OTP
     setCredentials: (state, action) => {
-      const { username, email, phone, password } = action.payload;
+      const { username, email,  password } = action.payload;
       state.username = username,
         state.email = email;
-      state.phone = phone;
       state.password = password;
     },
     setOtpVerified: (state, action) => {

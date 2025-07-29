@@ -37,28 +37,34 @@ class UserViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
         serializer = CreateUserSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                user = serializer.save()
-                return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
-            except Group.DoesNotExist:
-                return Response({"error": "Role does not exist"}, status=status.HTTP_400_BAD_REQUEST)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
-        email = request.data.get('email')
+        email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
 
-        if not email or not password:
+        if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = authenticate(request, email=email, password=password)
+        user = None
+        try:
+            user = User.objects.filter(email=email_or_username).first()
+            if not user:
+                user = User.objects.filter(username=email_or_username).first()
+            if user:
+                user = authenticate(request, email=user.email, password=password)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         if user:
+            if not user.is_active:
+                return Response({"error": "User account is not active."}, status=status.HTTP_403_FORBIDDEN)
             refresh = RefreshToken.for_user(user)
             return Response({
                 "access": str(refresh.access_token),
-                "refresh": str(refresh),
+                "refresh": str(refresh),    
             }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
@@ -95,55 +101,122 @@ class UserViewSet(viewsets.ViewSet):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
+
 class VendorRegistrationViewSet(viewsets.ViewSet):
 
-    @action(detail=False, methods=['post'], url_path='step1')
-    def step1_create_user(self, request):
-        serializer = Step1UserSerializer(data=request.data)
+    @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
+    def register_vendor(self, request):
+        serializer = VendorRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        VendorProfile.objects.create(user=user)
-        return Response({"message": "User created successfully", "user_id": user.id}, status=status.HTTP_201_CREATED)
 
-    @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
-    def step2_company_details(self, request, user_id):
-        profile = VendorProfile.objects.get(user_id=user_id)
-        serializer = Step2CompanySerializer(profile, data=request.data, partial=True)
+        # Deactivate vendor until verification
+        user.is_active = True
+        user.save()
+
+        # Create vendor profile
+        VendorProfile.objects.create(user=user)
+
+        return Response({"message": "Vendor created successfully", "user_id": user.id}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='login', permission_classes=[AllowAny])
+    def login(self, request):
+        email_or_username = request.data.get('email_or_username')
+        password = request.data.get('password')
+
+        print("Email or Username:", email_or_username)
+
+        if not email_or_username or not password:
+            return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email_or_username).first()
+        if not user:
+            user = User.objects.filter(username=email_or_username).first()
+
+        if user:
+            print(user.email, user.username)
+            user = authenticate(request, username=user.email, password=password)
+        print("Authenticated User:", user)
+        print("Has Vendor Profile:", hasattr(user, 'vendorprofile'))
+        # if user and hasattr(user, 'vendorprofile'):
+        if user:
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid vendor credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+    @action(detail=False, methods=['post'], url_path='step1/(?P<user_id>[^/.]+)')
+    def step1_company_details(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step1CompanySerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Company details saved"}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
-    def step3_contact_details(self, request, user_id):
-        profile = VendorProfile.objects.get(user_id=user_id)
-        serializer = Step3ContactSerializer(profile, data=request.data, partial=True)
+    @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
+    def step2_contact_details(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step2ContactSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Contact details saved"}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
-    def step4_kyc_documents(self, request, user_id):
-        profile = VendorProfile.objects.get(user_id=user_id)
-        serializer = Step4KYCSerializer(profile, data=request.data, partial=True)
+    @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
+    def step3_kyc_documents(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step3KYCSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "KYC documents uploaded"}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
-    def step5_business_documents(self, request, user_id):
-        profile = VendorProfile.objects.get(user_id=user_id)
-        serializer = Step5BusinessDocsSerializer(profile, data=request.data, partial=True)
+    @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
+    def step4_business_documents(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step4BusinessDocsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Business documents uploaded"}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
-    def step6_bank_tax_details(self, request, user_id):
-        profile = VendorProfile.objects.get(user_id=user_id)
-        serializer = Step6BankTaxSerializer(profile, data=request.data, partial=True)
+    @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
+    def step5_bank_tax_details(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step5BankTaxSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Bank and tax details saved"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
+    def step6_supporting_documents(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Supporting documents uploaded and vendor activated"}, status=status.HTTP_200_OK)
+
 
 
 class GoogleLoginAPIView(APIView):
@@ -300,3 +373,6 @@ class AddressViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Automatically assign the current logged-in user
         serializer.save(user=self.request.user)
+
+
+
