@@ -119,12 +119,6 @@ function App() {
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
         </Route>
-
-
-
-        </Route>
-
-
       </Routes>
 
       <ToastContainer position="top-right" autoClose={3000} />
