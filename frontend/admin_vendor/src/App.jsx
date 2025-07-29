@@ -36,11 +36,16 @@ import UserDataTable from './components/admin/userAndVendor/UserData';
 import VendorDataTable from './components/admin/userAndVendor/VendorData';
 import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
+import RevenueChart from './components/vendor/RevenueChart';
+import Notification from './pages/vendor/Notification';
+
+
 import ReturnsRefundsTable from './components/vendor/ReturnsRefundsTable';
 import OrderDetailView from './pages/vendor/orders/OrderDetailView';
 import OrderDetailEdit from './pages/vendor/orders/OrderDetailEdit';
 import OrderManagement from './pages/vendor/orders/OrderManagement';
 import OrdersLayout from './pages/vendor/orders/OrdersLayout';
+
 
 
 function App() {
@@ -100,8 +105,10 @@ function App() {
             <Route path='edit-order' element={<OrderDetailEdit />} />
 
           </Route>
-          {/* <Route path='/vendor/order' element={<OrderManagement />} />
-          <Route path="/vendor/orders" element={<OrderDetailView />} />
+             <Route path='notification' element={<Notification />}/>
+             <Route path='/vendor/order' element={<OrderManagement/>}/>
+             <Route path="/vendor/orders" element={<OrderDetailView />} />
+
 
           <Route path='/vendor/orders/1' element={<OrderDetailView />} />
           <Route path='/vendor/orders/2' element={<OrderDetailEdit />} /> */}
