@@ -37,13 +37,10 @@ class UserViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
         email = request.data.get('email')
-        username = request.data.get('username')
 
         if User.objects.filter(email=email).exists():
             return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(username=username).exists():
-            return Response({"error": "A user with this username already exists."}, status=status.HTTP_400_BAD_REQUEST)
-
+        
         serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
@@ -115,13 +112,9 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
     def register_vendor(self, request):
         email = request.data.get('email')
-        username = request.data.get('username')
 
         if User.objects.filter(email=email).exists():
             return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
-        if User.objects.filter(username=username).exists():
-            return Response({"error": "A user with this username already exists."}, status=status.HTTP_400_BAD_REQUEST)
-
 
         serializer = VendorRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -174,7 +167,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step1CompanySerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Company details saved"}, status=status.HTTP_200_OK)
+        return Response({"message": "Company details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
     def step2_contact_details(self, request, user_id):
@@ -185,7 +178,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step2ContactSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Contact details saved"}, status=status.HTTP_200_OK)
+        return Response({"message": "Contact details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
     def step3_kyc_documents(self, request, user_id):
@@ -196,7 +189,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step3KYCSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "KYC documents uploaded"}, status=status.HTTP_200_OK)
+        return Response({"message": "KYC documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
     def step4_business_documents(self, request, user_id):
@@ -207,7 +200,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step4BusinessDocsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Business documents uploaded"}, status=status.HTTP_200_OK)
+        return Response({"message": "Business documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
     def step5_bank_tax_details(self, request, user_id):
@@ -218,7 +211,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step5BankTaxSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Bank and tax details saved"}, status=status.HTTP_200_OK)
+        return Response({"message": "Bank and tax details saved","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
     def step6_supporting_documents(self, request, user_id):
@@ -230,7 +223,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response({"message": "Supporting documents uploaded and vendor activated"}, status=status.HTTP_200_OK)
+        return Response({"message": "Supporting documents uploaded and vendor activated","data": serializer.data}, status=status.HTTP_200_OK)
 
 
 
