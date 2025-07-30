@@ -51,7 +51,7 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor,IsVendorProfileComplete]
+    permission_classes = [permissions.IsAuthenticated, IsVendor] #add ,IsVendorProfileComplete
 
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)

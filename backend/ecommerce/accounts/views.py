@@ -1,0 +1,400 @@
+import random
+from django.shortcuts import render
+from django.contrib.auth import get_user_model
+from . serializers import *
+from rest_framework import viewsets
+from django.contrib.auth.models import Group
+from .models import *
+from rest_framework.response import Response
+from rest_framework import status,permissions
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from .permissions import IsAdmin, IsVendor
+from rest_framework.views import APIView
+
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.throttling import ScopedRateThrottle
+from django.contrib.auth import authenticate
+from rest_framework.decorators import action
+
+from django.conf import settings
+from .twilio_services import send_otp_via_twilio, verify_otp_via_twilio
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from .serializers import *
+
+from firebase_admin import auth as firebase_auth
+from . import firebase_config 
+
+User = get_user_model()
+
+# Create your views here.
+
+class UserViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def register(self, request):
+        email = request.data.get('email')
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = CreateUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def login(self, request):
+        email_or_username = request.data.get('email_or_username')
+        password = request.data.get('password')
+
+        if not email_or_username or not password:
+            return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = None
+        try:
+            user = User.objects.filter(email=email_or_username).first()
+            if not user:
+                user = User.objects.filter(username=email_or_username).first()
+            if user:
+                user = authenticate(request, email=user.email, password=password)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        if user:
+            if not user.is_active:
+                return Response({"error": "User account is not active."}, status=status.HTTP_403_FORBIDDEN)
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                "access": str(refresh.access_token),
+                "refresh": str(refresh),    
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def home(self, request):
+        serializer = UserSerializer(request.user)
+        return Response({"user": serializer.data})
+
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def logout(self, request):
+        serializer = LogoutSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'], url_path='change-password', permission_classes=[IsAuthenticated])
+    def change_password(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        user = request.user
+
+        if serializer.is_valid():
+            old_password = serializer.validated_data['old_password']
+            new_password = serializer.validated_data['new_password']
+
+            if not user.check_password(old_password):
+                return Response({'old_password': 'Wrong password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user.set_password(new_password)
+            user.save()
+
+            return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class VendorRegistrationViewSet(viewsets.ViewSet):
+
+    @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
+    def register_vendor(self, request):
+        email = request.data.get('email')
+
+        if User.objects.filter(email=email).exists():
+            return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = VendorRegistrationSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        # Deactivate vendor until verification
+        user.is_active = True
+        user.save()
+
+        # Create vendor profile
+        VendorProfile.objects.create(user=user)
+
+        return Response({"message": "Vendor created successfully", "user_id": user.id}, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['post'], url_path='login', permission_classes=[AllowAny])
+    def login(self, request):
+        email_or_username = request.data.get('email_or_username')
+        password = request.data.get('password')
+
+        if not email_or_username or not password:
+            return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = User.objects.filter(email=email_or_username).first()
+        if not user:
+            user = User.objects.filter(username=email_or_username).first()
+
+        if user:
+            print(user.email, user.username)
+            user = authenticate(request, username=user.email, password=password)
+        print("Authenticated User:", user)
+        print("Has Vendor Profile:", hasattr(user, 'vendorprofile'))
+        # if user and hasattr(user, 'vendorprofile'):
+        if user:
+            # Check if user is in Vendor group
+            if user.groups.filter(name='Vendor').exists():
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Only Vendor users can login here."}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+
+    @action(detail=False, methods=['post'], url_path='step1/(?P<user_id>[^/.]+)')
+    def step1_company_details(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step1CompanySerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Company details saved","data":serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
+    def step2_contact_details(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step2ContactSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Contact details saved","data":serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
+    def step3_kyc_documents(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step3KYCSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "KYC documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
+    def step4_business_documents(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step4BusinessDocsSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Business documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
+    def step5_bank_tax_details(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        serializer = Step5BankTaxSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Bank and tax details saved","data": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
+    def step6_supporting_documents(self, request, user_id):
+        try:
+            profile = VendorProfile.objects.get(user_id=user_id)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Supporting documents uploaded and vendor activated","data": serializer.data}, status=status.HTTP_200_OK)
+
+
+
+class GoogleLoginAPIView(APIView):
+    def post(self, request):
+        id_token = request.data.get("idToken")
+        if not id_token:
+            return Response({'error': 'idToken is required'}, status=400)
+
+        try:
+            # Verify Firebase token
+            decoded = firebase_auth.verify_id_token(id_token)
+            email = decoded.get('email')
+            uid = decoded.get('uid')
+            name = decoded.get('name', 'User')
+            picture = decoded.get('picture', '')
+
+            # Get or create user in your backend
+            user, created = User.objects.get_or_create(
+                email=email,
+                defaults={'username': name}
+            )
+
+            # Optionally: update profile picture or UID if needed
+
+            # Generate JWT token
+            refresh = RefreshToken.for_user(user)
+            return Response({
+                'refresh': str(refresh),
+                'access': str(refresh.access_token),
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                }
+            })
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=400)
+
+class OTPViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+
+    throttle_scope_map = {
+        'send_otp': 'otp_send',
+        'verify_otp': 'otp_verify',
+    }
+
+    def get_throttles(self):
+        print("ACTION:", self.action)
+        self.throttle_scope = self.throttle_scope_map.get(self.action)
+        print("Throttle scope:", self.throttle_scope)
+        return super().get_throttles()
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    #send OTP via SMS service here
+    def send_otp(self, request):
+
+        serializer = PhoneNumberValidateSerializer(data=request.data)
+
+        if serializer.is_valid():
+            phone_number = serializer.validated_data.get('phone_number')
+
+            if not phone_number:
+                return Response({"error": "Phone number is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+            try:
+                send_otp_via_twilio(phone_number=phone_number)
+                masked = '*' * (len(phone_number) - 3) + phone_number[-3:]
+                return Response({"message": f"OTP sent successfully to {masked}"}, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def verify_otp(self, request):
+        serializer = UserOTPSerializer(data=request.data)
+        if serializer.is_valid():
+            phone = serializer.validated_data['phone_number']
+            otp_code = serializer.validated_data['otp']
+
+            try:
+                result = verify_otp_via_twilio(phone, otp_code)
+                if result == "approved":
+                    # user = CustomUser.objects.get(phone_number=phone)
+                    # user.is_active = True
+                    # user.save()
+                    return Response({"message": "OTP verified"}, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "Invalid OTP"}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+           
+
+    def resent_otp(self, request):
+        # serializer = UserResendOTPSerializer(data=request.data)
+        # if serializer.is_valid():
+        #     phone_number = serializer.validated_data['phone_number']
+        ...
+
+
+class PasswordResetViewSet(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    @action(detail=False, methods=['post'], url_path='forgot-password')
+    def forgot_password(self, request):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            user = User.objects.filter(email=email).first()
+            if user:
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                reset_link = f"http://localhost:8000/api/auth/reset-password/{uid}/{token}/"  # Replace with your frontend URL
+
+                send_mail(
+                    subject="Password Reset Request",
+                    message=f"Click the link to reset your password: {reset_link}",
+                    from_email="nandakishore.p.r2002@gmail.com",
+                    recipient_list=[email],
+                    fail_silently=False,
+                )
+            return Response({"message": "A reset link has been sent to this mail."})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['post'], url_path='reset-password/(?P<uidb64>[^/.]+)/(?P<token>[^/.]+)')
+    def reset_password(self, request, uidb64=None, token=None):
+        serializer = ResetPasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            try:
+                uid = force_str(urlsafe_base64_decode(uidb64))
+                user = User.objects.get(pk=uid)
+            except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+                return Response({"error": "Invalid link"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if default_token_generator.check_token(user, token):
+                user.set_password(serializer.validated_data['new_password'])
+                user.save()
+                return Response({"message": "Password has been reset successfully."})
+            return Response({"error": "Invalid or expired token"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AddressViewSet(viewsets.ModelViewSet):
+    serializer_class = AddressSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Address.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        # Automatically assign the current logged-in user
+        serializer.save(user=self.request.user)
+
+
+class SaveFCMTokenView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        token = request.data.get('token')
+        print(token)
+        if token:
+            FCMToken.objects.update_or_create(user=request.user, defaults={'token': token})
+            return Response({"message": "Token saved"})
+        return Response({"error": "No token provided"}, status=400)
