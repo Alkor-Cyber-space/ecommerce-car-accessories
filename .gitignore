@@ -190,4 +190,4 @@ sketch
 
 # End of https://www.toptal.com/developers/gitignore/api/django,react
 
-account/firebase/serviceaccount.json
+**/firebase/serviceAccountKey.json
