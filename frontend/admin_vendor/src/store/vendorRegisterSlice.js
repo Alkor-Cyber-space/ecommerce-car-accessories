@@ -26,6 +26,7 @@ const initialState = {
   businessDocs: null,
   // Step 4
   bankDetails: null,
+
   taxDocuments: null,
 
   // Step 5
@@ -138,31 +139,28 @@ const vendorRegisterSlice = createSlice({
     },
 
     // ✅ Step 3: Business Docs
-    setBusinessDoc: (state, action) => {
-      const { key, file } = action.payload;
-      if (!state.businessDocs) {
-        state.businessDocs = {};
-      }
-      state.businessDocs[key] = {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        preview: URL.createObjectURL(file), // optional
-      };
+  setBusinessDoc: (state, action) => {
+  const { key, file } = action.payload;
 
-      if (
-        state.businessDocs.gstinCertificate &&
-        state.businessDocs.registrationCertificate &&
-        state.businessDocs.shopLicense &&
-        !state.completedSteps.includes(3)
-      ) {
-        state.completedSteps.push(3);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
-    }
+  if (!state.businessDocs) {
+    state.businessDocs = {};
+  }
+  state.businessDocs[key] = file.name;
+
+  // ✅ Completion check
+  if (
+    state.businessDocs.gstinCertificate &&
+    state.businessDocs.registrationCertificate &&
+    state.businessDocs.shopLicense &&
+    !state.completedSteps.includes(3)
+  ) {
+    state.completedSteps.push(3);
+    localStorage.setItem(
+      "vendor_completed_steps",
+      JSON.stringify(state.completedSteps)
+    );
+  }
+}
     ,
     // ✅ Step 4: Bank Details
     setBankDetails: (state, action) => {

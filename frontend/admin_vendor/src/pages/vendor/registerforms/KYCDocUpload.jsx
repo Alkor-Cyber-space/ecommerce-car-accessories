@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { addKycDocument, setCurrentStep } from "../../../store/vendorRegisterSlice";
+import { uploadKYCDocumentsApi } from "../../../services/allAPI";
+import { toast } from "react-toastify";
 
 export default function KYCDocumentsUpload() {
   const dispatch = useDispatch();
@@ -23,8 +25,8 @@ export default function KYCDocumentsUpload() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Save metadata only
     const fileData = {
+      file, 
       name: file.name,
       size: file.size,
       type: file.type,
@@ -32,33 +34,65 @@ export default function KYCDocumentsUpload() {
 
     setter(fileData);
 
-    // Save to localStorage
+    // Save metadata only (optional)
     const current = JSON.parse(localStorage.getItem("vendorKycDocuments")) || {};
     localStorage.setItem(
       "vendorKycDocuments",
       JSON.stringify({
         ...current,
-        [key]: fileData,
+        [key]: { name: file.name, size: file.size, type: file.type },
       })
     );
   };
 
   const isFormComplete = panCard && identityProof;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isFormComplete) return;
+    const vendorId = localStorage.getItem("vendorId");
 
-    // Dispatch to Redux
-    dispatch(addKycDocument({ id: "pan", ...panCard }));
-    dispatch(addKycDocument({ id: "identity", ...identityProof }));
-    dispatch(setCurrentStep(3));
+    if (!vendorId) {
+      toast.error("Vendor ID missing");
+      return;
+    }
 
-    // Proceed
-    setTimeout(() => {
-      navigate("/vendor-register/business-documents");
-    }, 100);
+    try {
+      const formData = new FormData();
+      formData.append("pan_card", panCard?.file); // ✅ file is stored inside object
+      formData.append("aadhar_passport_dl", identityProof?.file);
+      console.log("pan_card:", panCard?.file);
+      console.log("aadhar_passport_dl:", identityProof?.file);
+
+      const response = await uploadKYCDocumentsApi(vendorId, formData);
+      console.log(response.data);
+      // ✅ send FormData
+
+      dispatch(addKycDocument({ id: "pan", ...panCard }));
+      dispatch(addKycDocument({ id: "identity", ...identityProof }));
+      dispatch(setCurrentStep(2));
+
+      setTimeout(() => {
+        navigate("/vendor-register/business-documents");
+      }, 100);
+    } catch (error) {
+      console.error("Error uploading KYC documents:", error);
+
+      // Optionally display per-field errors if available:
+      if (error?.response?.data) {
+        const errors = error.response.data;
+        if (errors.pan_card) {
+          toast.error(`PAN Card: ${errors.pan_card[0]}`);
+        }
+        if (errors.aadhar_passport_dl) {
+          toast.error(`Identity: ${errors.aadhar_passport_dl[0]}`);
+        }
+      } else {
+        toast.error("Failed to upload KYC documents. Try again.");
+      }
+    }
   };
+
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
