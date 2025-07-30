@@ -67,49 +67,54 @@ export default function VendorRegister() {
     return Object.keys(newErrors).length === 0;
   };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError('');
-  setLoading(true);
-  if (!validate()) {
-    setLoading(false);
-    return;
-  }
-  try {
-    const vendorData = { username, email, password }; 
-    const result = await vendorRegisterApi(vendorData);
-    console.log("Step 1 success:", result);
-
-    if (result?.data?.email && Array.isArray(result.data.email)) {
-      const emailError = result.data.email[0];
-      toast.error(` ${emailError}`);
-      setError(emailError);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    if (!validate()) {
       setLoading(false);
       return;
     }
-    toast.success(" Registration successful! Proceeding to OTP verification.");
-    dispatch(setCredentials({ username, email, password }));
+    try {
+      const vendorData = { username, email, password };
+      const result = await vendorRegisterApi(vendorData);
+      console.log("Step 1 success:", result);
 
-    if (rememberMe) {
-      localStorage.setItem('vendorRegister', JSON.stringify({ username, email, password, rememberMe: true }));
-    } else {
-      localStorage.removeItem('vendorRegister');
+      if (result?.data?.email && Array.isArray(result.data.email)) {
+        const emailError = result.data.email[0];
+        toast.error(` ${emailError}`);
+        setError(emailError);
+        setLoading(false);
+        return;
+      }
+      toast.success(" Registration successful! Proceeding to OTP verification.");
+      dispatch(setCredentials({ username, email, password }));
+      const userId = result?.data?.user_id
+        || result?.data?.user?.id; // Adjust based on actual API response
+      if (userId) {
+        localStorage.setItem('vendorId', userId);
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('vendorRegister', JSON.stringify({ username, email, password, rememberMe: true }));
+      } else {
+        localStorage.removeItem('vendorRegister');
+      }
+
+      dispatch(setCurrentStep(2));
+      setTimeout(() => {
+        navigate('/register/verifyOtp');
+      }, 3000);
+
+    } catch (err) {
+      console.error(err);
+      const errorMsg = err?.detail || err?.message || "Something went wrong.";
+      toast.error(` Registration failed: ${errorMsg}`);
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
     }
-
-    dispatch(setCurrentStep(2));
-    setTimeout(() => {
-     navigate('/register/verifyOtp');
-    }, 3000);
-
-  } catch (err) {
-    console.error(err);
-    const errorMsg = err?.detail || err?.message || "Something went wrong.";
-    toast.error(` Registration failed: ${errorMsg}`);
-    setError(errorMsg);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex">
