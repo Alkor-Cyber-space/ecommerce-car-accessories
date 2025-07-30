@@ -9,6 +9,7 @@ import {
 import { MdNotificationsNone, MdOutlineDashboard } from "react-icons/md";
 import { IoNotificationsOutline, IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
+import { TbUsersGroup } from "react-icons/tb";
 
 import user from "../../assets/user.jpg";
 import { RiUserSettingsLine } from "react-icons/ri";
@@ -58,7 +59,7 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/dashboard" label="Dashboard" icon={<MdOutlineDashboard />} activePath={activePath} />
           <SidebarItem to="/vendor/products" label="Product Management" icon={<FaBoxOpen />} activePath={activePath} />
           <SidebarItem to="/vendor/orders" label="Order Management" icon={<FaListAlt />} activePath={activePath} />
-          <SidebarItem to="/vendor/returns" label="Returns & Refunds" icon={<FaTruckLoading />} activePath={activePath} />
+          <SidebarItem to="/vendor/returns" label="Returns & Refunds" icon={<TbUsersGroup  />} activePath={activePath} />
           <SidebarItem to="/vendor/payments-earnings" label="Payments & Earnings" icon={<PiBuildings />} activePath={activePath} />
           <SidebarItem to="/vendor/reviews" label="Ratings & Reviews" icon={<IoStarHalf />} activePath={activePath} />
           <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
