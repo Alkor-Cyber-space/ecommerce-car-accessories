@@ -36,17 +36,14 @@ export const contactDetailsApi = async (vendorId, vendorData) => {
 };
 
 
-export const uploadKYCDocumentsApi = async (vendorId, formData) => {
-  return await axios.post(
-    `${serverurl}/auth/vendor/step3/${vendorId}/`,
-    formData,
-    {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    }
-  );
+export const uploadKYCDocumentsApi = (vendorId, formData) => {
+  return axios.post(`${serverurl}/auth/vendor/step3/${vendorId}/`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
 };
+
 
 export const uploadBussinessDocApi = async (vendorId, formData) => {
   return await axios.post(
@@ -72,6 +69,17 @@ export const uploadBankAndTaxDocsApi = async (vendorId, formData) => {
   );
 };
 
+export const uploadAgreementsApi = async (vendorId, formData) => {
+  return await axios.post(
+    `${serverurl}/auth/vendor/step6/${vendorId}/`,
+    formData,
+    {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }
+  );
+};
 
 // product
 export const addProductApi = async (productData) => {
