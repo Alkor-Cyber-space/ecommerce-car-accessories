@@ -21,7 +21,6 @@ export default function BusinessDocumentsUpload() {
 
   const uploadIntervals = useRef({});
 
-  // ✅ Restore saved docs when user comes back
   useEffect(() => {
     const saved = localStorage.getItem("vendorBusinessDocuments");
     if (saved) {
@@ -53,7 +52,7 @@ export default function BusinessDocumentsUpload() {
 
     setDocuments((prev) => ({
       ...prev,
-      [key]: { file, progress: 0, status: "uploading" }, // ✅ keep actual File in state
+      [key]: { file, progress: 0, status: "uploading" }, 
     }));
 
     simulateUpload(file, key);
@@ -84,24 +83,19 @@ const simulateUpload = (file, key) => {
 
     if (!isInvalid && progress >= 100) {
       clearInterval(uploadIntervals.current[key]);
-
-      // ✅ Update status on UI
+      // Update status on UI
       setDocuments((prev) => ({
         ...prev,
         [key]: { ...prev[key], progress: 100, status: "success" },
       }));
 
-      // ✅ Save only filename to localStorage
       const existing = JSON.parse(localStorage.getItem("vendorBusinessDocuments") || "{}");
       localStorage.setItem(
         "vendorBusinessDocuments",
         JSON.stringify({ ...existing, [key]: file.name })
       );
-
-      // ✅ Dispatch to Redux: only file name
       dispatch(setBusinessDoc({ key, file: { name: file.name } }));
-          dispatch(setCompletedStep(3));
-      
+          dispatch(setCompletedStep(3));    
     }
   }, 200);
 
@@ -128,59 +122,45 @@ const simulateUpload = (file, key) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // ✅ Make sure all documents are uploaded successfully
     if (!isComplete) {
       console.warn("All documents must be successfully uploaded.");
       return;
     }
-
     const vendorId = localStorage.getItem("vendorId");
     if (!vendorId) {
       console.error("Vendor ID not found.");
       return;
     }
-
     const formData = new FormData();
-
-
-
     try {
-          // ✅ Append actual file objects to FormData
     Object.entries(documents).forEach(([key, doc]) => {
       if (doc?.file instanceof File) {
         formData.append(key, doc.file);
       }
     });
-
       const response = await uploadBussinessDocApi(vendorId, formData);
 
       if (response.status === 200 || response.status === 201) {
-        console.log("✅ Business documents uploaded successfully:", response.data);
-        dispatch(setCurrentStep(3));
+        console.log("Business documents uploaded successfully:", response.data);
+        dispatch(setCurrentStep(4));
         setTimeout(() => {
           navigate("/vendor-register/bank-details");
         }, 100);
       } else {
-        console.error("⚠️ Unexpected response:", response);
+        console.error("Unexpected response:", response);
       }
     } catch (error) {
-      console.error("❌ Error submitting business documents:", error);
-
-      // Optional: Handle field-level errors here if backend sends them like:
-      // { gst_certificate: ["This file is too large."] }
+      console.error(" Error submitting business documents:", error);
       if (error.response?.status === 400 && error.response.data) {
         const fieldErrors = error.response.data;
         Object.entries(fieldErrors).forEach(([field, messages]) => {
-          // displayErrorForField(field, messages[0]); ← implement this to show near field
-          console.error(`❌ ${field}: ${messages[0]}`);
+          console.error(` ${field}: ${messages[0]}`);
         });
       } else {
         toast.error("Failed to submit documents. Please try again.");
       }
     }
   };
-
 
   const renderUploader = (label, id) => {
     const doc = documents[id];

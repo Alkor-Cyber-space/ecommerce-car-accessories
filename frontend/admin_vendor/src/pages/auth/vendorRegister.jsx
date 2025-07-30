@@ -90,7 +90,7 @@ export default function VendorRegister() {
       toast.success(" Registration successful! Proceeding to OTP verification.");
       dispatch(setCredentials({ username, email, password }));
       const userId = result?.data?.user_id
-        || result?.data?.user?.id; // Adjust based on actual API response
+        || result?.data?.user?.id;
       if (userId) {
         localStorage.setItem('vendorId', userId);
       }

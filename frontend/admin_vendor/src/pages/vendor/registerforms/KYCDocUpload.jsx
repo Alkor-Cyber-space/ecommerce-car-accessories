@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { addKycDocument, setCurrentStep } from "../../../store/vendorRegisterSlice";
+import { addKycDocument, setCompletedStep, setCurrentStep } from "../../../store/vendorRegisterSlice";
 import { uploadKYCDocumentsApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 
@@ -34,7 +34,7 @@ export default function KYCDocumentsUpload() {
 
     setter(fileData);
 
-    // Save metadata only (optional)
+    // Save metadata only 
     const current = JSON.parse(localStorage.getItem("vendorKycDocuments")) || {};
     localStorage.setItem(
       "vendorKycDocuments",
@@ -59,26 +59,24 @@ export default function KYCDocumentsUpload() {
 
     try {
       const formData = new FormData();
-      formData.append("pan_card", panCard?.file); // ✅ file is stored inside object
+      formData.append("pan_card", panCard?.file);
       formData.append("aadhar_passport_dl", identityProof?.file);
       console.log("pan_card:", panCard?.file);
       console.log("aadhar_passport_dl:", identityProof?.file);
 
       const response = await uploadKYCDocumentsApi(vendorId, formData);
       console.log(response.data);
-      // ✅ send FormData
 
       dispatch(addKycDocument({ id: "pan", ...panCard }));
       dispatch(addKycDocument({ id: "identity", ...identityProof }));
-      dispatch(setCurrentStep(2));
+      dispatch(setCompletedStep(2));
+      dispatch(setCurrentStep(3));
 
       setTimeout(() => {
         navigate("/vendor-register/business-documents");
       }, 100);
     } catch (error) {
       console.error("Error uploading KYC documents:", error);
-
-      // Optionally display per-field errors if available:
       if (error?.response?.data) {
         const errors = error.response.data;
         if (errors.pan_card) {
@@ -92,7 +90,6 @@ export default function KYCDocumentsUpload() {
       }
     }
   };
-
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">

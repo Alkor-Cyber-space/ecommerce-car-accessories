@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setCompanyDetails, setCurrentStep } from "../../../store/vendorRegisterSlice";
+import { setCompanyDetails, setCompletedStep, setCurrentStep } from "../../../store/vendorRegisterSlice";
 import { companyDetailsApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 
 export default function CompanyDetails() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("vendorCompanyDetails");
@@ -20,31 +22,31 @@ export default function CompanyDetails() {
         company_number: "",
       };
   });
-  const [errors, setErrors] = useState({});
-
-  const [loading, setLoading] = useState(false);
-  const vendorId = localStorage.getItem("vendorId");
 
   const validate = () => {
     const newErrors = {};
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[6-9]\d{9}$/;
+
     if (!formData.company_name.trim()) newErrors.company_name = "Company name is required";
     if (!formData.type_of_vendor) newErrors.type_of_vendor = "Select a vendor type";
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!formData.company_email.trim()) {
       newErrors.company_email = "Email is required";
     } else if (!emailRegex.test(formData.company_email)) {
       newErrors.company_email = "Invalid email address";
     }
-    const phoneRegex = /^[6-9]\d{9}$/;
+
     if (!formData.company_number.trim()) {
       newErrors.company_number = "Phone number is required";
     } else if (!phoneRegex.test(formData.company_number)) {
-      newErrors.company_number = "Enter a valid 10-digit  number";
+      newErrors.company_number = "Enter a valid 10-digit number";
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  const isFormComplete = Object.values(formData).every((val) => val.trim() !== "");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -54,67 +56,82 @@ export default function CompanyDetails() {
     }));
   };
 
-  const isFormComplete = Object.values(formData).every((val) => val.trim() !== "");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validate()) return;
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!validate()) return;
-  setLoading(true);
-
-  try {
-    const res = await companyDetailsApi(formData, vendorId);
-    console.log("API response:", res);
-
-    // ✅ Handle duplicate email error if returned as an array
-    if (res?.data?.company_email && Array.isArray(res.data.company_email)) {
-      const emailError = res.data.company_email[0];
-      toast.error(emailError);
-      setLoading(false);
+    const vendorId = localStorage.getItem("vendorId");
+    if (!vendorId) {
+      toast.error("Vendor ID is missing");
       return;
     }
+    setLoading(true);
+    toast._shown = false;
 
-    // ✅ Optionally handle error string message
-    if (typeof res?.data?.error === "string" && res.data.error.toLowerCase().includes("email")) {
-      toast.error(res.data.error);
+    try {
+      const response = await companyDetailsApi(formData, vendorId);
+      console.log("API response:", response);
+
+      if (response?.status === 400 && response?.data) {
+        const serverErrors = response.data;
+        const newErrors = {};
+
+        Object.keys(serverErrors).forEach((field) => {
+          const message = Array.isArray(serverErrors[field])
+            ? serverErrors[field][0]
+            : serverErrors[field];
+          newErrors[field] = message;
+
+          if (!toast._shown) {
+            toast.error(message);
+            toast._shown = true;
+          }
+        });
+        setErrors((prev) => ({ ...prev, ...newErrors }));
+        setLoading(false);
+        return;
+      }
+
+      if (response?.status === 200 || response?.status === 201) {
+        dispatch(setCompanyDetails(formData));
+        dispatch(setCompletedStep(0));
+        dispatch(setCurrentStep(1));
+        localStorage.setItem("vendorCompanyDetails", JSON.stringify(formData));
+        toast.success("Company details saved!");
+
+        setTimeout(() => {
+          navigate("/vendor-register/contact-details");
+        }, 200);
+      } else {
+        toast.error("Unexpected response");
+      }
+    } catch (err) {
+      const serverData = err.response?.data;
+      const formattedErrors = {};
+
+      if (serverData && typeof serverData === "object") {
+        Object.keys(serverData).forEach((field) => {
+          if (Array.isArray(serverData[field])) {
+            formattedErrors[field] = serverData[field][0];
+            if (!toast._shown) {
+              toast.error(serverData[field][0]);
+              toast._shown = true;
+            }
+          }
+        });
+        setErrors((prev) => ({ ...prev, ...formattedErrors }));
+      } else {
+        toast.error("Failed to save company details. Please try again.");
+      }
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // ✅ Proceed on success
-    toast.success("Company details saved!");
-    localStorage.setItem("vendorCompanyDetails", JSON.stringify(formData));
-    localStorage.setItem("vendorId", vendorId);
-    dispatch(setCompanyDetails(formData));
-    dispatch(setCurrentStep(1));
-
-    setTimeout(() => {
-      navigate("/vendor-register/contact-details");
-    }, 200);
-  } catch (err) {
-    console.error("API error:", err);
-
-    // ✅ Catch 409 or email conflict
-    if (err?.response?.status === 409) {
-      toast.error("Email already exists.");
-    } else if (
-      err?.response?.data?.company_email &&
-      Array.isArray(err.response.data.company_email)
-    ) {
-      toast.error(err.response.data.company_email[0]);
-    } else {
-      toast.error("Failed to save company details. Please try again.");
-    }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-2xl p-8 mx-auto my-10">
         <h1 className="text-5xl font-bold text-[#232832] mb-6">Company Details</h1>
-
 
         <form className="space-y-4 w-[600px] max-w-[550px]" onSubmit={handleSubmit}>
           <div>
@@ -128,7 +145,6 @@ export default function CompanyDetails() {
               required
             />
             {errors.company_name && <p className="text-red-500 text-sm">{errors.company_name}</p>}
-
           </div>
 
           <div className="relative">
@@ -136,8 +152,8 @@ export default function CompanyDetails() {
               name="type_of_vendor"
               value={formData.type_of_vendor}
               onChange={handleChange}
-              className={`appearance-none w-full px-4 py-3 pr-10 rounded-lg bg-white font-semibold focus:ring-2
-              ${formData.type_of_vendor ? "text-black" : "text-[#7F7F7F]"}`}
+              className={`appearance-none w-full px-4 py-3 pr-10 rounded-lg bg-white font-semibold focus:ring-2 ${formData.type_of_vendor ? "text-black" : "text-[#7F7F7F]"
+                }`}
               required
             >
               <option value="">Type of Vendor</option>
@@ -151,7 +167,7 @@ export default function CompanyDetails() {
             {errors.type_of_vendor && <p className="text-red-500 text-sm">{errors.type_of_vendor}</p>}
           </div>
 
-         <div>
+          <div>
             <input
               type="email"
               name="company_email"
@@ -162,7 +178,8 @@ export default function CompanyDetails() {
               required
             />
             {errors.company_email && <p className="text-red-500 text-sm">{errors.company_email}</p>}
-         </div>
+          </div>
+
           <div>
             <input
               type="tel"
@@ -179,8 +196,7 @@ export default function CompanyDetails() {
           <button
             type="submit"
             disabled={!isFormComplete || loading}
-            className={`w-full py-3 rounded-3xl text-white transition mt-5 
-              ${isFormComplete && !loading
+            className={`w-full py-3 rounded-3xl text-white transition mt-5 ${isFormComplete && !loading
                 ? "bg-[#5737B4] hover:bg-[#432a91]"
                 : "bg-[#D8D8D8] cursor-not-allowed"
               }`}

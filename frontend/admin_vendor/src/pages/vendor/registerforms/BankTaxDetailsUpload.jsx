@@ -7,6 +7,7 @@ import {
     setCurrentStep,
     setBankDetails,
     setTaxDocuments,
+    setCompletedStep,
 } from "../../../store/vendorRegisterSlice";
 import { uploadBankAndTaxDocsApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
@@ -31,7 +32,7 @@ export default function BankAndTaxDetails() {
 
     const uploadIntervals = useRef({});
 
-    // ✅ RESTORE FROM LOCALSTORAGE ON LOAD
+    // RESTORE FROM LOCALSTORAGE 
     useEffect(() => {
         const restoreDocs = (key, fields, setDocs) => {
             const saved = localStorage.getItem(key);
@@ -48,7 +49,7 @@ export default function BankAndTaxDetails() {
             });
 
             setDocs(restored);
-            console.log(`✅ Restored ${key} from localStorage`, restored);
+            console.log(`Restored ${key} from localStorage`, restored);
         };
 
         restoreDocs("vendorBankDocuments", bankDocs, setBankDocs);
@@ -136,7 +137,6 @@ export default function BankAndTaxDetails() {
                 }
             });
 
-            // 👉 Make your API call here before dispatching
             try {
                 const vendorId = localStorage.getItem("vendorId");
 
@@ -149,8 +149,6 @@ export default function BankAndTaxDetails() {
                 }
                 const response = await uploadBankAndTaxDocsApi(vendorId, formData);
                 console.log(response.data);
-
-
                 if (response.status === 200) {
                     dispatch(setBankDetails(uploadedBankDocs));
                     localStorage.setItem("vendorBankDocuments", JSON.stringify(uploadedBankDocs));
@@ -159,16 +157,16 @@ export default function BankAndTaxDetails() {
                     dispatch(setTaxDocuments(uploadedTaxDocs));
                     localStorage.setItem("vendorTaxDocuments", JSON.stringify(uploadedTaxDocs));
                     console.log("Tax Documents saved:", uploadedTaxDocs);
-
-                    // ✅ Move to next step
+                    dispatch(setCompletedStep(4))
+                    // Move to next step
                     dispatch(setCurrentStep(5));
                     navigate("/vendor-register/agreements");
                 } else {
-                    console.error("❌ Upload failed with status:", response.status);
+                    console.error("Upload failed with status:", response.status);
                     toast.error("Failed to upload documents. Try again.");
                 }
             } catch (error) {
-                console.error("❌ API error:", error);
+                console.error("API error:", error);
                 toast.error("Server error. Please try again later.", error);
             }
         }
@@ -294,7 +292,6 @@ export default function BankAndTaxDetails() {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    dispatch(setCurrentStep(6));
                                     navigate("/vendor-register/agreements");
                                 }}
                                 className="w-[280px] py-2 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
@@ -344,7 +341,6 @@ export default function BankAndTaxDetails() {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    dispatch(setCurrentStep(6));
                                     navigate("/login");
                                 }}
                                 className="w-[280px] py-2 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
