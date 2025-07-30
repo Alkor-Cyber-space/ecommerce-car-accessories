@@ -50,6 +50,7 @@ import OrderManagement from './pages/vendor/orders/OrderManagement';
 import OrdersLayout from './pages/vendor/orders/OrdersLayout';
 import SupportHelp from './pages/vendor/SupportHelp';
 import CreateTicket from './pages/vendor/CreateTicket';
+import PaymentsEarnings from './pages/vendor/PaymentsEarnings';
 
 
 
@@ -75,8 +76,6 @@ function App() {
           <Route path="Sales Report" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-
-
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}
@@ -88,7 +87,6 @@ function App() {
           <Route path="bank-details" element={<BankTaxDetailsUpload />} />
           <Route path="agreements" element={<AgreementsUpload />} />
         </Route>
-
         {/* Vendor Dashboard */}
         <Route path="/vendor" element={<VendorHome />} >
           <Route path='dashboard' element={<VendorDashboard />} />
@@ -114,10 +112,10 @@ function App() {
             <Route path='order-detail' element={<OrderDetailView />} />
             <Route path='edit-order' element={<OrderDetailEdit />} />
           </Route>
-
              <Route path='notification' element={<Notification />}/>
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
+             <Route path='payments-earnings' element={<PaymentsEarnings />} />
         </Route>
       </Routes>
 

@@ -12,6 +12,7 @@ import logo from "../../assets/logo.png";
 
 import user from "../../assets/user.jpg";
 import { RiUserSettingsLine } from "react-icons/ri";
+import { PiBuildings } from "react-icons/pi";
 
 
 const VendorHome = () => {
@@ -56,18 +57,17 @@ const VendorHome = () => {
         <ul className="space-y-4 text-md py-10 font-medium">
           <SidebarItem to="/vendor/dashboard" label="Dashboard" icon={<MdOutlineDashboard />} activePath={activePath} />
           <SidebarItem to="/vendor/products" label="Product Management" icon={<FaBoxOpen />} activePath={activePath} />
-          <SidebarItem to="/vendor/orders" label="Orders" icon={<FaListAlt />} activePath={activePath} />
+          <SidebarItem to="/vendor/orders" label="Order Management" icon={<FaListAlt />} activePath={activePath} />
           <SidebarItem to="/vendor/returns" label="Returns & Refunds" icon={<FaTruckLoading />} activePath={activePath} />
+          <SidebarItem to="/vendor/payments-earnings" label="Payments & Earnings" icon={<PiBuildings />} activePath={activePath} />
           <SidebarItem to="/vendor/reviews" label="Ratings & Reviews" icon={<IoStarHalf />} activePath={activePath} />
           <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
           <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
           <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />
           <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} />
-          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <MdNotificationsNone />} activePath={activePath} />
-          <SidebarItem to="/vendor/support-help" label="Support/Help" icon={ <FaRegQuestionCircle />} activePath={activePath} />
-
+          <SidebarItem to="/vendor/notification" label="Notifications" icon={<MdNotificationsNone />} activePath={activePath} />
+          <SidebarItem to="/vendor/support-help" label="Support/Help" icon={<FaRegQuestionCircle />} activePath={activePath} />
           <SidebarItem to="/vendor/account-settings" label="Account Settings" icon={<RiUserSettingsLine />} activePath={activePath} />
-          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <IoNotificationsOutline />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 
@@ -79,8 +79,6 @@ const VendorHome = () => {
           </li>
         </ul>
       </div>
-
-
       {/* Main Content */}
       <div className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}>
         {/* Search Bar */}
