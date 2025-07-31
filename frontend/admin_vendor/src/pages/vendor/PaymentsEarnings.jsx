@@ -124,10 +124,10 @@ const PaymentsEarnings = () => {
     const handleFilterChange = (e) => {
         const selectedStatus = e.target.value;
         setStatusFilter(selectedStatus);
-        
+
         // Reset sort config when filter changes
         setSortConfig({ key: null, direction: 'asc' });
-        
+
         // Apply filter to the original data
         if (selectedStatus === 'All') {
             setTransactionData(originalTransactionData);
@@ -209,7 +209,7 @@ const PaymentsEarnings = () => {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <h1 className="text-[#232832] text-2xl font-semibold">Payments & Earnings</h1>
                 <div className="flex gap-3">
-                    <select 
+                    <select
                         className="w-full md:w-auto border border-[#5737B] rounded-md px-5 text-[15px] font-medium py-[2px] text-[#5737B3] focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
                         value={statusFilter}
                         onChange={handleFilterChange}
@@ -243,7 +243,7 @@ const PaymentsEarnings = () => {
             <div className='min-w-full bg-white rounded-lg shadow text-sm'>
                 <div className='flex justify-between items-center p-4  border-gray-100'>
                     <h1 className='text-[#232832] text-xl font-medium'>
-                        Transaction History 
+                        Transaction History
                         {statusFilter !== 'All' && (
                             <span className="text-sm text-gray-500 ml-2">
                                 ({statusFilter} - {transactionData.length} transactions)
