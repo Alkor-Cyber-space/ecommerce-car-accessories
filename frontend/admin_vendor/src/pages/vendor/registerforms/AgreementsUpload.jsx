@@ -3,7 +3,7 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { SlCloudUpload } from "react-icons/sl";
 import { RiDeleteBinLine } from "react-icons/ri";
-import { setAgreements, setCurrentStep, setCompletedStep, resetVendorRegistration } from "../../../store/vendorRegisterSlice";
+import { setAgreements, setCompletedStep, resetVendorRegistration } from "../../../store/vendorRegisterSlice";
 import { uploadAgreementsApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 
@@ -23,7 +23,7 @@ export default function AgreementsUpload() {
 
   const uploadIntervals = useRef({});
 
-  // ✅ Restore saved agreements when coming back
+  // Restore saved agreements when coming back
   useEffect(() => {
     const saved = localStorage.getItem("vendorAgreements");
     if (saved) {
@@ -47,7 +47,7 @@ export default function AgreementsUpload() {
       };
 
       setDocs(restored);
-      console.log("📥 Restored agreements from localStorage", restored);
+      console.log("Restored agreements from localStorage", restored);
     }
   }, []);
 
@@ -63,60 +63,59 @@ export default function AgreementsUpload() {
     simulateUpload(file, key);
   };
 
-const simulateUpload = (file, key) => {
-  const isInvalid = !allowedTypes.includes(file.type);
-  let progress = 0;
+  const simulateUpload = (file, key) => {
+    const isInvalid = !allowedTypes.includes(file.type);
+    let progress = 0;
 
-  const intervalId = setInterval(() => {
-    progress += 10;
+    const intervalId = setInterval(() => {
+      progress += 10;
 
-    if (progress <= 50) {
-      setDocs((prev) => ({
-        ...prev,
-        [key]: { ...prev[key], progress, status: "uploading" },
-      }));
-    }
+      if (progress <= 50) {
+        setDocs((prev) => ({
+          ...prev,
+          [key]: { ...prev[key], progress, status: "uploading" },
+        }));
+      }
 
-    if (isInvalid && progress >= 50) {
-      clearInterval(uploadIntervals.current[key]);
-      setDocs((prev) => ({
-        ...prev,
-        [key]: { ...prev[key], progress: 50, status: "failed" },
-      }));
-      return;
-    }
+      if (isInvalid && progress >= 50) {
+        clearInterval(uploadIntervals.current[key]);
+        setDocs((prev) => ({
+          ...prev,
+          [key]: { ...prev[key], progress: 50, status: "failed" },
+        }));
+        return;
+      }
 
-    if (!isInvalid && progress >= 100) {
-      clearInterval(uploadIntervals.current[key]);
+      if (!isInvalid && progress >= 100) {
+        clearInterval(uploadIntervals.current[key]);
 
-      const metadata = {
-        name: file.name,
-        size: file.size,
-        type: file.type,
-      };
+        const metadata = {
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        };
 
-      setDocs((prev) => ({
-        ...prev,
-        [key]: {
-          file, // ✅ store full File object here
-          metadata, // Optional: you can use this separately if needed
-          progress: 100,
-          status: "success",
-        },
-      }));
+        setDocs((prev) => ({
+          ...prev,
+          [key]: {
+            file,
+            metadata, 
+            progress: 100,
+            status: "success",
+          },
+        }));
 
-      // ✅ Only store metadata in localStorage
-      const existing = JSON.parse(localStorage.getItem("vendorAgreements") || "{}");
-      localStorage.setItem(
-        "vendorAgreements",
-        JSON.stringify({ ...existing, [key]: metadata })
-      );
-    }
-  }, 150);
+        // Only store metadata in localStorage
+        const existing = JSON.parse(localStorage.getItem("vendorAgreements") || "{}");
+        localStorage.setItem(
+          "vendorAgreements",
+          JSON.stringify({ ...existing, [key]: metadata })
+        );
+      }
+    }, 150);
 
-  uploadIntervals.current[key] = intervalId;
-};
-
+    uploadIntervals.current[key] = intervalId;
+  };
 
   const handleRemove = (key) => {
     // Stop ongoing upload
@@ -142,7 +141,6 @@ const simulateUpload = (file, key) => {
     const vendorId = localStorage.getItem("vendorId");
     const formData = new FormData();
 
-    // Collect uploaded docs and prepare formData
     Object.entries(docs).forEach(([key, doc]) => {
       if (doc.file) {
         uploadedDocs[key] = {
@@ -150,7 +148,7 @@ const simulateUpload = (file, key) => {
           size: doc.file.size,
           type: doc.file.type,
         };
-        formData.append(key, doc.file); // Add file to FormData
+        formData.append(key, doc.file);
       }
     });
 
@@ -163,13 +161,12 @@ const simulateUpload = (file, key) => {
       if (response.status === 200) {
         dispatch(setAgreements(uploadedDocs));
         localStorage.setItem("vendorAgreements", JSON.stringify(uploadedDocs));
-
-        dispatch(setCurrentStep(6));
-        dispatch(resetVendorRegistration());
-
+        dispatch(setCompletedStep(5));
         setTimeout(() => {
           setLoading(false);
           navigate("/login");
+          dispatch(resetVendorRegistration());
+
         }, 1000);
       } else {
         toast.error("Failed to submit agreements.");

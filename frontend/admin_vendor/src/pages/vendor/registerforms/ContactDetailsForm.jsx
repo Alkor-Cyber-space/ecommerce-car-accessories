@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setContactDetails, setCurrentStep } from "../../../store/vendorRegisterSlice";
+import { setCompletedStep, setContactDetails, setCurrentStep } from "../../../store/vendorRegisterSlice";
 import { contactDetailsApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 
@@ -11,7 +11,6 @@ export default function ContactDetailsForm() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // 🔁 Load from localStorage on init
   const [formData, setFormData] = useState(() => {
     const saved = localStorage.getItem("vendorContactDetails");
     return saved
@@ -62,13 +61,27 @@ export default function ContactDetailsForm() {
       return;
     }
     setLoading(true);
+    toast._shown = false;
 
     try {
       const response = await contactDetailsApi(vendorId, formData);
       console.log(response);
-      if (response?.data?.email && Array.isArray(response.data.email)) {
-        const emailError = response.data.email[0];
-        toast.error(` ${emailError}`);
+      if (response?.status === 400 && response?.data) {
+        const serverErrors = response.data;
+        const newErrors = {};
+        // Iterate through each field returned in the error
+        Object.keys(serverErrors).forEach((field) => {
+          const message = Array.isArray(serverErrors[field])
+            ? serverErrors[field][0]
+            : serverErrors[field];
+
+          newErrors[field] = message;
+          if (!toast._shown) {
+            toast.error(message);
+            toast._shown = true;
+          }
+        });
+        setErrors((prev) => ({ ...prev, ...newErrors }));
         setLoading(false);
         return;
       }
@@ -76,20 +89,38 @@ export default function ContactDetailsForm() {
       if (response?.status === 200 || response?.status === 201) {
 
         dispatch(setContactDetails(formData));
-        dispatch(setCurrentStep(1));
+        dispatch(setCompletedStep(1));
+        dispatch(setCurrentStep(2));
         localStorage.setItem("vendorContactDetails", JSON.stringify(formData));
 
         setTimeout(() => {
           navigate("/vendor-register/kyc-documents");
         }, 200);
       } else {
-        toast.error("Failed to save contact details. Try again.");
+        console.error("Unexpected response:", response.data);
       }
     } catch (error) {
-      console.error("API Error:", error);
-      toast.error("Something went wrong. Please try again.");
+      const serverData = error.response?.data;
+
+      if (serverData && typeof serverData === "object") {
+        const formattedErrors = {};
+
+        Object.keys(serverData).forEach((field) => {
+          if (Array.isArray(serverData[field])) {
+            formattedErrors[field] = serverData[field][0]; 
+            toast.error(`${serverData[field][0]}`);
+          }
+        });
+
+        setErrors((prev) => ({
+          ...prev,
+          ...formattedErrors,
+        }));
+      }
     } finally {
-      setLoading(false);
+      {
+        setLoading(false);
+      }
     }
   };
 
@@ -99,15 +130,15 @@ export default function ContactDetailsForm() {
         <h1 className="text-5xl font-bold text-[#232832] mb-6">Contact Details</h1>
 
         <form className="space-y-4 w-[600px] max-w-[550px]" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="contact_name"
-              placeholder="Contact Person Name"
-              value={formData.contact_name}
-              onChange={handleChange}
-              className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
-              required
-            />
+          <input
+            type="text"
+            name="contact_name"
+            placeholder="Contact Person Name"
+            value={formData.contact_name}
+            onChange={handleChange}
+            className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
+            required
+          />
 
           <div className="relative">
             <select
@@ -154,7 +185,9 @@ export default function ContactDetailsForm() {
               className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"
               required
             />
-            {errors.contact_email && <p className="text-red-500 text-sm">{errors.contact_email}</p>}
+            {errors.contact_email && (
+              <p className="text-red-500 text-sm mt-1">{errors.contact_email}</p>
+            )}
           </div>
 
           <button

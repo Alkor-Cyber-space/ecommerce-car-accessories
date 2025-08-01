@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'drf_spectacular',
     'adminapp',
+    'coupon_promotion'
 ]
 
 MIDDLEWARE = [
