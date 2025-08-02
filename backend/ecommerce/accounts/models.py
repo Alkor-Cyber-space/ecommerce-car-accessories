@@ -5,7 +5,7 @@ from django.core.validators import RegexValidator
 from django.utils.timezone import now
 from hashlib import sha256
 from datetime import datetime, timedelta
-
+from django.utils import timezone
 
 
 class CustomUser(AbstractUser):
@@ -179,3 +179,17 @@ class FCMToken(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     token = models.CharField(max_length=255, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+class OTP(models.Model):
+     user=models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='otps')
+     otp=models.CharField(max_length=4)
+     created_at=models.DateTimeField(auto_now_add=True)
+     expire_at=models.DateTimeField()
+     is_used=models.BooleanField(default=False)
+
+     def is_valid(self):
+          now=timezone.now()
+          return not self.is_used and now <=self.expire_at
+
+     def __str__(self):
+          return f"OTP{self.otp} for {self.user.email}" 

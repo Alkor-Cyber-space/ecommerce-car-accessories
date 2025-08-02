@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'drf_spectacular',
     'adminapp',
+    'coupon_promotion',
 ]
 
 MIDDLEWARE = [
@@ -189,17 +190,18 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.ScopedRateThrottle',
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'otp_send': '3/m',
-        'otp_verify': '10/hour',
-        'anon': '100/hour',
-        'user': '100/hour'
-    },
+    # 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.ScopedRateThrottle',
+    #     'rest_framework.throttling.AnonRateThrottle',
+    #     'rest_framework.throttling.UserRateThrottle',
+    # ],
+    # 'DEFAULT_THROTTLE_RATES': {
+    #     'otp_send': '3/m',
+    #     'otp_verify': '10/hour',
+    #     'anon': '100/hour',
+    #     'user': '100/hour'
+    # },
+    
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 

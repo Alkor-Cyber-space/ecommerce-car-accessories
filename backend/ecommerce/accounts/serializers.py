@@ -380,3 +380,50 @@ class AddressSerializer(serializers.ModelSerializer):
         model = Address
         fields = '__all__'
         read_only_fields = ['user']
+
+class VendorRegistrationSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['email', 'username', 'password']
+
+    def create(self, validated_data):
+        user = CustomUser.objects.create_user(**validated_data)
+
+        # Assign user to 'Vendor' group
+        vendor_group, created = Group.objects.get_or_create(name='Vendor')
+        user.groups.add(vendor_group)
+
+        return user
+        
+class OTPVerificationSerializer(serializers.Serializer):
+    email=serializers.EmailField()
+    otp=serializers.CharField(max_length=4)
+
+    def validate(self, data):
+        email=data.get('email')
+        otp=data.get('otp')
+
+        try:
+            user=CustomUser.objects.get(email=email)
+        except CustomUser.DoesNotExist:
+            raise serializers.ValidationError({"email": "user with the id does not exist"})
+        
+        try:
+            otp_obj=OTP.objects.get(user=user,otp=otp)
+        except OTP.DoesNotExist:
+            raise serializers.ValidationError({"otp": "invalid otp"})
+        
+        if not otp_obj.is_valid():
+            raise serializers.ValidationError({"otp": "the session expired or already used"})
+        
+        otp_obj.is_used=True
+        otp_obj.save()
+
+        user.is_active=True
+        user.save()
+        
+        data['user'] = user
+        return data
+        
