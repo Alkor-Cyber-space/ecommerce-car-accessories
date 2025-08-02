@@ -55,7 +55,7 @@ export default function AuditLogs() {
         />
         <button
           onClick={() => setSearch("")}
-          className="border-2 border-[#5737B4] text-[#5737B4] hover:bg-[#5737B4] hover:text-white active:bg-[#5737B4] active:text-white px-4 py-2 rounded transition duration-300"
+          className="border border-[#5737B4] text-[#5737B4] hover:bg-[#5737B4] hover:text-white active:bg-[#5737B4] active:text-white px-4 py-2 rounded transition duration-300"
         >
           Clear
         </button>
