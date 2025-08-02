@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaPlus } from "react-icons/fa";
 import { BsSearch } from "react-icons/bs";
 import { HiOutlineDotsVertical } from "react-icons/hi";
+import SearchFilter from "../../../pages/admin/SearchFilter";
 
 const initialAdmins = [
   {
@@ -144,16 +145,7 @@ export default function AdminOverview() {
         </div>
       </div>
 
-      <div className="relative w-full md:w-[50%]">
-        <BsSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search admins..."
-          className="bg-white px-5 py-2 rounded-3xl w-full"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <SearchFilter />
 
       <div className="overflow-x-auto scrollbar-none">
         <table className="min-w-full bg-white rounded-md text-sm shadow">

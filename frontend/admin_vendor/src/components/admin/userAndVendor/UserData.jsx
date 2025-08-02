@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BsSearch } from "react-icons/bs";
 import { HiOutlineDotsVertical } from "react-icons/hi";
+import SearchFilter from '../../../pages/admin/SearchFilter';
+import { Link } from 'react-router-dom';
 
 const usersData = [
   {
@@ -108,23 +110,16 @@ export default function UserDataTable() {
 
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-      <h1 className="text-[#232832] text-xl font-bold">Users Overview</h1>
-
-      <div className='bg-white rounded-xl relative w-full md:w-[20%] flex'>
-        <p className='pl-6 py-5.5'>Total User : </p>
-        <h1 className='text-[30px] py-3 px-2 font-semibold'>256</h1>
+      <div className='flex justify-between items-center'>
+        <h1 className="text-[#232832] text-xl font-bold">Users Overview</h1>
+        <button className='bg-[#5737B4] text-white p-2 rounded-md md:sm'>Download Report</button>
+      </div>
+      <div className="bg-white rounded-xl w-full md:w-[28%] flex flex-col md:flex-row items-center justify-between px-4 py-4">
+        <p className="text-base md:text-lg text-gray-700">Total User :</p>
+        <h1 className="text-3xl font-semibold text-black mr-5 md:mr-2">256</h1>
       </div>
 
-      <div className="relative w-full md:w-[50%]">
-        <BsSearch className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
-        <input
-          type="text"
-          placeholder="Search users..."
-          className="bg-white px-5 py-2 rounded-3xl w-full"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
+      <SearchFilter />
 
       <div className="overflow-x-auto scrollbar-none">
         <table className="min-w-full bg-white rounded-md text-sm shadow">
@@ -144,7 +139,7 @@ export default function UserDataTable() {
           <tbody>
             {filteredUsers.map((user, index) => (
               <tr key={`${user.id}-${index}`} className="text-left hover:bg-gray-50 border-b border-gray-100">
-                <td className="py-3 px-4 font-medium text-blue-600">{user.id}</td>
+                <td className="py-3 px-4 font-medium text-[#5737B4]"><Link to='/admin/user-details'>{user.id}</Link></td> 
                 <td className="py-3 px-4">{user.name}</td>
                 <td className="py-3 px-4">{user.email}</td>
                 <td className="py-3 px-4">{user.phone}</td>
@@ -155,7 +150,7 @@ export default function UserDataTable() {
                   </span>
                 </td>
                 <td className="py-3 px-4">{user.lastActive}</td>
-                <td className="py-3 px-4 font-medium">{user.totalOrders}</td>
+                <td className="py-3 px-4 font-medium">₹ {user.totalOrders}</td>
                 <td className="py-3 px-4 relative">
                   <button
                     onClick={(e) => {
@@ -172,8 +167,7 @@ export default function UserDataTable() {
                       <button
                         onClick={() => handleAction('View', user.id)}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
-                      >
-                        View
+                      > <Link to='/admin/user-details'>View</Link>
                       </button>
                       <button
                         onClick={() => handleAction('Edit', user.id)}
