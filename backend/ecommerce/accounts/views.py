@@ -86,25 +86,37 @@ class UserViewSet(viewsets.ViewSet):
             serializer.save()
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    # @action(detail=True, methods=['put'], url_path='edit_profile')
+    # def edit_profile(self, request, pk=None):
+    #     try:
+    #         user = self.get_object()
+    #     except:
+    #         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    #     serializer = UserProfileUpdateSerializer(instance=user, data=request.data, partial=True, context={'request': request})
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save()
+    #     return Response(serializer.data)
     
-    @action(detail=False, methods=['post'], url_path='change-password', permission_classes=[IsAuthenticated])
-    def change_password(self, request):
-        serializer = ChangePasswordSerializer(data=request.data)
-        user = request.user
+    # @action(detail=False, methods=['post'], url_path='change-password', permission_classes=[IsAuthenticated])
+    # def change_password(self, request):
+    #     serializer = ChangePasswordSerializer(data=request.data)
+    #     user = request.user
 
-        if serializer.is_valid():
-            old_password = serializer.validated_data['old_password']
-            new_password = serializer.validated_data['new_password']
+    #     if serializer.is_valid():
+    #         old_password = serializer.validated_data['old_password']
+    #         new_password = serializer.validated_data['new_password']
 
-            if not user.check_password(old_password):
-                return Response({'old_password': 'Wrong password.'}, status=status.HTTP_400_BAD_REQUEST)
+    #         if not user.check_password(old_password):
+    #             return Response({'old_password': 'Wrong password.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            user.set_password(new_password)
-            user.save()
+    #         user.set_password(new_password)
+    #         user.save()
 
-            return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
+    #         return Response({'detail': 'Password updated successfully.'}, status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
 class VendorRegistrationViewSet(viewsets.ViewSet):
@@ -134,6 +146,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             expire_at=timezone.now() + timedelta(minutes=10)
         )
 
+
         subject = 'Vendor Registration OTP'
         message = f'Your OTP for vendor registration is: {otp}. It is valid for 10 minutes.'
         from_email = settings.DEFAULT_FROM_EMAIL
@@ -159,6 +172,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             "user_id": user.id
         }, status=status.HTTP_201_CREATED)
     
+
+
     @action(detail=False, methods=['post'], url_path='login', permission_classes=[AllowAny])
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
@@ -264,6 +279,39 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer.save()
         return Response({"message": "Supporting documents uploaded and vendor activated","data": serializer.data}, status=status.HTTP_200_OK)
 
+
+# class VendorProfileEditAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+#     def put(self, request, user_id):
+#         try:
+#             profile = VendorProfile.objects.get(user_id=user_id)
+#         except VendorProfile.DoesNotExist:
+#             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+#         serializer = VendorProfileFullEditSerializer(instance=profile, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({
+#                 "message": "Vendor profile updated successfully",
+#                 "data": serializer.data
+#             }, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# class UserProfileEditAPIView(APIView):
+#     permission_classes = [IsAuthenticated]
+
+#     def put(self, request, user_id):
+#         try:
+#             user = User.objects.get(id=user_id)
+#         except User.DoesNotExist:
+#             return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+#         serializer = UserProfileUpdateSerializer(instance=user, data=request.data, context={'request': request}, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({"message": "User profile updated successfully"}, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class GoogleLoginAPIView(APIView):
