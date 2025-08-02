@@ -21,3 +21,27 @@ class Promotion(models.Model):
     def is_activate(self):
         now=timezone.now()
         return self.activate and self.start_date<=self.end_date
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+    
+
+class Coupon(models.Model):
+    name=models.CharField(max_length=255,unique=True)
+    discount_value=models.DecimalField(max_digits=5,decimal_places=2,help_text="enter the discount percentage" )
+    min_purchase_amount=models.DecimalField(max_digits=10,decimal_places=2,default=0)
+    start_date=models.DateTimeField(default=timezone.now)
+    end_date=models.DateTimeField()
+    activate=models.BooleanField(default=True)
+    useage_limit=models.PositiveIntegerField(default=1)
+    applicable_products=models.ManyToManyField('products.Product',blank=True,related_name='coupon')
+
+    def is_valid(self):
+        now=timezone.now()
+        return (
+            self.activate and
+            self.start_date <= now <=self.end_date
+        )
+        
+    def __str__(self):
+        return f"{self.name} - {self.discount_value}% "
