@@ -45,14 +45,14 @@ const VendorHome = () => {
         onClick={() => setShowSidebar(!showSidebar)}
         className={`fixed top-1 z-50 text-xl p-2 rounded transition-all duration-500 ease-in-out ${showSidebar ? 'left-4' : 'left-0'}`}
       >
-        <div className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? 'px-3 w-48' : 'w-12 justify-center'}`}>
+        <div className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? 'px-3 py-2 w-67' : 'w-12 justify-center'}`}>
           <img src={logo} alt="Logo" className="h-8" />
           {showSidebar && <p className="text-2xl font-semibold">carooa</p>}
         </div>
       </button>
 
       {/* Sidebar */}
-      <div className={`fixed top-0 left-0 h-full w-72 bg-white text-slate-800 p-6 overflow-y-auto z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}>
+      <div className={`fixed top-0 left-0 h-full w-72 bg-white text-slate-800 p-6 overflow-y-auto  scrollbar-none z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}>
         <ul className="space-y-4 text-md py-10 font-medium">
           <SidebarItem to="/vendor/dashboard" label="Dashboard" icon={<MdOutlineDashboard />} activePath={activePath} />
           <SidebarItem to="/vendor/products" label="Product Management" icon={<FaBoxOpen />} activePath={activePath} />
@@ -67,7 +67,6 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/support-help" label="Support/Help" icon={ <FaRegQuestionCircle />} activePath={activePath} />
 
           <SidebarItem to="/vendor/account-settings" label="Account Settings" icon={<RiUserSettingsLine />} activePath={activePath} />
-          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <IoNotificationsOutline />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 

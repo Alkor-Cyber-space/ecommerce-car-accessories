@@ -9,15 +9,15 @@ export const store = configureStore({
         products: productsSlice,
         productForm : productFormSlice,
     },
-    middleware: (getDefaultMiddleware) =>
+     middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ['productForm/updateImage',"productForm/updateField"],
-        ignoredPaths: ['productForm.images'],
-
-         isSerializable: (value) => {
-          return typeof value !== "object" || value instanceof File || value instanceof Blob;
-        },
+        ignoredActions: [
+          'products/fetchById/pending',
+          'products/fetchById/fulfilled',
+          'products/fetchById/rejected',
+        ],
+        ignoredPaths: ['meta'], // optional, for deeply nested issues
       },
     }),
 })

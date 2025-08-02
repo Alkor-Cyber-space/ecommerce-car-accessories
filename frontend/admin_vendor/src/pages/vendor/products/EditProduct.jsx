@@ -1,76 +1,180 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
-import car from "../../../assets/car.jpeg";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { confirmAlert } from "react-confirm-alert";
+import { toast } from "react-toastify";
 import {
-    updateField,
-    updateTags,
     toggleActive,
-    updateImage
 } from "../../../store/productFormSlice";
-import { updateProduct } from "../../../store/productSlice";
+import { deleteProductApi, getCategoriesApi, getVariantYearsApi, updateProductApi } from "../../../services/allAPI";
 import { RiArrowLeftRightFill } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
-import { toast } from "react-toastify";
+import { fetchProductById } from "../../../store/productSlice";
 
 export default function EditProduct() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const formData = useSelector((state) => state.productForm);
+    const { id } = useParams();
+
+    const { productDetails, loading } = useSelector((state) => state.products);
+    const [formData, setFormData] = useState({});
+    const [productImages, setProductImages] = useState({});
+    const [categories, setCategories] = useState([])
+    const [varientYears, setVarientYears] = useState([]);
+
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
     const inputRefs = useRef([]);
 
-    const [localFormData, setLocalFormData] = useState(formData);
+    // Fetch on mount
+    useEffect(() => {
+        dispatch(fetchProductById(id));
+    }, [dispatch, id]);
 
+    //  Sync fetched product to formData
+    useEffect(() => {
+        if (productDetails && productDetails.id) {
+            setFormData({ ...productDetails });
+            if (productDetails.image_list?.length) {
+                const previews = Array(6).fill(null);
+                productDetails.image_list.forEach((img, idx) => {
+                    if (img.image && idx < 6) previews[idx] = img.image;
+                });
+                setImagePreviews(previews);
+            }
+            setFormData((prev) => ({
+                ...prev,
+                compatible_varient_year: productDetails.compatible_varient_year || [],
+            }));
+        }
+    }, [productDetails]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await getCategoriesApi(); // this is already the parsed response data
+                console.log("Fetched categories:", data);
+                setCategories(data); // directly use it
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                toast.error('An unexpected error occurred. Please try again.');
+            }
+        };
+
+        fetchCategories();
+    }, []);
+    useEffect(() => {
+        const fetchVariantYears = async () => {
+            try {
+                const data = await getVariantYearsApi();
+                console.log("Fetched variant years:", data);
+
+                setVarientYears(data); // assuming it's an array
+            } catch (error) {
+                setVarientYears([]); // prevent crash
+            }
+        };
+
+        fetchVariantYears();
+    }, []);
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setLocalFormData((prev) => ({ ...prev, [name]: value }));
-
+        setFormData((prev) => ({ ...prev, [name]: value }));
     };
+
     const handleReplace = (index) => {
         inputRefs.current[index]?.click();
     };
 
     const handleFileChange = (e, index) => {
         const file = e.target.files[0];
+        if (!file || !file.type.startsWith("image/")) return;
 
-        if (!file || !file.type.startsWith("image/")) {
-            // Don't dispatch anything if no valid file selected
-            return;
-        }
+        // 1. Update image preview
+        const previews = [...imagePreviews];
+        previews[index] = URL.createObjectURL(file);
+        setImagePreviews(previews);
 
-        const updated = [...imagePreviews];
-        updated[index] = URL.createObjectURL(file);
-        setImagePreviews(updated);
-
+        // 2. Update actual image file in productImages state
         const keys = ["main", "close", "other1", "other2", "other3", "other4"];
         const key = keys[index];
-
-        dispatch(updateImage({ key, file }));
+        setProductImages((prev) => ({
+            ...prev,
+            [key]: file,
+        }));
     };
 
 
-    const handleSave = () => {
-        dispatch(updateProduct(localFormData));
-        console.log("updated", localFormData)
-        toast.success("Product Detail Updated Successffully")
-        setTimeout(() => {
-            navigate('/vendor/products');
-        }, 3000);
+    const handleSave = async () => {
+        const form = new FormData();
+
+        // Add regular fields
+        form.append("name", formData.name || "");
+        form.append("description", formData.description || "");
+        form.append("price", formData.price || "");
+        form.append("stock", formData.stock || "");
+        form.append("category_id", formData.category?.id || "");
+        form.append("size", formData.size || "");
+        form.append("manufacturing_date", formData.manufacturing_date || "");
+        if (Array.isArray(formData.compatible_varient_year)) {
+            formData.compatible_varient_year.forEach((id) => {
+                form.append("compatible_varient_year", id);
+            });
+        }
+
+        console.log("Sending files:");
+        Object.values(productImages).forEach((file) => {
+            if (file) {
+                form.append("image_list", file);
+                console.log(`Appending file: ${file.name}`);
+            }
+        });
+        try {
+            const response = await updateProductApi(id, form);
+            console.log(response);
+
+            toast.success("Product updated successfully!");
+            navigate("/vendor/products");
+        } catch (err) {
+            console.error("Update error:", err);
+            toast.error("Failed to update product.");
+        }
     };
 
-    const handleDelete = () => {
-        // Assuming `formData.id` or `localFormData.id` exists
-        // dispatch(deleteProduct(localFormData.id));
-        toast.success("Product Removed  Successffully")
-        setTimeout(() => {
-            navigate('/vendor/products');
-        }, 2000);
+    const handleDeleteConfirm = () => {
+        confirmAlert({
+            title: "Confirm Deletion",
+            message: "Are you sure you want to delete this product?",
+            buttons: [
+                {
+                    label: "Yes",
+                    onClick: () => handleDelete(id)
+                },
+                {
+                    label: "No"
+                }
+            ],
+            closeOnEscape: true,
+            closeOnClickOutside: true
+        });
+    };
+
+    const handleDelete = async (productId) => {
+        try {
+            const response = await deleteProductApi(productId);
+            if (response.status === 204) {
+                toast.success("Product deleted successfully!");
+                setTimeout(() => {
+                    navigate("/vendor/products");
+                }, 1500);
+            }
+        } catch (error) {
+            console.error("Error deleting product:", error);
+            toast.error("Failed to delete product.");
+        }
     };
 
     const handleCancel = () => {
-        dispatch(resetForm());
-        navigate(`/vendor/products/${localFormData.id}/view`);
+        navigate(`/vendor/products/${formData.id}/view`);
     };
 
     return (
@@ -80,7 +184,7 @@ export default function EditProduct() {
                     <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
                         Product Management
                     </Link>
-                    / Edit Product
+                    / Edit  {formData.name}
                 </h1>
                 <div className="sm:flex gap-2 tems-center">
                     <span className="text-md font-medium text-[#5737B4]">Product Active</span>
@@ -105,7 +209,7 @@ export default function EditProduct() {
                             <label className="font-medium">Product Name</label>
                             <input
                                 name="name"
-                                value={localFormData.name || "LumoBeam X9 LED Car Headlight – 6000K Cool White (H4, 60W) "}
+                                value={formData.name || "LumoBeam X9 LED Car Headlight – 6000K Cool White (H4, 60W) "}
                                 onChange={handleChange}
                                 type="text"
                                 className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -115,7 +219,7 @@ export default function EditProduct() {
                             <label className="font-medium">Description</label>
                             <textarea
                                 name="description"
-                                value={localFormData.description || "Upgrade your night driving experience with the LumoBeam X9 LED Headlight. Designed for superior brightness and energy efficiency, it emits a crisp 6000K cool white beam for enhanced road visibility. With plug-and-play installation and durable waterproof housing, it's compatible with most cars using H4 sockets."}
+                                value={formData.description || "Upgrade your night driving experience with the LumoBeam X9 LED Headlight. Designed for superior brightness and energy efficiency, it emits a crisp 6000K cool white beam for enhanced road visibility. With plug-and-play installation and durable waterproof housing, it's compatible with most cars using H4 sockets."}
                                 onChange={handleChange}
                                 rows={4}
                                 className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -128,12 +232,12 @@ export default function EditProduct() {
                         <h2 className="text-lg font-semibold">Price</h2>
                         <div className="flex gap-4 md:flex-col sm:flex-row">
                             <div className="flex-1">
-                                <label className="font-medium">Minimum Quantity</label>
+                                <label className="text-sm font-medium">Stock Number</label>
                                 <input
-                                    name="minQty"
-                                    value={localFormData.minQty || "2"}
+                                    name="stock"
+                                    value={formData.stock || "h667h"}
                                     onChange={handleChange}
-                                    type="number"
+                                    type="text"
                                     className="mt-1 border px-3 py-2 rounded-md w-full"
                                 />
                             </div>
@@ -141,7 +245,7 @@ export default function EditProduct() {
                                 <label className="font-medium">Unit Price</label>
                                 <input
                                     name="price"
-                                    value={localFormData.price || "5600"}
+                                    value={formData.price || "5600"}
                                     onChange={handleChange}
                                     type="number"
                                     className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -158,7 +262,7 @@ export default function EditProduct() {
                                 <label className="font-medium">Sizes Available</label>
                                 <input
                                     name="sizes"
-                                    value={localFormData.sizes || "L"}
+                                    value={formData.size || ""}
                                     onChange={handleChange}
                                     type="text"
                                     className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -167,8 +271,8 @@ export default function EditProduct() {
                             <div className="flex-1">
                                 <label className="font-medium">Manufacturing Date</label>
                                 <input
-                                    name="manufactureDate"
-                                    value={localFormData.manufactureDate || "2024-12-01"}
+                                    name="manufacturing_date"
+                                    value={formData.manufacturing_date || ""}
                                     onChange={handleChange}
                                     type="date"
                                     className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -179,30 +283,83 @@ export default function EditProduct() {
                             <label className="font-medium">Product Category</label>
                             <select
                                 name="category"
-                                value={localFormData.category || "Lighting & Electricals"}
-                                onChange={handleChange}
+                                value={formData.category?.id || ""}
+                                onChange={(e) => {
+                                    const selectedId = parseInt(e.target.value);
+                                    const selectedName = e.target.options[e.target.selectedIndex].text;
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        category: { id: selectedId, name: selectedName },
+                                    }));
+                                }}
                                 className="mt-1 border px-3 py-2 rounded-md w-full"
                             >
-                                <option value="">Select category</option>
-                                <option value="Lighting & Electricals">Lighting & Electricals</option>
-                                <option value="Exterior Accessories">Exterior Accessories</option>
-                                <option value="Tools & Maintenance">Tools & Maintenance</option>
+                                {categories.map((category) => (
+                                    <option key={category.id} value={category.id}>
+                                        {category.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
+
                     </div>
 
-                    {/* Stock */}
-                    <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-2">Available Stock</h2>
-                        <label className="text-sm font-medium">Stock Number</label>
-                        <input
-                            name="stock"
-                            value={localFormData.stock || "h667h"}
-                            onChange={handleChange}
-                            type="text"
-                            className="mt-1 border px-3 py-2 rounded-md w-full"
-                        />
-                    </div>
+                    {/* varient year */}
+
+
+                        {/* Enhanced Variant Year Multi-Select */}
+                        <div className="bg-white rounded-xl p-6 shadow">
+                            <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
+
+                            <div className="flex flex-wrap gap-2 mb-2">
+                                {Array.isArray(formData.compatible_varient_year) &&
+                                    formData.compatible_varient_year.map((id) => {
+                                        const year = varientYears.find((y) => y.id === parseInt(id));
+                                        return (
+                                            <span
+                                                key={id}
+                                                className="bg-[#5737B4] text-white px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                                            >
+                                                {year?.id}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData((prev) => ({
+                                                            ...prev,
+                                                            compatible_varient_year: prev.compatible_varient_year.filter(
+                                                                (y) => parseInt(y) !== parseInt(id)
+                                                            ),
+                                                        }));
+                                                    }}
+                                                    className="ml-1 text-white hover:text-red-300"
+                                                >
+                                                    ×
+                                                </button>
+                                            </span>
+                                        );
+                                    })}
+                            </div>
+
+                            <select
+
+                                value={formData.compatible_varient_year || []}
+                                onChange={(e) => {
+                                    const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        compatible_varient_year: selected,
+                                    }));
+                                }}
+                                className="border rounded px-4 py-2 w-full mt-1 "
+                            >
+                                {varientYears.map((year) => (
+                                    <option key={year.id} value={year.id}>
+                                        {year.id}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                 </div>
 
                 {/* Right Column */}
@@ -221,7 +378,7 @@ export default function EditProduct() {
                                         {imagePreviews[i] ? (
                                             <img src={imagePreviews[i]} alt={`Preview ${i + 1}`} className="object-cover h-full w-full rounded-lg" />
                                         ) : (
-                                            <span>No image</span>
+                                            <span>Upload an image</span>
                                         )}
 
                                         {/* Hover Overlay */}
@@ -266,10 +423,10 @@ export default function EditProduct() {
                         <h2 className="text-lg font-semibold mb-2">Tags</h2>
                         <input
                             name="tags"
-                            value={localFormData.tags?.join(", ") || "popular, featured, new"}
+                            value={formData.tags?.join(", ") || ""}
                             onChange={(e) =>
-                                setLocalFormData({
-                                    ...localFormData,
+                                setFormData({
+                                    ...formData,
                                     tags: e.target.value.split(",").map((tag) => tag.trim()),
                                 })
                             }
@@ -284,7 +441,7 @@ export default function EditProduct() {
             <div className="mt-6 flex sm:flex-col md:flex-row justify-end gap-4">
                 <button
                     className="border border-[#FF5A65] text-[#FF5A65] bg-[#FFDEE0] rounded-sm px-5 py-1"
-                    onClick={handleDelete}
+                    onClick={handleDeleteConfirm}
                 >
                     Delete Product
                 </button>
@@ -306,3 +463,4 @@ export default function EditProduct() {
         </div>
     );
 }
+
