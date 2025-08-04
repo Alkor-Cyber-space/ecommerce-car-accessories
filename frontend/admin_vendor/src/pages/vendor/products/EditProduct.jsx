@@ -271,7 +271,7 @@ export default function EditProduct() {
                             <div className="flex-1">
                                 <label className="font-medium">Manufacturing Date</label>
                                 <input
-                                    name="manufacturing_date"
+                                    name="manufacture_Date"
                                     value={formData.manufacturing_date || ""}
                                     onChange={handleChange}
                                     type="date"
@@ -307,58 +307,58 @@ export default function EditProduct() {
                     {/* varient year */}
 
 
-                        {/* Enhanced Variant Year Multi-Select */}
-                        <div className="bg-white rounded-xl p-6 shadow">
-                            <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
+                    {/* Enhanced Variant Year Multi-Select */}
+                    <div className="bg-white rounded-xl p-6 shadow">
+                        <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
 
-                            <div className="flex flex-wrap gap-2 mb-2">
-                                {Array.isArray(formData.compatible_varient_year) &&
-                                    formData.compatible_varient_year.map((id) => {
-                                        const year = varientYears.find((y) => y.id === parseInt(id));
-                                        return (
-                                            <span
-                                                key={id}
-                                                className="bg-[#5737B4] text-white px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                        <div className="flex flex-wrap gap-2 mb-2">
+                            {Array.isArray(formData.compatible_varient_year) &&
+                                formData.compatible_varient_year.map((id) => {
+                                    const year = varientYears.find((y) => y.id === parseInt(id));
+                                    return (
+                                        <span
+                                            key={id}
+                                            className="bg-[#5737B4] text-white px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                                        >
+                                            {year?.id}
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setFormData((prev) => ({
+                                                        ...prev,
+                                                        compatible_varient_year: prev.compatible_varient_year.filter(
+                                                            (y) => parseInt(y) !== parseInt(id)
+                                                        ),
+                                                    }));
+                                                }}
+                                                className="ml-1 text-white hover:text-red-300"
                                             >
-                                                {year?.id}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        setFormData((prev) => ({
-                                                            ...prev,
-                                                            compatible_varient_year: prev.compatible_varient_year.filter(
-                                                                (y) => parseInt(y) !== parseInt(id)
-                                                            ),
-                                                        }));
-                                                    }}
-                                                    className="ml-1 text-white hover:text-red-300"
-                                                >
-                                                    ×
-                                                </button>
-                                            </span>
-                                        );
-                                    })}
-                            </div>
-
-                            <select
-
-                                value={formData.compatible_varient_year || []}
-                                onChange={(e) => {
-                                    const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        compatible_varient_year: selected,
-                                    }));
-                                }}
-                                className="border rounded px-4 py-2 w-full mt-1 "
-                            >
-                                {varientYears.map((year) => (
-                                    <option key={year.id} value={year.id}>
-                                        {year.id}
-                                    </option>
-                                ))}
-                            </select>
+                                                ×
+                                            </button>
+                                        </span>
+                                    );
+                                })}
                         </div>
+
+                        <select
+
+                            value={formData.compatible_varient_year || []}
+                            onChange={(e) => {
+                                const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
+                                setFormData((prev) => ({
+                                    ...prev,
+                                    compatible_varient_year: selected,
+                                }));
+                            }}
+                            className="border rounded px-4 py-2 w-full mt-1 "
+                        >
+                            {varientYears.map((year) => (
+                                <option key={year.id} value={year.id}>
+                                    {year.id}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
                 </div>
 
@@ -423,17 +423,18 @@ export default function EditProduct() {
                         <h2 className="text-lg font-semibold mb-2">Tags</h2>
                         <input
                             name="tags"
-                            value={formData.tags?.join(", ") || ""}
+                            value={Array.isArray(formData.tag) ? formData.tag.join(", ") : formData.tag || ""}
                             onChange={(e) =>
                                 setFormData({
                                     ...formData,
-                                    tags: e.target.value.split(",").map((tag) => tag.trim()),
+                                    tag: e.target.value.split(",").map((tag) => tag.trim()),
                                 })
                             }
-                            placeholder="Comma-separated tags"
+                            placeholder=" tags"
                             className="mt-1 border px-3 py-2 rounded-md w-full"
                         />
                     </div>
+
                 </div>
             </div>
 
