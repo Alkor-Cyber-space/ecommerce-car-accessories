@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "react-confirm-alert/src/react-confirm-alert.css";
+
 
 // auth
 import AdminSignIn from './pages/auth/AdminSignin';
@@ -104,10 +106,10 @@ function App() {
           <Route path="products" element={<ProductLayout />}>
             <Route index element={<ProductList />} />
             <Route path="add" element={<AddProduct />} />
-            <Route path="1" element={<ProductDetailView />} />
-            <Route path="1/edit" element={<EditProduct />} />
-            {/* <Route path="product/:productId" element={<ProductView />} /> */}
+            <Route path=":id" element={<ProductDetailView />} />
+            <Route path=":id/edit" element={<EditProduct />} />
           </Route>
+
           <Route path='returns' element={<ReturnsRefundsTable />} />
           <Route path='reviews' element={<RatingAndReviewLayout />} />
 
@@ -122,6 +124,7 @@ function App() {
             <Route path='order-detail' element={<OrderDetailView />} />
             <Route path='edit-order' element={<OrderDetailEdit />} />
           </Route>
+
              <Route path='notification' element={<Notification />}/>
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
