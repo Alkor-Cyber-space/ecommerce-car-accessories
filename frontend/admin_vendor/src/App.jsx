@@ -64,6 +64,8 @@ import TransactionReport from './components/admin/reports/TransactionReports';
 import TaxReport from './components/admin/reports/TaxReport';
 import InventoryOverview from './components/admin/inventoryControl/InventoryOverview';
 import StockTable from './components/admin/inventoryControl/StockManagement';
+import VendorsDoc from './components/admin/userAndVendor/VendorsDoc';
+
 
 
 
@@ -88,6 +90,7 @@ function App() {
           <Route path="users" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
+          <Route path="vendor-documents" element={<VendorsDoc />} />
           <Route path="Sales-Report" element={<SalesReport />} />
           <Route path="returns" element={<ReturnsReport />} />
           <Route path="transaction" element={<TransactionReport />} />
@@ -117,6 +120,7 @@ function App() {
             <Route path="add" element={<AddProduct />} />
             <Route path=":id" element={<ProductDetailView />} />
             <Route path=":id/edit" element={<EditProduct />} />
+          
           </Route>
 
           <Route path='returns' element={<ReturnsRefundsTable />} />
@@ -136,6 +140,7 @@ function App() {
              <Route path='createticket' element={<CreateTicket />}/>
              <Route path='promotions' element={<Promotions />}/>
              <Route path='payments-earnings' element={<PaymentsEarnings />} />
+             
              
 
         </Route>
