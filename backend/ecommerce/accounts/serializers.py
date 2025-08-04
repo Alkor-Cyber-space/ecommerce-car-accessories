@@ -5,6 +5,12 @@ from .models import *
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import password_validation
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
+
+
+User = get_user_model()
 
 
 class CreateUserSerializer(serializers.ModelSerializer):
@@ -44,93 +50,100 @@ class VendorRegistrationSerializer(serializers.ModelSerializer):
 
         return user
 
-# class VendorProfileFullEditSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = VendorProfile
-#         fields = '__all__'
-#         extra_kwargs = {
-#             field: {'required': False, 'allow_null': True, 'allow_blank': True}
-#             for field in [
-#                 'company_name', 'type_of_vendor', 'company_email', 'company_number',
-#                 'contact_name', 'contact_email', 'contact_number', 'designation',
-#                 'pan_card', 'aadhar_passport_dl',
-#                 'gst_certificate', 'business_registration_cert', 'shop_license',
-#                 'cancelled_cheque', 'bank_statement', 'it_return', 'financial_statement',
-#                 'dealership_letter', 'authorized_signatory_letter', 'vendor_registration_form', 'signed_terms_and_con',
-#             ]
-#         }
+class VendorProfileFullEditSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorProfile
+        fields = '__all__'
+        extra_kwargs = {
+            field: {
+                'required': False,
+                'allow_null': True,
+                **({'allow_blank': True} if field in [
+                    'company_name', 'contact_name', 'designation',
+                    'company_email', 'contact_email'
+                ] else {})
+            }
+            for field in [
+                'company_name', 'type_of_vendor', 'company_email', 'company_number',
+                'contact_name', 'contact_email', 'contact_number', 'designation',
+                'pan_card', 'aadhar_passport_dl',
+                'gst_certificate', 'business_registration_cert', 'shop_license',
+                'cancelled_cheque', 'bank_statement', 'it_return', 'financial_statement',
+                'dealership_letter', 'authorized_signatory_letter', 'vendor_registration_form', 'signed_terms_and_con',
+            ]
+        }
 
-#     # --- Step 1 Validations ---
-#     def validate_company_name(self, value):
-#         if value and VendorProfile.objects.filter(company_name=value).exclude(pk=self.instance.pk).exists():
-#             raise serializers.ValidationError("This company name already exists.")
-#         return value
+    # --- Step 1 Validations ---
+    def validate_company_name(self, value):
+        if value and VendorProfile.objects.filter(company_name=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This company name already exists.")
+        return value
 
-#     def validate_company_email(self, value):
-#         if value and VendorProfile.objects.filter(company_email=value).exclude(pk=self.instance.pk).exists():
-#             raise serializers.ValidationError("This company email is already used.")
-#         return value
+    def validate_company_email(self, value):
+        if value and VendorProfile.objects.filter(company_email=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This company email is already used.")
+        return value
 
-#     def validate_company_number(self, value):
-#         if value and VendorProfile.objects.filter(company_number=value).exclude(pk=self.instance.pk).exists():
-#             raise serializers.ValidationError("This company number is already used.")
-#         return value
+    def validate_company_number(self, value):
+        if value and VendorProfile.objects.filter(company_number=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This company number is already used.")
+        return value
 
-#     # --- Step 2 Validations ---
-#     def validate_contact_email(self, value):
-#         if value and VendorProfile.objects.filter(contact_email=value).exclude(pk=self.instance.pk).exists():
-#             raise serializers.ValidationError("This contact email is already used.")
-#         return value
+    # --- Step 2 Validations ---
+    def validate_contact_email(self, value):
+        if value and VendorProfile.objects.filter(contact_email=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This contact email is already used.")
+        return value
 
-#     def validate_contact_number(self, value):
-#         if value and VendorProfile.objects.filter(contact_number=value).exclude(pk=self.instance.pk).exists():
-#             raise serializers.ValidationError("This contact number is already used.")
-#         return value
+    def validate_contact_number(self, value):
+        if value and VendorProfile.objects.filter(contact_number=value).exclude(pk=self.instance.pk).exists():
+            raise serializers.ValidationError("This contact number is already used.")
+        return value
 
-#     def _validate_file_size(self, file, label):
-#         max_size_mb = 5
-#         if file and file.size > max_size_mb * 1024 * 1024:
-#             raise serializers.ValidationError(f"{label} file too large. Max size is {max_size_mb}MB.")
-#         return file
+    def _validate_file_size(self, file, label):
+        max_size_mb = 5
+        if file and file.size > max_size_mb * 1024 * 1024:
+            raise serializers.ValidationError(f"{label} file too large. Max size is {max_size_mb}MB.")
+        return file
 
-#     def validate_pan_card(self, value):
-#         return self._validate_file_size(value, "PAN Card")
+    def validate_pan_card(self, value):
+        return self._validate_file_size(value, "PAN Card")
 
-#     def validate_aadhar_passport_dl(self, value):
-#         return self._validate_file_size(value, "Aadhar/Passport/DL")
+    def validate_aadhar_passport_dl(self, value):
+        return self._validate_file_size(value, "Aadhar/Passport/DL")
 
-#     def validate_gst_certificate(self, value):
-#         return self._validate_file_size(value, "GST Certificate")
+    def validate_gst_certificate(self, value):
+        return self._validate_file_size(value, "GST Certificate")
 
-#     def validate_business_registration_cert(self, value):
-#         return self._validate_file_size(value, "Business Registration Certificate")
+    def validate_business_registration_cert(self, value):
+        return self._validate_file_size(value, "Business Registration Certificate")
 
-#     def validate_shop_license(self, value):
-#         return self._validate_file_size(value, "Shop License")
+    def validate_shop_license(self, value):
+        return self._validate_file_size(value, "Shop License")
 
-#     def validate_cancelled_cheque(self, value):
-#         return self._validate_file_size(value, "Cancelled Cheque")
+    def validate_cancelled_cheque(self, value):
+        return self._validate_file_size(value, "Cancelled Cheque")
 
-#     def validate_bank_statement(self, value):
-#         return self._validate_file_size(value, "Bank Statement")
+    def validate_bank_statement(self, value):
+        return self._validate_file_size(value, "Bank Statement")
 
-#     def validate_it_return(self, value):
-#         return self._validate_file_size(value, "IT Return")
+    def validate_it_return(self, value):
+        return self._validate_file_size(value, "IT Return")
 
-#     def validate_financial_statement(self, value):
-#         return self._validate_file_size(value, "Financial Statement")
+    def validate_financial_statement(self, value):
+        return self._validate_file_size(value, "Financial Statement")
 
-#     def validate_dealership_letter(self, value):
-#         return self._validate_file_size(value, "Dealership Letter")
+    def validate_dealership_letter(self, value):
+        return self._validate_file_size(value, "Dealership Letter")
 
-#     def validate_authorized_signatory_letter(self, value):
-#         return self._validate_file_size(value, "Authorized Signatory Letter")
+    def validate_authorized_signatory_letter(self, value):
+        return self._validate_file_size(value, "Authorized Signatory Letter")
 
-#     def validate_vendor_registration_form(self, value):
-#         return self._validate_file_size(value, "Vendor Registration Form")
+    def validate_vendor_registration_form(self, value):
+        return self._validate_file_size(value, "Vendor Registration Form")
 
-#     def validate_signed_terms_and_con(self, value):
-#         return self._validate_file_size(value, "Signed Terms and Conditions")
+    def validate_signed_terms_and_con(self, value):
+        return self._validate_file_size(value, "Signed Terms and Conditions")
 
 
 
@@ -303,45 +316,49 @@ class ChangePasswordSerializer(serializers.Serializer):
 
         return attrs
 
-# class UserProfileUpdateSerializer(serializers.ModelSerializer):
-#     old_password = serializers.CharField(write_only=True, required=False)
-#     new_password = serializers.CharField(write_only=True, required=False)
+class UserEditSerializer(serializers.ModelSerializer):
+    old_password = serializers.CharField(write_only=True, required=False)
+    new_password = serializers.CharField(write_only=True, required=False)
 
-#     class Meta:
-#         model = User
-#         fields = ['first_name', 'last_name', 'email', 'phone_number', 'old_password', 'new_password']
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name','username', 'email', 'phone_number', 'old_password', 'new_password']
 
-#     def validate_email(self, value):
-#         user = self.context['request'].user
-#         if User.objects.exclude(id=user.id).filter(email=value).exists():
-#             raise serializers.ValidationError("Email already in use by another account.")
-#         return value
+    def validate_email(self, value):
+        user = self.context['request'].user
+        if User.objects.exclude(pk=user.pk).filter(email=value).exists():
+            raise serializers.ValidationError("Email already in use.")
+        return value
 
-#     def validate(self, data):
-#         old_password = data.get('old_password')
-#         new_password = data.get('new_password')
+    def validate(self, attrs):
+        old_password = attrs.get('old_password')
+        new_password = attrs.get('new_password')
 
-#         if old_password or new_password:
-#             if not old_password or not new_password:
-#                 raise serializers.ValidationError("Both old and new password are required.")
+        if old_password or new_password:
+            if not old_password or not new_password:
+                raise serializers.ValidationError("Both old and new passwords are required to change password.")
 
-#             if not self.instance.check_password(old_password):
-#                 raise serializers.ValidationError({"old_password": "Old password is incorrect."})
-#         return data
+            user = self.context['request'].user
+            if not check_password(old_password, user.password):
+                raise serializers.ValidationError({"old_password": "Old password is incorrect."})
 
-#     def update(self, instance, validated_data):
-#         instance.first_name = validated_data.get('first_name', instance.first_name)
-#         instance.last_name = validated_data.get('last_name', instance.last_name)
-#         instance.phone_number = validated_data.get('phone_number', instance.phone_number)
-#         instance.email = validated_data.get('email', instance.email)
-#         instance.username = instance.email  # If using email as username
+            validate_password(new_password, user)
 
-#         new_password = validated_data.get('new_password')
-#         if new_password:
-#             instance.set_password(new_password)
+        return attrs
 
-#         instance.save()
-#         return instance
+    def update(self, instance, validated_data):
+        old_password = validated_data.pop('old_password', None)
+        new_password = validated_data.pop('new_password', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if new_password:
+            instance.set_password(new_password)
+
+        instance.save()
+        return instance
+
     
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
