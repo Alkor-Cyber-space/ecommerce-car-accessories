@@ -40,7 +40,6 @@ import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
 
 import AccountSettings from './pages/vendor/AccountSettings';
-import RevenueChart from './components/vendor/RevenueChart';
 
 import Notification from './pages/vendor/Notification';
 
@@ -52,6 +51,7 @@ import OrderManagement from './pages/vendor/orders/OrderManagement';
 import OrdersLayout from './pages/vendor/orders/OrdersLayout';
 import SupportHelp from './pages/vendor/SupportHelp';
 import CreateTicket from './pages/vendor/CreateTicket';
+import Promotions from './pages/vendor/Promotions';
 import PaymentsEarnings from './pages/vendor/PaymentsEarnings';
 import SearchFilter from './pages/admin/SearchFilter';
 import AuditLogs from './pages/admin/AuditLogs';
@@ -121,12 +121,9 @@ function App() {
 
           <Route path='returns' element={<ReturnsRefundsTable />} />
           <Route path='reviews' element={<RatingAndReviewLayout />} />
-
-          <Route path='orders' element={<OrderManagement />} >
-          </Route>
+            
           <Route path='account-settings' element={<AccountSettings />}></Route>
-          <Route path='/vendor/order' element={<OrderManagement />} />
-          <Route path="/vendor/orders" element={<OrderDetailView />} />
+         
 
           <Route path='orders' element={<OrdersLayout />} >
             <Route index element={<OrderManagement />} />
@@ -137,8 +134,10 @@ function App() {
              <Route path='notification' element={<Notification />}/>
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
+             <Route path='promotions' element={<Promotions />}/>
              <Route path='payments-earnings' element={<PaymentsEarnings />} />
              
+
         </Route>
       </Routes>
 
