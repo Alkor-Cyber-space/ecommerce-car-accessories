@@ -87,17 +87,24 @@ class UserViewSet(viewsets.ViewSet):
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    # @action(detail=True, methods=['put'], url_path='edit_profile')
-    # def edit_profile(self, request, pk=None):
-    #     try:
-    #         user = self.get_object()
-    #     except:
-    #         return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+    @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated])
+    def edit_profile(self, request):
+        user = request.user
 
-    #     serializer = UserProfileUpdateSerializer(instance=user, data=request.data, partial=True, context={'request': request})
-    #     serializer.is_valid(raise_exception=True)
-    #     serializer.save()
-    #     return Response(serializer.data)
+        if not user or not user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = UserEditSerializer(user, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
     
     # @action(detail=False, methods=['post'], url_path='change-password', permission_classes=[IsAuthenticated])
     # def change_password(self, request):
@@ -172,8 +179,47 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             "user_id": user.id
         }, status=status.HTTP_201_CREATED)
     
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
 
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def profile_details(self, request):
+        try:
+            vendor_profile = request.user.vendor_profile
+            serializer = VendorProfileFullEditSerializer(vendor_profile)
+            return Response(serializer.data)
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated])
+    def edit_account(self, request):
+        user = request.user
+
+        if not user or not user.is_authenticated:
+            return Response({"error": "Authentication required."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = UserEditSerializer(user, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Profile updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated])
+    def edit_profile(self, request):
+        user = request.user
+        try:
+            vendor_profile = user.vendor_profile
+        except VendorProfile.DoesNotExist:
+            return Response({"error": "Vendor profile not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = VendorProfileFullEditSerializer(vendor_profile, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"message": "Vendor profile updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
     @action(detail=False, methods=['post'], url_path='login', permission_classes=[AllowAny])
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
