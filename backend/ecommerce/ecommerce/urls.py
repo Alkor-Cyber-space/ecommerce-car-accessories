@@ -39,6 +39,10 @@ urlpatterns = [
     path('api/orders/', include('orders.urls')),
     path('api/admin/', include('adminapp.urls')),
     path('api/payment/', include('payment.urls')),
+
+    path('api/coupon_promo/', include('coupon_promotion.urls')),
+
+
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT) 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

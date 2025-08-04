@@ -165,8 +165,8 @@ const AdminHome = () => {
             </div>
             {openDropdown === "Inventory Control" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <SidebarItem to="/admin/inventory/overview" label="Inventory Overview" activePath={activePath} />
-                <SidebarItem to="/admin/inventory/stock" label="Stock Management" activePath={activePath} />
+                <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
+                <SidebarItem to="/admin/inventory-stock" label="Stock Management" activePath={activePath} />
               </ul>
             )}
           </li>
@@ -204,18 +204,18 @@ const AdminHome = () => {
             </div>
             {openDropdown === "Reports" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <SidebarItem to="/admin/reports/sales" label="Sales Report" activePath={activePath} />
-                <SidebarItem to="/admin/reports/returns" label="Returns Report" activePath={activePath} />
-                <SidebarItem to="/admin/reports/transactions" label="Transaction Report" activePath={activePath} />
-                <SidebarItem to="/admin/reports/tax" label="Tax Report" activePath={activePath} />
+                <SidebarItem to="/admin/Sales-Report" label="Sales Report" activePath={activePath} />
+                <SidebarItem to="/admin/returns" label="Returns Report" activePath={activePath} />
+                <SidebarItem to="/admin/transaction" label="Transaction Report" activePath={activePath} />
+                <SidebarItem to="/admin/tax-reports" label="Tax Report" activePath={activePath} />
               </ul>
             )}
           </li>
 
-          <SidebarItem to="/admin/performance" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
+          <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
-          <SidebarItem to="/admin/profile" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
+          <SidebarItem to="/admin/support-admin" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
         </ul>

@@ -1,13 +1,14 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { GoPlus } from "react-icons/go";
 import { useDispatch, useSelector } from "react-redux";
 import { updateField, toggleActive, updateTags, updateImage, resetForm } from "../../../store/productFormSlice";
-import { addProduct } from '../../../store/productSlice'
 import { RiArrowLeftRightFill } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
 import { IoIosArrowDown } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { addProductApi, getCategoriesApi, getVariantYearsApi } from "../../../services/allAPI";
+import { serverurl } from "../../../services/serverURL";
 
 // tags component
 const TagInput = ({ value, onChange }) => {
@@ -59,48 +60,110 @@ const AddProduct = () => {
     const formData = useSelector((state) => state.productForm);
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
     const [showDropdown, setShowDropdown] = useState(false);
-
+    const [categories, setCategories] = useState([])
+    const [variantYears, setVariantYears] = useState([]);
     const tags = useSelector((state) => state.productForm.tags);
     const images = formData.images || {};
     const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
     const atLeastOneImageSelected = imageKeys.some((key) => images[key]);
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const data = await getCategoriesApi(); // this is already the parsed response data
+                console.log("Fetched categories:", data);
+                setCategories(data); // directly use it
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                toast.error('An unexpected error occurred. Please try again.');
+            }
+        };
+
+        fetchCategories();
+    }, []);
+    useEffect(() => {
+        const fetchVariantYears = async () => {
+            try {
+                const data = await getVariantYearsApi();
+                console.log("Fetched variant years:", data);
+
+                setVariantYears(data); // assuming it's an array
+            } catch (error) {
+                setVariantYears([]); // prevent crash
+            }
+        };
+
+        fetchVariantYears();
+    }, []);
 
     const isFormComplete =
         formData.name &&
         formData.description &&
         formData.price &&
         formData.category &&
-        tags.length > 0 && // ✅ ensure at least 1 tag
+        tags.length > 0 && // 
         atLeastOneImageSelected; const productData = useSelector((state) => state.productForm);
 
     const navigate = useNavigate()
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
+
         if (!isFormComplete) {
-            console.warn("Form is incomplete");
+            toast.error("Please complete the form");
             return;
         }
-        dispatch(addProduct(productData));
-        console.log("Product submitted:", productData);
-        toast.success("Product Added Successffully")
-        dispatch(resetForm());
-        setImagePreviews([null, null, null, null, null, null]);
-        setTimeout(() => {
-            navigate('/vendor/products');
-        }, 3000);
-    };
 
+        const formDataToSend = new FormData();
+
+        // Basic Fields
+        formDataToSend.append("name", formData.name);
+        formDataToSend.append("description", formData.description);
+        formDataToSend.append("price", formData.price);
+        formDataToSend.append("stock", formData.stock);
+        formDataToSend.append("manufacturing_date", formData.manufactureDate);
+        formDataToSend.append("tag", formData.tags?.[0] || "");
+        formDataToSend.append("category_id", formData.category);
+        if (formData.sizes) {
+            formDataToSend.append("size", formData.sizes);
+        }
+
+        // Append compatible_variant_year as multiple values
+        if (formData.compatible_variant_year && Array.isArray(formData.compatible_varient_year)) {
+            formData.compatible_variant_year.forEach((id) => {
+                formDataToSend.append("compatible_varient_year", id);
+            });
+        }
+
+        // Append images (make sure keys match backend field names)
+        const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
+
+        imageKeys.forEach((key) => {
+            if (formData.images?.[key]) {
+                formDataToSend.append("image_list", formData.images[key]); 
+            }
+        });
+
+        try {
+            const response = await addProductApi(formDataToSend);
+            console.log(response);
+
+            toast.success("Product added successfully");
+
+            dispatch(resetForm());
+            setImagePreviews(Array(6).fill(null));
+            navigate("/vendor/products");
+        } catch (error) {
+            console.error("Error submitting product:", error.response?.data || error.message);
+            toast.error("Failed to add product");
+        }
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        console.log(name, value);
+        const updatedValue = name === "category" ? parseInt(value) : value;
+        console.log(name, updatedValue);
 
-        dispatch(updateField({ field: name, value }));
-        console.log("Dispatching updateField:", {
-            value,
-            type: typeof value,
-        });
     };
 
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
@@ -116,11 +179,11 @@ const AddProduct = () => {
         setImagePreviews(newPreviews);
 
         // Save file to Redux
-        const key = imageKeys[index];
-        if (key) {
-            dispatch(updateImage({ key, file }));
-            console.log("Saving image to Redux:", key, file);
-        }
+        // const key = imageKeys[index];
+        // if (key) {
+        //     dispatch(updateImage({ key, file }));
+        //     console.log("Saving image to Redux:", key, file);
+        // }
     };
 
     const handleDrop = (e, index) => {
@@ -175,38 +238,6 @@ const AddProduct = () => {
                     </div>
 
                 </div>
-                {/* <div className="flex sm:flex-col items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">Product Active</span>
-                        <div
-                            onClick={() => dispatch(toggleActive())}
-                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
-                        >
-                            <div
-                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-8" : "translate-x-0"}`}
-                            />
-                        </div>
-                        <div className="relative  sm:w-auto">
-                            <button
-                                onClick={() => setShowDropdown(!showDropdown)}
-                                className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition">
-                                Bulk Upload
-                                <IoIosArrowDown />
-
-                            </button>
-                            {showDropdown && (
-                                <div className="absolute z-10 mt-2 w-35 rounded-md shadow-lg bg-white">
-                                    <ul className="py-1 text-sm text-gray-700">
-                                        <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as Excel</li>
-                                        <li className="hover:bg-gray-100 px-4 py-2 cursor-pointer">Upload as</li>
-
-                                    </ul>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                </div> */}
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6 mt-3">
@@ -230,8 +261,8 @@ const AddProduct = () => {
                         <h2 className="text-lg font-semibold">Price</h2>
                         <div className="flex gap-4 flex-col ">
                             <div className="flex flex-col flex-1">
-                                <label className="font-medium">Minimum Quantity</label>
-                                <input name="minQty" value={formData.minQty || ''} onChange={handleChange} type="number" className="border rounded px-4 py-2 mt-1" placeholder="0" />
+                                <label className="font-medium">Stock</label>
+                                <input name="stock" value={formData.stock || ''} onChange={handleChange} type="number" className="border rounded px-4 py-2 mt-1" placeholder="0" />
                             </div>
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Unit Price</label>
@@ -262,27 +293,36 @@ const AddProduct = () => {
                                 className="border rounded px-4 py-2 mt-1 bg-white"
                             >
                                 <option value=""></option>
-                                <option value="Exterior Accessories">Exterior Accessories</option>
-                                <option value="Interior Accessories">Interior Accessories</option>
-                                <option value="Lighting & Electrical">Lighting & Electrical</option>
-                                <option value="Engine & Mechanical Parts">Engine & Mechanical Parts</option>
-                                <option value="Tyre & Wheels">Tyre & Wheels</option>
-                                <option value="Car Care & Cleaning">Car Care & Cleaning</option>
-                                <option value="Electronics & Infotainment">Electronics & Infotainment</option>
-                                <option value="Tools & Maintenance">Tools & Maintenance</option>
-                                <option value="Performance Parts">Performance Parts</option>
-                                <option value="Security & Safety">Security & Safety</option>
-                                <option value="Documentation & Compliance">Documentation & Compliance</option>
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
 
                     {/* Stock */}
                     <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-2">Available Stock</h2>
-                        <label className="text-sm font-medium">Stock Number</label>
-                        <input name="stock" value={formData.stock || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 w-full mt-1" />
+                        <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
+                        {Array.isArray(variantYears) && variantYears.length > 0 ? (
+                            <select
+                                name="compatible_varient_year"
+                                value={formData.compatible_varient_year || ''}
+                                onChange={handleChange}
+                                className="border rounded px-4 py-2 w-full mt-1"
+                            >
+                                <option value="">Select Year</option>
+                                {variantYears.map((year) => (
+                                    <option key={year.id} value={year.id}>{year.id}</option>
+                                ))}
+                            </select>
+                        ) : (
+                            <p className="text-sm text-gray-500">Loading or no data</p>
+                        )}
+
                     </div>
+
                 </div>
 
                 {/* Right Column */}
@@ -377,8 +417,8 @@ const AddProduct = () => {
             {/* Buttons */}
             <div className="flex justify-end gap-4 mt-10">
                 <button
-                onClick={()=> navigate('/vendor/products')}
-                 className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">Cancel</button>
+                    onClick={() => navigate('/vendor/products')}
+                    className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">Cancel</button>
                 <button
                     onClick={(e) => handleSave(e)}
                     disabled={!isFormComplete}

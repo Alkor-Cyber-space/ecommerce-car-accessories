@@ -6,61 +6,8 @@ import { PiToolboxLight } from 'react-icons/pi';
 import { IoIosArrowDown } from "react-icons/io";
 import { BsSearch } from "react-icons/bs";
 import { useNavigate } from "react-router-dom";
+import { getProductsApi } from "../../../services/allAPI";
 
-const dummyProducts = [
-  {
-    id: 1,
-    name: "Car Floor Mats",
-    category: "Interior Accessories",
-    price: 999,
-    stock: 20,
-    status: "Live",
-  },
-  {
-    id: 2,
-    name: "LED Headlights",
-    category: "Lighting",
-    price: 3599,
-    stock: 0,
-    status: "Out of Stock",
-  },
-  {
-    id: 3,
-    name: "Wiper Blades",
-    image: "https://via.placeholder.com/80",
-    category: "Maintenance",
-    price: 499,
-    stock: 3,
-    status: "Draft",
-  },
-  {
-    id: 4,
-    name: "Steering Wheel Cover",
-    image: "https://via.placeholder.com/80",
-    category: "Interior Accessories",
-    price: 799,
-    stock: 15,
-    status: "Live",
-  },
-  {
-    id: 5,
-    name: "Air Freshener",
-    image: "https://via.placeholder.com/80",
-    category: "Accessories",
-    price: 199,
-    stock: 25,
-    status: "Live",
-  },
-  {
-    id: 6,
-    name: "Rear View Mirror",
-    image: "https://via.placeholder.com/80",
-    category: "Exterior",
-    price: 1499,
-    stock: 5,
-    status: "Draft",
-  },
-];
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
@@ -70,7 +17,16 @@ const ProductList = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    setProducts(dummyProducts);
+    const fetchProducts = async () => {
+      try {
+        const data = await getProductsApi();
+        console.log(data);
+        setProducts(data);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+      }
+    }
+    fetchProducts();
   }, []);
 
   const filtered = products.filter((product) =>
@@ -182,9 +138,9 @@ const ProductList = () => {
                   <td className="p-3"><input type="checkbox" /></td>
                   <td className="p-3">{startIndex + index + 1}</td>
                   <td
-                    onClick={() => navigate(`1`)}
-                    className="p-3 font-medium text-[#5737B4]">{product.name}</td>
-                  <td className="p-3">{product.category}</td>
+                    onClick={() => navigate(`${product.id}`)}
+                    className="p-3 font-medium w-75 text-[#5737B4]">{product.name}</td>
+                  <td className="p-3">{product.category?.name}</td>
                   <td className="p-3">₹{product.price}</td>
                   <td className="p-3">{product.stock}</td>
                   <td className="p-3">
@@ -194,7 +150,7 @@ const ProductList = () => {
                         ? "bg-[#AEB9E133] text-[#6989F9]"
                         : "bg-red-100 text-[#FF5A65]"
                       }`}>
-                      {product.status}
+                      {/* {product.status} */}Live
                     </span>
 
                   </td>

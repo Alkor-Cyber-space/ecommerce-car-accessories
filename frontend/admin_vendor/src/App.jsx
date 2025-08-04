@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import "react-confirm-alert/src/react-confirm-alert.css";
+
 
 // auth
 import AdminSignIn from './pages/auth/AdminSignin';
@@ -38,7 +40,6 @@ import AdminOverview from './components/admin/userAndVendor/AdminsData';
 import RatingAndReviewLayout from './pages/vendor/ratings&reviews/RatingAndReviewLayout';
 
 import AccountSettings from './pages/vendor/AccountSettings';
-import RevenueChart from './components/vendor/RevenueChart';
 
 import Notification from './pages/vendor/Notification';
 
@@ -51,6 +52,18 @@ import OrdersLayout from './pages/vendor/orders/OrdersLayout';
 import SupportHelp from './pages/vendor/SupportHelp';
 import CreateTicket from './pages/vendor/CreateTicket';
 import Promotions from './pages/vendor/Promotions';
+import PaymentsEarnings from './pages/vendor/PaymentsEarnings';
+import SearchFilter from './pages/admin/SearchFilter';
+import AuditLogs from './pages/admin/AuditLogs';
+import UserDetails from './components/admin/userAndVendor/UserDetails';
+import SupportHelpAdmin from './pages/admin/SupportHelpAdmin';
+import SupportResponse from './pages/admin/SupportResponse';
+import SalesReport from './components/admin/reports/SalesReport';
+import ReturnsReport from './components/admin/reports/ReturnsReport';
+import TransactionReport from './components/admin/reports/TransactionReports';
+import TaxReport from './components/admin/reports/TaxReport';
+import InventoryOverview from './components/admin/inventoryControl/InventoryOverview';
+import StockTable from './components/admin/inventoryControl/StockManagement';
 
 
 
@@ -70,14 +83,20 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="sales-analytics" element={<SalesAnalytics />} />
           <Route path="revenue-trends" element={<CombinedChartPanel />} />
+          <Route path="inventory-overview" element={<InventoryOverview />} />
+          <Route path="inventory-stock" element={<StockTable />} />
           <Route path="users" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-          <Route path="Sales Report" element={<UserDataTable />} />
-          <Route path="vendors" element={<VendorDataTable />} />
-          <Route path="admins" element={<AdminOverview />} />
-
-
+          <Route path="Sales-Report" element={<SalesReport />} />
+          <Route path="returns" element={<ReturnsReport />} />
+          <Route path="transaction" element={<TransactionReport />} />
+          <Route path='tax-reports' element={<TaxReport />} />
+          <Route path='search-filter' element={<SearchFilter />} />
+          <Route path='auditlogs' element={<AuditLogs />} />
+          <Route path='user-details' element={<UserDetails />} />
+          <Route path='support-admin' element={<SupportHelpAdmin />} />
+          <Route path='support-response' element={<SupportResponse />} />
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}
@@ -89,7 +108,6 @@ function App() {
           <Route path="bank-details" element={<BankTaxDetailsUpload />} />
           <Route path="agreements" element={<AgreementsUpload />} />
         </Route>
-
         {/* Vendor Dashboard */}
         <Route path="/vendor" element={<VendorHome />} >
           <Route path='dashboard' element={<VendorDashboard />} />
@@ -97,18 +115,15 @@ function App() {
           <Route path="products" element={<ProductLayout />}>
             <Route index element={<ProductList />} />
             <Route path="add" element={<AddProduct />} />
-            <Route path="1" element={<ProductDetailView />} />
-            <Route path="1/edit" element={<EditProduct />} />
-            {/* <Route path="product/:productId" element={<ProductView />} /> */}
+            <Route path=":id" element={<ProductDetailView />} />
+            <Route path=":id/edit" element={<EditProduct />} />
           </Route>
+
           <Route path='returns' element={<ReturnsRefundsTable />} />
           <Route path='reviews' element={<RatingAndReviewLayout />} />
-
-          <Route path='orders' element={<OrderManagement />} >
-          </Route>
+            
           <Route path='account-settings' element={<AccountSettings />}></Route>
-          <Route path='/vendor/order' element={<OrderManagement />} />
-          <Route path="/vendor/orders" element={<OrderDetailView />} />
+         
 
           <Route path='orders' element={<OrdersLayout />} >
             <Route index element={<OrderManagement />} />
@@ -120,6 +135,9 @@ function App() {
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
              <Route path='promotions' element={<Promotions />}/>
+             <Route path='payments-earnings' element={<PaymentsEarnings />} />
+             
+
         </Route>
       </Routes>
 

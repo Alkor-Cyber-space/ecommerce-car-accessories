@@ -22,23 +22,25 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     image_list = ProductImageSerializer(many=True, read_only=True, source='images')
     category = CategorySerializer(read_only=True)
+    
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         source='category',
         write_only=True
     )
-    # compatible_varient_year = serializers.PrimaryKeyRelatedField(
-    #     queryset=VariantYear.objects.all(),
-    #     many=True,
-    #     required=False
-    # )
+
+    compatible_varient_year = serializers.PrimaryKeyRelatedField(
+        queryset=VariantYear.objects.all(),
+        many=True,
+        required=False
+    )
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at',
             "manufacturing_date", "tag", "size", 'category', 'category_id',
-            "image_list"
+            "image_list","compatible_varient_year"
         ]
         extra_kwargs = {
             'size': {'required': False, 'allow_null': True, 'allow_blank': True},
