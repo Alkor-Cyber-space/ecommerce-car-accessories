@@ -52,6 +52,12 @@ import OrderManagement from './pages/vendor/orders/OrderManagement';
 import OrdersLayout from './pages/vendor/orders/OrdersLayout';
 import SupportHelp from './pages/vendor/SupportHelp';
 import CreateTicket from './pages/vendor/CreateTicket';
+import PaymentsEarnings from './pages/vendor/PaymentsEarnings';
+import SearchFilter from './pages/admin/SearchFilter';
+import AuditLogs from './pages/admin/AuditLogs';
+import UserDetails from './components/admin/userAndVendor/UserDetails';
+import SupportHelpAdmin from './pages/admin/SupportHelpAdmin';
+import SupportResponse from './pages/admin/SupportResponse';
 
 
 
@@ -77,8 +83,11 @@ function App() {
           <Route path="Sales Report" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-
-
+          <Route path='search-filter' element={<SearchFilter />} />
+          <Route path='auditlogs' element={<AuditLogs />} />
+          <Route path='user-details' element={<UserDetails />} />
+          <Route path='support-admin' element={<SupportHelpAdmin />} />
+          <Route path='support-response' element={<SupportResponse />} />
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}
@@ -90,7 +99,6 @@ function App() {
           <Route path="bank-details" element={<BankTaxDetailsUpload />} />
           <Route path="agreements" element={<AgreementsUpload />} />
         </Route>
-
         {/* Vendor Dashboard */}
         <Route path="/vendor" element={<VendorHome />} >
           <Route path='dashboard' element={<VendorDashboard />} />
@@ -117,9 +125,11 @@ function App() {
             <Route path='edit-order' element={<OrderDetailEdit />} />
           </Route>
 
-          <Route path='notification' element={<Notification />} />
-          <Route path='support-help' element={<SupportHelp />} />
-          <Route path='createticket' element={<CreateTicket />} />
+             <Route path='notification' element={<Notification />}/>
+             <Route path='support-help' element={<SupportHelp />}/> 
+             <Route path='createticket' element={<CreateTicket />}/>
+             <Route path='payments-earnings' element={<PaymentsEarnings />} />
+             
         </Route>
       </Routes>
 

@@ -1,28 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { BsSearch } from "react-icons/bs";
-
+import { HiOutlineDotsVertical } from "react-icons/hi";
+import SearchFilter from '../../../pages/admin/SearchFilter';
+import { Link } from 'react-router-dom';
 
 const usersData = [
   {
-    id: 1,
-    name: 'Amit Sharma',
-    email: 'amit@example.com',
+    id: "00975",
+    name: 'Arjun Kumar',
+    email: 'arjun.kumar@email.com',
     phone: '+91 9876543210',
     location: 'Delhi',
-    role: 'Customer',
     status: 'Active',
-    joined: '2024-12-15',
+    joined: '23/12/2024',
+    lastActive: '23/12/2024 10am',
+    totalOrders: '75,999'
   },
   {
-    id: 2,
-    name: 'Neha Verma',
-    email: 'neha@example.com',
+    id: "00977",
+    name: 'Aravind Singh',
+    email: 'aravind.singh@email.com',
     phone: '+91 9988776655',
     location: 'Mumbai',
-    role: 'Customer',
-    status: 'Blocked',
-    joined: '2024-10-01',
+    status: 'Active',
+    joined: '23/12/2024',
+    lastActive: '23/12/2024 10am',
+    totalOrders: '18,499'
   },
+  {
+    id: "00978",
+    name: 'Geeta Sharma',
+    email: 'geeta.sharma@email.com',
+    phone: '+91 9123456780',
+    location: 'Mumbai',
+    status: 'Pending Verification',
+    joined: '23/12/2024',
+    lastActive: '23/12/2024 10am',
+    totalOrders: '11,990'
+  },
+  {
+    id: "00979",
+    name: 'Wasim Khan',
+    email: 'wasim.khan@email.com',
+    phone: '+91 9876501234',
+    location: 'Mumbai',
+    status: 'Suspended',
+    joined: '23/12/2024',
+    lastActive: '23/12/2024 10am',
+    totalOrders: '75,999'
+  }
 ];
 
 export default function UserDataTable() {
@@ -30,60 +56,134 @@ export default function UserDataTable() {
   const [statusFilter, setStatusFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [search, setSearch] = useState('');
-
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
   const filteredUsers = users.filter(user => {
+    const matchesSearch = search === '' ||
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase()) ||
+      user.phone.includes(search) ||
+      user.id.toLowerCase().includes(search);
+
     return (
+      matchesSearch &&
       (statusFilter ? user.status === statusFilter : true) &&
       (locationFilter ? user.location === locationFilter : true)
     );
   });
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'Active':
+        return 'bg-green-100 text-green-600';
+      case 'Suspended':
+        return 'bg-red-100 text-red-600';
+      case 'Pending Verification':
+        return 'bg-yellow-100 text-yellow-600';
+      default:
+        return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  const handleActionClick = (userId) => {
+    setActiveDropdown(activeDropdown === userId ? null : userId);
+  };
+
+  const handleAction = (action, userId) => {
+    console.log(`${action} user with ID: ${userId}`);
+    setActiveDropdown(null);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setActiveDropdown(null);
+    };
+
+    if (activeDropdown) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [activeDropdown]);
+
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-      <h1 className="text-[#232832] text-xl font-bold">Users Overview</h1>
+      <div className='flex justify-between items-center'>
+        <h1 className="text-[#232832] text-xl font-bold">Users Overview</h1>
+        <button className='bg-[#5737B4] text-white p-2 rounded-md md:sm'>Download Report</button>
+      </div>
+      <div className="bg-white rounded-xl w-full md:w-[28%] flex flex-col md:flex-row items-center justify-between px-4 py-4">
+        <p className="text-base md:text-lg text-gray-700">Total User :</p>
+        <h1 className="text-3xl font-semibold text-black mr-5 md:mr-2">256</h1>
+      </div>
 
-      <div className="relative w-full md:w-[50%]">
-                  <BsSearch className=" absolute right-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search admins..."
-                    className="bg-white px-5 py-2 rounded-3xl w-full"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
+      <SearchFilter />
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto scrollbar-none">
         <table className="min-w-full bg-white rounded-md text-sm shadow">
           <thead className="text-gray-600">
             <tr>
-              <th className="py-4 text-left px-2">#</th>
-              <th className="py-4 text-left px-2">Name</th>
-              <th className="py-4 text-left px-2">Email</th>
-              <th className="py-4 text-left px-2">Phone</th>
-              <th className="py-4 text-left px-2">Location</th>
-              <th className="py-4 text-left px-2">Role</th>
-              <th className="py-4 text-left px-2">Status</th>
-              <th className="py-4 text-left px-2">Joined On</th>
+              <th className="py-4 text-left px-4 font-medium">User ID</th>
+              <th className="py-4 text-left px-4 font-medium">Full Name</th>
+              <th className="py-4 text-left px-4 font-medium">Email</th>
+              <th className="py-4 text-left px-4 font-medium">Phone</th>
+              <th className="py-4 text-left px-4 font-medium">Registration Date</th>
+              <th className="py-4 text-left px-4 font-medium">Status</th>
+              <th className="py-4 text-left px-4 font-medium">Last Active</th>
+              <th className="py-4 text-left px-4 font-medium">Total Orders</th>
+              <th className="py-4 text-left px-4 font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
             {filteredUsers.map((user, index) => (
-              <tr key={user.id} className="text-left hover:bg-gray-50">
-                <td className="py-2 px-2 font-medium">{index + 1}</td>
-                <td className="py-2 px-2">{user.name}</td>
-                <td className="py-2 px-2">{user.email}</td>
-                <td className="py-2 px-2">{user.phone}</td>
-                <td className="py-2 px-2">{user.location}</td>
-                <td className="py-2 px-2">{user.role}</td>
-                <td className="py-2 px-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium 
-                    ${user.status === 'Active' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              <tr key={`${user.id}-${index}`} className="text-left hover:bg-gray-50 border-b border-gray-100">
+                <td className="py-3 px-4 font-medium text-[#5737B4]"><Link to='/admin/user-details'>{user.id}</Link></td> 
+                <td className="py-3 px-4">{user.name}</td>
+                <td className="py-3 px-4">{user.email}</td>
+                <td className="py-3 px-4">{user.phone}</td>
+                <td className="py-3 px-4">{user.joined}</td>
+                <td className="py-3 px-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
                     {user.status}
                   </span>
                 </td>
-                <td className="py-2 px-2">{user.joined}</td>
+                <td className="py-3 px-4">{user.lastActive}</td>
+                <td className="py-3 px-4 font-medium">₹ {user.totalOrders}</td>
+                <td className="py-3 px-4 relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleActionClick(user.id + index);
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                  >
+                    <HiOutlineDotsVertical className="text-gray-500 text-lg" />
+                  </button>
+
+                  {activeDropdown === user.id + index && (
+                    <div className="absolute right-0 top-8 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      <button
+                        onClick={() => handleAction('View', user.id)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                      > <Link to='/admin/user-details'>View</Link>
+                      </button>
+                      <button
+                        onClick={() => handleAction('Edit', user.id)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleAction('Suspend', user.id)}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
+                      >
+                        Suspend
+                      </button>
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>

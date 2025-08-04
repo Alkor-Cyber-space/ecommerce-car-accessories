@@ -7,7 +7,7 @@ class IsVendor(BasePermission):
      
 class IsAdmin(BasePermission):
      def has_permission(self, request, view):
-          return request.user.is_authenticated and request.user.groups.filter(name='Admin').exists()
+          return request.user.is_authenticated and (request.user.is_superuser or request.user.groups.filter(name='Admin').exists())
 
 class IsVendorProfileComplete(BasePermission):
      def has_permission(self, request, view):

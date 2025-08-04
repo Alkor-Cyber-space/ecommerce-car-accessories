@@ -2,7 +2,7 @@
 from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework import status
-from products.models import Product, Category
+from products.models import Product, Category,ProductImage
 from vehicles.models import VehicleMake, VehicleModel, Year, Variant, ModelYear, VariantYear
 from products.serializers import ProductSerializer, CategorySerializer
 from vehicles.serializers import (
@@ -51,19 +51,26 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor] #add ,IsVendorProfileComplete
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(vendor=self.request.user)
+        product = serializer.save(vendor=self.request.user)
+
+        # Get image files from request.FILES
+        images = self.request.FILES.getlist('images')
+        print(images)
+        for image in images:
+            ProductImage.objects.create(product=product, image=image)
+
 
 # Category CRUD by Vendor
 class VendorCategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor,IsVendorProfileComplete]
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
 
 # Vehicle Makes CRUD by Vendor
 class VendorVehicleMakeViewSet(viewsets.ModelViewSet):

@@ -212,10 +212,10 @@ const AdminHome = () => {
             )}
           </li>
 
-          <SidebarItem to="/admin/performance" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
+          <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
-          <SidebarItem to="/admin/profile" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
+          <SidebarItem to="/admin/support-admin" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
         </ul>
