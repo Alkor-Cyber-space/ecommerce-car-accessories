@@ -50,6 +50,7 @@ import OrderManagement from './pages/vendor/orders/OrderManagement';
 import OrdersLayout from './pages/vendor/orders/OrdersLayout';
 import SupportHelp from './pages/vendor/SupportHelp';
 import CreateTicket from './pages/vendor/CreateTicket';
+import Promotions from './pages/vendor/Promotions';
 
 
 
@@ -118,6 +119,7 @@ function App() {
              <Route path='notification' element={<Notification />}/>
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
+             <Route path='promotions' element={<Promotions />}/>
         </Route>
       </Routes>
 

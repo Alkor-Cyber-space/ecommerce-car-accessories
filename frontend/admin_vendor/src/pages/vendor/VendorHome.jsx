@@ -67,7 +67,6 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/support-help" label="Support/Help" icon={ <FaRegQuestionCircle />} activePath={activePath} />
 
           <SidebarItem to="/vendor/account-settings" label="Account Settings" icon={<RiUserSettingsLine />} activePath={activePath} />
-          <SidebarItem to="/vendor/notification" label="Notifications" icon={ <IoNotificationsOutline />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
 
