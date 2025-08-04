@@ -165,8 +165,8 @@ const AdminHome = () => {
             </div>
             {openDropdown === "Inventory Control" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <SidebarItem to="/admin/inventory/overview" label="Inventory Overview" activePath={activePath} />
-                <SidebarItem to="/admin/inventory/stock" label="Stock Management" activePath={activePath} />
+                <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
+                <SidebarItem to="/admin/inventory-stock" label="Stock Management" activePath={activePath} />
               </ul>
             )}
           </li>
@@ -204,10 +204,10 @@ const AdminHome = () => {
             </div>
             {openDropdown === "Reports" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <SidebarItem to="/admin/reports/sales" label="Sales Report" activePath={activePath} />
-                <SidebarItem to="/admin/reports/returns" label="Returns Report" activePath={activePath} />
-                <SidebarItem to="/admin/reports/transactions" label="Transaction Report" activePath={activePath} />
-                <SidebarItem to="/admin/reports/tax" label="Tax Report" activePath={activePath} />
+                <SidebarItem to="/admin/Sales-Report" label="Sales Report" activePath={activePath} />
+                <SidebarItem to="/admin/returns" label="Returns Report" activePath={activePath} />
+                <SidebarItem to="/admin/transaction" label="Transaction Report" activePath={activePath} />
+                <SidebarItem to="/admin/tax-reports" label="Tax Report" activePath={activePath} />
               </ul>
             )}
           </li>

@@ -56,6 +56,12 @@ import AuditLogs from './pages/admin/AuditLogs';
 import UserDetails from './components/admin/userAndVendor/UserDetails';
 import SupportHelpAdmin from './pages/admin/SupportHelpAdmin';
 import SupportResponse from './pages/admin/SupportResponse';
+import SalesReport from './components/admin/reports/SalesReport';
+import ReturnsReport from './components/admin/reports/ReturnsReport';
+import TransactionReport from './components/admin/reports/TransactionReports';
+import TaxReport from './components/admin/reports/TaxReport';
+import InventoryOverview from './components/admin/inventoryControl/InventoryOverview';
+import StockTable from './components/admin/inventoryControl/StockManagement';
 
 
 
@@ -75,12 +81,15 @@ function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="sales-analytics" element={<SalesAnalytics />} />
           <Route path="revenue-trends" element={<CombinedChartPanel />} />
+          <Route path="inventory-overview" element={<InventoryOverview />} />
+          <Route path="inventory-stock" element={<StockTable />} />
           <Route path="users" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-          <Route path="Sales Report" element={<UserDataTable />} />
-          <Route path="vendors" element={<VendorDataTable />} />
-          <Route path="admins" element={<AdminOverview />} />
+          <Route path="Sales-Report" element={<SalesReport />} />
+          <Route path="returns" element={<ReturnsReport />} />
+          <Route path="transaction" element={<TransactionReport />} />
+          <Route path='tax-reports' element={<TaxReport />} />
           <Route path='search-filter' element={<SearchFilter />} />
           <Route path='auditlogs' element={<AuditLogs />} />
           <Route path='user-details' element={<UserDetails />} />
