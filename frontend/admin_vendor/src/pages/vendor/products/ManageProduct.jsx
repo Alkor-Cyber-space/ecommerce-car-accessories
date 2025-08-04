@@ -5,7 +5,7 @@ import { CiBadgeDollar } from "react-icons/ci";
 import { PiToolboxLight } from 'react-icons/pi';
 import { IoIosArrowDown } from "react-icons/io";
 import { BsSearch } from "react-icons/bs";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { getProductsApi } from "../../../services/allAPI";
 
 
@@ -21,13 +21,16 @@ const ProductList = () => {
       try {
         const data = await getProductsApi();
         console.log(data);
-        setProducts(data);
+         const sortedData = data.sort((a, b) => b.id - a.id);
+        setProducts(sortedData);
       } catch (error) {
         console.error("Error fetching products:", error);
       }
     }
     fetchProducts();
   }, []);
+    const { id } = useParams();
+
 
   const filtered = products.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase())
@@ -44,12 +47,15 @@ const ProductList = () => {
   };
   const [showDropdown, setShowDropdown] = useState(false);
 
+const totalProducts = products.length;
+const totalOrders = 200;
+const totalStocks = products.reduce((acc, product) => acc + (product.stock || 0), 0);
 
-  const stats = [
-    { icon: <IoPricetagOutline />, title: "Total Sales", value: "50.8K" },
-    { icon: <PiToolboxLight />, title: "Total Orders", value: "200" },
-    { icon: <CiBadgeDollar />, title: "Revenue Summary", value: "50.8K" },
-  ];
+const stats = [
+  { icon: <IoPricetagOutline />, title: "Total Products", value: totalProducts },
+  { icon: <PiToolboxLight />, title: "Total Orders", value: totalOrders },
+  { icon: <CiBadgeDollar />, title: "Stocks", value: totalStocks },
+];
 
   return (
     <>
@@ -156,7 +162,7 @@ const ProductList = () => {
                   </td>
                   <td className="p-3">
                     <button
-                      onClick={() => navigate("1/edit")}
+                      onClick={() => navigate(`${product.id}/edit`)}
                       className="text-xl text-gray-600 hover:text-blue-800">
                       <FiEdit3 />
                     </button>

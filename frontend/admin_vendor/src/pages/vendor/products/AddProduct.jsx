@@ -1,14 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { GoPlus } from "react-icons/go";
-import { useDispatch, useSelector } from "react-redux";
-import { updateField, toggleActive, updateTags, updateImage, resetForm } from "../../../store/productFormSlice";
+// import { useDispatch, useSelector } from "react-redux";
+// import { updateField, toggleActive, updateTags, updateImage, resetForm } from "../../../store/productFormSlice";
 import { RiArrowLeftRightFill } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
 import { IoIosArrowDown } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { addProductApi, getCategoriesApi, getVariantYearsApi } from "../../../services/allAPI";
-import { serverurl } from "../../../services/serverURL";
 
 // tags component
 const TagInput = ({ value, onChange }) => {
@@ -56,55 +55,65 @@ const TagInput = ({ value, onChange }) => {
 };
 // Add Product component
 const AddProduct = () => {
-    const dispatch = useDispatch();
-    const formData = useSelector((state) => state.productForm);
     const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
     const [showDropdown, setShowDropdown] = useState(false);
-    const [categories, setCategories] = useState([])
-    const [variantYears, setVariantYears] = useState([]);
-    const tags = useSelector((state) => state.productForm.tags);
-    const images = formData.images || {};
+    const [categories, setCategories] = useState([]);
+    const [varientYears, setvarientYears] = useState([]);
+    const [formData, setFormData] = useState({
+        name: '',
+        description: '',
+        price: '',
+        stock: '',
+        manufactureDate: '',
+        tags: [],
+        category: '',
+        sizes: '',
+        compatible_varient_year: [],
+        images: {}
+    });
+    const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
+    const [dragActiveIndex, setDragActiveIndex] = useState(null);
+    const inputRefs = useRef([]);
+
     const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
-    const atLeastOneImageSelected = imageKeys.some((key) => images[key]);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const data = await getCategoriesApi(); // this is already the parsed response data
-                console.log("Fetched categories:", data);
-                setCategories(data); // directly use it
+                const data = await getCategoriesApi();
+                setCategories(data);
             } catch (error) {
-                console.error('Error fetching data:', error);
-                toast.error('An unexpected error occurred. Please try again.');
+                toast.error('Error fetching categories');
             }
         };
 
         fetchCategories();
     }, []);
+
     useEffect(() => {
         const fetchVariantYears = async () => {
             try {
                 const data = await getVariantYearsApi();
-                console.log("Fetched variant years:", data);
-
-                setVariantYears(data); // assuming it's an array
+                setvarientYears(data);
             } catch (error) {
-                setVariantYears([]); // prevent crash
+                setvarientYears([]);
             }
         };
 
         fetchVariantYears();
     }, []);
 
+    const atLeastOneImageSelected = imageKeys.some((key) => formData.images[key]);
+
     const isFormComplete =
         formData.name &&
         formData.description &&
         formData.price &&
         formData.category &&
-        tags.length > 0 && // 
-        atLeastOneImageSelected; const productData = useSelector((state) => state.productForm);
-
-    const navigate = useNavigate()
+        formData.tags.length > 0 &&
+        atLeastOneImageSelected;
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -116,7 +125,6 @@ const AddProduct = () => {
 
         const formDataToSend = new FormData();
 
-        // Basic Fields
         formDataToSend.append("name", formData.name);
         formDataToSend.append("description", formData.description);
         formDataToSend.append("price", formData.price);
@@ -124,37 +132,41 @@ const AddProduct = () => {
         formDataToSend.append("manufacturing_date", formData.manufactureDate);
         formDataToSend.append("tag", formData.tags?.[0] || "");
         formDataToSend.append("category_id", formData.category);
+
         if (formData.sizes) {
             formDataToSend.append("size", formData.sizes);
         }
 
-        // Append compatible_variant_year as multiple values
-        if (formData.compatible_variant_year && Array.isArray(formData.compatible_varient_year)) {
-            formData.compatible_variant_year.forEach((id) => {
+        if (formData.compatible_varient_year && Array.isArray(formData.compatible_varient_year)) {
+            formData.compatible_varient_year.forEach((id) => {
                 formDataToSend.append("compatible_varient_year", id);
             });
         }
 
-        // Append images (make sure keys match backend field names)
-        const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
-
         imageKeys.forEach((key) => {
             if (formData.images?.[key]) {
-                formDataToSend.append("image_list", formData.images[key]); 
+                formDataToSend.append("image_list", formData.images[key]);
             }
         });
 
         try {
             const response = await addProductApi(formDataToSend);
-            console.log(response);
-
             toast.success("Product added successfully");
-
-            dispatch(resetForm());
+            setFormData({
+                name: '',
+                description: '',
+                price: '',
+                stock: '',
+                manufactureDate: '',
+                tags: [],
+                category: '',
+                sizes: '',
+                compatible_varient_year: [],
+                images: {}
+            });
             setImagePreviews(Array(6).fill(null));
             navigate("/vendor/products");
         } catch (error) {
-            console.error("Error submitting product:", error.response?.data || error.message);
             toast.error("Failed to add product");
         }
     };
@@ -162,28 +174,25 @@ const AddProduct = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         const updatedValue = name === "category" ? parseInt(value) : value;
-        console.log(name, updatedValue);
-
+        setFormData((prev) => ({ ...prev, [name]: updatedValue }));
     };
-
-    const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
-    const [dragActiveIndex, setDragActiveIndex] = useState(null);
-    const inputRefs = useRef([]);
 
     const handleFile = (file, index) => {
         if (!file || !allowedTypes.includes(file.type)) return;
-
-        // Preview image in UI
         const newPreviews = [...imagePreviews];
         newPreviews[index] = URL.createObjectURL(file);
         setImagePreviews(newPreviews);
 
-        // Save file to Redux
-        // const key = imageKeys[index];
-        // if (key) {
-        //     dispatch(updateImage({ key, file }));
-        //     console.log("Saving image to Redux:", key, file);
-        // }
+        const key = imageKeys[index];
+        if (key) {
+            setFormData((prev) => ({
+                ...prev,
+                images: {
+                    ...prev.images,
+                    [key]: file,
+                },
+            }));
+        }
     };
 
     const handleDrop = (e, index) => {
@@ -192,7 +201,6 @@ const AddProduct = () => {
         const file = e.dataTransfer.files[0];
         handleFile(file, index);
     };
-
     const handleBrowse = (index) => {
         if (inputRefs.current[index]) inputRefs.current[index].click();
     };
@@ -304,8 +312,8 @@ const AddProduct = () => {
 
                     {/* Stock */}
                     <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
-                        {Array.isArray(variantYears) && variantYears.length > 0 ? (
+                        <h2 className="text-lg font-semibold mb-2">Compatible varient Years</h2>
+                        {Array.isArray(varientYears) && varientYears.length > 0 ? (
                             <select
                                 name="compatible_varient_year"
                                 value={formData.compatible_varient_year || ''}
@@ -313,7 +321,7 @@ const AddProduct = () => {
                                 className="border rounded px-4 py-2 w-full mt-1"
                             >
                                 <option value="">Select Year</option>
-                                {variantYears.map((year) => (
+                                {varientYears.map((year) => (
                                     <option key={year.id} value={year.id}>{year.id}</option>
                                 ))}
                             </select>
@@ -409,7 +417,12 @@ const AddProduct = () => {
                     <div className="bg-white rounded-xl p-6 shadow">
                         <h2 className="text-lg font-semibold mb-2">Tags</h2>
                         <label className="text-sm">Type and search</label>
-                        <TagInput value={tags} onChange={(newTags) => dispatch(updateTags(newTags))} />
+                        <TagInput
+                            value={formData.tags}
+                            onChange={(newTags) =>
+                                setFormData((prev) => ({ ...prev, tags: newTags }))
+                            }
+                        />
                     </div>
                 </div>
             </div>
