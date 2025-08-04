@@ -5,12 +5,12 @@ import { FiEdit3 } from "react-icons/fi";
 import { getProductByIdApi } from "../../../services/allAPI";
 
 const ProductDetailView = () => {
-    const { id } = useParams(); // ✅ get id from URL
+    const { id } = useParams(); 
     const [product, setProduct] = useState(null);
 
     const fetchProduct = async () => {
         try {
-            const response = await getProductByIdApi(id); // ✅ use id
+            const response = await getProductByIdApi(id); 
             if (response.status === 200) {
                 console.log(response.data);
                 setProduct(response.data);
@@ -116,28 +116,21 @@ const ProductDetailView = () => {
                     </div>
 
                     {/* Compatible Variant Years */}
-                    {/* <div className="bg-white rounded-xl p-6 shadow">
-            <h2 className="text-lg font-semibold mb-2">Compatible Varient Years</h2>
-            <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">{product.compatible_varient_year}</p>
-          </div> */}
-
-                    <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {product.compatible_varient_year?.length > 0 ? (
-                                product.compatible_varient_year.map((variant) => (
+                    {product.compatible_varient_year?.length > 0 && (
+                        <div className="bg-white rounded-xl p-6 shadow">
+                            <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {product.compatible_varient_year.map((id) => (
                                     <span
-                                        key={variant.id}
-                                        className="px-3 py-1 bg-gray-100 text-sm rounded-full text-gray-700"
+                                        key={id}
+                                        className="mt-1 border w-full px-2 py-2 text-[#7F7F7F] rounded-md"
                                     >
-                                        {variant.id}
+                                        {id}
                                     </span>
-                                ))
-                            ) : (
-                                <p className="text-sm text-gray-500">No variant years</p>
-                            )}
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Right Column */}
