@@ -43,6 +43,10 @@ export const verifyVendorOtpApi = (data) => {
   return commonAPI("POST", `${serverurl}/auth/otp-verification/`, data);
 };
 
+export const resendOtpApi = async (email) => {
+  return await axios.post(`${serverurl}/auth/resend-otp/`, { email });
+};
+
 export const companyDetailsApi = async (vendorData, vendorId) => {
   console.log("inside companyDetailsApi", vendorData);
 

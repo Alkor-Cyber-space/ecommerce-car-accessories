@@ -71,29 +71,31 @@ export default function StepIndicator() {
       </div>
 
       <div className="w-full flex justify-center px-10 py-6">
-        <div className="flex items-center justify-between w-full">
+        <div className="flex items-center justify-start w-full overflow-x-auto whitespace-nowrap gap-4 scrollbar-none">
           {steps.map((label, idx) => {
             const isActive = idx === currentStep;
             const isCompleted = completedSteps.includes(idx);
 
             return (
-              <div
-                key={idx}
-                className="flex items-center justify-center gap-2 flex-1"
-              >
+             <div
+  key={idx}
+  className="flex flex-col items-center justify-center flex-1 text-center"
+>
+
                 {/* Circle */}
-                <div
-                  className={`w-6 h-6 md:w-8 md:h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center 
-                  ${
-                    isCompleted
-                      ? "bg-[#21A537] text-white"
-                      : isActive
-                      ? "border-[#5737B4]"
-                      : "border-gray-300"
-                  }`}
-                >
-                  {isCompleted ? "✓" : ""}
-                </div>
+              <div
+  className={`w-8 h-8 md:w-10 md:h-10 rounded-full border-2 flex items-center justify-center 
+    ${
+      isCompleted
+        ? "bg-[#21A537] text-white"
+        : isActive
+        ? "border-[#5737B4]"
+        : "border-gray-300"
+    }`}
+>
+  {isCompleted ? "✓" : ""}
+</div>
+
 
                 {/* Label */}
                 <span

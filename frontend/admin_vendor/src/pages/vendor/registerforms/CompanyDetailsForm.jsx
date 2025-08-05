@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { setCompanyDetails, setCompletedStep, setCurrentStep } from "../../../store/vendorRegisterSlice";
@@ -97,7 +97,6 @@ export default function CompanyDetails() {
         dispatch(setCompletedStep(0));
         dispatch(setCurrentStep(1));
         localStorage.setItem("vendorCompanyDetails", JSON.stringify(formData));
-        toast.success("Company details saved!");
 
         setTimeout(() => {
           navigate("/vendor-register/contact-details");
@@ -127,6 +126,26 @@ export default function CompanyDetails() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    const isVerified = localStorage.getItem("vendorOtpVerified") === "true";
+    if (!isVerified) {
+      navigate("/vendor-register/verify", { replace: true });
+    }
+
+    const handlePopState = () => {
+      const isVerified = localStorage.getItem("vendorOtpVerified") === "true";
+      if (isVerified) {
+        navigate("/vendor-register/company-details", { replace: true });
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, [navigate]);
+
 
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
