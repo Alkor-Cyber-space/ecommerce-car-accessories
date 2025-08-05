@@ -3,9 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { confirmAlert } from "react-confirm-alert";
 import { toast } from "react-toastify";
-import {
-    toggleActive,
-} from "../../../store/productFormSlice";
 import { deleteProductApi, getCategoriesApi, getVariantYearsApi, updateProductApi } from "../../../services/allAPI";
 import { RiArrowLeftRightFill } from "react-icons/ri";
 import { RxCross2 } from "react-icons/rx";
@@ -25,7 +22,6 @@ export default function EditProduct() {
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
     const inputRefs = useRef([]);
 
-    // Fetch on mount
     useEffect(() => {
         dispatch(fetchProductById(id));
     }, [dispatch, id]);
@@ -51,9 +47,9 @@ export default function EditProduct() {
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const data = await getCategoriesApi(); // this is already the parsed response data
+                const data = await getCategoriesApi();
                 console.log("Fetched categories:", data);
-                setCategories(data); // directly use it
+                setCategories(data);
             } catch (error) {
                 console.error('Error fetching data:', error);
                 toast.error('An unexpected error occurred. Please try again.');
@@ -68,9 +64,9 @@ export default function EditProduct() {
                 const data = await getVariantYearsApi();
                 console.log("Fetched variant years:", data);
 
-                setVarientYears(data); // assuming it's an array
+                setVarientYears(data);
             } catch (error) {
-                setVarientYears([]); // prevent crash
+                setVarientYears([]);
             }
         };
 
@@ -88,13 +84,9 @@ export default function EditProduct() {
     const handleFileChange = (e, index) => {
         const file = e.target.files[0];
         if (!file || !file.type.startsWith("image/")) return;
-
-        // 1. Update image preview
         const previews = [...imagePreviews];
         previews[index] = URL.createObjectURL(file);
         setImagePreviews(previews);
-
-        // 2. Update actual image file in productImages state
         const keys = ["main", "close", "other1", "other2", "other3", "other4"];
         const key = keys[index];
         setProductImages((prev) => ({
@@ -103,11 +95,8 @@ export default function EditProduct() {
         }));
     };
 
-
     const handleSave = async () => {
         const form = new FormData();
-
-        // Add regular fields
         form.append("name", formData.name || "");
         form.append("description", formData.description || "");
         form.append("price", formData.price || "");
@@ -115,13 +104,13 @@ export default function EditProduct() {
         form.append("category_id", formData.category?.id || "");
         form.append("size", formData.size || "");
         form.append("manufacturing_date", formData.manufacturing_date || "");
+        form.append("tag", formData.tag || "");
+        form.append("isActive", formData.isActive ? "true" : "false");
         if (Array.isArray(formData.compatible_varient_year)) {
             formData.compatible_varient_year.forEach((id) => {
                 form.append("compatible_varient_year", id);
             });
         }
-
-        console.log("Sending files:");
         Object.values(productImages).forEach((file) => {
             if (file) {
                 form.append("image_list", file);
@@ -131,6 +120,7 @@ export default function EditProduct() {
         try {
             const response = await updateProductApi(id, form);
             console.log(response);
+            console.log("Sending files:", formData);
 
             toast.success("Product updated successfully!");
             navigate("/vendor/products");
@@ -158,9 +148,9 @@ export default function EditProduct() {
         });
     };
 
-    const handleDelete = async (productId) => {
+    const handleDelete = async (id) => {
         try {
-            const response = await deleteProductApi(productId);
+            const response = await deleteProductApi(id);
             if (response.status === 204) {
                 toast.success("Product deleted successfully!");
                 setTimeout(() => {
@@ -186,17 +176,25 @@ export default function EditProduct() {
                     </Link>
                     / Edit  {formData.name}
                 </h1>
-                <div className="sm:flex gap-2 tems-center">
+                <div className="sm:flex items-center gap-3">
                     <span className="text-md font-medium text-[#5737B4]">Product Active</span>
                     <div
-                        onClick={() => dispatch(toggleActive())}
-                        className={`w-12 h-7 sm:w-14 sm:h:7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                        onClick={() =>
+                            setFormData((prev) => ({
+                                ...prev,
+                                isActive: !prev.isActive,
+                            }))
+                        }
+                        className={`w-14 h-7 flex items-center bg-[#5737B4] rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"
+                            }`}
                     >
                         <div
-                            className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "lg:translate-x-7 sm:translate-x-7 translate-x-7" : "translate-x-0"}`}
+                            className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-7" : "translate-x-0"
+                                }`}
                         />
                     </div>
                 </div>
+
             </div>
 
             <div className="flex flex-col lg:flex-row gap-6">
@@ -261,7 +259,7 @@ export default function EditProduct() {
                             <div className="flex-1">
                                 <label className="font-medium">Sizes Available</label>
                                 <input
-                                    name="sizes"
+                                    name="size"
                                     value={formData.size || ""}
                                     onChange={handleChange}
                                     type="text"
@@ -271,7 +269,7 @@ export default function EditProduct() {
                             <div className="flex-1">
                                 <label className="font-medium">Manufacturing Date</label>
                                 <input
-                                    name="manufacture_Date"
+                                    name="manufacturing_date"
                                     value={formData.manufacturing_date || ""}
                                     onChange={handleChange}
                                     type="date"
@@ -301,12 +299,8 @@ export default function EditProduct() {
                                 ))}
                             </select>
                         </div>
-
                     </div>
-
                     {/* varient year */}
-
-
                     {/* Enhanced Variant Year Multi-Select */}
                     <div className="bg-white rounded-xl p-6 shadow">
                         <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
@@ -341,7 +335,6 @@ export default function EditProduct() {
                         </div>
 
                         <select
-
                             value={formData.compatible_varient_year || []}
                             onChange={(e) => {
                                 const selected = Array.from(e.target.selectedOptions).map((opt) => opt.value);
@@ -374,14 +367,11 @@ export default function EditProduct() {
                                     <div
                                         className="relative h-32 w-full rounded-lg overflow-hidden border border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400 text-sm cursor-pointer group"
                                     >
-                                        {/* Image preview or placeholder */}
                                         {imagePreviews[i] ? (
                                             <img src={imagePreviews[i]} alt={`Preview ${i + 1}`} className="object-cover h-full w-full rounded-lg" />
                                         ) : (
                                             <span>Upload an image</span>
                                         )}
-
-                                        {/* Hover Overlay */}
                                         <div className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center gap-4 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
                                             {/* Replace Button */}
                                             <button
@@ -396,7 +386,7 @@ export default function EditProduct() {
                                             {/* Delete Button */}
                                             <button
                                                 type="button"
-                                                // onClick={() => handleDelete(i)}
+                                                onClick={() => handleDelete(i)}
                                                 className="flex flex-col items-center text-white"
                                             >
                                                 <RxCross2 className="w-6 h-6 mb-1" />
@@ -419,7 +409,7 @@ export default function EditProduct() {
                     </div>
 
                     {/* Tags */}
-                    <div className="bg-white rounded-xl p-6 shadow">
+                    {/* <div className="bg-white rounded-xl p-6 shadow">
                         <h2 className="text-lg font-semibold mb-2">Tags</h2>
                         <input
                             name="tags"
@@ -431,6 +421,29 @@ export default function EditProduct() {
                                 })
                             }
                             placeholder=" tags"
+                            className="mt-1 border px-3 py-2 rounded-md w-full"
+                        />
+                    </div> */}
+                    <div className="bg-white rounded-xl p-6 shadow">
+                        <h2 className="text-lg font-semibold mb-2">Tags</h2>
+                        <input
+                            name="tag"
+                            value={
+                                Array.isArray(formData.tag)
+                                    ? formData.tag.join(", ")
+                                    : formData.tag || ""
+                            }
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                const tags = value
+                                    .split(",")
+                                    .map((tag) => tag.trim())
+                                    .filter((tag) => tag.length > 0);
+                                setFormData({ ...formData, tag: tags });
+                                //   setFormData({ ...formData, tag: tags.join(", ") });
+
+                            }}
+                            placeholder="Enter tags separated by commas"
                             className="mt-1 border px-3 py-2 rounded-md w-full"
                         />
                     </div>

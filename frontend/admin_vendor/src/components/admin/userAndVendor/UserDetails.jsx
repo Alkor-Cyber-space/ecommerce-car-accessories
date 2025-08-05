@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GoArrowDownRight, GoArrowUpRight } from 'react-icons/go';
 import { HiOutlineDotsVertical } from 'react-icons/hi';
-
+import { Link } from 'react-router-dom';
 const UserDetails = () => {
     const [activeDropdown, setActiveDropdown] = useState(null);
 
@@ -35,6 +35,7 @@ const UserDetails = () => {
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h1 className="text-lg md:text-xl font-semibold">Vendor 1</h1>
+                <button className='border border-[#5737B4] max-w-max text-[#5737B4] px-10 py-2 rounded text-sm ml-auto'><Link to="/admin/vendor-documents">View Documents</Link></button>
                 <button className="bg-[#5737B4] text-white px-4 py-2 rounded text-sm">Download Report</button>
             </div>
 

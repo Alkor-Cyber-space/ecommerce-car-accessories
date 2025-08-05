@@ -10,7 +10,102 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework import generics, status, permissions, serializers
 from django.shortcuts import get_object_or_404
+from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.contrib.auth import get_user_model
+from django.contrib.auth.hashers import make_password
+
+User = get_user_model()
 # Create your views here.
+
+class AdminLoginAPIView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email_or_username = request.data.get('email_or_username')
+        password = request.data.get('password')
+
+        if not email_or_username or not password:
+            return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Try fetching user by email or username
+        user = User.objects.filter(email=email_or_username).first()
+        if not user:
+            user = User.objects.filter(username=email_or_username).first()
+
+        if user and user.check_password(password):
+            if user.groups.filter(name='Admin').exists():  # or `user.role == 'admin'` if you're using a field
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),
+                    "user": {
+                        "id": user.id,
+                        "email": user.email,
+                        "username": user.username,
+                        "role": "admin"
+                    }
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Only Admin users can login here."}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "Invalid credentials."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+class CreateAdminUserAPIView(APIView):
+    permission_classes = [IsAdmin, IsAuthenticated]
+
+    def post(self, request):
+        email = request.data.get('email')
+        username = request.data.get('username')
+        password = request.data.get('password')
+        phone_number = request.data.get('phone_number')
+        print(f"**********{email, username, password, phone_number}***********")
+
+        if not all([email, username, password,phone_number]):
+            return Response({"error": "Email, username, password and phone_number are required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if CustomUser.objects.filter(email=email).exists():
+            return Response({"error": "User with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if CustomUser.objects.filter(phone_number=phone_number).exists():
+            return Response({"error": "User with this phone number already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = CustomUser.objects.create(
+            email=email,
+            username=username,
+            password=make_password(password),
+            phone_number=phone_number,
+            is_admin_staff=True
+        )
+
+        admin_group, _ = Group.objects.get_or_create(name='Admin')
+        user.groups.add(admin_group)
+
+        return Response({"message": "Admin user created successfully."}, status=status.HTTP_201_CREATED)
+
+
+class AdminUserListAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        # Get users marked as admin or superuser
+        admin_users = CustomUser.objects.filter(
+            is_active=True
+        ).filter(
+            is_superuser=True
+        ) | CustomUser.objects.filter(
+            is_admin_staff=True
+        ) | CustomUser.objects.filter(
+            groups__name='Admin'
+        )
+
+        # Remove duplicates (in case a user meets more than one condition)
+        admin_users = admin_users.distinct()
+
+        serializer = UserSerializer(admin_users, many=True)
+        return Response(serializer.data)
+
 
 class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer

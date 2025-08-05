@@ -93,6 +93,7 @@ export default function VendorRegister() {
         || result?.data?.user?.id;
       if (userId) {
         localStorage.setItem('vendorId', userId);
+        localStorage.setItem('vendorEmail', email);
       }
 
       if (rememberMe) {
