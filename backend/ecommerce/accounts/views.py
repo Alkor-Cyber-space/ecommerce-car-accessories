@@ -260,10 +260,13 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post'], url_path='step1/(?P<user_id>[^/.]+)')
     def step1_company_details(self, request, user_id):
+        print(f'User ID: {user_id}')
         try:
-            profile = VendorProfile.objects.get(user_id=user_id)
-        except VendorProfile.DoesNotExist:
-            return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+            print(user_id)
+            profile = User.objects.get(id=user_id)
+            print(f'***************{profile}')
+        except User.DoesNotExist:
+            return Response({"error": "vendor not registered"}, status=status.HTTP_404_NOT_FOUND)
         serializer = Step1CompanySerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -272,8 +275,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
     def step2_contact_details(self, request, user_id):
         try:
-            profile = VendorProfile.objects.get(user_id=user_id)
-        except VendorProfile.DoesNotExist:
+            profile = User.objects.get(id=user_id)
+        except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = Step2ContactSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -283,8 +286,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
     def step3_kyc_documents(self, request, user_id):
         try:
-            profile = VendorProfile.objects.get(user_id=user_id)
-        except VendorProfile.DoesNotExist:
+            profile = User.objects.get(id=user_id)
+        except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = Step3KYCSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -294,8 +297,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
     def step4_business_documents(self, request, user_id):
         try:
-            profile = VendorProfile.objects.get(user_id=user_id)
-        except VendorProfile.DoesNotExist:
+            profile = User.objects.get(id=user_id)
+        except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = Step4BusinessDocsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -305,8 +308,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
     def step5_bank_tax_details(self, request, user_id):
         try:
-            profile = VendorProfile.objects.get(user_id=user_id)
-        except VendorProfile.DoesNotExist:
+            profile = User.objects.get(id=user_id)
+        except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         serializer = Step5BankTaxSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -316,8 +319,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
     def step6_supporting_documents(self, request, user_id):
         try:
-            profile = VendorProfile.objects.get(user_id=user_id)
-        except VendorProfile.DoesNotExist:
+            profile = User.objects.get(id=user_id)
+        except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
