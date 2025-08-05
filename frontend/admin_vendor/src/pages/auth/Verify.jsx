@@ -46,6 +46,7 @@ const handleSubmit = async (e) => {
     const payload = {
       user_id: vendorId,
       otp: code,
+      email: localStorage.getItem("vendorEmail") 
     };
 
     const response = await verifyVendorOtpApi(payload);
