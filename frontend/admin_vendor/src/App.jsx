@@ -65,6 +65,11 @@ import TaxReport from './components/admin/reports/TaxReport';
 import InventoryOverview from './components/admin/inventoryControl/InventoryOverview';
 import StockTable from './components/admin/inventoryControl/StockManagement';
 import VendorsDoc from './components/admin/userAndVendor/VendorsDoc';
+import VehicleCatogery from './pages/admin/Catogery/VehicleCatogery';
+import VehiclTable from './pages/admin/Catogery/VehiclTable';
+import ProductCatogery from './pages/admin/Catogery/ProductCatogery';
+import ProductTable from './pages/admin/Catogery/ProductTable';
+import IndexCatogery from './pages/admin/Catogery/IndexCatogery';
 
 
 
@@ -100,6 +105,11 @@ function App() {
           <Route path='user-details' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
+          <Route path='index-catogery' element={<IndexCatogery />} />
+          <Route path='vehicle-catogery' element={<VehicleCatogery />} />
+          <Route path='vehicle-table' element={<VehiclTable />} />
+          <Route path='product-catogery' element={<ProductCatogery />} />
+          <Route path='product-table' element={<ProductTable />} />
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}
