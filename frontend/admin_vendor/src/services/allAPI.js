@@ -224,3 +224,15 @@ export const getVariantYearsApi = async () => {
     throw error;
   }
 };
+
+// admin 
+// vendor list
+export const getVendorList = async () => {
+  try {
+    const response = await axios.get(`${serverurl}/admin/vendors/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
+  }
+}
