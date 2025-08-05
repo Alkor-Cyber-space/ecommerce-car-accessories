@@ -165,6 +165,7 @@ class Step1CompanySerializer(serializers.ModelSerializer):
     def validate_company_number(self, value):
         if VendorProfile.objects.filter(company_number=value).exclude(pk=self.instance.pk).exists():
             raise serializers.ValidationError("This company number is already used.")
+        
         return value
 
 
