@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { setOtpVerified, setCurrentStep, resetVendorRegistration } from '../../store/vendorRegisterSlice';
 import loggo from '../../assets/loggo.png';
-import { verifyVendorOtpApi } from '../../services/allAPI';
+import { resendOtpApi, verifyVendorOtpApi } from '../../services/allAPI';
+import { toast } from 'react-toastify';
 
 export default function Verify() {
   const dispatch = useDispatch(); 
   const navigate = useNavigate(); 
 
   const [otp, setOtp] = useState(["", "", "", ""]);
+  const [resendTimer, setResendTimer] = useState(0); // Timer in seconds
+
+  useEffect(() => {
+    let interval = null;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const handleChange = (value, index) => {
     if (!/^\d*$/.test(value)) return;
@@ -57,7 +69,7 @@ const handleSubmit = async (e) => {
     dispatch(setCurrentStep(0));
     localStorage.setItem("vendorOtpVerified", "true");
     dispatch(resetVendorRegistration());
-    navigate("/vendor-register/company-details");
+    // navigate("/vendor-register/company-details");
 
   } catch (error) {
     console.error("❌ OTP verification failed:", error);
@@ -66,7 +78,34 @@ const handleSubmit = async (e) => {
   }
 };
 
+ const handleResendOtp = async () => {
+    const email = localStorage.getItem("vendorEmail");
+    if (!email) {
+      alert("Email not found. Please re-register.");
+      return;
+    }
 
+    try {
+      const result = await resendOtpApi(email);
+      console.log(result);
+      
+      if(result.status === 200){
+      toast.success("OTP resent successfully to your email.");
+      setResendTimer(60); 
+      }
+
+    } catch (error) {
+      console.error(" Failed to resend OTP:", error);
+      const msg = error?.response?.data?.error || "Failed to resend OTP. Try again.";
+      toast.error(msg);
+    }
+  };
+useEffect(() => {
+  const isVerified = localStorage.getItem("vendorOtpVerified") === "true";
+  if (isVerified) {
+    navigate("/vendor-register/company-details", { replace: true }); // ✅ 'replace' avoids pushing verify page into history
+  }
+}, []);
 
 
   return (
@@ -113,11 +152,16 @@ const handleSubmit = async (e) => {
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-500">
-            Didn't receive the code?{" "}
-            <Link to="#" className="text-blue-600 hover:underline">
-              Resend
-            </Link>
+           <p className="text-center text-sm text-slate-500">
+            Didn’t receive the code?{" "}
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={resendTimer > 0}
+              className={`ml-1 font-medium ${resendTimer > 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
+            >
+              {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend"}
+            </button>
           </p>
         </div>
       </div>
