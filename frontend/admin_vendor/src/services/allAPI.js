@@ -38,6 +38,11 @@ export const vendorRegisterApi = async (vendorData) => {
     "content-Type": "application/json"
   })
 }
+
+export const verifyVendorOtpApi = (data) => {
+  return commonAPI("POST", `${serverurl}/auth/otp-verification/`, data);
+};
+
 export const companyDetailsApi = async (vendorData, vendorId) => {
   console.log("inside companyDetailsApi", vendorData);
 

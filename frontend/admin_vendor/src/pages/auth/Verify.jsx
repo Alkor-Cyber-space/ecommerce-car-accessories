@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // also add useNavigate
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setOtpVerified, setCurrentStep, resetVendorRegistration } from '../../store/vendorRegisterSlice'; // import your actions
+import { setOtpVerified, setCurrentStep, resetVendorRegistration } from '../../store/vendorRegisterSlice';
 import loggo from '../../assets/loggo.png';
+import { verifyVendorOtpApi } from '../../services/allAPI';
 
 export default function Verify() {
-  const dispatch = useDispatch(); // ✅ this line fixes the error
-  const navigate = useNavigate(); // ✅ to navigate to next step
+  const dispatch = useDispatch(); 
+  const navigate = useNavigate(); 
 
   const [otp, setOtp] = useState(["", "", "", ""]);
 
@@ -25,34 +26,46 @@ export default function Verify() {
 
   const isOtpComplete = otp.every(digit => digit !== "");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!isOtpComplete) {
-      alert("Please enter the complete OTP");
-      return;
-    }
+  if (!isOtpComplete) {
+    alert("Please enter the complete OTP");
+    return;
+  }
 
-    const code = otp.join("");
-    console.log("Submitted OTP:", code);
+  const code = otp.join("");
+  const vendorId = localStorage.getItem("vendorId");
 
-    // ✅ Mock OTP check
-    if (code === "1234") {
-      console.log("✅ OTP verified successfully");
-      dispatch(setOtpVerified(true));
-      dispatch(setCurrentStep(0));
-       localStorage.setItem("vendorOtpVerified", "true");
-    dispatch(resetVendorRegistration()); 
+  if (!vendorId) {
+    alert("User not found. Please re-register.");
+    return;
+  }
 
-      navigate("/vendor-register/company-details");
-    } else {
-      alert("❌ Invalid OTP. Try again.");
-    }
-  };
+  try {
+    const payload = {
+      user_id: vendorId,
+      otp: code,
+    };
 
-//   To expire OTP status after some time,
+    const response = await verifyVendorOtpApi(payload);
 
-// Or to clear it after logout/reset.
+    console.log("✅ OTP verified via backend:", response.data);
+
+    dispatch(setOtpVerified(true));
+    dispatch(setCurrentStep(0));
+    localStorage.setItem("vendorOtpVerified", "true");
+    dispatch(resetVendorRegistration());
+    navigate("/vendor-register/company-details");
+
+  } catch (error) {
+    console.error("❌ OTP verification failed:", error);
+    const msg = error?.response?.data?.error || "Invalid OTP. Please try again.";
+    alert(msg);
+  }
+};
+
+
 
 
   return (
@@ -90,11 +103,10 @@ export default function Verify() {
             <button
               type="submit"
               disabled={!isOtpComplete}
-              className={`w-full text-white py-3 rounded-3xl mt-4 transition duration-200 ${
-                isOtpComplete
+              className={`w-full text-white py-3 rounded-3xl mt-4 transition duration-200 ${isOtpComplete
                   ? "bg-[#5737B4] hover:bg-[#3e2991] cursor-pointer"
                   : "bg-[#D8D8D8] cursor-not-allowed"
-              }`}
+                }`}
             >
               <h2 className="text-md">Verify</h2>
             </button>
