@@ -3,12 +3,9 @@ from rest_framework import viewsets, permissions
 from rest_framework.response import Response
 from rest_framework import status
 from products.models import Product, Category,ProductImage
-from vehicles.models import VehicleMake, VehicleModel, Year, Variant, ModelYear, VariantYear
+from vehicles.models import *
 from products.serializers import ProductSerializer, CategorySerializer
-from vehicles.serializers import (
-    VehicleMakeSerializer, VehicleModelSerializer, YearSerializer, 
-    VariantSerializer, ModelYearSerializer, VariantYearSerializer
-)
+from vehicles.serializers import *
 from accounts.permissions import IsVendor,IsVendorProfileComplete
 from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer
 import csv

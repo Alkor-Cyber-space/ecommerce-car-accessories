@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError 
-from vehicles.models import VehicleMake, VehicleModel, Year, Variant, VariantYear
+from vehicles.models import *
 from rest_framework.views import APIView
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
