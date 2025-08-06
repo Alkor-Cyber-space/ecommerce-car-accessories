@@ -322,6 +322,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             profile = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        
 
         serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
