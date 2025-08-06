@@ -66,48 +66,6 @@ class VendorProductViewSet(viewsets.ModelViewSet):
             ProductImage.objects.create(product=product, image=image)
 
 
-# Category CRUD by Vendor
-class VendorCategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# Vehicle Makes CRUD by Vendor
-class VendorVehicleMakeViewSet(viewsets.ModelViewSet):
-    queryset = VehicleMake.objects.all()
-    serializer_class = VehicleMakeSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# Vehicle Model CRUD by Vendor
-class VendorVehicleModelViewSet(viewsets.ModelViewSet):
-    queryset = VehicleModel.objects.all()
-    serializer_class = VehicleModelSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# Year CRUD by Vendor
-class VendorYearViewSet(viewsets.ModelViewSet):
-    queryset = Year.objects.all()
-    serializer_class = YearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# Variant CRUD by Vendor
-class VendorVariantViewSet(viewsets.ModelViewSet):
-    queryset = Variant.objects.all()
-    serializer_class = VariantSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# ModelYear CRUD by Vendor
-class VendorModelYearViewSet(viewsets.ModelViewSet):
-    queryset = ModelYear.objects.all()
-    serializer_class = ModelYearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# VariantYear CRUD by Vendor
-class VendorVariantYearViewSet(viewsets.ModelViewSet):
-    queryset = VariantYear.objects.all()
-    serializer_class = VariantYearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
-
 
 class ProductBulkUploadViewSet(viewsets.ViewSet):
     permission_classes = [IsAuthenticated, IsVendor]
