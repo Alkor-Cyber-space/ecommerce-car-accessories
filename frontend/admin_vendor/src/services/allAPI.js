@@ -250,6 +250,21 @@ export const getVendorProfileApi = async () => {
   }
 };
 
+export const updateVendorProfileApi = async (profileData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.patch(`${serverurl}/auth/vendor/edit_profile/`, profileData, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error updating vendor profile:", error);
+    throw error;
+  }
+};
 
 // admin 
 // vendor list
