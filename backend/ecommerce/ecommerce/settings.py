@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'adminapp',
     'coupon_promotion',
+    'fcm_django',      
 ]
 
 MIDDLEWARE = [

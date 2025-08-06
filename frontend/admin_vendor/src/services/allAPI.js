@@ -24,6 +24,7 @@ const refreshToken = async () => {
   }
 };
 
+
 //admin register & login
 export const AdminLoginApi = async (adminData) => {
   return await commonAPI("POST", `${serverurl}/admin/login/`, adminData, {
@@ -31,6 +32,8 @@ export const AdminLoginApi = async (adminData) => {
   });
 }
 
+
+// auth
 // vendor register & login
 export const vendorLoginApi = async (vendorData) => {
   return await commonAPI("POST", `${serverurl}/auth/vendor/login/`, vendorData, {
@@ -46,6 +49,15 @@ export const vendorRegisterApi = async (vendorData) => {
     "content-Type": "application/json"
   })
 }
+
+export const verifyVendorOtpApi = (data) => {
+  return commonAPI("POST", `${serverurl}/auth/otp-verification/`, data);
+};
+
+export const resendOtpApi = async (email) => {
+  return await axios.post(`${serverurl}/auth/resend-otp/`, { email });
+};
+
 export const companyDetailsApi = async (vendorData, vendorId) => {
   console.log("inside companyDetailsApi", vendorData);
 
@@ -117,7 +129,7 @@ export const uploadAgreementsApi = async (vendorId, formData) => {
   );
 };
 
-// product
+// vendor product
 export const addProductApi = async (productData) => {
 
     const token = localStorage.getItem("access_token");
@@ -191,7 +203,7 @@ export const updateProductApi = async (productId, productData) => {
         "Content-Type": "multipart/form-data"
       }
     });
-    return response.data; // ✅ return data directly
+    return response.data;
   } catch (error) {
     console.error("Error updating product:", error);
     throw error;
@@ -299,8 +311,33 @@ export const deactivateAccountApi = async () => {
     return response;
   } catch (error) {
     console.error("Error deactivating account:", error);
+// profile & kyc 
+export const getVendorProfileApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/auth/vendor/profile_details/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor profile:", error);
+    throw error;
+  }
+};
+
+
+// admin 
+// vendor list
+export const getVendorList = async () => {
+  try {
+    const response = await axios.get(`${serverurl}/admin/vendors/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendors:", error);
     throw error;
   }
 }
 
-// Remove the old AccountSettingsApi function and replace it with the above functions
+

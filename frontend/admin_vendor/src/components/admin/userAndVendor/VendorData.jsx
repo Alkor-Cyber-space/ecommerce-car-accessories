@@ -3,112 +3,27 @@ import { BsSearch } from "react-icons/bs";
 import { HiOutlineDotsVertical } from "react-icons/hi";
 import SearchFilter from '../../../pages/admin/SearchFilter';
 import { Link } from 'react-router-dom';
-
-const initialVendors = [
-  {
-    id: 234430,
-    name: 'Vendor 1',
-    email: 'autoparts@example.com',
-    phone: '+91 9876543210',
-    location: 'London',
-    status: 'Approved',
-    joined: '2024-09-10',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 8,
-    totalOrders: 54
-  },
-  {
-    id: 234431,
-    name: 'Vendor 1',
-    email: 'speed@example.com',
-    phone: '+91 9999888877',
-    location: 'Mumbai',
-    status: 'Pending',
-    joined: '2025-01-05',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 12,
-    totalOrders: 12
-  },
-  {
-    id: 234432,
-    name: 'Vendor 1',
-    email: 'autoparts@example.com',
-    phone: '+91 9876543210',
-    location: 'Delhi',
-    status: 'Pending',
-    joined: '2024-09-10',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 16,
-    totalOrders: 16
-  },
-  {
-    id: 234433,
-    name: 'Vendor 1',
-    email: 'speed@example.com',
-    phone: '+91 9999888877',
-    location: 'India',
-    status: 'Rejected',
-    joined: '2025-01-05',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 4,
-    totalOrders: 4
-  },
-  {
-    id: 234434,
-    name: 'Vendor 1',
-    email: 'autoparts@example.com',
-    phone: '+91 9876543210',
-    location: 'Japan',
-    status: 'Rejected',
-    joined: '2024-09-10',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 5,
-    totalOrders: 5
-  },
-  {
-    id: 234435,
-    name: 'Vendor 1',
-    email: 'speed@example.com',
-    phone: '+91 9999888877',
-    location: 'Gujarat',
-    status: 'Approved',
-    joined: '2025-01-05',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 6,
-    totalOrders: 6
-  },
-  {
-    id: 234436,
-    name: 'Vendor 1',
-    email: 'autoparts@example.com',
-    phone: '+91 9876543210',
-    location: 'China',
-    status: 'Rejected',
-    joined: '2024-09-10',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 7,
-    totalOrders: 7
-  },
-  {
-    id: 234437,
-    name: 'Vendor 1',
-    email: 'speed@example.com',
-    phone: '+91 9999888877',
-    location: 'German',
-    status: 'Rejected',
-    joined: '2025-01-05',
-    lastActive: '23/12/2024 10am',
-    totalProducts: 9,
-    totalOrders: 9
-  }
-];
+import { getVendorList } from '../../../services/allAPI';
 
 export default function VendorDataTable() {
-  const [vendors, setVendors] = useState(initialVendors);
+  const [vendors, setVendors] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [search, setSearch] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
+
+  useEffect(() => {
+    const fetchVendorList = async () => {
+      try {
+        const data = await getVendorList();
+        console.log("API Response:", data);
+        setVendors(data);
+      } catch (error) {
+        console.error("Error fetching vendor list:", error);
+      }
+    };
+    fetchVendorList();
+  }, []);
 
   const handleStatusChange = (id, newStatus) => {
     const updated = vendors.map(vendor =>
@@ -119,9 +34,9 @@ export default function VendorDataTable() {
 
   const filteredVendors = vendors.filter(vendor => {
     const matchesSearch = search === '' ||
-      vendor.name.toLowerCase().includes(search.toLowerCase()) ||
-      vendor.email.toLowerCase().includes(search.toLowerCase()) ||
-      vendor.id.toLowerCase().includes(search.toLowerCase());
+      vendor.name?.toLowerCase().includes(search.toLowerCase()) ||
+      vendor.email?.toLowerCase().includes(search.toLowerCase()) ||
+      vendor.id?.toString().includes(search);
 
     return (
       matchesSearch &&
@@ -143,16 +58,20 @@ export default function VendorDataTable() {
     }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return dateString.split('T')[0];
+  };
+
   const handleActionClick = (vendorId) => {
     setActiveDropdown(activeDropdown === vendorId ? null : vendorId);
   };
 
   const handleAction = (action, vendorId) => {
-    console.log(`${action} vendor with ID: ${vendorId}`);
+    console.log(`${action} vendor with ID: ${vendorId}`); 
     setActiveDropdown(null);
   };
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
       setActiveDropdown(null);
@@ -168,23 +87,111 @@ export default function VendorDataTable() {
   }, [activeDropdown]);
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-      <div className='flex justify-between items-center'>
-        <h1 className="text-[#232832] text-xl font-bold">Vendors Overview</h1>
-        <button className='bg-[#5737B4] text-white p-2 rounded-md md:sm'>Download Report</button>
+    <div className="bg-[#ECECF0] px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-10 rounded-2xl w-full space-y-4 sm:space-y-6">
+      {/* Header */}
+      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+        <h1 className="text-[#232832] text-lg sm:text-xl font-bold">Vendors Overview</h1>
+        <button className='bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base w-full sm:w-auto'>
+          Download Report
+        </button>
       </div>
 
-
-      <div className="bg-white rounded-xl w-full md:w-[28%] flex flex-col md:flex-row items-center justify-between px-4 py-4">
-        <p className="text-base md:text-lg text-gray-700">Total User :</p>
-        <h1 className="text-3xl font-semibold text-black mr-5 md:mr-2">256</h1>
+      {/* Total Users Card */}
+      <div className="bg-white rounded-xl w-full sm:w-auto lg:w-[28%] flex flex-col sm:flex-row items-center justify-between px-4 py-4">
+        <p className="text-sm sm:text-base lg:text-lg text-gray-700 mb-2 sm:mb-0">Total User :</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-black">{vendors.length}</h1>
       </div>
 
+      {/* Search Filter */}
       <SearchFilter />
 
-      <div className="overflow-x-auto scrollbar-none">
+      {/* Mobile Card View - Show on small screens */}
+      <div className="block lg:hidden space-y-4">
+        {filteredVendors.map((vendor, index) => (
+          <div key={`${vendor.id}-${index}`} className="bg-white rounded-lg p-4 shadow-sm border">
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <h3 className="font-semibold text-[#5737B4] text-base">
+                  <Link to='/admin/user-details'>{vendor.username}</Link>
+                </h3>
+                <p className="text-sm text-gray-600">ID: {vendor.id}</p>
+              </div>
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleActionClick(vendor.id + index);
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <HiOutlineDotsVertical className="text-gray-500 text-lg" />
+                </button>
+
+                {activeDropdown === vendor.id + index && (
+                  <div className="absolute right-0 top-10 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    <button
+                      onClick={() => handleAction('View', vendor.id)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                    >
+                      <Link to='/admin/user-details'>View</Link>
+                    </button>
+                    <button
+                      onClick={() => handleAction('Edit', vendor.id)}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleAction('Suspend', vendor.id)}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
+                    >
+                      Suspend
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Email:</span>
+                <span className="text-right flex-1 ml-2 truncate">{vendor.email}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Phone:</span>
+                <span>{vendor.contact_number || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Location:</span>
+                <span>{vendor.location || 'N/A'}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Status:</span>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(vendor.status)}`}>
+                  {vendor.status || 'Pending'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Joined:</span>
+                <span>{formatDate(vendor.date_joined)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Products:</span>
+                <span className="font-medium">{vendor.totalProducts || 0}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Orders:</span>
+                <span className="font-medium">{vendor.totalOrders || 0}</span>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View - Show on large screens */}
+      <div className="hidden lg:block overflow-x-auto scrollbar-none">
         <table className="min-w-full bg-white rounded-md text-sm shadow">
-          <thead className="text-gray-600 ">
+          <thead className="text-gray-600">
             <tr>
               <th className="py-4 text-left px-4 font-medium">User ID</th>
               <th className="py-4 text-left px-4 font-medium">Vendor Name</th>
@@ -200,20 +207,22 @@ export default function VendorDataTable() {
           </thead>
           <tbody>
             {filteredVendors.map((vendor, index) => (
-              <tr key={`${vendor.id}-${index}`} className="text-left hover:bg-gray-50  border-gray-100">
+              <tr key={`${vendor.id}-${index}`} className="text-left hover:bg-gray-50 border-gray-100">
                 <td className="py-3 px-4 font-medium text-black">{vendor.id}</td>
-                <td className="py-3 px-4 text-[#5737B4]/100 font-medium"><Link to='/admin/user-details'>{vendor.name}</Link></td>
+                <td className="py-3 px-4 text-[#5737B4]/100 font-medium">
+                  <Link to='/admin/user-details'>{vendor.username}</Link>
+                </td>
                 <td className="py-3 px-4">{vendor.email}</td>
-                <td className="py-3 px-4">{vendor.phone}</td>
-                <td className="py-3 px-4">{vendor.location}</td>
+                <td className="py-3 px-4">{vendor.contact_number || 'N/A'}</td>
+                <td className="py-3 px-4">{vendor.location || 'N/A'}</td>
                 <td className="py-3 px-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vendor.status)}`}>
-                    {vendor.status}
+                    {vendor.status || 'Pending'}
                   </span>
                 </td>
-                <td className="py-3 px-4">{vendor.joined}</td>
-                <td className="py-3 px-4 font-medium">{vendor.totalProducts}</td>
-                <td className="py-3 px-4 font-medium">{vendor.totalOrders}</td>
+                <td className="py-3 px-4">{formatDate(vendor.date_joined)}</td>
+                <td className="py-3 px-4 font-medium">{vendor.totalProducts || 0}</td>
+                <td className="py-3 px-4 font-medium">{vendor.totalOrders || 0}</td>
                 <td className="py-3 px-4 relative">
                   <button
                     onClick={(e) => {
@@ -253,9 +262,13 @@ export default function VendorDataTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Empty State */}
+      {filteredVendors.length === 0 && (
+        <div className="bg-white rounded-lg p-8 text-center">
+          <p className="text-gray-500">No vendors found matching your criteria.</p>
+        </div>
+      )}
     </div>
   );
 }
-
-
-
