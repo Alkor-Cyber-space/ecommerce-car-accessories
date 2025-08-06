@@ -16,7 +16,7 @@ User = get_user_model()
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'password')
+        fields = ('id', 'username', 'email', 'password',"phone_number")
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -219,9 +219,25 @@ class Step6AgreementsSerializer(serializers.ModelSerializer):
 #         return CustomUser.objects.create_user(**validated_data)
 
 class UserSerializer(serializers.ModelSerializer):
+    contact_number = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'groups']
+        fields = [
+            'id',
+            'email',
+            'username',
+            'phone_number',
+            'is_admin_staff',
+            'is_superuser',
+            'date_joined',
+            'contact_number'  # from VendorProfile
+        ]
+
+    def get_contact_number(self, obj):
+        if hasattr(obj, 'vendor_profile') and obj.vendor_profile:
+            return obj.vendor_profile.contact_number
+        return None
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
