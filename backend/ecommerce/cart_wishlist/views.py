@@ -35,12 +35,15 @@ class WishlistViewSet(viewsets.ModelViewSet):
             wishlist = Wishlist.objects.get(user=request.user)
             product = Product.objects.get(id=product_id)
             wishlist.products.remove(product)
-            send_push_notification(
-                user=self.request.user,
-                title="Product Removed",
-                body=f"{product.name} was removed from your wishlist.",
-                data={"type": "wishlist_update"}
-            )
+            # send_push_notification(
+            #     user=self.request.user,
+            #     title="Product Removed",
+            #     body=f"{product.name} was removed from your wishlist.",
+            #     data={"type": "wishlist_update"}
+            # )
+            if wishlist.products.count() == 0:
+                wishlist.delete()
+                return Response({'message': 'Wishlist is now empty.'}, status=status.HTTP_200_OK)
             return Response({'message': 'Product removed from wishlist.'}, status=status.HTTP_200_OK)
         except Wishlist.DoesNotExist:
             return Response({'error': 'Wishlist not found.'}, status=status.HTTP_404_NOT_FOUND)

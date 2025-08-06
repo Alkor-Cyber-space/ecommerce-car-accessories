@@ -404,7 +404,9 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         
+
         profile, created = VendorProfile.objects.get_or_create(user=profile)
+
         serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

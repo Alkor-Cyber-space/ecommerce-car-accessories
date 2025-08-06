@@ -31,7 +31,7 @@ class ProductSerializer(serializers.ModelSerializer):
     )
 
     compatible_varient_year = serializers.PrimaryKeyRelatedField(
-        queryset=VariantYear.objects.all(),
+        queryset=VehicleVariant.objects.all(),
         many=True,
         required=False
     )   

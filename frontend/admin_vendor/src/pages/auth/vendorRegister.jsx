@@ -80,14 +80,15 @@ export default function VendorRegister() {
       const result = await vendorRegisterApi(vendorData);
       console.log("Step 1 success:", result);
 
-      if (result?.data?.email && Array.isArray(result.data.email)) {
-        const emailError = result.data.email[0];
-        toast.error(` ${emailError}`);
-        setError(emailError);
-        setLoading(false);
-        return;
-      }
-      toast.success(" Registration successful! Proceeding to OTP verification.");
+      // if (result?.data?.email && Array.isArray(result.data.email)) {
+      //   const emailError = result.data.email[0];
+      //   toast.error(` ${emailError}`);
+      //   setError(emailError);
+      //   setLoading(false);
+      //   return;
+      // }
+      if(result.status === 201){
+ toast.success(" Registration successful! Proceeding to OTP verification.");
       dispatch(setCredentials({ username, email, password }));
       const userId = result?.data?.user_id
         || result?.data?.user?.id;
@@ -106,6 +107,12 @@ export default function VendorRegister() {
       setTimeout(() => {
         navigate('/register/verifyOtp');
       }, 3000);
+      }else{
+        console.log("error :",result.data);
+        toast.error(result.data?.error)
+        
+      }
+     
 
     } catch (err) {
       console.error(err);

@@ -15,6 +15,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from products.serializers import CategorySerializer
+from vehicles.serializers import VehicleFullEntrySerializer
+from products.models import Category
+from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
+
 
 User = get_user_model()
 # Create your views here.
@@ -174,3 +179,26 @@ class VendorApprove(generics.GenericAPIView):
                 "message": "Error approving vendor.",
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+
+# Category CRUD by Vendor
+class AdminCategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+
+class AdminVehicleCreate(APIView):
+    def post(self, request):
+        serializer = VehicleFullEntrySerializer(data=request.data)
+        if serializer.is_valid():
+            variant = serializer.save()
+            return Response({
+                "message": "Vehicle entry saved successfully.",
+                "data": {
+                    "make": variant.make.name,
+                    "model": variant.model.name,
+                    "variant": variant.variant,
+                    "year": variant.year
+                }
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

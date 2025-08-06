@@ -23,7 +23,7 @@ import AdminDashboard from './AdminDashboard';
 import { RiHomeFill } from 'react-icons/ri';
 import { PiCalculatorDuotone, PiCurrencyDollarSimpleBold, PiPuzzlePieceFill, PiQuestion } from 'react-icons/pi';
 import { AiOutlineAppstore, AiOutlineStock } from 'react-icons/ai';
-import { MdOutlineInventory } from 'react-icons/md';
+import { MdOutlineCategory, MdOutlineInventory } from 'react-icons/md';
 import { IoSearchOutline } from 'react-icons/io5';
 import { HiOutlineDocumentReport } from "react-icons/hi";
 
@@ -211,7 +211,7 @@ const AdminHome = () => {
               </ul>
             )}
           </li>
-
+          <SidebarItem to="/admin/index-catogery" label="Manage Category" icon={<MdOutlineCategory />} activePath={activePath} />
           <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
