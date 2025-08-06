@@ -103,7 +103,7 @@ const handleSubmit = async (e) => {
 useEffect(() => {
   const isVerified = localStorage.getItem("vendorOtpVerified") === "true";
   if (isVerified) {
-    navigate("/vendor-register/company-details", { replace: true }); // ✅ 'replace' avoids pushing verify page into history
+    navigate("/vendor-register/company-details", { replace: true }); 
   }
 }, []);
 

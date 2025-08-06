@@ -1,16 +1,33 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FaEye } from 'react-icons/fa';
 import { FiEdit3 } from "react-icons/fi";
 import { RiDeleteBinLine } from 'react-icons/ri';
+import { getVendorProfileApi } from '../../services/allAPI';
 
 const VendorProfile = () => {
-
-  // edit modal---
+ const [profileData , setProfileData] = useState({})
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editSection, setEditSection] = useState(null); // 'business' | 'location' | 'bank'
 
   const fileInputRef = useRef(null);
   // const [fileName, setFileName] = useState('PANfile.pdf');
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const data = await getVendorProfileApi();
+        setProfileData(data);
+        console.log(data);
+        
+      } catch (error) {
+        console.error("Error fetching profile data:", error);
+      }
+    };
+
+    fetchProfileData();
+  }, []);
+
+
 
   const handleReplaceDoc = (e) => {
     const file = e.target.files[0];
@@ -83,13 +100,13 @@ const VendorProfile = () => {
           </div>
           <div className="grid grid-cols-2 gap-y-5 mt-4">
             <p className="font-semibold">Name</p>
-            <p>ABC Technologies</p>
+            <p>{profileData.company_name || ''}</p>
             <p className="font-semibold">Email</p>
-            <p>rahimtest4@gmail.com</p>
+            <p>{profileData.company_email || ''}</p>
             <p className="font-semibold">Phone</p>
-            <p>+91 8876546231</p>
+            <p>{profileData.company_number || ''}</p>
             <p className="font-semibold">GSTIN</p>
-            <p>37526509nhaghtu</p>
+            <p>{profileData.company_gstin || ''}</p>
           </div>
         </div>
 
@@ -118,7 +135,7 @@ const VendorProfile = () => {
       {/* Bank Details */}
       <div className="bg-white lg:w-[49.5%] md:w-full rounded-lg px-5 py-6 shadow mt-6">
         <div className="flex justify-between items-center">
-          <h2 className="font-semibold text-lg">Bank Details</h2>
+          <h2 className="font-semibold text-lg">Contact Details</h2>
           <FiEdit3 size={20}
             onClick={() => {
               setEditSection('bank');
@@ -127,14 +144,14 @@ const VendorProfile = () => {
             className="cursor-pointer" />
         </div>
         <div className="grid grid-cols-2 gap-y-5 mt-4">
-          <p className="font-semibold">Account Number</p>
-          <p>2113456789012</p>
-          <p className="font-semibold">Bank Name</p>
-          <p>HDFC Bank</p>
-          <p className="font-semibold">IFSC</p>
-          <p>HDFC0006234</p>
-          <p className="font-semibold">UPI</p>
-          <p>abc@hdfcbank</p>
+          <p className="font-semibold">Contact Name</p>
+          <p>{profileData.contact_name || ''}</p>
+          <p className="font-semibold">Contact Email</p>
+          <p>{profileData.contact_email}</p>
+          <p className="font-semibold">Contact Number</p>
+          <p>{profileData.contact_number}</p>
+          <p className="font-semibold">Designation</p>
+          <p>{profileData.designation}</p>
         </div>
       </div>
       {/* KYC Uploads */}
@@ -144,7 +161,18 @@ const VendorProfile = () => {
           <div className="flex justify-between items-center bg-white p-5 rounded shadow sm:gap-5">
             <p className="text-green-600 font-medium">✓ Verified</p>
             <p className='font-medium'>PAN Card</p>
-            <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span>
+          <a
+  href={profileData.pan_card}
+  target="_blank"
+  rel="noopener noreferrer"
+    // download="PANCard.pdf"
+
+  className="text-blue-600 text-sm underline"
+>
+  PANCard.pdf
+</a>
+
+            {/* <span className="underline text-sm text-blue-600 cursor-pointer">PANfile.pdf</span> */}
             <p className="text-sm text-gray-700"><span className='font-medium text-gray-900'>Uploaded At :</span> 20 May 2025, Time:3:20 PM</p>
             <div
               onClick={() => fileInputRef.current.click()}
@@ -353,57 +381,83 @@ const VendorProfile = () => {
       />
 
       {/* modal */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white rounded p-6 w-full max-w-md shadow-lg relative">
-            <button
-              className="absolute top-2 right-2 text-gray-600"
-              onClick={() => setIsEditModalOpen(false)}
-            >
-              ✕
-            </button>
+{isEditModalOpen && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center  backdrop-blur-sm px-4">
+    <div className="relative w-full max-w-3xl bg-white rounded-2xl shadow-2xl p-8">
+      {/* Close Button */}
+      <button
+        className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
+        onClick={() => setIsEditModalOpen(false)}
+      >
+        ✕
+      </button>
 
-            <h2 className="text-xl font-semibold mb-4">
-              Edit {editSection === 'business' ? 'Business Details' :
-                editSection === 'location' ? 'Location Details' :
-                  'Bank Details'}
-            </h2>
+      {/* Heading */}
+      <h2 className="text-2xl font-bold text-[#5737B4] mb-6 border-b pb-3">
+        Edit {editSection === 'business'
+          ? 'Business Details'
+          : editSection === 'location'
+            ? 'Location Details'
+            : 'Bank Details'}
+      </h2>
 
-            {/* You can conditionally render forms based on section */}
-            {editSection === 'business' && (
-              <>
-                <input type="text" placeholder="Name" className="input-class" />
-                <input type="email" placeholder="Email" className="input-class" />
-                <input type="tel" placeholder="Phone" className="input-class" />
-                <input type="text" placeholder="GSTIN" className="input-class" />
-              </>
-            )}
+      {/* Form Section */}
+      <div className="flex flex-col gap-4">
+        {editSection === 'business' && (
+          <>
+            <input type="text" placeholder="Name" 
+            value={profileData.company_name}
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+            <input type="email" placeholder="Email"
+                        value={profileData.company_email}
 
-            {editSection === 'location' && (
-              <>
-                <input type="text" placeholder="Pick Up Location" className="input-class" />
-                <input type="text" placeholder="Nearby Landmark" className="input-class" />
-              </>
-            )}
+             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+            <input type="tel" placeholder="Phone"
+                        value={profileData.company_number}
 
-            {editSection === 'bank' && (
-              <>
-                <input type="text" placeholder="Account Number" className="input-class" />
-                <input type="text" placeholder="Bank Name" className="input-class" />
-                <input type="text" placeholder="IFSC" className="input-class" />
-                <input type="text" placeholder="UPI" className="input-class" />
-              </>
-            )}
+             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+            <input type="text" placeholder="GSTIN"
+                       
 
-            <button
-              onClick={() => setIsEditModalOpen(false)}
-              className="mt-4 bg-[#5737B4] text-white px-4 py-2 rounded"
-            >
-              Save Changes
-            </button>
-          </div>
-        </div>
-      )}
+             className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+          </>
+        )}
+
+        {editSection === 'location' && (
+          <>
+            <input type="text" placeholder="Pick Up Location" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition"/>
+            <input type="text" placeholder="Nearby Landmark"
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+          </>
+        )}
+
+        {editSection === 'bank' && (
+          <>
+            <input type="text" placeholder="Account Number" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition"/>
+            <input type="text" placeholder="Bank Name" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+            <input type="text" placeholder="IFSC" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+            <input type="text" placeholder="UPI" 
+            className="w-full px-4 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-1  transition" />
+          </>
+        )}
+      </div>
+
+      {/* Save Button */}
+      <div className="mt-6 text-right">
+        <button
+          onClick={() => setIsEditModalOpen(false)}
+          className="px-6 py-2 bg-[#5737B4] hover:bg-[#402b91] text-white rounded-md text-sm font-semibold transition"
+        >
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+)}
 
     </div>
 

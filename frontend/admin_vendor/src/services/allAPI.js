@@ -23,7 +23,7 @@ const refreshToken = async () => {
     throw error;
   }
 };
-
+// auth
 // vendor register & login
 export const vendorLoginApi = async (vendorData) => {
   return await commonAPI("POST", `${serverurl}/auth/vendor/login/`, vendorData, {
@@ -118,7 +118,7 @@ export const uploadAgreementsApi = async (vendorId, formData) => {
   );
 };
 
-// product
+// vendor product
 export const addProductApi = async (productData) => {
 
     const token = localStorage.getItem("access_token");
@@ -192,7 +192,7 @@ export const updateProductApi = async (productId, productData) => {
         "Content-Type": "multipart/form-data"
       }
     });
-    return response.data; // ✅ return data directly
+    return response.data;
   } catch (error) {
     console.error("Error updating product:", error);
     throw error;
@@ -234,6 +234,22 @@ export const getVariantYearsApi = async () => {
   }
 };
 
+// profile & kyc 
+export const getVendorProfileApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/auth/vendor/profile_details/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor profile:", error);
+    throw error;
+  }
+};
+
 
 // admin 
 // vendor list
@@ -242,7 +258,7 @@ export const getVendorList = async () => {
     const response = await axios.get(`${serverurl}/admin/vendors/`);
     return response.data;
   } catch (error) {
-    console.error("Error fetching products:", error);
+    console.error("Error fetching vendors:", error);
     throw error;
   }
 }
