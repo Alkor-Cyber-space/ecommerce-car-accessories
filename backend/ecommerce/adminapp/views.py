@@ -15,6 +15,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from products.serializers import CategorySerializer
+from vehicles.serializers import (
+    VehicleMakeSerializer, VehicleModelSerializer, YearSerializer, 
+    VariantSerializer, ModelYearSerializer, VariantYearSerializer
+)
+from products.models import Category
+from vehicles.models import VehicleMake, VehicleModel, Year, Variant, ModelYear, VariantYear
+
 
 User = get_user_model()
 # Create your views here.
@@ -174,3 +182,45 @@ class VendorApprove(generics.GenericAPIView):
                 "message": "Error approving vendor.",
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+
+# Category CRUD by Vendor
+class AdminCategoryViewSet(viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+# Vehicle Makes CRUD by Vendor
+class AdminVehicleMakeViewSet(viewsets.ModelViewSet):
+    queryset = VehicleMake.objects.all()
+    serializer_class = VehicleMakeSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+# Vehicle Model CRUD by Vendor
+class AdminVehicleModelViewSet(viewsets.ModelViewSet):
+    queryset = VehicleModel.objects.all()
+    serializer_class = VehicleModelSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+# Year CRUD by Vendor
+class AdminYearViewSet(viewsets.ModelViewSet):
+    queryset = Year.objects.all()
+    serializer_class = YearSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+# Variant CRUD by Vendor
+class AdminVariantViewSet(viewsets.ModelViewSet):
+    queryset = Variant.objects.all()
+    serializer_class = VariantSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+# ModelYear CRUD by Vendor
+class AdminModelYearViewSet(viewsets.ModelViewSet):
+    queryset = ModelYear.objects.all()
+    serializer_class = ModelYearSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+# VariantYear CRUD by Vendor
+class AdminVariantYearViewSet(viewsets.ModelViewSet):
+    queryset = VariantYear.objects.all()
+    serializer_class = VariantYearSerializer
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
