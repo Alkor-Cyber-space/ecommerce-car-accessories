@@ -26,6 +26,7 @@ from .serializers import *
 from rest_framework.generics import GenericAPIView
 from firebase_admin import auth as firebase_auth
 from . import firebase_config 
+from django.db.models import Q
 
 User = get_user_model()
 
@@ -44,8 +45,76 @@ class UserViewSet(viewsets.ViewSet):
         serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
+        otp= str(random.randint(1000,9999))
+        OTP.objects.create(
+            user=user,
+            otp=otp,
+            expire_at=timezone.now()+timedelta(minutes=10)
+        )
 
+        subject='User Register Otp'
+        message= f'your OTP for User registeration is {otp}.it is valid for 10 minutes '
+        from_email=settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
+
+        try:
+            send_mail(subject,message,from_email,recipient_list,fail_silently=False)
+        except Exception as e:
+
+            return Response({
+                "message": "USER created, but failed to send OTP. Please contact support.",
+                "user_id": user.id
+            }, status=status.HTTP_201_CREATED)
+            
+        return Response({
+            "message": "User created successfully. Please verify your email with the OTP sent.",
+            "user_id": user.id
+        }, status=status.HTTP_201_CREATED)
+    
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def Verify(self,request):
+        email_or_username=request.data.get('email_or_username')
+        otp_input=request.data.get('otp')
+
+        if not email_or_username or not otp_input: 
+            return Response({
+                "status":"failed",
+                "code":status.HTTP_400_BAD_REQUEST,
+                "message": "email_or_username and otp is madatory for verification"
+            },status=status.HTTP_400_BAD_REQUEST 
+            )
+        user=CustomUser.objects.filter( Q(email=email_or_username) | Q(username=email_or_username)).first()
+        print(f"user:{user}")
+        if not user:
+            return Response({
+                "status":"Failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "The user name or email is valid , please register"
+            },status=status.HTTP_400_BAD_REQUEST)
+        otp_obj=OTP.objects.filter(user=user,otp=otp_input,is_used=False).last()
+        if not otp_obj:
+             return Response({
+            "status": "failed",
+            "message": "Invalid or expired OTP."
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+        if not otp_obj.is_valid():
+            return Response({
+                "status": "failed",
+                "message": "OTP has expired."
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        otp_obj.is_used = True
+        otp_obj.save()
+
+        user.is_active = True  # or user.is_email_verified = True if using that field
+        user.save()
+
+        return Response({
+            "status": "success",
+            "message": "OTP verified successfully. Your account is now active."
+        }, status=status.HTTP_200_OK)
+        
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
@@ -56,7 +125,7 @@ class UserViewSet(viewsets.ViewSet):
 
         user = None
         try:
-            user = User.objects.filter(email=email_or_username).first()
+            user = User.objects.filter(email=email_or_username,is_active=True).first()
             if not user:
                 user = User.objects.filter(username=email_or_username).first()
             if user:
@@ -585,33 +654,4 @@ class ResendOptVerification(GenericAPIView):
             return Response({"error": "Failed to send OTP. Please contact support."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"message": "OTP resent successfully."}, status=status.HTTP_200_OK)
-    
-
-def generate_otp():
-    return str(random.randint(1000,9999))
-
-def send_sms(phone_number,otp):
-    print(f"Send SMS to {phone_number}: Your OTP is {otp}")
-
-class RegisterView(APIView):
-
-    def post(self,request):
-        email =request.data.get('email')
-        phone = request.data.get('phone_number')
-
-        if CustomUser.objects.filter(email=email).exists():
-            return Response({"error": "User with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer = CreateUserSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        user=serializer.save(is_active=False)
-
-        otp_code = generate_otp()
-        expire_time = timezone.now() + timedelta(minutes=5)
-
-        OTP.objects.create(user=user, otp=otp_code , expire_at=expire_time)
-        
-        send_sms(user.phone_number,otp_code)
-
-        return Response({'message': "otp sent to your phone number"},status=status.HTTP_200_OK)
     

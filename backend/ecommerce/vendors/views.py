@@ -52,7 +52,7 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
+    print("reached function")
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
 
@@ -65,7 +65,18 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         for image in images:
             ProductImage.objects.create(product=product, image=image)
 
+    def perform_update(self, serializer):
+        product = serializer.save()
+        new_images = self.request.FILES.getlist('images')
+        if new_images:
+            for img in product.images.all():
+                if img.image:
+                    img.image.delete(save=False)
+            
+            product.images.all().delete()
 
+        for image in new_images:
+            ProductImage.objects.create(product=product, image=image)
 # Category CRUD by Vendor
 class VendorCategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
@@ -228,3 +239,5 @@ class InventoryUpdateViewSet(viewsets.ViewSet):
 
             return Response({'message': 'Stock updated successfully.'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
