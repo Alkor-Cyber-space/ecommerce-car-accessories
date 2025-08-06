@@ -38,6 +38,15 @@ export const vendorRegisterApi = async (vendorData) => {
     "content-Type": "application/json"
   })
 }
+
+export const verifyVendorOtpApi = (data) => {
+  return commonAPI("POST", `${serverurl}/auth/otp-verification/`, data);
+};
+
+export const resendOtpApi = async (email) => {
+  return await axios.post(`${serverurl}/auth/resend-otp/`, { email });
+};
+
 export const companyDetailsApi = async (vendorData, vendorId) => {
   console.log("inside companyDetailsApi", vendorData);
 
@@ -224,3 +233,17 @@ export const getVariantYearsApi = async () => {
     throw error;
   }
 };
+
+
+// admin 
+// vendor list
+export const getVendorList = async () => {
+  try {
+    const response = await axios.get(`${serverurl}/admin/vendors/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
+  }
+}
+

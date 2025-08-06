@@ -69,7 +69,6 @@ export default function ContactDetailsForm() {
       if (response?.status === 400 && response?.data) {
         const serverErrors = response.data;
         const newErrors = {};
-        // Iterate through each field returned in the error
         Object.keys(serverErrors).forEach((field) => {
           const message = Array.isArray(serverErrors[field])
             ? serverErrors[field][0]
