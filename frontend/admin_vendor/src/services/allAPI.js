@@ -23,6 +23,16 @@ const refreshToken = async () => {
     throw error;
   }
 };
+
+
+//admin register & login
+export const AdminLoginApi = async (adminData) => {
+  return await commonAPI("POST", `${serverurl}/admin/login/`, adminData, {
+    "Content-Type": "application/json"
+  });
+}
+
+
 // auth
 // vendor register & login
 export const vendorLoginApi = async (vendorData) => {
@@ -30,6 +40,7 @@ export const vendorLoginApi = async (vendorData) => {
     "Content-Type": "application/json"
   });
 }
+
 
 export const vendorRegisterApi = async (vendorData) => {
   console.log("inside register", vendorData);
@@ -234,6 +245,72 @@ export const getVariantYearsApi = async () => {
   }
 };
 
+// Account Settings
+// Account Settings APIs - Add these to your existing allAPI.js file
+
+// Get current user profile
+export const getMeApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/auth/vendor/me/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response;
+  } catch (error) {
+    console.error("Error fetching account settings:", error);
+    throw error;
+  }
+}
+
+// Update user profile
+export const updateAccountApi = async (userData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.patch(`${serverurl}/auth/vendor/edit_account/`, userData, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response;
+  } catch (error) {
+    console.error("Error updating account:", error);
+    throw error;
+  }
+}
+
+// Change password
+// export const changePasswordApi = async (passwordData) => {
+//   try {
+//     const token = localStorage.getItem("access_token");
+//     const response = await axios.patch(`${serverurl}/auth/vendor/edit_account/`, passwordData, {
+//       headers: {
+//         Authorization: `JWT ${token}`,
+//         "Content-Type": "application/json",
+//       },
+//     });
+//     return response;
+//   } catch (error) {
+//     console.error("Error changing password:", error);
+//     throw error;
+//   }
+// }
+
+// Deactivate account
+export const deactivateAccountApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(`${serverurl}/auth/vendor/deactivate_account/`, {}, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response;
+  } catch (error) {
+    console.error("Error deactivating account:", error);
 // profile & kyc 
 export const getVendorProfileApi = async () => {
   try {
@@ -262,4 +339,5 @@ export const getVendorList = async () => {
     throw error;
   }
 }
+
 
