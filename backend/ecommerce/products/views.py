@@ -29,10 +29,10 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [permissions.AllowAny]
+# class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+#     queryset = Product.objects.all()
+#     serializer_class = ProductSerializer
+#     permission_classes = [permissions.AllowAny]
 
 class ProductListAPIView(APIView):
     """
@@ -41,6 +41,7 @@ class ProductListAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        print("hgamshgasdhgasdjh")
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)

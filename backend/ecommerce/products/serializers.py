@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-  
+from vehicles.serializers import VehicleVariantReadSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = serializers.StringRelatedField(many=True, read_only=True)
@@ -19,6 +19,8 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ['id', 'image', 'is_main']
 
+
+
 class ProductSerializer(serializers.ModelSerializer):
     image_list = ProductImageSerializer(many=True, read_only=True, source='images')
     category = CategorySerializer(read_only=True)
@@ -30,24 +32,29 @@ class ProductSerializer(serializers.ModelSerializer):
         write_only=True
     )
 
-    compatible_varient_year = serializers.PrimaryKeyRelatedField(
+    compatible_varient_year = VehicleVariantReadSerializer(many=True, read_only=True)
+
+    compatible_varient_year_ids = serializers.PrimaryKeyRelatedField(
         queryset=VehicleVariant.objects.all(),
         many=True,
-        required=False
-    )   
+        required=False,
+        write_only=True,
+        source='compatible_varient_year')   
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at',
             "manufacturing_date", "tag", "size", 'category', 'category_id',
-            "image_list","compatible_varient_year"
+            "image_list","compatible_varient_year_ids" , 'compatible_varient_year'
         ]
         extra_kwargs = {
             'size': {'required': False, 'allow_null': True, 'allow_blank': True},
         }
 
     def validate(self, attrs):
+        print(attrs.get("price"))
+        print("reached serilaasjaj")
         if not attrs.get('name'):
             raise serializers.ValidationError("Name is required.")
         if attrs.get('price') <= 0:
