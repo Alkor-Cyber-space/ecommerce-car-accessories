@@ -106,10 +106,7 @@ function App() {
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
           <Route path='index-catogery' element={<IndexCatogery />} />
-          <Route path='vehicle-catogery' element={<VehicleCatogery />} />
-          <Route path='vehicle-table' element={<VehiclTable />} />
-          <Route path='product-catogery' element={<ProductCatogery />} />
-          <Route path='product-table' element={<ProductTable />} />
+
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}
