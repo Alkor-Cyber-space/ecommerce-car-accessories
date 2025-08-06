@@ -29,6 +29,10 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
+class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [permissions.AllowAny]
 
 class ProductListAPIView(APIView):
     """

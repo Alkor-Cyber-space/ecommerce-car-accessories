@@ -262,11 +262,14 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     def step1_company_details(self, request, user_id):
         print(f'User ID: {user_id}')
         try:
-            print(user_id)
+            print(f"user_id ::{user_id}")
             profile = User.objects.get(id=user_id)
             print(f'***************{profile}')
         except User.DoesNotExist:
             return Response({"error": "vendor not registered"}, status=status.HTTP_404_NOT_FOUND)
+        
+        profile, created = VendorProfile.objects.get_or_create(user=profile)
+
         serializer = Step1CompanySerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -278,6 +281,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             profile = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        profile, created = VendorProfile.objects.get_or_create(user=profile)
+
         serializer = Step2ContactSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -289,6 +294,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             profile = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        profile, created = VendorProfile.objects.get_or_create(user=profile)
+
         serializer = Step3KYCSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -300,6 +307,9 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             profile = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        profile, created = VendorProfile.objects.get_or_create(user=profile)
+
         serializer = Step4BusinessDocsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -311,6 +321,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             profile = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
+                
+        profile, created = VendorProfile.objects.get_or_create(user=profile)
         serializer = Step5BankTaxSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -323,6 +335,8 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         
+
+        profile, created = VendorProfile.objects.get_or_create(user=profile)
 
         serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -573,3 +587,33 @@ class ResendOptVerification(GenericAPIView):
             return Response({"error": "Failed to send OTP. Please contact support."}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({"message": "OTP resent successfully."}, status=status.HTTP_200_OK)
+    
+
+def generate_otp():
+    return str(random.randint(1000,9999))
+
+def send_sms(phone_number,otp):
+    print(f"Send SMS to {phone_number}: Your OTP is {otp}")
+
+class RegisterView(APIView):
+
+    def post(self,request):
+        email =request.data.get('email')
+        phone = request.data.get('phone_number')
+
+        if CustomUser.objects.filter(email=email).exists():
+            return Response({"error": "User with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = CreateUserSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user=serializer.save(is_active=False)
+
+        otp_code = generate_otp()
+        expire_time = timezone.now() + timedelta(minutes=5)
+
+        OTP.objects.create(user=user, otp=otp_code , expire_at=expire_time)
+        
+        send_sms(user.phone_number,otp_code)
+
+        return Response({'message': "otp sent to your phone number"},status=status.HTTP_200_OK)
+    
