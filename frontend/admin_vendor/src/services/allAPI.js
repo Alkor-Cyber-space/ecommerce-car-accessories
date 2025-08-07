@@ -311,7 +311,10 @@ export const deactivateAccountApi = async () => {
     return response;
   } catch (error) {
     console.error("Error deactivating account:", error);
-// profile & kyc 
+  }
+};
+
+// profile & kyc
 export const getVendorProfileApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
