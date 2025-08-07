@@ -45,6 +45,16 @@ class ProductListAPIView(APIView):
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
+class CategoryListAPIView(APIView):
+    """
+    Return all products.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True, context={'request': request})
+        return Response(serializer.data)
 
 class ProductSearchAPIView(APIView):
     """

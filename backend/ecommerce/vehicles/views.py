@@ -7,6 +7,7 @@ from rest_framework import viewsets,permissions
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.views import APIView
 
 
 
@@ -24,3 +25,15 @@ class SavedVehicleViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         self.perform_destroy(instance)
         return Response({'message': 'Saved vehicle deleted successfully.'}, status=status.HTTP_200_OK)
+
+
+class compatibleYearListAPIView(APIView):
+    """
+    Return all products.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        vehicles = VehicleVariant.objects.all()
+        serializer = VehicleVariantReadSerializer(vehicles, many=True, context={'request': request})
+        return Response(serializer.data)
