@@ -18,7 +18,7 @@ urlpatterns = [
     path('save-fcm-token/', SaveFCMTokenView.as_view(), name='save_fcm_token'),
 
     path('otp-verification/',OTPVerification.as_view(),name='otp-verification'),
-    path('resend-otp/',ResendOptVerification.as_view(),name='resend-otp')
+    path('resend-otp/',ResendOptVerification.as_view(),name='resend-otp'),
 
     # path('vendor-edit/vendor-profile/<int:user_id>/', VendorProfileEditAPIView.as_view()),
     # path('user-profile/<int:user_id>/', UserProfileEditAPIView.as_view(), name='user-profile-edit'),

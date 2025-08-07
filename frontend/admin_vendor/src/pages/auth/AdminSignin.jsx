@@ -1,84 +1,115 @@
+
 import React, { useState } from 'react';
-import { FaEnvelope, FaLock } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import loggo from '../../assets/loggo.png';
+import { AdminLoginApi } from '../../services/allAPI';
+import { toast } from 'react-toastify';
 
-const AdminSignIn = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-const navigate = useNavigate();
-  const handleLogin = (e) => {
-    e.preventDefault();
-    if (email === 'admin@gmail.com' && password === 'admin123') {
-      alert('Login successful');
-      navigate('/admin');
+export default function AdminSignIn() {
+  const navigate = useNavigate();
 
-    } else {
-      alert('Invalid email or password');
-    }
+  // 🔐 Form state
+  const [formData, setFormData] = useState({
+    email_or_username: '',
+    password: '',
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  // 🎯 Input change handler
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  //  Submit handler
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+
+  try {
+    const response = await AdminLoginApi(formData); 
+    console.log(response.data);
+    if (response.status === 200) {
+      toast.success('Login successful');
+      const { access, refresh } = response.data;
+      localStorage.setItem('access_token', access);
+      localStorage.setItem('refresh_token', refresh);
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 2000);
+    }else{
+      toast.error(response.data.error || 'Login failed' );
+      console.error('Login failed:', response.data);
+    }
+  } catch (error) {
+    console.error(error);
+    toast.error(
+      error.response?.data?.error ||
+      error.response?.data?.detail ||
+      'Login failed'
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black px-4">
-      <div className="text-white absolute top-10 text-center">
-        <h1 className="text-4xl font-bold tracking-wide mb-2 animate-pulse">CarSpare Admin</h1>
-        <p className="text-sm text-gray-400">Secure admin access panel</p>
+    <div className="min-h-screen flex">
+      {/* Left Section */}
+      <div className="hidden md:flex md:w-2/5 bg-[#030130] justify-center items-center">
+        <img src={loggo} alt="Logo" className="h-70 w-70" />
       </div>
 
-      <div className="w-full max-w-md bg-white/10 backdrop-blur-lg border border-white/20 text-white p-8 rounded-2xl shadow-2xl">
-        <div className="mb-6 text-center">
-          <h2 className="text-3xl font-bold">Admin Login</h2>
-          <p className="text-sm text-gray-300 mt-1">Sign in to manage your dashboard</p>
+      {/* Right Section: Login Form */}
+      <div className="w-full md:w-3/5 bg-gray-100 flex flex-col justify-center items-center px-5 py-16">
+        <div className="w-full max-w-[600px] space-y-10">
+          <h2 className="text-5xl font-bold text-gray-800">Login</h2>
+
+          <form className="space-y-4 w-full" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              name="email_or_username"
+              placeholder="Email or Username"
+              value={formData.email_or_username}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+              required
+            />
+
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+              required
+            />
+
+            <div className="flex justify-between items-center text-sm text-gray-600">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="accent-blue-900" />
+                Remember me
+              </label>
+              <Link to="/forgot-password" className="text-blue-900 hover:underline">
+                Forgot Password
+              </Link>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-[#5737B4] text-white py-3 rounded-2xl hover:opacity-90"
+              disabled={loading}
+            >
+              <h2 className="text-lg font-semibold">
+                {loading ? 'Logging in...' : 'Login'}
+              </h2>
+            </button>
+          </form>
         </div>
-
-        <form onSubmit={handleLogin} className="space-y-5">
-          <div>
-            <label className="block text-sm text-gray-200 font-medium mb-1">Email</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <FaEnvelope />
-              </span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@gmail.com"
-                required
-                className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm text-gray-200 font-medium mb-1">Password</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <FaLock />
-              </span>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                required
-                className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
-              />
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200"
-          >
-            Sign In
-          </button>
-        </form>
-
-        <p className="text-xs text-gray-400 text-center mt-6">
-          © {new Date().getFullYear()} CarSpare Admin. All rights reserved.
-        </p>
       </div>
     </div>
   );
-};
-
-export default AdminSignIn;
+}

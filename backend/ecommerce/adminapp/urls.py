@@ -5,6 +5,8 @@ from .views import *
 router = DefaultRouter()
 router.register(r'vendors', VendorListViewSet, basename='vendor')
 router.register(r'users', UserListViewSet, basename='user')
+router.register(r'categories', AdminCategoryViewSet, basename='admin-categories')
+
 
 urlpatterns = [
     path('', include(router.urls)),
@@ -12,4 +14,5 @@ urlpatterns = [
     path('login/', AdminLoginAPIView.as_view(), name='admin-login'),
     path('create_admin/', CreateAdminUserAPIView.as_view(), name='create-admin'),
     path('list_admins/', AdminUserListAPIView.as_view(), name='list_admin_users'),
+    path('vehicle-create/', AdminVehicleCreate.as_view(), name='vehicle-entry'),
 ]

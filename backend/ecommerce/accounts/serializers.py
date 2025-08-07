@@ -16,7 +16,7 @@ User = get_user_model()
 class CreateUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ('id', 'username', 'email', 'password')
+        fields = ('id', 'username', 'email', 'password',"phone_number")
         extra_kwargs = {
             'password': {'write_only': True},
         }
@@ -25,6 +25,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         user = CustomUser(**validated_data)
         user.set_password(password)
+        user.is_active = False
         user.save()
 
         # Assign to "User" group by default
@@ -165,6 +166,7 @@ class Step1CompanySerializer(serializers.ModelSerializer):
     def validate_company_number(self, value):
         if VendorProfile.objects.filter(company_number=value).exclude(pk=self.instance.pk).exists():
             raise serializers.ValidationError("This company number is already used.")
+        
         return value
 
 
@@ -219,9 +221,25 @@ class Step6AgreementsSerializer(serializers.ModelSerializer):
 #         return CustomUser.objects.create_user(**validated_data)
 
 class UserSerializer(serializers.ModelSerializer):
+    contact_number = serializers.SerializerMethodField()
+
     class Meta:
         model = CustomUser
-        fields = ['id', 'username', 'email', 'groups']
+        fields = [
+            'id',
+            'email',
+            'username',
+            'phone_number',
+            'is_admin_staff',
+            'is_superuser',
+            'date_joined',
+            'contact_number'  # from VendorProfile
+        ]
+
+    def get_contact_number(self, obj):
+        if hasattr(obj, 'vendor_profile') and obj.vendor_profile:
+            return obj.vendor_profile.contact_number
+        return None
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
@@ -329,7 +347,7 @@ class UserEditSerializer(serializers.ModelSerializer):
         if User.objects.exclude(pk=user.pk).filter(email=value).exists():
             raise serializers.ValidationError("Email already in use.")
         return value
-
+        
     def validate(self, attrs):
         old_password = attrs.get('old_password')
         new_password = attrs.get('new_password')
