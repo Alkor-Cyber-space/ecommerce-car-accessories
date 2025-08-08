@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import ValidationError
-from .models import Order
+from .models import Order,OrderItem
 from .serializers import OrderSerializer
 from rest_framework.decorators import action
 from rest_framework import status
@@ -116,6 +116,16 @@ class CheckoutViewSet(viewsets.ViewSet):
             status="pending",
             payment_method=payment_method
         )
+
+        for item in items:
+            product = item['product']
+            quantity = item['quantity']
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=quantity,
+                price=product.price
+            )
 
         # Metadata to pass to payment provider
         metadata = {"order_id": str(order.id)}
