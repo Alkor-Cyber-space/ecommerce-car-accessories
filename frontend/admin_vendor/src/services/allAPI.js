@@ -215,7 +215,7 @@ export const getCategoriesApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
 
-    const response = await axios.get(`${serverurl}/vendor/categories/`, {
+    const response = await axios.get(`${serverurl}/products/categories/`, {
       headers: {
         Authorization: `JWT ${token}`,
         "Content-Type": "application/json",
@@ -229,10 +229,9 @@ export const getCategoriesApi = async () => {
   }
 };
     const token = localStorage.getItem("access_token");
-
 export const getVariantYearsApi = async () => {
   try {
-    const response = await axios.get(`${serverurl}/vendor/variant-years/`,{
+    const response = await axios.get(`${serverurl}/vehicles/compatible-year/`,{
       headers: {
         Authorization: `JWT ${token}`,
         "Content-Type": "application/json",
@@ -246,8 +245,6 @@ export const getVariantYearsApi = async () => {
 };
 
 // Account Settings
-// Account Settings APIs - Add these to your existing allAPI.js file
-
 // Get current user profile
 export const getMeApi = async () => {
   try {
