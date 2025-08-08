@@ -240,3 +240,102 @@ class ApplyPromotionApiview(GenericAPIView):
 
         result=serializer.apply_promotion()
         return Response(result,status=status.HTTP_200_OK)
+    
+
+class BannerAPIview(generics.GenericAPIView):
+    serializer_class=BannerSerilizer
+    queryset = Banner.objects.all()
+
+    def get(self,request):
+
+        banners=self.get_queryset()
+        if banners:
+            serializer =self.get_serializer(banners,many=True)
+            return Response({
+                "status": "success",
+                "code" : status.HTTP_200_OK,
+                "message": serializer.data
+            })
+        return Response({
+        "status": "Failed",
+        "code": 404,
+        "message": "No banners found"
+    })
+    
+    def post(self,request):
+        try:
+            serializer =self.get_serializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({
+                    "status" : "Created successfully",
+                    "code": status.HTTP_200_OK,
+                    "message" : serializer.data
+                },status=status.HTTP_200_OK)
+            return Response({
+                "status": "Failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({
+                    "status" : "Failed",
+                    "code": status.HTTP_400_BAD_REQUEST,
+                    "message" : str(e)
+                },status=status.HTTP_400_BAD_REQUEST)
+        
+class RetrieveBannerAPIview(generics.GenericAPIView):
+    serializer_class=BannerSerilizer
+    queryset=Banner.objects.all()
+
+    def get_object(self,pk):
+        try:
+            return Banner.objects.get(pk=pk)
+        except:
+            return None
+    
+    def get(self,request,pk):
+        banner=self.get_object(pk)
+        if not banner:
+            return Response({
+                    "status" : "Failed",
+                    "code": status.HTTP_404_NOT_FOUND,
+                    "message" : "not found"
+            },status=status.HTTP_404_NOT_FOUND)
+    
+    def put(self,request,pk):
+        banner=self.get_object(pk)
+        if not banner:
+            return Response({
+                    "status" : "Failed",
+                    "code": status.HTTP_404_NOT_FOUND,
+                    "message" : "not found"
+            },status=status.HTTP_404_NOT_FOUND)
+        serializer=self.get_serializer(banner,data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                    "status" : "Updated Successfully",
+                    "code": status.HTTP_200_OK,
+                    "message" : serializer.data
+            },status=status.HTTP_200_OK)
+        return Response({
+                    "status" : "Failed",
+                    "code": status.HTTP_400_BAD_REQUEST,
+                    "message" : "not found"
+            },status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self,request,pk):
+        banner=self.get_object(pk=pk)
+        if not banner:
+            return Response({
+                    "status" : "Failed",
+                    "code": status.HTTP_404_NOT_FOUND,
+                    "message" : "not found"
+            },status=status.HTTP_404_NOT_FOUND)
+        banner.delete()
+        return Response({
+                    "status" : "Deleted Successfully",
+                    "code": status.HTTP_204_NO_CONTENT
+                })
+    

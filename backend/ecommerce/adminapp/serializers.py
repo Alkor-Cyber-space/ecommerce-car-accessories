@@ -1,5 +1,7 @@
 from rest_framework import serializers
 from accounts.models import CustomUser,VendorProfile
+from products.models import *
+from products.models import Product  
 
 class UserSerializer(serializers.ModelSerializer):
     contact_number = serializers.SerializerMethodField()
@@ -28,3 +30,7 @@ class VendorSerializer(serializers.ModelSerializer):
         fields = '__all__' 
 
 
+class VendorViewProductSerilizer(serializers.ModelSerializer):
+    class Meta:
+        model = Product         
+        fields = '__all__' 

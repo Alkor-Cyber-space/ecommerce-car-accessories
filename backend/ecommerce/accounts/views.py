@@ -10,7 +10,7 @@ from rest_framework import status,permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsAdmin, IsVendor
 from rest_framework.views import APIView
-
+from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.throttling import ScopedRateThrottle
 from django.contrib.auth import authenticate
@@ -39,8 +39,13 @@ class UserViewSet(viewsets.ViewSet):
     def register(self, request):
         email = request.data.get('email')
 
-        if User.objects.filter(email=email).exists():
-            return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        existing_user = User.objects.filter(email=email).first()
+        if existing_user:
+            if not existing_user.is_active:
+                existing_user.delete()
+            else:
+                return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
         
         serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -51,7 +56,7 @@ class UserViewSet(viewsets.ViewSet):
             otp=otp,
             expire_at=timezone.now()+timedelta(minutes=10)
         )
-
+        
         subject='User Register Otp'
         message= f'your OTP for User registeration is {otp}.it is valid for 10 minutes '
         from_email=settings.DEFAULT_FROM_EMAIL
@@ -60,7 +65,8 @@ class UserViewSet(viewsets.ViewSet):
         try:
             send_mail(subject,message,from_email,recipient_list,fail_silently=False)
         except Exception as e:
-
+            user.delete()  # remove the inactive user
+            print(f"Email send error: {e}")  
             return Response({
                 "message": "USER created, but failed to send OTP. Please contact support.",
                 "user_id": user.id
@@ -113,8 +119,7 @@ class UserViewSet(viewsets.ViewSet):
         return Response({
             "status": "success",
             "message": "OTP verified successfully. Your account is now active."
-        }, status=status.HTTP_200_OK)
-        
+        }, status=status.HTTP_200_OK)        
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
@@ -327,7 +332,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             print("User not found for email/username:", email_or_username)
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
-    @action(detail=False, methods=['post'], url_path='step1/(?P<user_id>[^/.]+)')
+    @action(detail=False, methods=['post','put'], url_path='step1/(?P<user_id>[^/.]+)')
     def step1_company_details(self, request, user_id):
         print(f'User ID: {user_id}')
         try:
@@ -344,7 +349,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer.save()
         return Response({"message": "Company details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step2/(?P<user_id>[^/.]+)')
+    @action(detail=False, methods=['post','put'], url_path='step2/(?P<user_id>[^/.]+)')
     def step2_contact_details(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
@@ -357,47 +362,55 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer.save()
         return Response({"message": "Contact details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step3/(?P<user_id>[^/.]+)')
+    @action(detail=False, methods=['post','put'], url_path='step3/(?P<user_id>[^/.]+)')
     def step3_kyc_documents(self, request, user_id):
         try:
-            profile = User.objects.get(id=user_id)
+            user = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
-        profile, created = VendorProfile.objects.get_or_create(user=profile)
+        vendor_profile, _ = VendorProfile.objects.get_or_create(user=user)
 
-        serializer = Step3KYCSerializer(profile, data=request.data, partial=True)
+        vendor_documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=vendor_profile)
+
+        serializer = Step3KYCSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "KYC documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step4/(?P<user_id>[^/.]+)')
+    @action(detail=False, methods=['post','put'], url_path='step4/(?P<user_id>[^/.]+)')
     def step4_business_documents(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        profile, created = VendorProfile.objects.get_or_create(user=profile)
+        vendor_profile, _ = VendorProfile.objects.get_or_create(user=profile)
 
-        serializer = Step4BusinessDocsSerializer(profile, data=request.data, partial=True)
+        vendor_documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=vendor_profile)
+
+
+        serializer = Step4BusinessDocsSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Business documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step5/(?P<user_id>[^/.]+)')
+    @action(detail=False, methods=['post','put'], url_path='step5/(?P<user_id>[^/.]+)')
     def step5_bank_tax_details(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
                 
-        profile, created = VendorProfile.objects.get_or_create(user=profile)
-        serializer = Step5BankTaxSerializer(profile, data=request.data, partial=True)
+        vendor_profile, _ = VendorProfile.objects.get_or_create(user=profile)
+
+        vendor_documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=vendor_profile)
+
+        serializer = Step5BankTaxSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Bank and tax details saved","data": serializer.data}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['post'], url_path='step6/(?P<user_id>[^/.]+)')
+    @action(detail=False, methods=['post','put'], url_path='step6/(?P<user_id>[^/.]+)')
     def step6_supporting_documents(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
@@ -405,9 +418,10 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         
 
-        profile, created = VendorProfile.objects.get_or_create(user=profile)
+        vendor_profile, created = VendorProfile.objects.get_or_create(user=profile)
+        vendor_documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=vendor_profile)
 
-        serializer = Step6AgreementsSerializer(profile, data=request.data, partial=True)
+        serializer = Step6AgreementsSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Supporting documents uploaded and vendor activated","data": serializer.data}, status=status.HTTP_200_OK)
@@ -657,3 +671,124 @@ class ResendOptVerification(GenericAPIView):
 
         return Response({"message": "OTP resent successfully."}, status=status.HTTP_200_OK)
     
+
+class VendorProfileUpdateView(APIView):
+    # permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            profile = VendorProfile.objects.get(user_id=pk)
+            
+            return profile
+        except VendorProfile.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        profile = self.get_object(pk)    
+        if not profile:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=profile)
+        serializer = VendorDocumentsSerializer(documents)
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        profile = self.get_object(pk)
+        if profile:
+            custom_user=CustomUser.objects.get(id=pk)
+        
+        if not profile:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=profile)
+        serializer = VendorDocumentsSerializer(documents, data=request.data, partial=True,context={'custom_user': custom_user} ) # Fixed: Pass custom_user as a dictionary value)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class VendorDocumentsFinalApprovalView(APIView):
+
+    def post(self, request, vendor_profile_id):
+
+        try:
+
+            vendor_profile = VendorProfile.objects.get(id=vendor_profile_id)
+            documents = VendorDocuments.objects.get(vendor_profile=vendor_profile)
+        except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
+            return Response({"error": "Vendor profile or documents not found."}, status=status.HTTP_404_NOT_FOUND)
+        
+
+        final_status = request.data.get('final_status')  
+        if documents.is_verified==True and final_status=="rejected":
+            return Response({
+                "status": "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "can't able to change is_verified to rejected. it is already approved,"
+            })
+        # print(f"final_status: {final_status}")
+        if final_status=="approved":
+            document_statuses = [
+                documents.pan_card_status,
+                documents.aadhar_passport_dl_status,
+                documents.gst_certificate_status,
+                documents.business_registration_cert_status,
+                documents.shop_license_status,
+                documents.cancelled_cheque_status,
+                documents.bank_statement_status,
+                documents.it_return_status,
+                documents.financial_statement_status,
+                documents.dealership_letter_status,
+                documents.authorized_signatory_letter_status,
+                documents.vendor_registration_form_status,
+                documents.signed_terms_and_con_status,
+            ]
+            
+            if all(status == 'approved' for status in document_statuses):
+                final_status = 'approved'
+                
+            else:
+                final_status = 'pending'
+                return Response({"error": "cant able to approve there are non approved documents"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+        documents.profile_status = final_status
+        documents.is_verified = (final_status == 'approved')
+        documents.save()
+
+        # Send notification email to vendor
+        user_email = vendor_profile.user.email
+        subject = "Vendor Documents Final Approval Status"
+        if final_status == 'approved':
+            message = (
+                f"Dear {vendor_profile.user.username},\n\n"
+                "Congratulations! Your vendor documents have been fully approved.\n"
+                "You can now proceed with further steps.\n\n"
+                "Thank you."
+            )
+        else:
+            message = (
+                f"Dear {vendor_profile.user.username},\n\n"
+                "Unfortunately, your vendor documents have not been fully approved. "
+                "Please review and resubmit the necessary documents.\n\n"
+                "Thank you."
+            )
+
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [user_email],
+            fail_silently=True,
+        )
+
+        return Response({
+            "status": "success",
+            "message": f"Vendor documents have been {final_status}.",
+            "profile_status": documents.profile_status,
+            "is_verified": documents.is_verified,
+        }, status=status.HTTP_200_OK)
