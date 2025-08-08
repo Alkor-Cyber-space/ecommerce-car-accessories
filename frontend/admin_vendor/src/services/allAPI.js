@@ -438,3 +438,31 @@ export const deleteProductCategoryApi = async (categoryId) => {
     throw error;
   }
 }
+
+// vehicle category
+export const vehicleCategoryApi = async (vehicleData) => {
+  const token = localStorage.getItem("access_token");
+
+  const response = await axios.post(`${serverurl}/admin/vehicle-create/`, vehicleData, {
+    headers: {
+      Authorization: `JWT ${token}`,
+      "Content-Type": "application/json"
+    }
+  });
+  return response.data;
+};
+
+export const getVehicleCategoriesApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/vehicles/compatible-year/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error fetching vendor by ID:", error);
+    throw error;
+  }
+};

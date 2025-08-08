@@ -1,35 +1,29 @@
-import React, { useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { MoreVertical, Edit, Trash2, Ban } from 'lucide-react';
+import { getVehicleCategoriesApi } from '../../../services/allAPI';
 
 const VehicleTable = () => {
     const [openDropdown, setOpenDropdown] = useState(null);
-
-    const vehicleData = [
-        { id: 1, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'CNG' },
-        { id: 2, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Petrol' },
-        { id: 3, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Diesel' },
-        { id: 4, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Electric' },
-        { id: 5, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'CNG' },
-        { id: 6, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Diesel' },
-        { id: 7, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Diesel' },
-        { id: 8, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Electric' },
-        { id: 9, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Electric' },
-        { id: 10, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'CNG' },
-        { id: 11, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Electric' },
-        { id: 12, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Electric' },
-        { id: 13, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Electric' },
-        { id: 14, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'CNG' },
-        { id: 15, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Diesel' },
-        { id: 16, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'Diesel' },
-        { id: 17, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'CNG' },
-        { id: 18, brandName: 'Brand 1', modelName: 'Model 1', year: 2019, type: 'CNG' },
-    ];
+    const [vehicleData, setVehicleData] = useState([]);
+useEffect(()=>{
+    const fetchVehicleData = async () => {
+        try {
+            const response = await getVehicleCategoriesApi(); // Adjust API call as needed
+            setVehicleData(response );
+            console.log("Vehicle Data:", response);
+        } catch (error) {
+            console.error('Error fetching vehicle data:', error);
+        }
+    };
+    fetchVehicleData();
+},[])
 
     const handleAction = (action, item) => {
         console.log(`${action} clicked for:`, item);
         setOpenDropdown(null);
         // Add your action logic here
     };
+    
 
     const toggleDropdown = (id) => {
         setOpenDropdown(openDropdown === id ? null : id);
@@ -52,7 +46,7 @@ const VehicleTable = () => {
                                 YEAR
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
-                                TYPE
+                                VARIANT
                             </th>
                             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
                                 ACTIONS
@@ -62,10 +56,10 @@ const VehicleTable = () => {
                     <tbody className="bg-white">
                         {vehicleData.map((item, index) => (
                             <tr key={item.id} className={index % 2 === 0 ? 'bg-white' : ''}>
-                                <td className="px-4 py-3 text-sm text-gray-900">{item.brandName}</td>
-                                <td className="px-4 py-3 text-sm text-gray-900">{item.modelName}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{item.make}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{item.model}</td>
                                 <td className="px-4 py-3 text-sm text-gray-900">{item.year}</td>
-                                <td className="px-4 py-3 text-sm text-gray-900">{item.type}</td>
+                                <td className="px-4 py-3 text-sm text-gray-900">{item.variant}</td>
                                 <td className="px-4 py-3 text-sm text-gray-900 relative">
                                     <button
                                         onClick={() => toggleDropdown(item.id)}
