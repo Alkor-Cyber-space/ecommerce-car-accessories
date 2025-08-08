@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import VehicleCategory from './VehicleCatogery';
-import ProductCatogery from './ProductCatogery';
+import ProductCategory from './ProductCatogery';
 import VehicleTable from './VehiclTable';
 import ProductTable from './ProductTable';
 
@@ -71,7 +71,7 @@ const IndexCategory = () => {
                 {isSecondExpanded && (
                     <div className="px-2 sm:px-3 pb-3 sm:pb-4">
                         <div className="pt-2 sm:pt-3">
-                            <ProductCatogery />
+                            <ProductCategory />
                             <div className='mt-4 sm:mt-6'>
                                 <ProductTable />
                             </div>

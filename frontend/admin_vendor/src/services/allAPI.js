@@ -311,6 +311,8 @@ export const deactivateAccountApi = async () => {
     return response;
   } catch (error) {
     console.error("Error deactivating account:", error);
+  }
+}
 // profile & kyc 
 export const getVendorProfileApi = async () => {
   try {
@@ -340,4 +342,63 @@ export const getVendorList = async () => {
   }
 }
 
+export const productcategory = async (productData) => {
 
+    const token = localStorage.getItem("access_token");
+
+    const response = await axios.post(`${serverurl}/admin/categories/`, productData, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json"
+      }
+    })
+    return response.data
+  } 
+
+  export const getProductcategorylist = async () => {
+  try {
+        const token = localStorage.getItem("access_token");
+
+    const response = await axios.get(`${serverurl}/admin/categories/`,{
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    } );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendors:", error);
+    throw error;
+  }
+}
+
+export const updateProductCategoryApi = async (categoryid,category) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.put(`${serverurl}/admin/categories/${categoryid}/`, category, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response;
+  } catch (error) {
+    console.error("Error updating account:", error);
+    throw error;
+  }
+}
+
+  
+export const deleteProductCategoryApi = async (categoryId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/admin/categories/${categoryId}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error deleting product category:", error);
+    throw error;
+  }
+}

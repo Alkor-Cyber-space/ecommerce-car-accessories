@@ -1,71 +1,78 @@
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { productcategory } from '../../../services/allAPI';
+import { toast } from 'react-toastify';
 
-const ProductCatogery = () => {
-    const [formData, setFormData] = useState({
-        productName: ''
-    });
-
-    const handleInputChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value
-        }));
-    };
+const ProductCategory = () => {
+    const [categoryName, setCategoryName] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleCancel = () => {
-        setFormData({
-            productName: '',
-        });
+        setCategoryName('');
     };
 
-    const handleCreateCategory = () => {
-        console.log('Creating vehicle category:', formData);
-        // Handle form submission logic here
-    };
+ const handleCreateCategory = async (e) => {
+    e.preventDefault();
+
+    try {
+        setLoading(true);
+        const response = await productcategory({ name: categoryName });
+        console.log("Response:", response);
+            toast.success(  'Product category created successfully!');
+                  await fetchProductcategorylist();
+
+            setCategoryName('');
+
+        
+
+    } catch (error) {
+        console.error('Error creating category:', error);
+        toast.error(error?.response?.data?.message || 'An error occurred while creating the category.');
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
-        <div className="bg-white rounded-lg">
+        <div className="bg-white rounded-lg shadow-md">
             <div className="p-4">
                 <h2 className="text-lg font-medium text-gray-700 mb-4">Product Category</h2>
-                
-                                        {/* Form Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                            
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Product Name
-                                </label>
-                                <input 
-                                    type="text"
-                                    className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#5727B4] focus:border-transparent"
-                                    placeholder="Enter product name"
-                                    value={formData.brandName}
-                                    onChange={(e) => handleInputChange('productName', e.target.value)}
-                                />
-                            </div>
 
-                            
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex justify-end space-x-3">
-                            <button 
-                                onClick={handleCancel}
-                                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
-                            >
-                                Cancel
-                            </button>
-                            <button 
-                                onClick={handleCreateCategory}
-                                className="px-6 py-2 bg-[#5727B4] text-white rounded-md hover:bg-[#4a1f99] transition-colors"
-                            >
-                                Create Product Category
-                            </button>
-                        </div>
+                {/* Input Form */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Product category
+                        </label>
+                        <input
+                            type="text"
+                            className="w-full p-3 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#5727B4]"
+                            placeholder="Enter product name"
+                            value={categoryName}
+                            onChange={(e) => setCategoryName(e.target.value)}
+                        />
                     </div>
+                </div>
+
+
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3">
+                    <button
+                        onClick={handleCancel}
+                        className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={handleCreateCategory}
+                        disabled={loading}
+                        className={`px-6 py-2 bg-[#5727B4] text-white rounded-md transition-colors ${loading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#4a1f99]'}`}
+                    >
+                        {loading ? 'Creating...' : 'Create Product Category'}
+                    </button>
+                </div>
             </div>
+        </div>
     );
 };
 
-export default ProductCatogery;
+export default ProductCategory;
