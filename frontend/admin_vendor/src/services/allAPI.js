@@ -311,6 +311,8 @@ export const deactivateAccountApi = async () => {
     return response;
   } catch (error) {
     console.error("Error deactivating account:", error);
+  }
+}
 // profile & kyc 
 export const getVendorProfileApi = async () => {
   try {
@@ -332,12 +334,32 @@ export const getVendorProfileApi = async () => {
 // vendor list
 export const getVendorList = async () => {
   try {
-    const response = await axios.get(`${serverurl}/admin/vendors/`);
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/vendors/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching vendors:", error);
     throw error;
   }
 }
+
+export const getVendorByIdApi = async (vendorId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/vendors/${vendorId}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error fetching vendor by ID:", error);
+    throw error;
+  }
+};
 
 
