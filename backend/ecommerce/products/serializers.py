@@ -22,7 +22,8 @@ class ProductImageSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     image_list = ProductImageSerializer(many=True, read_only=True, source='images')
     category = CategorySerializer(read_only=True)
-    
+    tag = serializers.CharField(required=False, allow_blank=True)
+
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         source='category',
@@ -30,10 +31,10 @@ class ProductSerializer(serializers.ModelSerializer):
     )
 
     compatible_varient_year = serializers.PrimaryKeyRelatedField(
-        queryset=VariantYear.objects.all(),
+        queryset=VehicleVariant.objects.all(),
         many=True,
         required=False
-    )
+    )   
 
     class Meta:
         model = Product
@@ -53,6 +54,17 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Price must be greater than zero.")
         return attrs
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        tags_str = ret.get('tag', '')
+        ret['tag'] = [t.strip() for t in tags_str.split(',')] if tags_str else []
+        return ret
+
+    def to_internal_value(self, data):
+        tags = data.get('tag', [])
+        if isinstance(tags, list):
+            data['tag'] = ', '.join(tags)
+        return super().to_internal_value(data)
     
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)

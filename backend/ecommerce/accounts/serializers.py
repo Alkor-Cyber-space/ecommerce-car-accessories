@@ -25,6 +25,7 @@ class CreateUserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password')
         user = CustomUser(**validated_data)
         user.set_password(password)
+        user.is_active = False
         user.save()
 
         # Assign to "User" group by default
@@ -346,7 +347,7 @@ class UserEditSerializer(serializers.ModelSerializer):
         if User.objects.exclude(pk=user.pk).filter(email=value).exists():
             raise serializers.ValidationError("Email already in use.")
         return value
-
+        
     def validate(self, attrs):
         old_password = attrs.get('old_password')
         new_password = attrs.get('new_password')
