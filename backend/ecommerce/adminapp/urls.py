@@ -15,7 +15,11 @@ urlpatterns = [
     path('create_admin/', CreateAdminUserAPIView.as_view(), name='create-admin'),
     path('list_admins/', AdminUserListAPIView.as_view(), name='list_admin_users'),
     path('vehicle-create/', AdminVehicleCreate.as_view(), name='vehicle-entry'),
+
+    path('list-vendor-products/',VendorViewProductAPIView.as_view(),name='list-vendor-products'),
+
     path('vehicles/<int:pk>/update/', AdminVehicleUpdate.as_view(), name='vehicle-update'),
     path('vehicles/<int:pk>/delete/', AdminVehicleDelete.as_view(), name='vehicle-delete'),
+
 
 ]

@@ -8,7 +8,7 @@ from django.contrib.auth import password_validation
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
-
+import os
 
 User = get_user_model()
 
@@ -187,26 +187,26 @@ class Step2ContactSerializer(serializers.ModelSerializer):
 
 class Step3KYCSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VendorProfile
+        model = VendorDocuments
         fields = ['pan_card', 'aadhar_passport_dl']
 
 
 class Step4BusinessDocsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VendorProfile
+        model = VendorDocuments
         fields = ['gst_certificate', 'business_registration_cert', 'shop_license']
 
 
 
 class Step5BankTaxSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VendorProfile
+        model = VendorDocuments
         fields = ['cancelled_cheque', 'bank_statement', 'it_return', 'financial_statement']
 
 
 class Step6AgreementsSerializer(serializers.ModelSerializer):
     class Meta:
-        model = VendorProfile
+        model = VendorDocuments
         fields = ['dealership_letter', 'authorized_signatory_letter', 'vendor_registration_form', 'signed_terms_and_con']
 
 
@@ -462,3 +462,296 @@ class OTPVerificationSerializer(serializers.Serializer):
         data['user'] = user
         return data
         
+
+# from rest_framework import serializers
+# from .models import VendorProfile, VendorDocuments
+# import os
+
+# class VendorDocumentsSerializer(serializers.ModelSerializer):
+    
+#     class Meta:
+#         model = VendorDocuments
+#         fields = [
+#             'pan_card_status',
+#             'aadhar_passport_dl_status',
+#             'gst_certificate_status',
+#             'business_registration_cert_status',
+#             'shop_license_status',
+#             'cancelled_cheque_status',
+#             'bank_statement_status',
+#             'it_return_status',
+#             'financial_statement_status',
+#             'dealership_letter_status',
+#             'authorized_signatory_letter_status',
+#             'vendor_registration_form_status',
+#             'signed_terms_and_con_status',
+#             'is_verified', 'submitted_at',
+#         ]
+
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.custom_user = self.context.get('custom_user')
+
+        
+#     def validate(self,attrs):
+        
+#         valid_statuses = [choice[0] for choice in VendorDocuments.STATUS_CHOICES]
+#         for field in['pan_card_status','aadhar_passport_dl_status','gst_certificate_status','business_registration_cert_status','shop_license_status',
+#                      'cancelled_cheque_status','bank_statement_status ', 'it_return_status','financial_statement_status','dealership_letter_status ',
+#                      'authorized_signatory_letter_status','vendor_registration_form_status','signed_terms_and_con_status'
+#                      ]:
+#             value=attrs.get(field)
+#             if value and value not in valid_statuses:
+#                 raise serializers.ValidationError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}.")
+
+#         return attrs
+#     def update(self,instance,validated_data):
+#         rejected_fileds=[]
+#         for field, value in validated_data.items():
+#             if field.endswith('_status'):
+#                 setattr(instance,field,value)
+
+#     def validate_pan_card_status(self, value):
+        
+#         valid_statuses = [choice[0] for choice in VendorDocuments.STATUS_CHOICES]
+#         if value not in valid_statuses:
+#             raise serializers.ValidationError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}.")
+#         instance = self.instance
+        
+#         if instance:
+#             print(f"PAN card status updated to: {value}")
+#             instance.pan_card_status = value
+#             instance.update_profile_status()
+#             instance.save()  # Save the instance to persist changes
+#         return value
+
+#     def validate_aadhar_passport_dl_status(self, value):
+
+#         valid_statuses = [choice[0] for choice in VendorDocuments.STATUS_CHOICES]
+#         if value not in valid_statuses:
+#             raise serializers.ValidationError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}.")
+#         instance = self.instance
+#         print(f' instance:   {instance}')
+#         if instance:
+#             instance.aadhar_passport_dl_status = value
+#             instance.update_profile_status()
+#             instance.save()  
+#         return value
+
+
+#     def validate_gst_certificate_status(self, value):
+
+#         valid_statuses = [choice[0] for choice in VendorDocuments.STATUS_CHOICES]
+#         if value not in valid_statuses:
+#             raise serializers.ValidationError(f"Invalid status. Must be one of: {', '.join(valid_statuses)}.")
+#         instance = self.instance
+#         if value =='approved':
+#             if instance.gst_certificate:
+#                 instance.gst_certificate_status = value
+#                 instance.update_profile_status()
+#                 instance.save()  
+#             else:
+#                 raise serializers.ValidationError("first upload file then approve")
+        
+#         return value
+
+#     # Add similar validate_<field> methods for other document fields if needed
+#     def validate_business_registration_cert(self, value):
+#         if not value:
+#             print("Business registration certificate not uploaded.")
+#             return value
+#         print(f"Business registration certificate uploaded: {value.name}")
+#         return value
+
+#     def validate_shop_license(self, value):
+#         if not value:
+#             print("Shop license not uploaded.")
+#             return value
+#         print(f"Shop license uploaded: {value.name}")
+#         return value
+
+#     def validate_cancelled_cheque(self, value):
+#         if not value:
+#             print("Cancelled cheque not uploaded.")
+#             return value
+#         print(f"Cancelled cheque uploaded: {value.name}")
+#         return value
+
+#     def validate_bank_statement(self, value):
+#         if not value:
+#             print("Bank statement not uploaded.")
+#             return value
+#         print(f"Bank statement uploaded: {value.name}")
+#         return value
+
+#     def validate_it_return(self, value):
+#         if not value:
+#             print("IT return not uploaded.")
+#             return value
+#         print(f"IT return uploaded: {value.name}")
+#         return value
+
+#     def validate_financial_statement(self, value):
+#         if not value:
+#             print("Financial statement not uploaded.")
+#             return value
+#         print(f"Financial statement uploaded: {value.name}")
+#         return value
+
+#     def validate_dealership_letter(self, value):
+#         if not value:
+#             print("Dealership letter not uploaded.")
+#             return value
+#         print(f"Dealership letter uploaded: {value.name}")
+#         return value
+
+#     def validate_authorized_signatory_letter(self, value):
+#         if not value:
+#             print("Authorized signatory letter not uploaded.")
+#             return value
+#         print(f"Authorized signatory letter uploaded: {value.name}")
+#         return value
+
+#     def validate_vendor_registration_form(self, value):
+#         if not value:
+#             print("Vendor registration form not uploaded.")
+#             return value
+#         print(f"Vendor registration form uploaded: {value.name}")
+#         return value
+
+#     def validate_signed_terms_and_con(self, value):
+#         if not value:
+#             print("Signed terms and conditions not uploaded.")
+#             return value
+#         print(f"Signed terms and conditions uploaded: {value.name}")
+#         return value
+
+# class VendorProfileSerializer(serializers.ModelSerializer):
+#     documents = VendorDocumentsSerializer()
+
+#     class Meta:
+#         model = VendorProfile
+#         fields = '__all__'
+
+#     def update(self, instance, validated_data):
+#         documents_data = validated_data.pop('documents', None)
+#         instance = super().update(instance, validated_data)
+
+#         if documents_data:
+#             documents, created = VendorDocuments.objects.get_or_create(vendor_profile=instance)
+#             documents_serializer = VendorDocumentsSerializer(documents, data=documents_data, partial=True)
+#             if documents_serializer.is_valid():
+#                 documents_serializer.save()
+#             else:
+#                 raise serializers.ValidationError(documents_serializer.errors)
+#         return instance
+    
+from rest_framework import serializers
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import VendorDocuments, CustomUser
+
+class VendorDocumentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorDocuments
+        fields = [
+            'pan_card', 'pan_card_status',
+            'aadhar_passport_dl', 'aadhar_passport_dl_status',
+            'gst_certificate', 'gst_certificate_status',
+            'business_registration_cert', 'business_registration_cert_status',
+            'shop_license', 'shop_license_status',
+            'cancelled_cheque', 'cancelled_cheque_status',
+            'bank_statement', 'bank_statement_status',
+            'it_return', 'it_return_status',
+            'financial_statement', 'financial_statement_status',
+            'dealership_letter', 'dealership_letter_status',
+            'authorized_signatory_letter', 'authorized_signatory_letter_status',
+            'vendor_registration_form', 'vendor_registration_form_status',
+            'signed_terms_and_con', 'signed_terms_and_con_status',
+            'profile_status', 'is_verified', 'submitted_at'
+        ]
+        read_only_fields = ['profile_status', 'is_verified', 'submitted_at']
+
+    def validate(self, data):
+        
+        document_fields = [
+            ('pan_card', 'pan_card_status'),
+            ('aadhar_passport_dl', 'aadhar_passport_dl_status'),
+            ('gst_certificate', 'gst_certificate_status'),
+            ('business_registration_cert', 'business_registration_cert_status'),
+            ('shop_license', 'shop_license_status'),
+            ('cancelled_cheque', 'cancelled_cheque_status'),
+            ('bank_statement', 'bank_statement_status'),
+            ('it_return', 'it_return_status'),
+            ('financial_statement', 'financial_statement_status'),
+            ('dealership_letter', 'dealership_letter_status'),
+            ('authorized_signatory_letter', 'authorized_signatory_letter_status'),
+            ('vendor_registration_form', 'vendor_registration_form_status'),
+            ('signed_terms_and_con', 'signed_terms_and_con_status'),
+        ]
+
+        errors = {}
+        instance = self.instance
+
+        for doc_field, status_field in document_fields:
+            if status_field in data:
+                new_status = data[status_field]
+                if new_status in ['approved', 'rejected']:
+                    # Check if the document file exists
+                    doc_value = getattr(instance, doc_field) if instance else None
+                    if not doc_value:
+                        errors[status_field] = f"Cannot set {status_field} to {new_status} because {doc_field} is not uploaded."
+
+        if errors:
+            raise serializers.ValidationError(errors)
+
+        return data
+
+    def update(self, instance, validated_data):
+        """
+        Update the instance and send email if any document is rejected.
+        """
+        rejected_docs = []
+        document_fields = [
+            'pan_card_status', 'aadhar_passport_dl_status', 'gst_certificate_status',
+            'business_registration_cert_status', 'shop_license_status',
+            'cancelled_cheque_status', 'bank_statement_status', 'it_return_status',
+            'financial_statement_status', 'dealership_letter_status',
+            'authorized_signatory_letter_status', 'vendor_registration_form_status',
+            'signed_terms_and_con_status'
+        ]
+
+        # Track rejected documents for email notification
+        for status_field in document_fields:
+            if status_field in validated_data:
+                new_status = validated_data[status_field]
+                if new_status == 'rejected':
+                    rejected_docs.append(status_field.replace('_status', '').replace('_', ' ').title())
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        instance.save()
+
+        instance.update_profile_status()
+
+        if rejected_docs:
+            custom_user = self.context.get('custom_user')
+            if custom_user and custom_user.email:
+                subject = "Vendor Document Rejection Notification"
+                message = (
+                    f"Dear {custom_user.username},\n\n"
+                    f"The following documents have been rejected:\n"
+                    f"{', '.join(rejected_docs)}\n\n"
+                    "Please review and re-upload the necessary documents.\n"
+                    "Thank you,\nVendor Management Team"
+                )
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[custom_user.email],
+                    fail_silently=True,
+                )
+
+        return instance

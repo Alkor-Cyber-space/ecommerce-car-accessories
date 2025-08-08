@@ -109,7 +109,13 @@ from .models import *
 #             raise serializers.ValidationError("Variant and Year are required.")
 #         return attrs
 
+class VehicleVariantReadSerializer(serializers.ModelSerializer):
+    make = serializers.CharField(source='make.name')
+    model = serializers.CharField(source='model.name')
 
+    class Meta:
+        model = VehicleVariant
+        fields = ['id', 'make', 'model', 'variant','year']
 class VehicleFullEntrySerializer(serializers.Serializer):
     make = serializers.CharField()
     model = serializers.CharField()

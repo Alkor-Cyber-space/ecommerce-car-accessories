@@ -106,3 +106,9 @@ class ApplyPromotionSerializer(serializers.Serializer):
             result['discount_value'] = product.price  
 
         return result
+    
+class BannerSerilizer(serializers.ModelSerializer):
+    class  Meta:
+        model = Banner
+        fields= "__all__"
+        read_only_field=['created_at']
