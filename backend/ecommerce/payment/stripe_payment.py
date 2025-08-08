@@ -12,3 +12,7 @@ def initiate_payment_intent(user,amount, metadata):
     return{
         "client_secret": intent.client_secret,
     }
+
+def verify_stripe_payment(payment_id):
+    payment_intent = stripe.PaymentIntent.retrieve(payment_id)
+    return payment_intent.status == "succeeded"

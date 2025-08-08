@@ -14,6 +14,6 @@ urlpatterns = [
     path('', include(router.urls)),
     path('products/', ProductListAPIView.as_view(), name='product-list'),
     path('category/', CategoryListAPIView.as_view(), name='product-list'),
-    path('products/search/', ProductSearchAPIView.as_view(), name='product-search'),
+    path('search/', ProductSearchAPIView.as_view(), name='product-search'),
     # path('vehicle-specific/', VehicleProductSearchViewSet.as_view({'get': 'vehicle_specific'}), name='vehicle-specific-search'),
 ]

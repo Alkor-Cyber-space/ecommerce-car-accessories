@@ -7,7 +7,78 @@ from .serializers import OrderSerializer
 from rest_framework.decorators import action
 from rest_framework import status
 from payment.stripe_payment import initiate_payment_intent
+from payment.factory import *
+from payment.razorpay_payment import *
 from decimal import Decimal
+from django.conf import settings
+import razorpay
+
+
+
+# class CheckoutViewSet(viewsets.ViewSet):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def create(self, request):
+#         serializer = OrderSerializer(data=request.data, context={'request': request})
+#         serializer.is_valid(raise_exception=True)
+
+#         validated = serializer.validated_data
+#         user = request.user
+#         items = validated['items']
+#         shipping_address = validated['shipping_address']
+#         payment_method = validated['payment_method']
+
+#         subtotal = Decimal('0.00')
+#         tax_rate = Decimal('0.18')
+#         shipping_fee = Decimal('50.00')
+
+#         # Prepare metadata (keep it minimal for gateways)
+#         metadata = {
+#             "user_id": str(user.id),
+#             "payment_method": payment_method,
+#             "shipping_address": str(shipping_address.id),
+#         }
+
+#         for i, item in enumerate(items):
+#             product = item['product']
+#             quantity = item['quantity']
+#             subtotal += product.price * quantity
+#             metadata[f'product_{i}'] = str(product.id)
+#             metadata[f'quantity_{i}'] = str(quantity)
+
+#         tax = subtotal * tax_rate
+#         total = subtotal + tax + shipping_fee
+
+#         # Create pending order in DB
+#         order = Order.objects.create(
+#             user=user,
+#             shipping_address=shipping_address,
+#             tax=tax,
+#             shipping_cost=shipping_fee,
+#             total_price=total,
+#             status="pending",
+#             payment_method=payment_method
+#         )
+
+#         # Only pass minimal metadata to gateway
+#         gateway_metadata = {"order_id": str(order.id)}
+
+#         try:
+#             gateway_handler = get_payment_gateway(payment_method)
+#         except Exception:
+#             raise ValidationError("Unsupported payment method")
+
+#         gateway_response = gateway_handler(
+#             user=user,
+#             amount=float(total),  # convert to float for payment gateway
+#             metadata=gateway_metadata
+#         )
+
+#         return Response({
+#             "amount": float(total),
+#             "payment_gateway_response": gateway_response,
+#             "order_id": order.id
+#         }, status=status.HTTP_200_OK)
 
 
 class CheckoutViewSet(viewsets.ViewSet):
@@ -23,41 +94,44 @@ class CheckoutViewSet(viewsets.ViewSet):
         shipping_address = validated['shipping_address']
         payment_method = validated['payment_method']
 
-        subtotal = Decimal('0.00')
-        tax_rate = Decimal('0.18')
-        shipping_fee = Decimal('50.00')
+        subtotal = Decimal("0.00")
+        tax_rate = Decimal("0.18")
+        shipping_fee = Decimal("50.00")
 
-        metadata = {
-            "user_id": str(user.id),
-            "payment_method": payment_method,
-            "shipping_address": str(shipping_address.id),
-        }
-
-        for i, item in enumerate(items):
+        for item in items:
             product = item['product']
             quantity = item['quantity']
             subtotal += product.price * quantity
-            metadata[f'product_{i}'] = str(product.id)
-            metadata[f'quantity_{i}'] = str(quantity)
 
         tax = subtotal * tax_rate
         total = subtotal + tax + shipping_fee
 
+        # Create pending order in DB
+        order = Order.objects.create(
+            user=user,
+            shipping_address=shipping_address,
+            tax=tax,
+            shipping_cost=shipping_fee,
+            total_price=total,
+            status="pending",
+            payment_method=payment_method
+        )
+
+        # Metadata to pass to payment provider
+        metadata = {"order_id": str(order.id)}
+
         try:
             gateway_handler = get_payment_gateway(payment_method)
-        except Exception:
-            raise ValidationError("Unsupported payment method")
-
-        gateway_response = gateway_handler(
-            user=user,
-            amount=total,
-            metadata=metadata
-        )
+            gateway_response = gateway_handler(user, float(total), metadata)
+        except Exception as e:
+            raise ValidationError(str(e))
 
         return Response({
             "amount": float(total),
-            "payment_gateway_response": gateway_response
-        }, status=status.HTTP_200_OK)
+            "payment_gateway_response": gateway_response,
+            "order_id": order.id
+        }, status=status.HTTP_200_OK)       
+
 
 
 class UserOrderViewSet(viewsets.ViewSet):
