@@ -12,7 +12,6 @@ const VehicleCategory = () => {
     });
 
     const [years, setYears] = useState([]);
-    
 
     useEffect(() => {
         const currentYear = new Date().getFullYear();
