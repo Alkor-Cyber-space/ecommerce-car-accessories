@@ -8,5 +8,6 @@ router.register(r'saved-vehicles', SavedVehicleViewSet, basename='savedvehicles'
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('compatible-year/',compatibleYearListAPIView.as_view(),name="compatible-year")
 
 ]   
