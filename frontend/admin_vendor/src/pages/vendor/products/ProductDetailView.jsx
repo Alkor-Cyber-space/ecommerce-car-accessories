@@ -5,12 +5,12 @@ import { FiEdit3 } from "react-icons/fi";
 import { getProductByIdApi } from "../../../services/allAPI";
 
 const ProductDetailView = () => {
-    const { id } = useParams(); 
+    const { id } = useParams();
     const [product, setProduct] = useState(null);
 
     const fetchProduct = async () => {
         try {
-            const response = await getProductByIdApi(id); 
+            const response = await getProductByIdApi(id);
             if (response.status === 200) {
                 console.log(response.data);
                 setProduct(response.data);
@@ -165,16 +165,18 @@ const ProductDetailView = () => {
                     <div className="bg-white rounded-xl p-6 shadow">
                         <h2 className="text-lg font-semibold mb-2">Tags</h2>
                         <div className="flex flex-wrap gap-2">
-                            {product.tag?.split(",").map((tag, idx) => (
-                                <span
-                                    key={idx}
-                                    className="flex items-center gap-1 bg-[#ECECF0] text-[#505050] text-sm font-medium px-3 py-1 rounded"
-                                >
-                                    {tag.trim()}
-                                </span>
-                            ))}
+                            {product.tag?.length > 0 ? (
+                                product.tag.map((tagItem, index) => (
+                                    <span key={index} className="bg-gray-100 text-sm px-2 py-1 rounded">
+                                        {tagItem}
+                                    </span>
+                                ))
+                            ) : (
+                                <span className="text-sm text-gray-500">No tags</span>
+                            )}
                         </div>
                     </div>
+
                 </div>
             </div>
 

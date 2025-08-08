@@ -113,7 +113,7 @@ export default function EditProduct() {
         }
         Object.values(productImages).forEach((file) => {
             if (file) {
-                form.append("image_list", file);
+                form.append("images", file);
                 console.log(`Appending file: ${file.name}`);
             }
         });
