@@ -119,24 +119,21 @@ class UserViewSet(viewsets.ViewSet):
         return Response({
             "status": "success",
             "message": "OTP verified successfully. Your account is now active."
-        }, status=status.HTTP_200_OK)        
+        }, status=status.HTTP_200_OK)    
+
+
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
-
+        print("Email or Username:", email_or_username)
+        print("Password:", password)
         if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = None
-        try:
-            user = User.objects.filter(email=email_or_username,is_active=True).first()
-            if not user:
-                user = User.objects.filter(username=email_or_username).first()
-            if user:
-                user = authenticate(request, email=user.email, password=password)
-        except User.DoesNotExist:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        user = authenticate(request, username=email_or_username, password=password)
+        print("User found:", user)
         if user:
             if not user.is_active:
                 return Response({"error": "User account is not active."}, status=status.HTTP_403_FORBIDDEN)
