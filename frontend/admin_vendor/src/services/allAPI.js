@@ -466,3 +466,44 @@ export const getVehicleCategoriesApi = async () => {
     throw error;
   }
 };
+
+export const editVehicleCategoryApi = async (categoryId, updatedData) => { 
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.put(
+      `${serverurl}/admin/vehicles/${categoryId}/update/`,
+      updatedData, // send updated fields
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating vehicle:", error);
+    throw error;
+  }
+};
+
+
+export const deletevehiclecategory = async (categoryId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(
+      `${serverurl}/admin/vehicles/${categoryId}/delete/`, // Added trailing slash
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting vehicle category:", error);
+    throw error;
+  }
+};
+
+
