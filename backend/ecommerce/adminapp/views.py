@@ -21,6 +21,8 @@ from products.models import Category
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
 from .serializers import *
+from accounts.models import VendorDocuments
+
 User = get_user_model()
 # Create your views here.
 
@@ -231,7 +233,14 @@ class VendorViewProductAPIView(APIView):
             "data": serializer.data
         },status=status.HTTP_200_OK)
 
-        
+
+class UnverifiedVendorsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
+        serializer = VendorSerializer(unverified_vendors, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminVehicleUpdate(APIView):
     def put(self, request, pk):

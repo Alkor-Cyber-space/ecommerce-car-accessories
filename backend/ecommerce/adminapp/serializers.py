@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from accounts.models import CustomUser,VendorProfile
+from accounts.models import *
 from products.models import *
 from products.models import Product  
+# from accour.models import VendorDocuments
 
 class UserSerializer(serializers.ModelSerializer):
     contact_number = serializers.SerializerMethodField()
@@ -34,3 +35,12 @@ class VendorViewProductSerilizer(serializers.ModelSerializer):
     class Meta:
         model = Product         
         fields = '__all__' 
+
+
+
+class VendorDocumentsSerializer(serializers.ModelSerializer):
+    # vendor_profile = VendorProfileSerializer()
+
+    class Meta:
+        model = VendorDocuments
+        fields = ['id', 'is_verified', 'profile_status']
