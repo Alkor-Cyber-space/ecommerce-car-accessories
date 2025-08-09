@@ -156,39 +156,41 @@ export default function VendorDataTable() {
                 <td className="py-3 px-4 font-medium">{vendor.totalProducts || 0}</td>
                 <td className="py-3 px-4 font-medium">{vendor.totalOrders || 0}</td>
                 <td className="py-3 px-4 relative">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleActionClick(vendor.id + index);
-                    }}
-                    className="p-1 hover:bg-gray-100 rounded-full"
-                  >
-                    <HiOutlineDotsVertical className="text-gray-500 text-lg" />
-                  </button>
-                  {activeDropdown === vendor.id + index && (
-                    <div className="absolute right-0 top-8 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                      <Link
-                        to="/admin/user-details"
-                        onClick={() => handleAction('View', vendor)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
-                      >
-                        View
-                      </Link>
-                      <button
-                        onClick={() => handleAction('Edit', vendor)}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleAction('Suspend', vendor)}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
-                      >
-                        Suspend
-                      </button>
-                    </div>
-                  )}
-                </td>
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      handleActionClick(vendor.id + index);
+    }}
+    className="p-1 hover:bg-gray-100 rounded-full"
+  >
+    <HiOutlineDotsVertical className="text-gray-500 text-lg" />
+  </button>
+
+  {activeDropdown === vendor.id + index && (
+    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+      <Link
+        to="/admin/user-details"
+        onClick={() => handleAction('View', vendor)}
+        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+      >
+        View
+      </Link>
+      <button
+        onClick={() => handleAction('Edit', vendor)}
+        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        Edit
+      </button>
+      <button
+        onClick={() => handleAction('Suspend', vendor)}
+        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
+      >
+        Suspend
+      </button>
+    </div>
+  )}
+</td>
+
               </tr>
             ))}
           </tbody>

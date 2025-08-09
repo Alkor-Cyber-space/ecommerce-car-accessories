@@ -311,6 +311,12 @@ export const deactivateAccountApi = async () => {
   }
 }
 
+
+
+// profile & kyc
+
+
+
 export const getVendorProfileApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
@@ -420,6 +426,17 @@ export const getVendorByIdApi = async (vendorId) => {
 };
 
 
+export const getUserList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/users/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
   
 export const deleteProductCategoryApi = async (categoryId) => {
   try {
@@ -432,6 +449,21 @@ export const deleteProductCategoryApi = async (categoryId) => {
     return response.data; // ✅ return data directly
   } catch (error) {
     console.error("Error deleting product category:", error);
+    throw error;
+  }
+}
+
+export const getAdminsList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/list_admins/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
     throw error;
   }
 }
