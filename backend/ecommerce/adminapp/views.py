@@ -239,7 +239,7 @@ class UnverifiedVendorsAPIView(APIView):
 
     def get(self, request):
         unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
-        serializer = VendorSerializer(unverified_vendors, many=True)
+        serializer = VendorDocumentsSerializer(unverified_vendors, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminVehicleUpdate(APIView):
