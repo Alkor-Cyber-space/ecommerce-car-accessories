@@ -206,7 +206,8 @@ class VehicleVariantSerializer(serializers.ModelSerializer):
 class SavedVehicleSerializer(serializers.ModelSerializer):
     vehicle_variant = VehicleVariantSerializer(read_only=True)
     vehicle_variant_id = serializers.PrimaryKeyRelatedField(
-        queryset=VehicleVariant.objects.all()
+        queryset=VehicleVariant.objects.all(),
+        source='vehicle_variant'
     )
 
     class Meta:
