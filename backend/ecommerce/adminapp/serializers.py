@@ -38,9 +38,28 @@ class VendorViewProductSerilizer(serializers.ModelSerializer):
 
 
 
+class VendorProfileSerializer(serializers.ModelSerializer):
+    user_email = serializers.EmailField(source='user.email')
+
+    class Meta:
+        model = VendorProfile
+        fields = [
+            'id',
+            'user_email',
+            'company_name',
+            'type_of_vendor',
+            'company_email',
+            'company_number',
+            'contact_name',
+            'contact_email',
+            'contact_number',
+            'designation',
+        ]
+
+
 class VendorDocumentsSerializer(serializers.ModelSerializer):
-    # vendor_profile = VendorProfileSerializer()
+    vendor_profile = VendorProfileSerializer()
 
     class Meta:
         model = VendorDocuments
-        fields = ['id', 'is_verified', 'profile_status']
+        fields = ['id', 'vendor_profile', 'is_verified', 'profile_status']
