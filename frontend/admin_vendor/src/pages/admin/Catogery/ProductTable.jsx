@@ -149,7 +149,7 @@ const ProductTable = () => {
 
       {/* ----------- Edit Category Modal ----------- */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+        <div className="fixed inset-0  z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96 shadow-lg relative">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
@@ -184,7 +184,7 @@ const ProductTable = () => {
 
       {/* ----------- Delete Confirmation Modal ----------- */}
       {showDeleteModal && categoryToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+        <div className="fixed inset-0  z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-96 shadow-lg relative">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
