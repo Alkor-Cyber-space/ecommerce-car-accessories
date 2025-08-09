@@ -437,6 +437,7 @@ export const getUserList = async () => {
     return response.data;
   } catch (error) {
     console.error("Error fetching admin users:", error);
+  }}
   
 export const deleteProductCategoryApi = async (categoryId) => {
   try {
@@ -534,5 +535,4 @@ export const deletevehiclecategory = async (categoryId) => {
     throw error;
   }
 };
-
 
