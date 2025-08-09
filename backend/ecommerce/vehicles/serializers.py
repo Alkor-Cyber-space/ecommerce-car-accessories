@@ -109,7 +109,13 @@ from .models import *
 #             raise serializers.ValidationError("Variant and Year are required.")
 #         return attrs
 
+class VehicleVariantReadSerializer(serializers.ModelSerializer):
+    make = serializers.CharField(source='make.name')
+    model = serializers.CharField(source='model.name')
 
+    class Meta:
+        model = VehicleVariant
+        fields = ['id', 'make', 'model', 'variant','year']
 class VehicleFullEntrySerializer(serializers.Serializer):
     make = serializers.CharField()
     model = serializers.CharField()
@@ -137,6 +143,31 @@ class VehicleFullEntrySerializer(serializers.Serializer):
         )
 
         return variant_obj
+
+    def update(self, instance, validated_data):
+        make_name = validated_data.get('make', instance.make.name)
+        model_name = validated_data.get('model', instance.model.name)
+        variant = validated_data.get('variant', instance.variant)
+        year = validated_data.get('year', instance.year)
+
+        make_obj, _ = VehicleMake.objects.get_or_create(
+            name__iexact=make_name,
+            defaults={'name': make_name}
+        )
+        model_obj, _ = VehicleModel.objects.get_or_create(
+            make=make_obj,
+            name__iexact=model_name,
+            defaults={'name': model_name}
+        )
+
+        instance.make = make_obj
+        instance.model = model_obj
+        instance.variant = variant
+        instance.year = year
+        instance.save()
+
+        return instance
+
 
 class VehicleVariantReadSerializer(serializers.ModelSerializer):
     make = serializers.CharField(source='make.name')

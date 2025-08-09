@@ -130,7 +130,7 @@ const AddProduct = () => {
         formDataToSend.append("price", formData.price);
         formDataToSend.append("stock", formData.stock);
         formDataToSend.append("manufacturing_date", formData.manufactureDate);
-        formDataToSend.append("tag", formData.tags?.[0] || "");
+        formDataToSend.append("tag", formData.tags.join(','));
         formDataToSend.append("category_id", formData.category);
 
         if (formData.sizes) {
@@ -145,7 +145,7 @@ const AddProduct = () => {
 
         imageKeys.forEach((key) => {
             if (formData.images?.[key]) {
-                formDataToSend.append("image_list", formData.images[key]);
+                formDataToSend.append("images", formData.images[key]);
             }
         });
 

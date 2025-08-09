@@ -19,8 +19,8 @@ from products.serializers import CategorySerializer
 from vehicles.serializers import VehicleFullEntrySerializer
 from products.models import Category
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
-
-
+from products.models import *
+from .serializers import *
 User = get_user_model()
 # Create your views here.
 
@@ -202,3 +202,65 @@ class AdminVehicleCreate(APIView):
                 }
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class VendorViewProductAPIView(APIView):
+
+    def post(self,request):
+        pk=request.data.get('pk')
+        if not pk:
+            return Response({
+                "status" : "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "pk is mandatory"
+            },status=status.HTTP_400_BAD_REQUEST)
+        
+        custom_user=Product.objects.filter(vendor_id=pk)
+        if not custom_user:
+            return Response({
+                "status" : "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "user does not exist"
+            },status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer=VendorViewProductSerilizer(custom_user , many=True)
+        return Response({
+            "status" : "success",
+            "code": status.HTTP_200_OK,
+            "data": serializer.data
+        },status=status.HTTP_200_OK)
+
+        
+
+class AdminVehicleUpdate(APIView):
+    def put(self, request, pk):
+        try:
+            variant = VehicleVariant.objects.get(pk=pk)
+        except VehicleVariant.DoesNotExist:
+            return Response({"error": "Vehicle entry not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = VehicleFullEntrySerializer(instance=variant, data=request.data)
+        if serializer.is_valid():
+            updated_variant = serializer.save()
+            return Response({
+                "message": "Vehicle entry updated successfully.",
+                "data": {
+                    "make": updated_variant.make.name,
+                    "model": updated_variant.model.name,
+                    "variant": updated_variant.variant,
+                    "year": updated_variant.year
+                }
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminVehicleDelete(APIView):
+    def delete(self, request, pk):
+        try:
+            variant = VehicleVariant.objects.get(pk=pk)
+            variant.delete()
+            return Response({"message": "Vehicle entry deleted successfully."}, status=status.HTTP_200_OK)
+        except VehicleVariant.DoesNotExist:
+            return Response({"error": "Vehicle entry not found."}, status=status.HTTP_404_NOT_FOUND)
+
