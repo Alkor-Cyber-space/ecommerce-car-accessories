@@ -314,7 +314,7 @@ export const deactivateAccountApi = async () => {
   }
 }
 
-};
+
 
 // profile & kyc
 
@@ -381,4 +381,34 @@ export const getVendorByIdApi = async (vendorId) => {
   }
 };
 
+
+export const getUserList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/users/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
+    throw error;
+  }
+}
+
+export const getAdminsList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/list_admins/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    throw error;
+  }
+}
 
