@@ -215,7 +215,7 @@ export const getCategoriesApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
 
-    const response = await axios.get(`${serverurl}/vendor/categories/`, {
+    const response = await axios.get(`${serverurl}/products/categories/`, {
       headers: {
         Authorization: `JWT ${token}`,
         "Content-Type": "application/json",
@@ -229,10 +229,9 @@ export const getCategoriesApi = async () => {
   }
 };
     const token = localStorage.getItem("access_token");
-
 export const getVariantYearsApi = async () => {
   try {
-    const response = await axios.get(`${serverurl}/vendor/variant-years/`,{
+    const response = await axios.get(`${serverurl}/vehicles/compatible-year/`,{
       headers: {
         Authorization: `JWT ${token}`,
         "Content-Type": "application/json",
@@ -246,8 +245,6 @@ export const getVariantYearsApi = async () => {
 };
 
 // Account Settings
-// Account Settings APIs - Add these to your existing allAPI.js file
-
 // Get current user profile
 export const getMeApi = async () => {
   try {
@@ -313,6 +310,12 @@ export const deactivateAccountApi = async () => {
     console.error("Error deactivating account:", error);
   }
 }
+
+
+
+// profile & kyc
+
+
 
 export const getVendorProfileApi = async () => {
   try {
@@ -423,6 +426,18 @@ export const getVendorByIdApi = async (vendorId) => {
 };
 
 
+export const getUserList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/users/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
+  }}
   
 export const deleteProductCategoryApi = async (categoryId) => {
   try {
@@ -435,6 +450,21 @@ export const deleteProductCategoryApi = async (categoryId) => {
     return response.data; // ✅ return data directly
   } catch (error) {
     console.error("Error deleting product category:", error);
+    throw error;
+  }
+}
+
+export const getAdminsList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/list_admins/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
     throw error;
   }
 }
@@ -466,3 +496,43 @@ export const getVehicleCategoriesApi = async () => {
     throw error;
   }
 };
+
+export const editVehicleCategoryApi = async (categoryId, updatedData) => { 
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.put(
+      `${serverurl}/admin/vehicles/${categoryId}/update/`,
+      updatedData, // send updated fields
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating vehicle:", error);
+    throw error;
+  }
+};
+
+
+export const deletevehiclecategory = async (categoryId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(
+      `${serverurl}/admin/vehicles/${categoryId}/delete/`, // Added trailing slash
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting vehicle category:", error);
+    throw error;
+  }
+};
+

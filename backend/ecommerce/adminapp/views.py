@@ -21,6 +21,8 @@ from products.models import Category
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
 from .serializers import *
+from accounts.models import VendorDocuments
+
 User = get_user_model()
 # Create your views here.
 
@@ -38,6 +40,12 @@ class AdminLoginAPIView(APIView):
         user = User.objects.filter(email=email_or_username).first()
         if not user:
             user = User.objects.filter(username=email_or_username).first()
+        
+        if not user:
+            return Response({"error": "No account found with the provided email/username."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.check_password(password):
+            return Response({"error": "Incorrect password."}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user and user.check_password(password):
             if user.groups.filter(name='Admin').exists():  # or `user.role == 'admin'` if you're using a field
@@ -230,7 +238,14 @@ class VendorViewProductAPIView(APIView):
             "data": serializer.data
         },status=status.HTTP_200_OK)
 
-        
+
+class UnverifiedVendorsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
+        serializer = VendorDocumentsSerializer(unverified_vendors, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminVehicleUpdate(APIView):
     def put(self, request, pk):

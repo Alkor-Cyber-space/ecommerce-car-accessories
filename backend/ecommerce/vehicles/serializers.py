@@ -116,6 +116,8 @@ class VehicleVariantReadSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleVariant
         fields = ['id', 'make', 'model', 'variant','year']
+
+
 class VehicleFullEntrySerializer(serializers.Serializer):
     make = serializers.CharField()
     model = serializers.CharField()
@@ -169,21 +171,46 @@ class VehicleFullEntrySerializer(serializers.Serializer):
         return instance
 
 
-class VehicleVariantReadSerializer(serializers.ModelSerializer):
-    make = serializers.CharField(source='make.name')
-    model = serializers.CharField(source='model.name')
+# class VehicleVariantReadSerializer(serializers.ModelSerializer):
+#     make = serializers.CharField(source='make.name')
+#     model = serializers.CharField(source='model.name')
+
+#     class Meta:
+#         model = VehicleVariant
+#         fields = ['id', 'make', 'model', 'variant', 'year']
+
+class VehicleMakeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleMake
+        fields = ['id', 'name']
+
+
+class VehicleModelSerializer(serializers.ModelSerializer):
+    make = VehicleMakeSerializer()
+
+    class Meta:
+        model = VehicleModel
+        fields = ['id', 'name', 'make']
+
+
+class VehicleVariantSerializer(serializers.ModelSerializer):
+    make = VehicleMakeSerializer()
+    model = VehicleModelSerializer()
 
     class Meta:
         model = VehicleVariant
         fields = ['id', 'make', 'model', 'variant', 'year']
 
 
+
 class SavedVehicleSerializer(serializers.ModelSerializer):
-    vehicle_variant_year = serializers.PrimaryKeyRelatedField(
-        queryset=VehicleVariant.objects.all()
+    vehicle_variant = VehicleVariantSerializer(read_only=True)
+    vehicle_variant_id = serializers.PrimaryKeyRelatedField(
+        queryset=VehicleVariant.objects.all(),
+        source='vehicle_variant'
     )
 
     class Meta:
         model = SavedVehicle
-        fields = ['id', 'vehicle_variant_year', 'saved_at']
+        fields = ['id', 'vehicle_variant', 'vehicle_variant_id','saved_at']
         read_only_fields = ['saved_at']

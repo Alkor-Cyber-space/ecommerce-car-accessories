@@ -54,6 +54,7 @@ class VerifyPaymentView(APIView):
 
         if verified:
             order.status = "paid"
+            print(order.status)
             order.save()
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         else:
