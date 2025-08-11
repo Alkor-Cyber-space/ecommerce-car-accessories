@@ -157,7 +157,6 @@ class UserListViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({'message':'user blocked successfully'}, status=status.HTTP_200_OK)
 
 
-
 class VendorApprove(generics.GenericAPIView):
     queryset = VendorProfile.objects.all()
     serializer_class = VendorSerializer
