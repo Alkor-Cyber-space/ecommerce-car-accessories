@@ -27,6 +27,7 @@ from rest_framework.generics import GenericAPIView
 from firebase_admin import auth as firebase_auth
 from . import firebase_config 
 from django.db.models import Q
+from .utils import log_action
 
 User = get_user_model()
 
@@ -288,6 +289,11 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = VendorProfileFullEditSerializer(vendor_profile, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            log_action(
+                user=user,
+                action="update",
+                description="Vendor profile updated "
+            )
             return Response({"message": "Vendor profile updated successfully."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
@@ -331,11 +337,12 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['post','put'], url_path='step1/(?P<user_id>[^/.]+)')
     def step1_company_details(self, request, user_id):
-        print(f'User ID: {user_id}')
+        
         try:
-            print(f"user_id ::{user_id}")
             profile = User.objects.get(id=user_id)
-            print(f'***************{profile}')
+            custom=CustomUser.objects.get(id=user_id)
+            print(f"profile: {profile}")
+            print(f"custom.id {custom}")
         except User.DoesNotExist:
             return Response({"error": "vendor not registered"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -343,6 +350,11 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
 
         serializer = Step1CompanySerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
+        log_action(
+                user=custom,
+                action="update",
+                description="Vendor updated Company Details"
+            )
         serializer.save()
         return Response({"message": "Company details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
@@ -350,6 +362,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
     def step2_contact_details(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
+            custom=CustomUser.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         profile, created = VendorProfile.objects.get_or_create(user=profile)
@@ -357,12 +370,18 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step2ContactSerializer(profile, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        log_action(
+                user=custom,
+                action="update",
+                description="Vendor updated contact Details"
+            )
         return Response({"message": "Contact details saved","data":serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post','put'], url_path='step3/(?P<user_id>[^/.]+)')
     def step3_kyc_documents(self, request, user_id):
         try:
             user = User.objects.get(id=user_id)
+            custom=CustomUser.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         vendor_profile, _ = VendorProfile.objects.get_or_create(user=user)
@@ -372,12 +391,18 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step3KYCSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        log_action(
+                user=custom,
+                action="update",
+                description="Vendor updated KYC documents"
+            )
         return Response({"message": "KYC documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post','put'], url_path='step4/(?P<user_id>[^/.]+)')
     def step4_business_documents(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
+            custom=CustomUser.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -389,12 +414,18 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step4BusinessDocsSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        log_action(
+                user=custom,
+                action="update",
+                description="Vendor updated business documents"
+            )
         return Response({"message": "Business documents uploaded","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post','put'], url_path='step5/(?P<user_id>[^/.]+)')
     def step5_bank_tax_details(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
+            custom= CustomUser.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
                 
@@ -405,12 +436,18 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step5BankTaxSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        log_action(
+                user=custom,
+                action="update",
+                description="Vendor updated bank-tax Details"
+            )
         return Response({"message": "Bank and tax details saved","data": serializer.data}, status=status.HTTP_200_OK)
 
     @action(detail=False, methods=['post','put'], url_path='step6/(?P<user_id>[^/.]+)')
     def step6_supporting_documents(self, request, user_id):
         try:
             profile = User.objects.get(id=user_id)
+            custom=CustomUser.objects.get(id=user_id)
         except User.DoesNotExist:
             return Response({"error": "Vendor profile not found"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -421,6 +458,11 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         serializer = Step6AgreementsSerializer(vendor_documents, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        log_action(
+                user=custom,
+                action="update",
+                description="Vendor updated supporting_documents"
+            )
         return Response({"message": "Supporting documents uploaded and vendor activated","data": serializer.data}, status=status.HTTP_200_OK)
 
 
@@ -573,7 +615,7 @@ class PasswordResetViewSet(viewsets.ViewSet):
             if user:
                 uid = urlsafe_base64_encode(force_bytes(user.pk))
                 token = default_token_generator.make_token(user)
-                reset_link = f"http://localhost:8000/api/auth/reset-password/{uid}/{token}/"  # Replace with your frontend URL
+                reset_link = f"http://localhost:8000/api/auth/password/reset-password/{uid}/{token}/"  # Replace with your frontend URL
 
                 send_mail(
                     subject="Password Reset Request",
@@ -582,6 +624,7 @@ class PasswordResetViewSet(viewsets.ViewSet):
                     recipient_list=[email],
                     fail_silently=False,
                 )
+
             return Response({"message": "A reset link has been sent to this mail."})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

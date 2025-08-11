@@ -305,3 +305,25 @@ class OTP(models.Model):
 
      def __str__(self):
           return f"OTP{self.otp} for {self.user.email}" 
+     
+class VendorAuditLog(models.Model):
+    ACTION_CHOICES = [
+        ('create', 'Create'),
+        ('update', 'Update'),
+        ('delete', 'Delete'),
+        ('document_upload', 'Document Upload'),
+        ('profile_update', 'Profile Update'),
+        ('account_update', 'Account Update'),
+    ]
+
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vendor_audit_logs"
+    )
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    description = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vendor.email} - {self.action} - {self.timestamp}"

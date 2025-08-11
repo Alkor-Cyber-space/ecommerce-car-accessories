@@ -696,11 +696,22 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
         for doc_field, status_field in document_fields:
             if status_field in data:
                 new_status = data[status_field]
-                if new_status in ['approved', 'rejected']:
+                
+                # doc_value=getattr(instance,doc_field) if instance else None
+                print(f"docvalues: {doc_value}")
+                
+                if new_status in ['approved', 'rejected'] :
+                    # errors[status_field] = f"Cannot set {status_field} to {new_status} because {doc_field} is not uploaded."
                     # Check if the document file exists
                     doc_value = getattr(instance, doc_field) if instance else None
                     if not doc_value:
                         errors[status_field] = f"Cannot set {status_field} to {new_status} because {doc_field} is not uploaded."
+                    if instance and new_status == 'rejected':
+                        current_status = getattr(instance, status_field)
+                        print(f"current staus: {current_status}")
+                        print(f"current: {current_status}")
+                        if current_status == 'approved':
+                            errors[status_field] = f"Cannot change {status_field} from 'approved' to 'rejected'."
 
         if errors:
             raise serializers.ValidationError(errors)
@@ -708,11 +719,10 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
         return data
 
     def update(self, instance, validated_data):
-        """
-        Update the instance and send email if any document is rejected.
-        """
+        
         rejected_docs = []
         document_fields = [
+
             'pan_card_status', 'aadhar_passport_dl_status', 'gst_certificate_status',
             'business_registration_cert_status', 'shop_license_status',
             'cancelled_cheque_status', 'bank_statement_status', 'it_return_status',
@@ -722,6 +732,7 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
         ]
 
         # Track rejected documents for email notification
+        
         for status_field in document_fields:
             if status_field in validated_data:
                 new_status = validated_data[status_field]
