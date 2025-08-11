@@ -22,6 +22,7 @@ from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
 from .serializers import *
 from accounts.models import VendorDocuments
+from accounts.mixin import AuditLogMixin
 
 User = get_user_model()
 # Create your views here.
@@ -188,10 +189,10 @@ class VendorApprove(generics.GenericAPIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
 # Category CRUD by Vendor
-class AdminCategoryViewSet(viewsets.ModelViewSet):
+class AdminCategoryViewSet(AuditLogMixin,viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class AdminVehicleCreate(APIView):
