@@ -536,3 +536,88 @@ export const deletevehiclecategory = async (categoryId) => {
   }
 };
 
+
+export const getVendorProductListApi = async (vendorId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/list-vendor-products/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error fetching vendor details:", error);
+    throw error;
+  }
+} 
+
+
+
+// Create vendor address
+export const VendorAddressesApi = async (address) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(
+      `${serverurl}/auth/addresses/`,
+      address,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating vendor address:", error);
+    throw error;
+  }
+};
+
+// Get vendor address by ID
+export const getVendorAddressesApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(
+      `${serverurl}/auth/addresses/`, // ✅ added trailing slash
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor addresses:", error);
+    throw error;
+  }
+};
+
+// Update vendor address
+export const updateVendorAddressApi = async (id, address) => {
+  try {
+    if (!id) throw new Error("Address ID is required");
+
+    const token = localStorage.getItem("access_token");
+    if (!token) throw new Error("No access token found");
+
+    const res = await axios.patch(
+      `${serverurl}/auth/addresses/${id}/`, // trailing slash is good for Django REST
+      address,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.data;
+  } catch (err) {
+    console.error("Error updating vendor address:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+
