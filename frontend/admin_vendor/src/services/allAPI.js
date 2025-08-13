@@ -311,6 +311,12 @@ export const deactivateAccountApi = async () => {
   }
 }
 
+
+
+// profile & kyc
+
+
+
 export const getVendorProfileApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
@@ -420,6 +426,18 @@ export const getVendorByIdApi = async (vendorId) => {
 };
 
 
+export const getUserList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/users/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin users:", error);
+  }}
   
 export const deleteProductCategoryApi = async (categoryId) => {
   try {
@@ -432,6 +450,21 @@ export const deleteProductCategoryApi = async (categoryId) => {
     return response.data; // ✅ return data directly
   } catch (error) {
     console.error("Error deleting product category:", error);
+    throw error;
+  }
+}
+
+export const getAdminsList = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/list_admins/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching users:", error);
     throw error;
   }
 }
@@ -519,18 +552,7 @@ export const getVendorProductListApi = async (vendorId) => {
   }
 } 
 
-// export const VendorAddressApi = async () => {
-//   return await commonAPI("POST", `${serverurl}/auth/addresses/`, {
-//     "Content-Type": "application/json"
-//   });
-// }
 
-export const VendorProfileApi = async () => {
-  return await commonAPI("POST", `${serverurl}/auth/vendor/edit_profile/`, {
-    "Content-Type": "application/json",
-    Authorization: `JWT ${localStorage.getItem("access_token")}`
-  });
-}
 
 // Create vendor address
 export const VendorAddressesApi = async (address) => {
@@ -597,4 +619,5 @@ export const updateVendorAddressApi = async (id, address) => {
     throw err;
   }
 };
+
 
