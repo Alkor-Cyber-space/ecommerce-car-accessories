@@ -207,6 +207,7 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
+    
     'AUTH_HEADER_TYPES': ('JWT',),
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -217,7 +218,7 @@ AUTH_USER_MODEL = 'accounts.CustomUser'
 
 AUTHENTICATION_BACKENDS = [
     'accounts.auth_backend.EmailBackend',  
-    'django.contrib.auth.backends.ModelBackend',  # Optional fallback
+    'django.contrib.auth.backends.ModelBackend',  
 ]
 
 

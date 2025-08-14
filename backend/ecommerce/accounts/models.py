@@ -194,8 +194,8 @@ class VendorDocuments(models.Model):
           elif all( status =='approved' for status in document_statuses if status !='pending'):
                self.profile_status='approved'
           else:
-               self.profile_status=='pending'
-          self.is_verified=self.profile_status=='approved' and self.is_registration_complete()
+               self.profile_status='pending'
+          self.is_verified=(self.profile_status=='approved') and self.is_registration_complete()
           self.save()
 
      def __str__(self):

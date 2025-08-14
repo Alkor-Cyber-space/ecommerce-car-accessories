@@ -138,11 +138,14 @@ class UserViewSet(viewsets.ViewSet):
         if user:
             if not user.is_active:
                 return Response({"error": "User account is not active."}, status=status.HTTP_403_FORBIDDEN)
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),    
-            }, status=status.HTTP_200_OK)
+            if user.groups.filter(name='User').exists():
+                refresh = RefreshToken.for_user(user)
+                return Response({
+                    "access": str(refresh.access_token),
+                    "refresh": str(refresh),    
+                }, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "Only user can login here"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -685,7 +688,9 @@ class ResendOptVerification(GenericAPIView):
     def post(self, request):
         email = request.data.get('email')
         try:
+            print(email)
             user = CustomUser.objects.get(email=email)
+            print(user)
         except CustomUser.DoesNotExist:
             return Response({"error": "User with this email does not exist."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -744,6 +749,7 @@ class VendorProfileUpdateView(APIView):
                 {"error": "Vendor profile not found"},
                 status=status.HTTP_404_NOT_FOUND
             )
+
         documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=profile)
         serializer = VendorDocumentsSerializer(documents, data=request.data, partial=True,context={'custom_user': custom_user} ) # Fixed: Pass custom_user as a dictionary value)
         if serializer.is_valid():
@@ -754,23 +760,21 @@ class VendorProfileUpdateView(APIView):
 class VendorDocumentsFinalApprovalView(APIView):
 
     def post(self, request, vendor_profile_id):
-
         try:
-
             vendor_profile = VendorProfile.objects.get(id=vendor_profile_id)
             documents = VendorDocuments.objects.get(vendor_profile=vendor_profile)
         except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
             return Response({"error": "Vendor profile or documents not found."}, status=status.HTTP_404_NOT_FOUND)
-        
 
-        final_status = request.data.get('final_status')  
+
+        final_status = request.data.get('final_status')  or 'pending'
         if documents.is_verified==True and final_status=="rejected":
             return Response({
                 "status": "failed",
                 "code": status.HTTP_400_BAD_REQUEST,
                 "message": "can't able to change is_verified to rejected. it is already approved,"
             })
-        # print(f"final_status: {final_status}")
+        
         if final_status=="approved":
             document_statuses = [
                 documents.pan_card_status,
