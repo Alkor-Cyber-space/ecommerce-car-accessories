@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { use, useEffect, useState } from 'react';
 import { GoArrowDownRight, GoArrowUpRight } from 'react-icons/go';
 import { HiOutlineDotsVertical } from 'react-icons/hi';
-import { Link } from 'react-router-dom';
-import { getVendorByIdApi } from '../../../services/allAPI'; // 🔁 Adjust path if needed
+import { Link, useParams } from 'react-router-dom';
+import { getVendorByIdApi, getVendorProductListApi } from '../../../services/allAPI'; // 🔁 Adjust path if needed
+import axios from 'axios';
 
 const UserDetails = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [vendorData, setVendorData] = useState(null);
+
+  const [vendorData, setVendorData] = useState({});
+  const [vendorProducts, setVendorProducts] = useState([]);
 
   const statusArray = [
     'Live', 'Live', 'Draft', 'Out of Stock', 'Out of Stock', 'Live',
@@ -23,6 +26,37 @@ const UserDetails = () => {
     status,
     price: '₹4,499',
   }));
+  const {id} = useParams();
+
+useEffect(() => {
+    const fetchVendorProducts = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        const payload = { pk: Number(id) };  // or { vendor_id: Number(id) } depending on API
+        console.log("Vendor ID (pk) sent to API:", id);
+
+
+        const response = await axios.post(
+          "http://127.0.0.1:8000/api/admin/list-vendor-products/",
+          payload,
+          {
+            headers: {
+              Authorization: `JWT ${token}`,  // or `Bearer ${token}`
+              "Content-Type": "application/json",
+            },
+          }
+        );
+          setVendorProducts(response.data.data);
+          console.log(response);
+          
+      } catch (error) {
+        console.error("Error fetching vendor products:", error.response || error.message);
+      }
+    };
+
+    fetchVendorProducts();
+  }, [id]);
+
 
   const handleDropdownToggle = (productId) => {
     setActiveDropdown(activeDropdown === productId ? null : productId);
@@ -201,8 +235,8 @@ const UserDetails = () => {
           <thead>
             <tr className="text-xs md:text-sm text-gray-600">
               <th className="px-3 py-2 font-medium">S.NO</th>
-              <th className="px-3 py-2 font-medium">Product Name</th>
-              <th className="px-3 py-2 font-medium">SKU</th>
+              <th className="px-3 py-2 font-medium ">Product Name</th>
+              <th className="px-3 py-2 font-medium"></th>
               <th className="px-3 py-2 font-medium">Stock</th>
               <th className="px-3 py-2 font-medium">Status</th>
               <th className="px-3 py-2 font-medium">Price</th>
@@ -210,10 +244,11 @@ const UserDetails = () => {
             </tr>
           </thead>
           <tbody>
-            {products.map((product, index) => (
-              <tr key={product.id} className="hover:bg-gray-50">
+            { vendorProducts.map((product, index) => (
+
+              <tr key={index} className="hover:bg-gray-50">
                 <td className="px-3 py-2">{index + 1}</td>
-                <td className="px-3 py-2 text-blue-600 underline cursor-pointer">
+                <td className="px-3 py-2 text-[#5737B4] font-semibold  cursor-pointer">
                   {product.name}
                 </td>
                 <td className="px-3 py-2">{product.sku}</td>

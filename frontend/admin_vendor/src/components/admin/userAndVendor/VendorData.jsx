@@ -193,9 +193,8 @@ useEffect(() => {
               <tr key={`${vendor.id}-${index}`} className=" hover:bg-gray-50 text-gray-800">
                 <td className="py-3 px-4">{vendor.id}</td>
                 <td className="py-3 px-4 font-semibold text-[#5737B4]">
-                  <Link
-                    to="/admin/user-details"
-                    onClick={() => localStorage.setItem("selected_vendor", JSON.stringify(vendor))}
+                  <Link to={`/admin/user-details/${vendor.id}`}      
+                               onClick={() => localStorage.setItem("selected_vendor", JSON.stringify(vendor))}
                   >
                     {vendor.username}
                   </Link>

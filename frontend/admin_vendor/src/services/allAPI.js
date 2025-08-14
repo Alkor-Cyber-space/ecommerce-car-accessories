@@ -541,16 +541,32 @@ export const getUnverifiedVendorsApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.get(`${serverurl}/admin/vendors/unverified/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
-    });
-    return response.data;
+          return response.data;
   } catch (error) {
     console.error("Error fetching unverified vendors:", error);
     throw error;
   }
 };
+
+
+
+export const getVendorProductListApi = async (vendorId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/list-vendor-products/`, {
+
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+     return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error fetching vendor details:", error);
+    throw error;
+  }
+} 
+
+
 
 export const getVendorProfileDocumentsApi = async (vendorId) => {
   try {
@@ -563,9 +579,29 @@ export const getVendorProfileDocumentsApi = async (vendorId) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching vendor profile documents:", error);
+  }}
+
+// Create vendor address
+export const VendorAddressesApi = async (address) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(
+      `${serverurl}/auth/addresses/`,
+      address,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating vendor address:", error);
     throw error;
   }
 };
+
 
 export const ApproveorRejectApi = async (vendorId, documentKey, action) => {
   try {
@@ -574,39 +610,34 @@ export const ApproveorRejectApi = async (vendorId, documentKey, action) => {
     const response = await axios.put(
       `${serverurl}/auth/vendor_profile_update/${vendorId}/`,
       { [documentKey]: action }, // dynamic key update (e.g. "pan_card_status": "approved")
+      return response.data;
+  } catch (error) {
+    console.error("Error approving/rejecting document:", error);
+    }
+}
+
+// Get vendor address by ID
+export const getVendorAddressesApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(
+      `${serverurl}/auth/addresses/`, // ✅ added trailing slash
+
       {
         headers: {
           Authorization: `JWT ${token}`,
         },
       }
     );
-
     return response.data;
   } catch (error) {
-    console.error("Error approving/rejecting document:", error);
+    console.error("Error fetching vendor addresses:", error);
+
     throw error;
   }
 };
 
-// export const FinalApproveVendorApi = async (vendorId) => {
-//   try {
-//     const token = localStorage.getItem("access_token");
-//     const response = await axios.post(
-//       `${serverurl}/auth/vendor-final-approve/${vendorId}/`,
-//       null,
-//       {
-//         headers: {
-//           Authorization: `JWT ${token}`,
-//         },
-//       }
-//     );
 
-//     return response.data;
-//   } catch (error) {
-//     console.error("Error final approving vendor:", error);
-//     throw error;
-//   }
-// };
 export const FinalApproveVendorApi = async (vendorId, finalStatus = 'approved') => {
   try {
     const token = localStorage.getItem("access_token");
@@ -626,3 +657,31 @@ export const FinalApproveVendorApi = async (vendorId, finalStatus = 'approved') 
     throw error;
   }
 };
+
+// Update vendor address
+export const updateVendorAddressApi = async (id, address) => {
+  try {
+    if (!id) throw new Error("Address ID is required");
+
+    const token = localStorage.getItem("access_token");
+    if (!token) throw new Error("No access token found");
+
+    const res = await axios.patch(
+      `${serverurl}/auth/addresses/${id}/`, // trailing slash is good for Django REST
+      address,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.data;
+  } catch (err) {
+    console.error("Error updating vendor address:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+

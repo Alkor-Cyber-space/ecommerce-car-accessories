@@ -99,7 +99,7 @@ function App() {
           <Route path='tax-reports' element={<TaxReport />} />
           <Route path='search-filter' element={<SearchFilter />} />
           <Route path='auditlogs' element={<AuditLogs />} />
-          <Route path='user-details' element={<UserDetails />} />
+          <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
           <Route path='index-catogery' element={<IndexCatogery />} />
