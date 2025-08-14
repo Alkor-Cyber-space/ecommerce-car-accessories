@@ -12,26 +12,7 @@ export default function UserDataTable() {
   const [search, setSearch] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState(null);
-  const [filteredUsers, setFilteredUsers] = useState([]);
 
-  const [filters, setFilters] = useState({
-    year: '',
-    location: '',
-    status: '',
-    regDateFrom: '',
-    regDateTo: '',
-  });
-
-  const handleReset = () => {
-    setFilters({
-      year: '',
-      location: '',
-      status: '',
-      regDateFrom: '',
-      regDateTo: '',
-    });
-    setFilteredUsers(users);
-  };
 
 
   useEffect(() => {
@@ -45,52 +26,21 @@ export default function UserDataTable() {
       }
     };
     fetchUserList();
-    setFilteredUsers(users);
-
   }, []);
 
-  // const filteredUsers = users.filter(user => {
-  //   const matchesSearch = search === '' ||
-  //     user.name.toLowerCase().includes(search.toLowerCase()) ||
-  //     user.email.toLowerCase().includes(search.toLowerCase()) ||
-  //     user.phone.includes(search) ||
-  //     user.id.toLowerCase().includes(search);
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = search === '' ||
+      user.name.toLowerCase().includes(search.toLowerCase()) ||
+      user.email.toLowerCase().includes(search.toLowerCase()) ||
+      user.phone.includes(search) ||
+      user.id.toLowerCase().includes(search);
 
-  //   return (
-  //     matchesSearch &&
-  //     (statusFilter ? user.status === statusFilter : true) &&
-  //     (locationFilter ? user.location === locationFilter : true)
-  //   );
-  // });
-  const handleSearch = () => {
-    const filtered = users.filter(user => {
-      const matchesYear =
-        filters.year === '' ||
-        (user.date_joined && new Date(user.date_joined).getFullYear().toString() === filters.year);
-
-      const matchesLocation =
-        filters.location === '' || (user.location && user.location.toLowerCase() === filters.location.toLowerCase());
-
-      const matchesStatus =
-        filters.status === '' || (user.status && user.status.toLowerCase() === filters.status.toLowerCase());
-
-      const matchesRegDateFrom =
-        filters.regDateFrom === '' || (user.date_joined && new Date(user.date_joined) >= new Date(filters.regDateFrom));
-
-      const matchesRegDateTo =
-        filters.regDateTo === '' || (user.date_joined && new Date(user.date_joined) <= new Date(filters.regDateTo));
-
-      return (
-        matchesYear &&
-        matchesLocation &&
-        matchesStatus &&
-        matchesRegDateFrom &&
-        matchesRegDateTo
-      );
-    });
-
-    setFilteredUsers(filtered);
-  };
+    return (
+      matchesSearch &&
+      (statusFilter ? user.status === statusFilter : true) &&
+      (locationFilter ? user.location === locationFilter : true)
+    );
+  });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -150,16 +100,7 @@ export default function UserDataTable() {
         <h1 className="text-3xl font-semibold text-black mr-5 md:mr-2">{users?.length}</h1>
       </div>
 
-      <SearchFilter
-        filters={filters}
-        setFilters={setFilters}
-        onSearch={handleSearch}
-        onReset={handleReset}
-        showYear={true}
-        showLocation={true}
-        showStatus={true}
-      />
-
+      <SearchFilter />
 
       <div className="overflow-x-auto scrollbar-none">
         <table className="min-w-full bg-white rounded-md text-sm shadow">
@@ -177,7 +118,7 @@ export default function UserDataTable() {
             </tr>
           </thead>
           <tbody>
-            {(filteredUsers.length > 0 ? filteredUsers : users).map((user, index) => (
+            {users.map((user, index) => (
               <tr key={`${user.id}-${index}`} className="text-left hover:bg-gray-50 border-b border-gray-100">
                 <td className="py-3 px-4 font-medium text-[#5737B4]"><Link to='/admin/user-details'>{user.id}</Link></td>
                 <td className="py-3 px-4">{user.username || 'N/A'}</td>
@@ -201,10 +142,10 @@ export default function UserDataTable() {
                   {activeDropdown && dropdownPosition && (
                     <div
                       className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 flex items-center gap-3 px-3 py-2"
-                    // style={{
-                    //   top: dropdownPosition.top,
-                    //   left: dropdownPosition.left,
-                    // }}
+                      // style={{
+                      //   top: dropdownPosition.top,
+                      //   left: dropdownPosition.left,
+                      // }}
                     >
                       <button
                         onClick={() => handleAction('View', activeDropdown)}

@@ -92,7 +92,7 @@ function App() {
           <Route path="users" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-          <Route path="vendor-documents/:id" element={<VendorsDoc />} />
+          <Route path="vendor-documents" element={<VendorsDoc />} />
           <Route path="Sales-Report" element={<SalesReport />} />
           <Route path="returns" element={<ReturnsReport />} />
           <Route path="transaction" element={<TransactionReport />} />
