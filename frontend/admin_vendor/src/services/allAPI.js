@@ -536,16 +536,30 @@ export const deletevehiclecategory = async (categoryId) => {
   }
 };
 
+// list unverified vendors ---admin
+export const getUnverifiedVendorsApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/vendors/unverified/`, {
+          return response.data;
+  } catch (error) {
+    console.error("Error fetching unverified vendors:", error);
+    throw error;
+  }
+};
+
+
 
 export const getVendorProductListApi = async (vendorId) => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.get(`${serverurl}/admin/list-vendor-products/`, {
+
       headers: {
         Authorization: `JWT ${token}`,
       },
     });
-    return response.data; // ✅ return data directly
+     return response.data; // ✅ return data directly
   } catch (error) {
     console.error("Error fetching vendor details:", error);
     throw error;
@@ -553,6 +567,19 @@ export const getVendorProductListApi = async (vendorId) => {
 } 
 
 
+
+export const getVendorProfileDocumentsApi = async (vendorId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/auth/vendor_profile_update/${vendorId}/`, {}, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor profile documents:", error);
+  }}
 
 // Create vendor address
 export const VendorAddressesApi = async (address) => {
@@ -575,12 +602,27 @@ export const VendorAddressesApi = async (address) => {
   }
 };
 
+
+export const ApproveorRejectApi = async (vendorId, documentKey, action) => {
+  try {
+    const token = localStorage.getItem("access_token");
+
+    const response = await axios.put(
+      `${serverurl}/auth/vendor_profile_update/${vendorId}/`,
+      { [documentKey]: action }, // dynamic key update (e.g. "pan_card_status": "approved")
+      return response.data;
+  } catch (error) {
+    console.error("Error approving/rejecting document:", error);
+    }
+}
+
 // Get vendor address by ID
 export const getVendorAddressesApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.get(
       `${serverurl}/auth/addresses/`, // ✅ added trailing slash
+
       {
         headers: {
           Authorization: `JWT ${token}`,
@@ -590,6 +632,28 @@ export const getVendorAddressesApi = async () => {
     return response.data;
   } catch (error) {
     console.error("Error fetching vendor addresses:", error);
+
+    throw error;
+  }
+};
+
+
+export const FinalApproveVendorApi = async (vendorId, finalStatus = 'approved') => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(
+      `${serverurl}/auth/vendor-final-approve/${vendorId}/`,
+      { final_status: finalStatus }, // Send status in body
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error updating final status for vendor:", error);
     throw error;
   }
 };

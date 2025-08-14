@@ -3,7 +3,7 @@ import { ChevronDown } from 'lucide-react';
 import { vehicleCategoryApi } from '../../../services/allAPI';
 import { toast } from 'react-toastify';
 
-const VehicleCategory = () => {
+const VehicleCategory = ({ onCategoryAdded }) => {
     const [formData, setFormData] = useState({
         make: '',    
         model: '',   
@@ -44,6 +44,7 @@ const VehicleCategory = () => {
             const response = await vehicleCategoryApi(formData); 
             console.log("Response:", response);
                 toast.success(response.message || 'Vehicle category created successfully!');
+                onCategoryAdded(response.data);
                 handleCancel();
         } catch (error) {
             console.error('Error creating vehicle category:', error);

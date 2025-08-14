@@ -11,8 +11,6 @@ export default function AdminOverview() {
   const [admins, setAdmins] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
-  // const [activeDropdown, setActiveDropdown] = useState(null);
-  // const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -21,19 +19,59 @@ export default function AdminOverview() {
     status: "Active",
     joined: new Date().toISOString().split("T")[0],
   });
+  const [filteredAdmins, setFilteredAdmins] = useState([]);
+
+  const [filters, setFilters] = useState({
+    year: '',
+    location: '',
+    status: '',
+    regDateFrom: '',
+    regDateTo: '',
+  });
+
+  const handleReset = () => {
+    setFilters({
+      year: '',
+      location: '',
+      status: '',
+      regDateFrom: '',
+      regDateTo: '',
+    });
+    setFilteredAdmins(admins);
+  };
+  const handleSearch = () => {
+    const filtered = admins.filter((admin) => {
+      const matchesStatus = filters.status
+        ? admin.status?.toLowerCase() === filters.status.toLowerCase()
+        : true;
+
+      const matchesDateFrom = filters.regDateFrom
+        ? new Date(admin.date_joined) >= new Date(filters.regDateFrom)
+        : true;
+
+      const matchesDateTo = filters.regDateTo
+        ? new Date(admin.date_joined) <= new Date(filters.regDateTo)
+        : true;
+
+      return matchesStatus && matchesDateFrom && matchesDateTo;
+    });
+
+    setFilteredAdmins(filtered);
+  };
 
   useEffect(() => {
-    const fetcAdminsList = async () => {
+    const fetchAdminsList = async () => {
       try {
         const data = await getAdminsList();
-        console.log(data);
         setAdmins(data);
+        setFilteredAdmins(data);
       } catch (error) {
         console.error("Error fetching admin user list:", error);
       }
     };
-    fetcAdminsList();
+    fetchAdminsList();
   }, []);
+
 
   const handleAdd = () => setShowModal(true);
 
@@ -66,18 +104,18 @@ export default function AdminOverview() {
     }
   };
 
-// State
-const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-const [activeDropdown, setActiveDropdown] = useState(null);
+  // State
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
-const handleActionClick = (id, event) => {
-  const rect = event.currentTarget.getBoundingClientRect();
-  setDropdownPosition({
-    top: rect.bottom + window.scrollY + 4, // 4px gap
-    left: rect.left + window.scrollX - 120, // shift left so it aligns nicely
-  });
-  setActiveDropdown(id);
-};
+  const handleActionClick = (id, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + window.scrollY + 4, // 4px gap
+      left: rect.left + window.scrollX - 120, // shift left so it aligns nicely
+    });
+    setActiveDropdown(id);
+  };
 
 
   const handleAction = (action, adminId) => {
@@ -152,10 +190,18 @@ const handleActionClick = (id, event) => {
         </div>
       </div>
 
-      <SearchFilter />
+      <SearchFilter
+        filters={filters}
+        setFilters={setFilters}
+        onSearch={handleSearch}
+        onReset={handleReset}
+        showYear={false}
+        showLocation={false}
+      />
 
-      <div className="overflow-x-auto scrollbar-none">
-        <table className="min-w-full bg-white rounded-md text-sm shadow">
+
+      <div className="overflow-x-auto bg-white shadow rounded-md scrollbar-none p-3">
+        <table className="min-w-full bg-white text-sm">
           <thead className="text-gray-600 ">
             <tr>
               <th className="py-4 text-left px-4 font-medium">User ID</th>
@@ -169,7 +215,7 @@ const handleActionClick = (id, event) => {
             </tr>
           </thead>
           <tbody>
-            {admins.map((admin, id) => (
+            {filteredAdmins.map((admin, id) => (
               <tr key={id} className="hover:bg-gray-50 border-gray-100">
                 <td className="py-3 px-4 font-medium text-[#5737B4]">{admin.id || 'N/A'}</td>
                 <td className="py-3 px-4">{admin.username || 'N/A'}</td>
@@ -189,19 +235,44 @@ const handleActionClick = (id, event) => {
                   {admin.date_joined ? admin.date_joined.slice(0, 10) : 'N/A'}
                 </td>
 
-                <td className="py-3 px-4">
-<button
-  onClick={(e) => handleActionClick(admin.id, e)}
-  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-  data-dropdown
->
-  <HiOutlineDotsVertical className="text-gray-500 text-lg" />
-</button>
+                <td className="py-3 px-4 relative">
+                  <button
+                    onClick={(e) => handleActionClick(admin.id, e)}
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    data-dropdown
+                  >
+                    <HiOutlineDotsVertical className="text-gray-500 text-lg" />
+                  </button>
+
+                  {/* Dropdown shown on click */}
+                  {activeDropdown === admin.id && (
+                    <div className="absolute right-0 top-0 translate-y-[-10px] flex flex-col bg-white  rounded shadow w-32 z-50">
+                      <button
+                        onClick={() => handleAction("View", admin.id)}
+                        className="px-4 py-2 text-left hover:bg-gray-100"
+                      >
+                        View
+                      </button>
+                      <button
+                        onClick={() => handleAction("Edit", admin.id)}
+                        className="px-4 py-2 text-left hover:bg-gray-100"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleAction("Suspend", admin.id)}
+                        className="px-4 py-2 text-left text-red-600 hover:bg-gray-100"
+                      >
+                        Suspend
+                      </button>
+                    </div>
+                  )}
 
                 </td>
+
               </tr>
             ))}
-            {admins.length === 0 && (
+            {filteredAdmins.length === 0 && (
               <tr>
                 <td colSpan="8" className="py-4 text-center text-gray-500">
                   No admins found.
@@ -211,37 +282,6 @@ const handleActionClick = (id, event) => {
           </tbody>
         </table>
       </div>
-
-      {/* External Dropdown Menu */}
-{activeDropdown && (
-  <div
-    className="fixed flex bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-50"
-    style={{
-      top: `${dropdownPosition.top}px`,
-      left: `${dropdownPosition.left}px`,
-    }}
-    data-dropdown
-  >
-    <button
-      onClick={() => handleAction("View", activeDropdown)}
-      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-    >
-      View
-    </button>
-    <button
-      onClick={() => handleAction("Edit", activeDropdown)}
-      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-    >
-      Edit
-    </button>
-    <button
-      onClick={() => handleAction("Delete", activeDropdown)}
-      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-    >
-      Delete
-    </button>
-  </div>
-)}
 
 
       {showModal && (

@@ -102,7 +102,7 @@ useEffect(() => {
         </h1>
         <div className="flex gap-2 ml-auto">
           <Link
-            to="/admin/vendor-documents"
+            to={`/admin/vendor-documents/${vendorData?.id}`}
             className="border border-[#5737B4] text-[#5737B4] px-4 py-2 rounded text-sm"
           >
             View Documents

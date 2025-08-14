@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import { IoChevronDown } from "react-icons/io5";
 
 
-const VehicleTable = () => {
+const VehicleTable = ({ data, onUpdateCategory, onDeleteCategory }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [vehicleData, setVehicleData] = useState([]);
 
@@ -29,15 +29,15 @@ const VehicleTable = () => {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [disableLoading, setDisableLoading] = useState(false);
   // Put this at the top of VehicleTable component, before return()
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 30 }, (_, i) => currentYear - i); // Last 30 years
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 30 }, (_, i) => currentYear - i); // Last 30 years
 
 
   useEffect(() => {
     const fetchVehicleData = async () => {
       try {
         const response = await getVehicleCategoriesApi();
-        const sortedData =response.sort((a, b) => b.id - a.id); // 
+        const sortedData = response.sort((a, b) => b.id - a.id); // 
         setVehicleData(sortedData);
       } catch (error) {
         console.error('Error fetching vehicle data:', error);
@@ -96,9 +96,10 @@ const years = Array.from({ length: 30 }, (_, i) => currentYear - i); // Last 30 
       await editVehicleCategoryApi(selectedVehicle.id, updatedVehicle);
 
       toast.success('Vehicle updated successfully!');
+      onUpdateCategory(updatedVehicle);
 
       const response = await getVehicleCategoriesApi();
-              const sortedData =response.sort((a, b) => b.id - a.id); // 
+      const sortedData = response.sort((a, b) => b.id - a.id); // 
 
       setVehicleData(sortedData);
 
@@ -113,30 +114,31 @@ const years = Array.from({ length: 30 }, (_, i) => currentYear - i); // Last 30 
 
 
   const handleConfirmDelete = async () => {
-  if (!vehicleToDelete?.id) return;
+    if (!vehicleToDelete?.id) return;
 
-  setDeleteLoading(true);
+    setDeleteLoading(true);
 
-  try {
-    await deletevehiclecategory(vehicleToDelete.id);
-    toast.success("Vehicle deleted successfully");
+    try {
+      await deletevehiclecategory(vehicleToDelete.id);
+      toast.success("Vehicle deleted successfully");
+      onDeleteCategory(vehicleToDelete.id);
 
-    // Refresh vehicle list
-    const response = await getVehicleCategoriesApi();
-    console.log(response);
-    
-    setVehicleData(response);
+      // Refresh vehicle list
+      const response = await getVehicleCategoriesApi();
+      console.log(response);
 
-    // Close modal
-    setShowDeleteModal(false);
-    setVehicleToDelete(null);
-  } catch (error) {
-    toast.error("Error deleting vehicle");
-    console.error(error);
-  } finally {
-    setDeleteLoading(false);
-  }
-};
+      setVehicleData(response);
+
+      // Close modal
+      setShowDeleteModal(false);
+      setVehicleToDelete(null);
+    } catch (error) {
+      toast.error("Error deleting vehicle");
+      console.error(error);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
 
   const handleConfirmDisable = async () => {
@@ -189,34 +191,34 @@ const years = Array.from({ length: 30 }, (_, i) => currentYear - i); // Last 30 
                   </button>
 
                   {/* Dropdown Menu */}
-                {/* Dropdown Menu */}
-{openDropdown === item.id && (
-  <div className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10">
-    <div className="flex"> {/* Changed from py-1 to flex */}
-      <button
-        onClick={() => handleAction('Edit', item)}
-        className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-      >
-        <Edit className="w-4 h-4 mr-1" />
-        Edit
-      </button>
-      <button
-        onClick={() => handleAction('Delete', item)}
-        className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
-      >
-        <Trash2 className="w-4 h-4 mr-1" />
-        Delete
-      </button>
-      <button
-        onClick={() => handleAction('Disable', item)}
-        className="flex items-center px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors"
-      >
-        <Ban className="w-4 h-4 mr-1" />
-        Disable
-      </button>
-    </div>
-  </div>
-)}
+                  {/* Dropdown Menu */}
+                  {openDropdown === item.id && (
+                    <div className="absolute right-0 mt-1 bg-white border border-gray-200 rounded-md shadow-lg z-10">
+                      <div className="flex"> {/* Changed from py-1 to flex */}
+                        <button
+                          onClick={() => handleAction('Edit', item)}
+                          className="flex items-center px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                        >
+                          <Edit className="w-4 h-4 mr-1" />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleAction('Delete', item)}
+                          className="flex items-center px-3 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Delete
+                        </button>
+                        <button
+                          onClick={() => handleAction('Disable', item)}
+                          className="flex items-center px-3 py-2 text-sm text-orange-600 hover:bg-orange-50 transition-colors"
+                        >
+                          <Ban className="w-4 h-4 mr-1" />
+                          Disable
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                 </td>
               </tr>
@@ -229,99 +231,99 @@ const years = Array.from({ length: 30 }, (_, i) => currentYear - i); // Last 30 
       {openDropdown && <div className="fixed inset-0 z-5" onClick={() => setOpenDropdown(null)} />}
 
       {/* ----------- Edit Vehicle Modal ----------- */}
- {showEditModal && (
-  <div className="fixed inset-0  bg-opacity-40 z-50 flex items-center justify-center">
-    <div className="bg-white rounded-lg p-6 w-96 shadow-lg relative">
-      <button
-        className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-        onClick={() => setShowEditModal(false)}
-      >
-        <X className="w-5 h-5" />
-      </button>
-      <h2 className="text-lg font-semibold mb-4">Edit Vehicle</h2>
-
-      <form onSubmit={handleEditSave} className="space-y-4">
-        {/* Make */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Make</label>
-          <input
-            type="text"
-            value={editedMake}
-            onChange={(e) => setEditedMake(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Model */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
-          <input
-            type="text"
-            value={editedModel}
-            onChange={(e) => setEditedModel(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        {/* Year - Select Dropdown */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-          <div className="relative">
-            <select
-              className="w-full p-3 border border-gray-300 rounded-md bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={editedYear}
-              onChange={(e) => setEditedYear(e.target.value)}
+      {showEditModal && (
+        <div className="fixed inset-0  bg-opacity-40 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-96 shadow-lg relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowEditModal(false)}
             >
-              <option value="">Select Year</option>
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-            <IoChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <X className="w-5 h-5" />
+            </button>
+            <h2 className="text-lg font-semibold mb-4">Edit Vehicle</h2>
+
+            <form onSubmit={handleEditSave} className="space-y-4">
+              {/* Make */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Make</label>
+                <input
+                  type="text"
+                  value={editedMake}
+                  onChange={(e) => setEditedMake(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Model */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                <input
+                  type="text"
+                  value={editedModel}
+                  onChange={(e) => setEditedModel(e.target.value)}
+                  className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Year - Select Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+                <div className="relative">
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-md bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={editedYear}
+                    onChange={(e) => setEditedYear(e.target.value)}
+                  >
+                    <option value="">Select Year</option>
+                    {years.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </select>
+                  <IoChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Variant - Select Dropdown */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Variant</label>
+                <div className="relative">
+                  <select
+                    className="w-full p-3 border border-gray-300 rounded-md bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={editedVariant}
+                    onChange={(e) => setEditedVariant(e.target.value)}
+                  >
+                    <option value="">Select Type</option>
+                    <option value="Petrol">Petrol</option>
+                    <option value="Diesel">Diesel</option>
+                    <option value="Electric">Electric</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </select>
+                  <IoChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded"
+                >
+                  Save
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-
-        {/* Variant - Select Dropdown */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Variant</label>
-          <div className="relative">
-            <select
-              className="w-full p-3 border border-gray-300 rounded-md bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              value={editedVariant}
-              onChange={(e) => setEditedVariant(e.target.value)}
-            >
-              <option value="">Select Type</option>
-              <option value="Petrol">Petrol</option>
-              <option value="Diesel">Diesel</option>
-              <option value="Electric">Electric</option>
-              <option value="Hybrid">Hybrid</option>
-            </select>
-            <IoChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-          </div>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex justify-end space-x-3 mt-6">
-          <button
-            type="button"
-            className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded"
-            onClick={() => setShowEditModal(false)}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700 rounded"
-          >
-            Save
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
+      )}
 
 
       {/* ----------- Delete Confirmation Modal ----------- */}

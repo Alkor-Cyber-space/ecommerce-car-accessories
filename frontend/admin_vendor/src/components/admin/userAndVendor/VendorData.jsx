@@ -10,19 +10,68 @@ export default function VendorDataTable() {
   const [locationFilter, setLocationFilter] = useState('');
   const [search, setSearch] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
+const [filteredVendors, setFilteredVendors] = useState([]);
 
-  useEffect(() => {
-    const fetchVendorList = async () => {
-      try {
-        const data = await getVendorList();
-        setVendors(data);
-      } catch (error) {
-        console.error("Error fetching vendor list:", error);
-      }
-    };
-    fetchVendorList();
-  }, []);
+  const [filters, setFilters] = useState({
+    year: '',
+    location: '',
+    status: '',
+    regDateFrom: '',
+    regDateTo: '',
+  });
 
+  const handleReset = () => {
+    setFilters({
+      year: '',
+      location: '',
+      status: '',
+      regDateFrom: '',
+      regDateTo: '',
+    });
+    setFilteredVendors(vendors);
+  };
+  const handleSearch = () => {
+  const filtered = vendors.filter(vendor => {
+    const matchesYear = filters.year
+      ? new Date(vendor.date_joined).getFullYear().toString() === filters.year
+      : true;
+
+    const matchesLocation = filters.location
+      ? vendor.location?.toLowerCase().includes(filters.location.toLowerCase())
+      : true;
+
+    const matchesStatus = filters.status
+      ? vendor.status === filters.status
+      : true;
+
+    const matchesRegDateFrom = filters.regDateFrom
+      ? new Date(vendor.date_joined) >= new Date(filters.regDateFrom)
+      : true;
+
+    const matchesRegDateTo = filters.regDateTo
+      ? new Date(vendor.date_joined) <= new Date(filters.regDateTo)
+      : true;
+
+    return matchesYear && matchesLocation && matchesStatus && matchesRegDateFrom && matchesRegDateTo;
+  });
+
+  setFilteredVendors(filtered);
+};
+
+useEffect(() => {
+  const fetchVendorList = async () => {
+    try {
+      const data = await getVendorList();
+      setVendors(data);
+      setFilteredVendors(data); 
+    } catch (error) {
+      console.error("Error fetching vendor list:", error);
+    }
+  };
+  fetchVendorList();
+}, []);
+
+  
   const handleStatusChange = (id, newStatus) => {
     const updated = vendors.map(vendor =>
       vendor.id === id ? { ...vendor, status: newStatus } : vendor
@@ -30,18 +79,18 @@ export default function VendorDataTable() {
     setVendors(updated);
   };
 
-  const filteredVendors = vendors.filter(vendor => {
-    const matchesSearch = search === '' ||
-      vendor.name?.toLowerCase().includes(search.toLowerCase()) ||
-      vendor.email?.toLowerCase().includes(search.toLowerCase()) ||
-      vendor.id?.toString().includes(search);
+  // const filteredVendors = vendors.filter(vendor => {
+  //   const matchesSearch = search === '' ||
+  //     vendor.name?.toLowerCase().includes(search.toLowerCase()) ||
+  //     vendor.email?.toLowerCase().includes(search.toLowerCase()) ||
+  //     vendor.id?.toString().includes(search);
 
-    return (
-      matchesSearch &&
-      (statusFilter ? vendor.status === statusFilter : true) &&
-      (locationFilter ? vendor.location === locationFilter : true)
-    );
-  });
+  //   return (
+  //     matchesSearch &&
+  //     (statusFilter ? vendor.status === statusFilter : true) &&
+  //     (locationFilter ? vendor.location === locationFilter : true)
+  //   );
+  // });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -81,7 +130,6 @@ export default function VendorDataTable() {
 
   return (
     <div className="bg-[#ECECF0] px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-10 rounded-2xl w-full space-y-4 sm:space-y-6">
-      
       {/* Header */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <h1 className="text-[#232832] text-lg sm:text-xl font-bold">Vendors Overview</h1>
@@ -113,12 +161,20 @@ export default function VendorDataTable() {
       </div>
 
       {/* Filters */}
-      <SearchFilter />
+      <SearchFilter
+        filters={filters}
+        setFilters={setFilters}
+        onSearch={handleSearch}
+        onReset={handleReset}
+        showYear={true}
+        showLocation={true}
+        showStatus={true}
+      />
 
       {/* Unified Responsive Table */}
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm  scrollbar-none">
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm  scrollbar-none p-3">
         <table className="min-w-[800px] w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className=" text-gray-600">
             <tr>
               <th className="py-3 px-4 text-left">User ID</th>
               <th className="py-3 px-4 text-left">Vendor Name</th>
@@ -155,41 +211,40 @@ export default function VendorDataTable() {
                 <td className="py-3 px-4 font-medium">{vendor.totalProducts || 0}</td>
                 <td className="py-3 px-4 font-medium">{vendor.totalOrders || 0}</td>
                 <td className="py-3 px-4 relative">
-  <button
-    onClick={(e) => {
-      e.stopPropagation();
-      handleActionClick(vendor.id + index);
-    }}
-    className="p-1 hover:bg-gray-100 rounded-full"
-  >
-    <HiOutlineDotsVertical className="text-gray-500 text-lg" />
-  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleActionClick(vendor.id + index);
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded-full"
+                  >
+                    <HiOutlineDotsVertical className="text-gray-500 text-lg" />
+                  </button>
 
-  {activeDropdown === vendor.id + index && (
-    <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-      <Link
-        to="/admin/user-details"
-        onClick={() => handleAction('View', vendor)}
-        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
-      >
-        View
-      </Link>
-      <button
-        onClick={() => handleAction('Edit', vendor)}
-        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-      >
-        Edit
-      </button>
-      <button
-        onClick={() => handleAction('Suspend', vendor)}
-        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
-      >
-        Suspend
-      </button>
-    </div>
-  )}
-</td>
-
+                  {activeDropdown === vendor.id + index && (
+                    <div className="absolute right-0 top-0 translate-y-[-10px] w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                      <Link
+                        to="/admin/user-details"
+                        onClick={() => handleAction('View', vendor)}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                      >
+                        View
+                      </Link>
+                      <button
+                        onClick={() => handleAction('Edit', vendor)}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleAction('Suspend', vendor)}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
+                      >
+                        Suspend
+                      </button>
+                    </div>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
