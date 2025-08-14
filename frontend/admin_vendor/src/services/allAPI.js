@@ -536,3 +536,93 @@ export const deletevehiclecategory = async (categoryId) => {
   }
 };
 
+// list unverified vendors ---admin
+export const getUnverifiedVendorsApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/vendors/unverified/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching unverified vendors:", error);
+    throw error;
+  }
+};
+
+export const getVendorProfileDocumentsApi = async (vendorId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/auth/vendor_profile_update/${vendorId}/`, {}, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor profile documents:", error);
+    throw error;
+  }
+};
+
+export const ApproveorRejectApi = async (vendorId, documentKey, action) => {
+  try {
+    const token = localStorage.getItem("access_token");
+
+    const response = await axios.put(
+      `${serverurl}/auth/vendor_profile_update/${vendorId}/`,
+      { [documentKey]: action }, // dynamic key update (e.g. "pan_card_status": "approved")
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error approving/rejecting document:", error);
+    throw error;
+  }
+};
+
+// export const FinalApproveVendorApi = async (vendorId) => {
+//   try {
+//     const token = localStorage.getItem("access_token");
+//     const response = await axios.post(
+//       `${serverurl}/auth/vendor-final-approve/${vendorId}/`,
+//       null,
+//       {
+//         headers: {
+//           Authorization: `JWT ${token}`,
+//         },
+//       }
+//     );
+
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error final approving vendor:", error);
+//     throw error;
+//   }
+// };
+export const FinalApproveVendorApi = async (vendorId, finalStatus = 'approved') => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(
+      `${serverurl}/auth/vendor-final-approve/${vendorId}/`,
+      { final_status: finalStatus }, // Send status in body
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error updating final status for vendor:", error);
+    throw error;
+  }
+};
