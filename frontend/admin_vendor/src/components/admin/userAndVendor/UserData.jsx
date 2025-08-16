@@ -3,60 +3,30 @@ import { BsSearch } from "react-icons/bs";
 import { HiOutlineDotsVertical } from "react-icons/hi";
 import SearchFilter from '../../../pages/admin/SearchFilter';
 import { Link } from 'react-router-dom';
-
-const usersData = [
-  {
-    id: "00975",
-    name: 'Arjun Kumar',
-    email: 'arjun.kumar@email.com',
-    phone: '+91 9876543210',
-    location: 'Delhi',
-    status: 'Active',
-    joined: '23/12/2024',
-    lastActive: '23/12/2024 10am',
-    totalOrders: '75,999'
-  },
-  {
-    id: "00977",
-    name: 'Aravind Singh',
-    email: 'aravind.singh@email.com',
-    phone: '+91 9988776655',
-    location: 'Mumbai',
-    status: 'Active',
-    joined: '23/12/2024',
-    lastActive: '23/12/2024 10am',
-    totalOrders: '18,499'
-  },
-  {
-    id: "00978",
-    name: 'Geeta Sharma',
-    email: 'geeta.sharma@email.com',
-    phone: '+91 9123456780',
-    location: 'Mumbai',
-    status: 'Pending Verification',
-    joined: '23/12/2024',
-    lastActive: '23/12/2024 10am',
-    totalOrders: '11,990'
-  },
-  {
-    id: "00979",
-    name: 'Wasim Khan',
-    email: 'wasim.khan@email.com',
-    phone: '+91 9876501234',
-    location: 'Mumbai',
-    status: 'Suspended',
-    joined: '23/12/2024',
-    lastActive: '23/12/2024 10am',
-    totalOrders: '75,999'
-  }
-];
+import { getUserList } from '../../../services/allAPI';
 
 export default function UserDataTable() {
-  const [users, setUsers] = useState(usersData);
+  const [users, setUsers] = useState([]);
   const [statusFilter, setStatusFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [search, setSearch] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState(null);
+
+
+
+  useEffect(() => {
+    const fetchUserList = async () => {
+      try {
+        const data = await getUserList();
+        console.log(data);
+        setUsers(data);
+      } catch (error) {
+        console.error("Error fetching user list:", error);
+      }
+    };
+    fetchUserList();
+  }, []);
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = search === '' ||
@@ -85,8 +55,19 @@ export default function UserDataTable() {
     }
   };
 
-  const handleActionClick = (userId) => {
-    setActiveDropdown(activeDropdown === userId ? null : userId);
+  const handleActionClick = (id, e) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    // setDropdownPosition({
+    //   top: rect.bottom + 4, // space below button
+    //   left: rect.left - 60, // shift horizontally if needed
+    // });
+    setActiveDropdown(id);
+  };
+
+  const closeDropdown = () => {
+    setActiveDropdown(null);
+    setDropdownPosition(null);
   };
 
   const handleAction = (action, userId) => {
@@ -116,7 +97,7 @@ export default function UserDataTable() {
       </div>
       <div className="bg-white rounded-xl w-full md:w-[28%] flex flex-col md:flex-row items-center justify-between px-4 py-4">
         <p className="text-base md:text-lg text-gray-700">Total User :</p>
-        <h1 className="text-3xl font-semibold text-black mr-5 md:mr-2">256</h1>
+        <h1 className="text-3xl font-semibold text-black mr-5 md:mr-2">{users?.length}</h1>
       </div>
 
       <SearchFilter />
@@ -137,49 +118,52 @@ export default function UserDataTable() {
             </tr>
           </thead>
           <tbody>
-            {filteredUsers.map((user, index) => (
+            {users.map((user, index) => (
               <tr key={`${user.id}-${index}`} className="text-left hover:bg-gray-50 border-b border-gray-100">
-                <td className="py-3 px-4 font-medium text-[#5737B4]"><Link to='/admin/user-details'>{user.id}</Link></td> 
-                <td className="py-3 px-4">{user.name}</td>
-                <td className="py-3 px-4">{user.email}</td>
-                <td className="py-3 px-4">{user.phone}</td>
-                <td className="py-3 px-4">{user.joined}</td>
+                <td className="py-3 px-4 font-medium text-[#5737B4]"><Link to='/admin/user-details'>{user.id}</Link></td>
+                <td className="py-3 px-4">{user.username || 'N/A'}</td>
+                <td className="py-3 px-4">{user.email || 'N/A'}</td>
+                <td className="py-3 px-4">{user.phone_number || 'N/A'}</td>
+                <td className="py-3 px-4">{user.date_joined ? user.date_joined.slice(0, 10) : 'N/A'}</td>
                 <td className="py-3 px-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(user.status)}`}>
-                    {user.status}
+                    {user.status || 'N/A'}
                   </span>
                 </td>
-                <td className="py-3 px-4">{user.lastActive}</td>
-                <td className="py-3 px-4 font-medium">₹ {user.totalOrders}</td>
-                <td className="py-3 px-4 relative">
+                <td className="py-3 px-4">{user.lastActive || 'N/A'}</td>
+                <td className="py-3 px-4 font-medium">₹ {user.totalOrders || 'N/A'}</td>
+                <td className="py-3 px-4">
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleActionClick(user.id + index);
-                    }}
+                    onClick={(e) => handleActionClick(user.id + index, e)}
                     className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                   >
                     <HiOutlineDotsVertical className="text-gray-500 text-lg" />
                   </button>
-
-                  {activeDropdown === user.id + index && (
-                    <div className="absolute right-0 top-8 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  {activeDropdown && dropdownPosition && (
+                    <div
+                      className="fixed bg-white border border-gray-200 rounded-lg shadow-lg z-50 flex items-center gap-3 px-3 py-2"
+                      // style={{
+                      //   top: dropdownPosition.top,
+                      //   left: dropdownPosition.left,
+                      // }}
+                    >
                       <button
-                        onClick={() => handleAction('View', user.id)}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
-                      > <Link to='/admin/user-details'>View</Link>
+                        onClick={() => handleAction('View', activeDropdown)}
+                        className="text-sm text-gray-700 hover:text-gray-900"
+                      >
+                        View
                       </button>
                       <button
-                        onClick={() => handleAction('Edit', user.id)}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => handleAction('Edit', activeDropdown)}
+                        className="text-sm text-gray-700 hover:text-gray-900"
                       >
                         Edit
                       </button>
                       <button
-                        onClick={() => handleAction('Suspend', user.id)}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
+                        onClick={() => handleAction('Delete', activeDropdown)}
+                        className="text-sm text-red-600 hover:text-red-800"
                       >
-                        Suspend
+                        Delete
                       </button>
                     </div>
                   )}

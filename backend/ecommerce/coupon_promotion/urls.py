@@ -13,4 +13,7 @@ urlpatterns = [
     path('coupon/<int:pk>/', CouponAPIView.as_view(),name='coupon-create-single'),
     path('coupon/apply-coupon/', ApplycouponAPIView.as_view(), name='apply-coupon'),
 
+    path('banner-create/',BannerAPIview.as_view(),name='banner-create-get'),
+    path('banner-update-delete/<int:pk>/',RetrieveBannerAPIview.as_view(),name='banner-update-delete')
+
 ]   

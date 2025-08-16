@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 from accounts.models import CustomUser
-from vehicles.models import VariantYear
+from vehicles.models import VehicleVariant
 from django.core.validators import MinValueValidator, MaxValueValidator
 # Create your models here.
 
@@ -28,7 +28,7 @@ class Product(models.Model):
     is_best_seller = models.BooleanField(default=False)
     is_top_rated = models.BooleanField(default=False)
     is_popular = models.BooleanField(default=False)
-    compatible_varient_year = models.ManyToManyField('vehicles.VariantYear', blank=True, related_name='compatible_products')
+    compatible_varient_year = models.ManyToManyField('vehicles.VehicleVariant', blank=True, related_name='compatible_products')
 
     def __str__(self):
         return self.name

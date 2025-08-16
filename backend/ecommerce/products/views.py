@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError 
-from vehicles.models import VehicleMake, VehicleModel, Year, Variant, VariantYear
+from vehicles.models import *
 from rest_framework.views import APIView
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
@@ -29,10 +29,10 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
-class ProductViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [permissions.AllowAny]
+# class ProductViewSet(viewsets.ReadOnlyModelViewSet):
+#     queryset = Product.objects.all()
+#     serializer_class = ProductSerializer
+#     permission_classes = [permissions.AllowAny]
 
 class ProductListAPIView(APIView):
     """
@@ -41,10 +41,21 @@ class ProductListAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
+        print("hgamshgasdhgasdjh")
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
+class CategoryListAPIView(APIView):
+    """
+    Return all products.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        categories = Category.objects.all()
+        serializer = CategorySerializer(categories, many=True, context={'request': request})
+        return Response(serializer.data)
 
 class ProductSearchAPIView(APIView):
     """
@@ -85,41 +96,41 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class VehicleProductSearchViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.AllowAny]  # Or IsAuthenticated, as required.
+# class VehicleProductSearchViewSet(viewsets.ViewSet):
+#     permission_classes = [permissions.AllowAny]  # Or IsAuthenticated, as required.
 
-    @action(detail=False, methods=['get'], url_path='vehicle-specific')
-    def vehicle_specific(self, request):
-        manufacturer = request.query_params.get('manufacturer')  # Expecting VehicleMake name
-        model = request.query_params.get('model')               # Expecting VehicleModel name
-        year = request.query_params.get('year')                 # Integer
-        variant = request.query_params.get('variant')           # Expecting Variant name
+#     @action(detail=False, methods=['get'], url_path='vehicle-specific')
+#     def vehicle_specific(self, request):
+#         manufacturer = request.query_params.get('manufacturer')  # Expecting VehicleMake name
+#         model = request.query_params.get('model')               # Expecting VehicleModel name
+#         year = request.query_params.get('year')                 # Integer
+#         variant = request.query_params.get('variant')           # Expecting Variant name
 
-        if not (manufacturer and model and year and variant):
-            return Response(
-                {"error": "Please provide manufacturer, model, year, and variant as query parameters."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+#         if not (manufacturer and model and year and variant):
+#             return Response(
+#                 {"error": "Please provide manufacturer, model, year, and variant as query parameters."},
+#                 status=status.HTTP_400_BAD_REQUEST
+#             )
 
-        try:
-            make_obj = VehicleMake.objects.get(name__iexact=manufacturer)
-            model_obj = VehicleModel.objects.get(make=make_obj, name__iexact=model)
-            year_obj = Year.objects.get(year=year)
-            variant_obj = Variant.objects.get(model=model_obj, name__iexact=variant)
-            variant_year_obj = VariantYear.objects.get(variant=variant_obj, year=year_obj)
+#         try:
+#             make_obj = VehicleMake.objects.get(name__iexact=manufacturer)
+#             model_obj = VehicleModel.objects.get(make=make_obj, name__iexact=model)
+#             year_obj = Year.objects.get(year=year)
+#             variant_obj = Variant.objects.get(model=model_obj, name__iexact=variant)
+#             variant_year_obj = VariantYear.objects.get(variant=variant_obj, year=year_obj)
 
-            products = Product.objects.filter(compatible_varient_year=variant_year_obj).distinct()
+#             products = Product.objects.filter(compatible_varient_year=variant_year_obj).distinct()
 
-            serializer = ProductSerializer(products, many=True, context={'request': request})
-            return Response(serializer.data, status=status.HTTP_200_OK)
+#             serializer = ProductSerializer(products, many=True, context={'request': request})
+#             return Response(serializer.data, status=status.HTTP_200_OK)
 
-        except VehicleMake.DoesNotExist:
-            return Response({"error": "Manufacturer not found."}, status=status.HTTP_404_NOT_FOUND)
-        except VehicleModel.DoesNotExist:
-            return Response({"error": "Model not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Year.DoesNotExist:
-            return Response({"error": "Year not found."}, status=status.HTTP_404_NOT_FOUND)
-        except Variant.DoesNotExist:
-            return Response({"error": "Variant not found."}, status=status.HTTP_404_NOT_FOUND)
-        except VariantYear.DoesNotExist:
-            return Response({"error": "Variant-Year combination not found."}, status=status.HTTP_404_NOT_FOUND)
+#         except VehicleMake.DoesNotExist:
+#             return Response({"error": "Manufacturer not found."}, status=status.HTTP_404_NOT_FOUND)
+#         except VehicleModel.DoesNotExist:
+#             return Response({"error": "Model not found."}, status=status.HTTP_404_NOT_FOUND)
+#         except Year.DoesNotExist:
+#             return Response({"error": "Year not found."}, status=status.HTTP_404_NOT_FOUND)
+#         except Variant.DoesNotExist:
+#             return Response({"error": "Variant not found."}, status=status.HTTP_404_NOT_FOUND)
+#         except VariantYear.DoesNotExist:
+#             return Response({"error": "Variant-Year combination not found."}, status=status.HTTP_404_NOT_FOUND)

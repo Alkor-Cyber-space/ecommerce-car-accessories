@@ -15,6 +15,14 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
+from products.serializers import CategorySerializer
+from vehicles.serializers import VehicleFullEntrySerializer
+from products.models import Category
+from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
+from products.models import *
+from .serializers import *
+from accounts.models import VendorDocuments
+from accounts.mixin import AuditLogMixin
 
 User = get_user_model()
 # Create your views here.
@@ -33,6 +41,12 @@ class AdminLoginAPIView(APIView):
         user = User.objects.filter(email=email_or_username).first()
         if not user:
             user = User.objects.filter(username=email_or_username).first()
+        
+        if not user:
+            return Response({"error": "No account found with the provided email/username."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not user.check_password(password):
+            return Response({"error": "Incorrect password."}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user and user.check_password(password):
             if user.groups.filter(name='Admin').exists():  # or `user.role == 'admin'` if you're using a field
@@ -152,7 +166,6 @@ class UserListViewSet(viewsets.ReadOnlyModelViewSet):
         return Response({'message':'user blocked successfully'}, status=status.HTTP_200_OK)
 
 
-
 class VendorApprove(generics.GenericAPIView):
     queryset = VendorProfile.objects.all()
     serializer_class = VendorSerializer
@@ -174,3 +187,95 @@ class VendorApprove(generics.GenericAPIView):
                 "message": "Error approving vendor.",
                 "error": str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
+
+# Category CRUD by Vendor
+class AdminCategoryViewSet(AuditLogMixin,viewsets.ModelViewSet):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class AdminVehicleCreate(APIView):
+    def post(self, request):
+        serializer = VehicleFullEntrySerializer(data=request.data)
+        if serializer.is_valid():
+            variant = serializer.save()
+            return Response({
+                "message": "Vehicle entry saved successfully.",
+                "data": {
+                    "make": variant.make.name,
+                    "model": variant.model.name,
+                    "variant": variant.variant,
+                    "year": variant.year
+                }
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class VendorViewProductAPIView(APIView):
+
+    def post(self,request):
+        pk=request.data.get('pk')
+        if not pk:
+            return Response({
+                "status" : "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "pk is mandatory"
+            },status=status.HTTP_400_BAD_REQUEST)
+        
+        custom_user=Product.objects.filter(vendor_id=pk)
+        if not custom_user:
+            return Response({
+                "status" : "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "user does not exist"
+            },status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer=VendorViewProductSerilizer(custom_user , many=True)
+        return Response({
+            "status" : "success",
+            "code": status.HTTP_200_OK,
+            "data": serializer.data
+        },status=status.HTTP_200_OK)
+
+
+class UnverifiedVendorsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
+        serializer = VendorDocumentsSerializer(unverified_vendors, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AdminVehicleUpdate(APIView):
+    def put(self, request, pk):
+        try:
+            variant = VehicleVariant.objects.get(pk=pk)
+        except VehicleVariant.DoesNotExist:
+            return Response({"error": "Vehicle entry not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = VehicleFullEntrySerializer(instance=variant, data=request.data)
+        if serializer.is_valid():
+            updated_variant = serializer.save()
+            return Response({
+                "message": "Vehicle entry updated successfully.",
+                "data": {
+                    "make": updated_variant.make.name,
+                    "model": updated_variant.model.name,
+                    "variant": updated_variant.variant,
+                    "year": updated_variant.year
+                }
+            }, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class AdminVehicleDelete(APIView):
+    def delete(self, request, pk):
+        try:
+            variant = VehicleVariant.objects.get(pk=pk)
+            variant.delete()
+            return Response({"message": "Vehicle entry deleted successfully."}, status=status.HTTP_200_OK)
+        except VehicleVariant.DoesNotExist:
+            return Response({"error": "Vehicle entry not found."}, status=status.HTTP_404_NOT_FOUND)
+

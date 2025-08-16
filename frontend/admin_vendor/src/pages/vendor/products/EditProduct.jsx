@@ -26,7 +26,7 @@ export default function EditProduct() {
         dispatch(fetchProductById(id));
     }, [dispatch, id]);
 
-    //  Sync fetched product to formData
+    //  Sync fetched product to formData 
     useEffect(() => {
         if (productDetails && productDetails.id) {
             setFormData({ ...productDetails });
@@ -113,7 +113,7 @@ export default function EditProduct() {
         }
         Object.values(productImages).forEach((file) => {
             if (file) {
-                form.append("image_list", file);
+                form.append("images", file);
                 console.log(`Appending file: ${file.name}`);
             }
         });

@@ -65,6 +65,8 @@ import TaxReport from './components/admin/reports/TaxReport';
 import InventoryOverview from './components/admin/inventoryControl/InventoryOverview';
 import StockTable from './components/admin/inventoryControl/StockManagement';
 import VendorsDoc from './components/admin/userAndVendor/VendorsDoc';
+import IndexCatogery from './pages/admin/Catogery/IndexCatogery';
+import NewVendorRequest from './components/admin/userAndVendor/NewVendorRequest';
 
 
 
@@ -97,9 +99,12 @@ function App() {
           <Route path='tax-reports' element={<TaxReport />} />
           <Route path='search-filter' element={<SearchFilter />} />
           <Route path='auditlogs' element={<AuditLogs />} />
-          <Route path='user-details' element={<UserDetails />} />
+          <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
+          <Route path='index-catogery' element={<IndexCatogery />} />
+          <Route path='new-vendor-request' element={<NewVendorRequest />} />
+
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}

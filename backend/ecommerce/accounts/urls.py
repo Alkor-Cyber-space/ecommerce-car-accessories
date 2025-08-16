@@ -20,7 +20,8 @@ urlpatterns = [
     path('otp-verification/',OTPVerification.as_view(),name='otp-verification'),
     path('resend-otp/',ResendOptVerification.as_view(),name='resend-otp'),
 
-    path('sms-otp-verification',RegisterView.as_view(),name='otp-sms-verification')
+    path('vendor_profile_update/<int:pk>/', VendorProfileUpdateView.as_view(), name='vendor-profile-update'),
+    path('vendor-final-approve/<int:vendor_profile_id>/',VendorDocumentsFinalApprovalView.as_view(),name='vendor-final-approve'),
     # path('vendor-edit/vendor-profile/<int:user_id>/', VendorProfileEditAPIView.as_view()),
     # path('user-profile/<int:user_id>/', UserProfileEditAPIView.as_view(), name='user-profile-edit'),
 

@@ -21,7 +21,7 @@ const SearchFilter = () => {
 
   return (
 
-    <div className='bg-white rounded-xl px-8 py-5 w-full md:w-4xl'>
+    <div className='bg-white rounded-xl px-8 py-5 w-full sm:w-sm md:w-xl  lg:w-4xl'>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4  ">
       {/* Row 1 */}
       <div>

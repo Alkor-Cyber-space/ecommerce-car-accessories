@@ -63,16 +63,18 @@ const handleSubmit = async (e) => {
 
     const response = await verifyVendorOtpApi(payload);
 
-    console.log("✅ OTP verified via backend:", response.data);
+    console.log(response.data);
+    toast.success(response.data)
 
     dispatch(setOtpVerified(true));
     dispatch(setCurrentStep(0));
     localStorage.setItem("vendorOtpVerified", "true");
     dispatch(resetVendorRegistration());
-    // navigate("/vendor-register/company-details");
+    navigate("/vendor-register/company-details");
 
   } catch (error) {
-    console.error("❌ OTP verification failed:", error);
+    console.error("OTP verification failed:", error);
+    toast.error(response.data);
     const msg = error?.response?.data?.error || "Invalid OTP. Please try again.";
     alert(msg);
   }
@@ -88,24 +90,24 @@ const handleSubmit = async (e) => {
     try {
       const result = await resendOtpApi(email);
       console.log(result);
-      
       if(result.status === 200){
       toast.success("OTP resent successfully to your email.");
       setResendTimer(60); 
+      }else{
+      toast.error(result.data);
       }
-
     } catch (error) {
       console.error(" Failed to resend OTP:", error);
       const msg = error?.response?.data?.error || "Failed to resend OTP. Try again.";
-      toast.error(msg);
+      toast.error(error?.response.data.error);
     }
   };
-useEffect(() => {
-  const isVerified = localStorage.getItem("vendorOtpVerified") === "true";
-  if (isVerified) {
-    navigate("/vendor-register/company-details", { replace: true }); // ✅ 'replace' avoids pushing verify page into history
-  }
-}, []);
+// useEffect(() => {
+//   const isVerified = localStorage.getItem("vendorOtpVerified") === "true";
+//   if (isVerified) {
+//     navigate("/vendor-register/company-details", { replace: true }); 
+//   }
+// }, []);
 
 
   return (

@@ -2,120 +2,215 @@
 from rest_framework import serializers
 from .models import *
 
+# class VehicleMakeSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = VehicleMake
+#         fields = '__all__'
+
+#     def validate(self, attrs):
+#         if not attrs.get('name'):
+#             raise serializers.ValidationError("Name is required.")
+#         return attrs
+
+
+# class VehicleModelSerializer(serializers.ModelSerializer):
+#     make = VehicleMakeSerializer(read_only=True)
+#     make_id = serializers.PrimaryKeyRelatedField(
+#         queryset=VehicleMake.objects.all(), source='make', write_only=True
+#     ) 
+#     class Meta:
+#         model = VehicleModel
+#         fields = '__all__'
+
+#     def validate(self, attrs):
+#         if not attrs.get('name'):
+#             raise serializers.ValidationError("Name is required.")
+#         return attrs
+    
+
+# class YearSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Year
+#         fields = '__all__'
+
+#     def validate(self, attrs):
+#         if attrs.get('year') <= 2002:
+#             raise serializers.ValidationError("Year must be greater than 2002.")
+#         return attrs
+    
+
+# class VariantSerializer(serializers.ModelSerializer):
+#     model = VehicleModelSerializer(read_only=True)
+#     model_id = serializers.PrimaryKeyRelatedField( 
+#         queryset=VehicleModel.objects.all(),
+#         source='model',
+#         write_only=True
+#     )
+#     class Meta:
+#         model = Variant
+#         fields = '__all__'
+
+#     def validate(self, attrs):
+#         if not attrs.get('name'):
+#             raise serializers.ValidationError("Name is required.")
+#         return attrs
+    
+
+# class ModelYearSerializer(serializers.ModelSerializer):
+#     model = serializers.PrimaryKeyRelatedField(
+#         read_only=True
+#     )
+#     year = serializers.PrimaryKeyRelatedField(
+#         read_only=True
+#     )
+#     model_id = serializers.PrimaryKeyRelatedField(
+#         queryset=VehicleModel.objects.all(),
+#         source='model',
+#         write_only=True
+#     )
+#     year_id = serializers.PrimaryKeyRelatedField(
+#         queryset=Year.objects.all(),
+#         source='year',
+#         write_only=True
+#     )
+#     class Meta:
+#         model = ModelYear
+#         fields = '__all__'
+
+#     def validate(self, attrs):
+#         if not attrs.get('model') or not attrs.get('year'):
+#             raise serializers.ValidationError("Model and Year are required.")
+#         return attrs
+    
+
+# class VariantYearSerializer(serializers.ModelSerializer):
+#     variant = serializers.PrimaryKeyRelatedField(
+#         read_only=True
+#     )
+#     year = serializers.PrimaryKeyRelatedField(
+#         read_only=True
+#     )
+#     variant_id = serializers.PrimaryKeyRelatedField(
+#         queryset=Variant.objects.all(),
+#         source='variant',
+#         write_only=True
+#     )
+#     year_id = serializers.PrimaryKeyRelatedField(
+#         queryset=Year.objects.all(),
+#         source='year',
+#         write_only=True
+#     )
+#     class Meta:
+#         model = VariantYear
+#         fields = '__all__'
+
+#     def validate(self, attrs):
+#         if not attrs.get('variant') or not attrs.get('year'):
+#             raise serializers.ValidationError("Variant and Year are required.")
+#         return attrs
+
+class VehicleVariantReadSerializer(serializers.ModelSerializer):
+    make = serializers.CharField(source='make.name')
+    model = serializers.CharField(source='model.name')
+
+    class Meta:
+        model = VehicleVariant
+        fields = ['id', 'make', 'model', 'variant','year']
+
+
+class VehicleFullEntrySerializer(serializers.Serializer):
+    make = serializers.CharField()
+    model = serializers.CharField()
+    variant = serializers.ChoiceField(choices=['Petrol', 'Diesel', 'CNG', 'Electric'])
+    year = serializers.IntegerField()
+
+    def create(self, validated_data):
+        make_name = validated_data['make']
+        model_name = validated_data['model']
+        variant = validated_data['variant']
+        year = validated_data['year']
+
+        # Get or create Make
+        make_obj, _ = VehicleMake.objects.get_or_create(name__iexact=make_name, defaults={'name': make_name})
+
+        # Get or create Model
+        model_obj, _ = VehicleModel.objects.get_or_create(make=make_obj, name__iexact=model_name, defaults={'name': model_name})
+
+        # Create Variant
+        variant_obj, created = VehicleVariant.objects.get_or_create(
+            make=make_obj,
+            model=model_obj,
+            variant=variant,
+            year=year
+        )
+
+        return variant_obj
+
+    def update(self, instance, validated_data):
+        make_name = validated_data.get('make', instance.make.name)
+        model_name = validated_data.get('model', instance.model.name)
+        variant = validated_data.get('variant', instance.variant)
+        year = validated_data.get('year', instance.year)
+
+        make_obj, _ = VehicleMake.objects.get_or_create(
+            name__iexact=make_name,
+            defaults={'name': make_name}
+        )
+        model_obj, _ = VehicleModel.objects.get_or_create(
+            make=make_obj,
+            name__iexact=model_name,
+            defaults={'name': model_name}
+        )
+
+        instance.make = make_obj
+        instance.model = model_obj
+        instance.variant = variant
+        instance.year = year
+        instance.save()
+
+        return instance
+
+
+# class VehicleVariantReadSerializer(serializers.ModelSerializer):
+#     make = serializers.CharField(source='make.name')
+#     model = serializers.CharField(source='model.name')
+
+#     class Meta:
+#         model = VehicleVariant
+#         fields = ['id', 'make', 'model', 'variant', 'year']
+
 class VehicleMakeSerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleMake
-        fields = '__all__'
-
-    def validate(self, attrs):
-        if not attrs.get('name'):
-            raise serializers.ValidationError("Name is required.")
-        return attrs
+        fields = ['id', 'name']
 
 
 class VehicleModelSerializer(serializers.ModelSerializer):
-    make = VehicleMakeSerializer(read_only=True)
-    make_id = serializers.PrimaryKeyRelatedField(
-        queryset=VehicleMake.objects.all(), source='make', write_only=True
-    ) 
+    make = VehicleMakeSerializer()
+
     class Meta:
         model = VehicleModel
-        fields = '__all__'
+        fields = ['id', 'name', 'make']
 
-    def validate(self, attrs):
-        if not attrs.get('name'):
-            raise serializers.ValidationError("Name is required.")
-        return attrs
-    
 
-class YearSerializer(serializers.ModelSerializer):
+class VehicleVariantSerializer(serializers.ModelSerializer):
+    make = VehicleMakeSerializer()
+    model = VehicleModelSerializer()
+
     class Meta:
-        model = Year
-        fields = '__all__'
+        model = VehicleVariant
+        fields = ['id', 'make', 'model', 'variant', 'year']
 
-    def validate(self, attrs):
-        if attrs.get('year') <= 2002:
-            raise serializers.ValidationError("Year must be greater than 2002.")
-        return attrs
-    
-
-class VariantSerializer(serializers.ModelSerializer):
-    model = VehicleModelSerializer(read_only=True)
-    model_id = serializers.PrimaryKeyRelatedField( 
-        queryset=VehicleModel.objects.all(),
-        source='model',
-        write_only=True
-    )
-    class Meta:
-        model = Variant
-        fields = '__all__'
-
-    def validate(self, attrs):
-        if not attrs.get('name'):
-            raise serializers.ValidationError("Name is required.")
-        return attrs
-    
-
-class ModelYearSerializer(serializers.ModelSerializer):
-    model = serializers.PrimaryKeyRelatedField(
-        read_only=True
-    )
-    year = serializers.PrimaryKeyRelatedField(
-        read_only=True
-    )
-    model_id = serializers.PrimaryKeyRelatedField(
-        queryset=VehicleModel.objects.all(),
-        source='model',
-        write_only=True
-    )
-    year_id = serializers.PrimaryKeyRelatedField(
-        queryset=Year.objects.all(),
-        source='year',
-        write_only=True
-    )
-    class Meta:
-        model = ModelYear
-        fields = '__all__'
-
-    def validate(self, attrs):
-        if not attrs.get('model') or not attrs.get('year'):
-            raise serializers.ValidationError("Model and Year are required.")
-        return attrs
-    
-
-class VariantYearSerializer(serializers.ModelSerializer):
-    variant = serializers.PrimaryKeyRelatedField(
-        read_only=True
-    )
-    year = serializers.PrimaryKeyRelatedField(
-        read_only=True
-    )
-    variant_id = serializers.PrimaryKeyRelatedField(
-        queryset=Variant.objects.all(),
-        source='variant',
-        write_only=True
-    )
-    year_id = serializers.PrimaryKeyRelatedField(
-        queryset=Year.objects.all(),
-        source='year',
-        write_only=True
-    )
-    class Meta:
-        model = VariantYear
-        fields = '__all__'
-
-    def validate(self, attrs):
-        if not attrs.get('variant') or not attrs.get('year'):
-            raise serializers.ValidationError("Variant and Year are required.")
-        return attrs
 
 
 class SavedVehicleSerializer(serializers.ModelSerializer):
-    vehicle_variant_year = serializers.PrimaryKeyRelatedField(
-        queryset=VariantYear.objects.all()
+    vehicle_variant = VehicleVariantSerializer(read_only=True)
+    vehicle_variant_id = serializers.PrimaryKeyRelatedField(
+        queryset=VehicleVariant.objects.all(),
+        source='vehicle_variant'
     )
 
     class Meta:
         model = SavedVehicle
-        fields = ['id', 'vehicle_variant_year', 'saved_at']
+        fields = ['id', 'vehicle_variant', 'vehicle_variant_id','saved_at']
         read_only_fields = ['saved_at']

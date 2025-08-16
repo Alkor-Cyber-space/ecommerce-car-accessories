@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import *
-  
+from vehicles.serializers import VehicleVariantReadSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
     subcategories = serializers.StringRelatedField(many=True, read_only=True)
@@ -19,40 +19,59 @@ class ProductImageSerializer(serializers.ModelSerializer):
         model = ProductImage
         fields = ['id', 'image', 'is_main']
 
+
+
 class ProductSerializer(serializers.ModelSerializer):
     image_list = ProductImageSerializer(many=True, read_only=True, source='images')
     category = CategorySerializer(read_only=True)
-    
+    tag = serializers.CharField(required=False, allow_blank=True)
+
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
         source='category',
         write_only=True
     )
 
-    compatible_varient_year = serializers.PrimaryKeyRelatedField(
-        queryset=VariantYear.objects.all(),
+    compatible_varient_year = VehicleVariantReadSerializer(many=True, read_only=True)
+
+    compatible_varient_year_ids = serializers.PrimaryKeyRelatedField(
+        queryset=VehicleVariant.objects.all(),
         many=True,
-        required=False
-    )
+        required=False,
+        write_only=True,
+        source='compatible_varient_year')   
 
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at',
             "manufacturing_date", "tag", "size", 'category', 'category_id',
-            "image_list","compatible_varient_year"
+            "image_list","compatible_varient_year_ids" , 'compatible_varient_year'
         ]
         extra_kwargs = {
             'size': {'required': False, 'allow_null': True, 'allow_blank': True},
         }
 
     def validate(self, attrs):
+        print(attrs.get("price"))
+        print("reached serilaasjaj")
         if not attrs.get('name'):
             raise serializers.ValidationError("Name is required.")
         if attrs.get('price') <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
         return attrs
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        tags_str = ret.get('tag', '')
+        ret['tag'] = [t.strip() for t in tags_str.split(',')] if tags_str else []
+        return ret
+
+    def to_internal_value(self, data):
+        tags = data.get('tag', [])
+        if isinstance(tags, list):
+            data['tag'] = ', '.join(tags)
+        return super().to_internal_value(data)
     
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)
