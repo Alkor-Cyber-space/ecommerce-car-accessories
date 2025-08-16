@@ -18,7 +18,7 @@ class CustomUser(AbstractUser):
     REQUIRED_FIELDS = ['username', 'phone_number']
 
     def __str__(self):
-        return self.email
+        return self.username
 # models.py
 
 class VendorProfile(models.Model):
