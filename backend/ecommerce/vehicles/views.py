@@ -15,12 +15,17 @@ class SavedVehicleViewSet(viewsets.ModelViewSet):
     serializer_class = SavedVehicleSerializer
     permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
     def get_queryset(self):
         return SavedVehicle.objects.filter(user=self.request.user)
-    
+
+    def perform_create(self, serializer):
+        vehicle_variant = serializer.validated_data['vehicle_variant']  # comes from vehicle_variant_id via `source`
+        
+        if SavedVehicle.objects.filter(user=self.request.user, vehicle_variant=vehicle_variant).exists():
+            raise serializers.ValidationError("You have already saved this vehicle.")
+        
+        serializer.save(user=self.request.user)
+
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
         self.perform_destroy(instance)

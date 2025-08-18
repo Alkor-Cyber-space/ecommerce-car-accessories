@@ -194,8 +194,8 @@ class VendorDocuments(models.Model):
           elif all( status =='approved' for status in document_statuses if status !='pending'):
                self.profile_status='approved'
           else:
-               self.profile_status=='pending'
-          self.is_verified=self.profile_status=='approved' and self.is_registration_complete()
+               self.profile_status='pending'
+          self.is_verified=(self.profile_status=='approved') and self.is_registration_complete()
           self.save()
 
      def __str__(self):
@@ -305,3 +305,25 @@ class OTP(models.Model):
 
      def __str__(self):
           return f"OTP{self.otp} for {self.user.email}" 
+     
+class VendorAuditLog(models.Model):
+    ACTION_CHOICES = [
+        ('create', 'Create'),
+        ('update', 'Update'),
+        ('delete', 'Delete'),
+        ('document_upload', 'Document Upload'),
+        ('profile_update', 'Profile Update'),
+        ('account_update', 'Account Update'),
+    ]
+
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vendor_audit_logs"
+    )
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    description = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vendor.email} - {self.action} - {self.timestamp}"

@@ -4,10 +4,10 @@ from accounts.models import CustomUser
 # Create your models here.
 
 VARIANT_CHOICES = [
-    ('Petrol', 'Petrol'),
-    ('Diesel', 'Diesel'),
-    ('CNG', 'CNG'),
-    ('Electric', 'Electric'),
+    ('PETROL', 'petrol'),
+    ('DIESEL', 'diesel'),
+    ('CNG', 'cng'),
+    ('ELECTRIC', 'electric'),
 ]
 
 

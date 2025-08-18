@@ -8,7 +8,9 @@ router.register(r'users', UserListViewSet, basename='user')
 router.register(r'categories', AdminCategoryViewSet, basename='admin-categories')
 
 
+
 urlpatterns = [
+    path('vendors/unverified/', UnverifiedVendorsAPIView.as_view(), name='unverified-vendors'),
     path('', include(router.urls)),
     path('vendor/approve/<int:pk>/', VendorApprove.as_view(), name='approve-vendor'),
     path('login/', AdminLoginAPIView.as_view(), name='admin-login'),
@@ -20,6 +22,5 @@ urlpatterns = [
 
     path('vehicles/<int:pk>/update/', AdminVehicleUpdate.as_view(), name='vehicle-update'),
     path('vehicles/<int:pk>/delete/', AdminVehicleDelete.as_view(), name='vehicle-delete'),
-
 
 ]

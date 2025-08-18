@@ -132,16 +132,16 @@ export const uploadAgreementsApi = async (vendorId, formData) => {
 // vendor product
 export const addProductApi = async (productData) => {
 
-    const token = localStorage.getItem("access_token");
+  const token = localStorage.getItem("access_token");
 
-    const response = await axios.post(`${serverurl}/vendor/products/`, productData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "multipart/form-data"
-      }
-    })
-    return response.data
-  } 
+  const response = await axios.post(`${serverurl}/vendor/products/`, productData, {
+    headers: {
+      Authorization: `JWT ${token}`,
+      "Content-Type": "multipart/form-data"
+    }
+  })
+  return response.data
+}
 
 export const getProductsApi = async () => {
   try {
@@ -196,7 +196,7 @@ export const deleteProductApi = async (productId) => {
 };
 export const updateProductApi = async (productId, productData) => {
   try {
-    const token = localStorage.getItem("access_token");   
+    const token = localStorage.getItem("access_token");
     const response = await axios.patch(`${serverurl}/vendor/products/${productId}/`, productData, {
       headers: {
         Authorization: `JWT ${token}`,
@@ -228,10 +228,10 @@ export const getCategoriesApi = async () => {
     throw error;
   }
 };
-    const token = localStorage.getItem("access_token");
+const token = localStorage.getItem("access_token");
 export const getVariantYearsApi = async () => {
   try {
-    const response = await axios.get(`${serverurl}/vehicles/compatible-year/`,{
+    const response = await axios.get(`${serverurl}/vehicles/compatible-year/`, {
       headers: {
         Authorization: `JWT ${token}`,
         "Content-Type": "application/json",
@@ -367,26 +367,26 @@ export const getVendorList = async () => {
 
 export const productcategory = async (productData) => {
 
+  const token = localStorage.getItem("access_token");
+
+  const response = await axios.post(`${serverurl}/admin/categories/`, productData, {
+    headers: {
+      Authorization: `JWT ${token}`,
+      "Content-Type": "application/json"
+    }
+  })
+  return response.data
+}
+
+export const getProductcategorylist = async () => {
+  try {
     const token = localStorage.getItem("access_token");
 
-    const response = await axios.post(`${serverurl}/admin/categories/`, productData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json"
-      }
-    })
-    return response.data
-  } 
-
-  export const getProductcategorylist = async () => {
-  try {
-        const token = localStorage.getItem("access_token");
-
-    const response = await axios.get(`${serverurl}/admin/categories/`,{
+    const response = await axios.get(`${serverurl}/admin/categories/`, {
       headers: {
         Authorization: `JWT ${token}`
       },
-    } );
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching vendors:", error);
@@ -394,7 +394,7 @@ export const productcategory = async (productData) => {
   }
 }
 
-export const updateProductCategoryApi = async (categoryid,category) => {
+export const updateProductCategoryApi = async (categoryid, category) => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.put(`${serverurl}/admin/categories/${categoryid}/`, category, {
@@ -437,8 +437,9 @@ export const getUserList = async () => {
     return response.data;
   } catch (error) {
     console.error("Error fetching admin users:", error);
-  }}
-  
+  }
+}
+
 export const deleteProductCategoryApi = async (categoryId) => {
   try {
     const token = localStorage.getItem("access_token");
@@ -497,7 +498,7 @@ export const getVehicleCategoriesApi = async () => {
   }
 };
 
-export const editVehicleCategoryApi = async (categoryId, updatedData) => { 
+export const editVehicleCategoryApi = async (categoryId, updatedData) => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.put(
@@ -545,7 +546,7 @@ export const forgotPasswordApi = async (email) => {
       { email }, // ✅ send email in request body
       {
         headers: {
-          Authorization: `JWT ${token}`, // If token is optional, you can remove this
+          Authorization: `JWT ${token}`,
         },
       }
     );
@@ -556,16 +557,54 @@ export const forgotPasswordApi = async (email) => {
   }
 };
 
-export const resetPasswordApi = async (currentPassword, newPassword) => {
+export const getVendorProductListApi = async (vendorId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/admin/list-vendor-products/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+      },
+    });
+    return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error fetching vendor details:", error);
+    throw error;
+  }
+}
+
+// Create vendor address
+export const VendorAddressesApi = async (address) => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.post(
-      `${serverurl}/auth/password/reset-password/${uidb64}/${token}/`,  //const url = `${serverUrl}/auth/password/reset-password/${uidb64}/${token}/`;
-      { current_password: currentPassword, new_password: newPassword }, // ✅ send passwords in request body
+      `${serverurl}/auth/addresses/`,
+      address,
       {
         headers: {
           Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
         },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error creating vendor address:", error);
+    throw error;
+  }
+};
+
+export const resetPasswordApi = async (uidb64, token, currentPassword, newPassword) => {
+  try {
+    const response = await axios.post(
+      `${serverurl}/auth/password/reset-password/${uidb64}/${token}/`,
+      { 
+        current_password: currentPassword, 
+        new_password: newPassword 
+      },
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
       }
     );
     return response.data;
@@ -574,3 +613,48 @@ export const resetPasswordApi = async (currentPassword, newPassword) => {
     throw error;
   }
 }
+// Get vendor address by ID
+export const getVendorAddressesApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(
+      `${serverurl}/auth/addresses/`, // ✅ added trailing slash
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor addresses:", error);
+    throw error;
+  }
+};
+
+// Update vendor address
+export const updateVendorAddressApi = async (id, address) => {
+  try {
+    if (!id) throw new Error("Address ID is required");
+
+    const token = localStorage.getItem("access_token");
+    if (!token) throw new Error("No access token found");
+
+    const res = await axios.patch(
+      `${serverurl}/auth/addresses/${id}/`, // trailing slash is good for Django REST
+      address,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return res.data;
+  } catch (err) {
+    console.error("Error updating vendor address:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
