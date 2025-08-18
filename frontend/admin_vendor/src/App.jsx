@@ -67,6 +67,7 @@ import StockTable from './components/admin/inventoryControl/StockManagement';
 import VendorsDoc from './components/admin/userAndVendor/VendorsDoc';
 import IndexCatogery from './pages/admin/Catogery/IndexCatogery';
 import NewVendorRequest from './components/admin/userAndVendor/NewVendorRequest';
+import ResetPassword from './pages/auth/ResetPassword';
 
 
 
@@ -79,6 +80,7 @@ function App() {
         <Route path="/signin" element={<AdminSignIn />} />
         <Route path="/login" element={<VendorSignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/api/auth/password/reset-password/:uidb64/:token/" element={<ResetPassword />} />
         <Route path="/register/verifyOtp" element={<Verify />} />
         <Route path='/register' element={<VendorRegister />} />
 

@@ -66,18 +66,18 @@ export default function AdminOverview() {
     }
   };
 
-// State
-const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-const [activeDropdown, setActiveDropdown] = useState(null);
+  // State
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [activeDropdown, setActiveDropdown] = useState(null);
 
-const handleActionClick = (id, event) => {
-  const rect = event.currentTarget.getBoundingClientRect();
-  setDropdownPosition({
-    top: rect.bottom + window.scrollY + 4, // 4px gap
-    left: rect.left + window.scrollX - 120, // shift left so it aligns nicely
-  });
-  setActiveDropdown(id);
-};
+  const handleActionClick = (id, event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setDropdownPosition({
+      top: rect.bottom + window.scrollY + 4, // 4px gap
+      left: rect.left + window.scrollX - 120, // shift left so it aligns nicely
+    });
+    setActiveDropdown(id);
+  };
 
 
   const handleAction = (action, adminId) => {
@@ -190,13 +190,13 @@ const handleActionClick = (id, event) => {
                 </td>
 
                 <td className="py-3 px-4">
-<button
-  onClick={(e) => handleActionClick(admin.id, e)}
-  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-  data-dropdown
->
-  <HiOutlineDotsVertical className="text-gray-500 text-lg" />
-</button>
+                  <button
+                    onClick={(e) => handleActionClick(admin.id, e)}
+                    className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    data-dropdown
+                  >
+                    <HiOutlineDotsVertical className="text-gray-500 text-lg" />
+                  </button>
 
                 </td>
               </tr>
@@ -213,35 +213,35 @@ const handleActionClick = (id, event) => {
       </div>
 
       {/* External Dropdown Menu */}
-{activeDropdown && (
-  <div
-    className="fixed flex bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-50"
-    style={{
-      top: `${dropdownPosition.top}px`,
-      left: `${dropdownPosition.left}px`,
-    }}
-    data-dropdown
-  >
-    <button
-      onClick={() => handleAction("View", activeDropdown)}
-      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-    >
-      View
-    </button>
-    <button
-      onClick={() => handleAction("Edit", activeDropdown)}
-      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-    >
-      Edit
-    </button>
-    <button
-      onClick={() => handleAction("Delete", activeDropdown)}
-      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-    >
-      Delete
-    </button>
-  </div>
-)}
+      {activeDropdown && (
+        <div
+          className="fixed flex bg-white border border-gray-200 rounded-lg shadow-lg z-50 w-50"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
+          }}
+          data-dropdown
+        >
+          <button
+            onClick={() => handleAction("View", activeDropdown)}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            View
+          </button>
+          <button
+            onClick={() => handleAction("Edit", activeDropdown)}
+            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => handleAction("Delete", activeDropdown)}
+            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+          >
+            Delete
+          </button>
+        </div>
+      )}
 
 
       {showModal && (
@@ -255,7 +255,7 @@ const handleActionClick = (id, event) => {
                 <input
                   type="text"
                   name="name"
-                  value={formData.name}
+                  value={formData.username}
                   onChange={handleChange}
                   required
                   className="w-full rounded p-2 border"
@@ -277,7 +277,7 @@ const handleActionClick = (id, event) => {
                 <input
                   type="text"
                   name="phone"
-                  value={formData.phone}
+                  value={formData.phone_number}
                   onChange={handleChange}
                   required
                   className="w-full rounded p-2 border"
@@ -313,7 +313,7 @@ const handleActionClick = (id, event) => {
                 <input
                   type="date"
                   name="joined"
-                  value={formData.joined}
+                  value={formData.date_joined}
                   onChange={handleChange}
                   className="w-full rounded p-2 border"
                 />
