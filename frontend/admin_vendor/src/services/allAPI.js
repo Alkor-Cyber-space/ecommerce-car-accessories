@@ -536,3 +536,41 @@ export const deletevehiclecategory = async (categoryId) => {
   }
 };
 
+//forgot password API
+export const forgotPasswordApi = async (email) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(
+      `${serverurl}/auth/password/forgot-password/`,
+      { email }, // ✅ send email in request body
+      {
+        headers: {
+          Authorization: `JWT ${token}`, // If token is optional, you can remove this
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error sending forgot password request:", error);
+    throw error;
+  }
+};
+
+export const resetPasswordApi = async (currentPassword, newPassword) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(
+      `${serverurl}/auth/password/reset-password/${uidb64}/${token}/`,  //const url = `${serverUrl}/auth/password/reset-password/${uidb64}/${token}/`;
+      { current_password: currentPassword, new_password: newPassword }, // ✅ send passwords in request body
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    throw error;
+  }
+}

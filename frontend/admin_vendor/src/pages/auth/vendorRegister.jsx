@@ -5,6 +5,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import loggo from '../../assets/loggo.png';
 import { vendorRegisterApi } from '../../services/allAPI';
 import { toast } from 'react-toastify';
+import { FaRegEye, FaRegEyeSlash } from 'react-icons/fa';
 
 export default function VendorRegister() {
   const dispatch = useDispatch();
@@ -19,8 +20,9 @@ export default function VendorRegister() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
-
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Load from localStorage
   useEffect(() => {
@@ -87,32 +89,32 @@ export default function VendorRegister() {
       //   setLoading(false);
       //   return;
       // }
-      if(result.status === 201){
- toast.success(" Registration successful! Proceeding to OTP verification.");
-      dispatch(setCredentials({ username, email, password }));
-      const userId = result?.data?.user_id
-        || result?.data?.user?.id;
-      if (userId) {
-        localStorage.setItem('vendorId', userId);
-        localStorage.setItem('vendorEmail', email);
-      }
+      if (result.status === 201) {
+        toast.success(" Registration successful! Proceeding to OTP verification.");
+        dispatch(setCredentials({ username, email, password }));
+        const userId = result?.data?.user_id
+          || result?.data?.user?.id;
+        if (userId) {
+          localStorage.setItem('vendorId', userId);
+          localStorage.setItem('vendorEmail', email);
+        }
 
-      if (rememberMe) {
-        localStorage.setItem('vendorRegister', JSON.stringify({ username, email, password, rememberMe: true }));
+        if (rememberMe) {
+          localStorage.setItem('vendorRegister', JSON.stringify({ username, email, password, rememberMe: true }));
+        } else {
+          localStorage.removeItem('vendorRegister');
+        }
+
+        dispatch(setCurrentStep(2));
+        setTimeout(() => {
+          navigate('/register/verifyOtp');
+        }, 3000);
       } else {
-        localStorage.removeItem('vendorRegister');
+        console.log("error :", result.data);
+        toast.error(result.data?.error)
+
       }
 
-      dispatch(setCurrentStep(2));
-      setTimeout(() => {
-        navigate('/register/verifyOtp');
-      }, 3000);
-      }else{
-        console.log("error :",result.data);
-        toast.error(result.data?.error)
-        
-      }
-     
 
     } catch (err) {
       console.error(err);
@@ -135,7 +137,7 @@ export default function VendorRegister() {
           <h2 className="text-5xl font-bold text-gray-800">Seller Account</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4 w-full">
-            <div>
+            <div className="relative">
               <input
                 type="text"
                 placeholder="Username"
@@ -150,7 +152,7 @@ export default function VendorRegister() {
               )}
             </div>
 
-            <div>
+            <div className="relative">
               <input
                 type="email"
                 placeholder="Email"
@@ -163,27 +165,45 @@ export default function VendorRegister() {
               )}
             </div>
 
-            <div>
+            <div className="relative">
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => dispatch(setCredentials({ username, email, password: e.target.value }))}
-                className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none"
+                className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none pr-12"
               />
+              <span
+                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
+                onClick={() => setShowPassword((prev) => !prev)}
+                tabIndex={0}
+                role="button"
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? <FaRegEyeSlash size={20} />   : <FaRegEye size={20} />}
+              </span>
               {fieldErrors.password && (
                 <p className="text-sm text-red-600 mt-1">{fieldErrors.password}</p>
               )}
             </div>
 
-            <div>
+            <div className="relative">
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none"
+                className="w-full px-5 py-3 rounded-2xl bg-white text-lg focus:outline-none pr-12"
               />
+              <span
+                className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+                tabIndex={0}
+                role="button"
+                aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+              >
+                {showConfirmPassword ? <FaRegEyeSlash size={20} />   : <FaRegEye size={20} />}
+              </span>
               {fieldErrors.confirmPassword && (
                 <p className="text-sm text-red-600 mt-1">{fieldErrors.confirmPassword}</p>
               )}
@@ -204,12 +224,10 @@ export default function VendorRegister() {
             {error && (
               <p className="text-red-600 text-center text-sm font-medium">{error}</p>
             )}
-
             <button
               type="submit"
               disabled={loading}
-              className={`w-full  text-white py-2 rounded-4xl hover:opacity-90 mt-5
-e ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5737B4]'
+              className={`w-full text-white py-2 rounded-4xl hover:opacity-90 mt-5 ${loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#5737B4]'
                 }`}
             >
               {loading ? 'Processing...' : 'Proceed'}
