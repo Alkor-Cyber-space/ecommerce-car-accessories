@@ -10,8 +10,8 @@ from django.utils import timezone
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    username = models.CharField(max_length=255, unique=True)
+    phone_number = models.CharField(unique=True, max_length=15, blank=True, null=True, default=None)
     is_admin_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
@@ -19,7 +19,7 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
-# models.py
+
 
 class VendorProfile(models.Model):
 
