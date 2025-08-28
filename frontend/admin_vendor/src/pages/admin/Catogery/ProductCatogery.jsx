@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { productcategory } from '../../../services/allAPI';
 import { toast } from 'react-toastify';
 
-const ProductCategory = () => {
+const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
     const [categoryName, setCategoryName] = useState('');
     const [loading, setLoading] = useState(false);
 
@@ -10,27 +10,28 @@ const ProductCategory = () => {
         setCategoryName('');
     };
 
- const handleCreateCategory = async (e) => {
-    e.preventDefault();
+    const handleCreateCategory = async (e) => {
+        e.preventDefault();
 
-    try {
-        setLoading(true);
-        const response = await productcategory({ name: categoryName });
-        console.log("Response:", response);
-            toast.success(  'Product category created successfully!');
-                  await fetchProductcategorylist();
-
+        try {
+            setLoading(true);
+            const response = await productcategory({ name: categoryName });
+            console.log("Response:", response);
+            toast.success('Product category created successfully!');
+            
+            // Call the callback function with the new category
+            if (onCategoryCreated) {
+                onCategoryCreated(response);
+            }
+            
             setCategoryName('');
-
-        
-
-    } catch (error) {
-        console.error('Error creating category:', error);
-        toast.error(error?.response?.data?.message || 'An error occurred while creating the category.');
-    } finally {
-        setLoading(false);
-    }
-};
+        } catch (error) {
+            console.error('Error creating category:', error);
+            toast.error(error?.response?.data?.message || 'An error occurred while creating the category.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="bg-white rounded-lg shadow-md">
@@ -52,8 +53,6 @@ const ProductCategory = () => {
                         />
                     </div>
                 </div>
-
-
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-3">
                     <button

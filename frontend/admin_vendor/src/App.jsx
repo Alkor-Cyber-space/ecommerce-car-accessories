@@ -68,6 +68,7 @@ import VendorsDoc from './components/admin/userAndVendor/VendorsDoc';
 import IndexCatogery from './pages/admin/Catogery/IndexCatogery';
 import NewVendorRequest from './components/admin/userAndVendor/NewVendorRequest';
 import ResetPassword from './pages/auth/ResetPassword';
+import VendorDetails from './components/admin/userAndVendor/VendorDetails';
 
 
 
@@ -106,6 +107,7 @@ function App() {
           <Route path='support-response' element={<SupportResponse />} />
           <Route path='index-catogery' element={<IndexCatogery />} />
           <Route path='new-vendor-request' element={<NewVendorRequest />} />
+          <Route path='vendor-details/:id'element={<VendorDetails />} />
 
         </Route>
 
