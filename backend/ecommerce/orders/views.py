@@ -148,14 +148,22 @@ class UserOrderViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def list(self, request):
-        """Fetch user order history"""
-        orders = Order.objects.filter(user=request.user).order_by('-created_at')
+        """Fetch order history"""
+        if request.user.is_superuser:
+            orders = Order.objects.all().order_by('-created_at')
+        else:
+            orders = Order.objects.filter(user=request.user).order_by('-created_at')
+
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 
+
     def retrieve(self, request, pk=None):
         """Retrieve specific order details"""
-        order = get_object_or_404(Order, pk=pk, user=request.user)
+        if request.user.is_superuser:
+            order = get_object_or_404(Order, pk=pk)  # superuser can see all
+        else:
+            order = get_object_or_404(Order, pk=pk, user=request.user)
         serializer = OrderSerializer(order)
         return Response(serializer.data)
 
