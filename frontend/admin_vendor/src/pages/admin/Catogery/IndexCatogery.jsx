@@ -71,10 +71,9 @@ const IndexCategory = () => {
                 {isSecondExpanded && (
                     <div className="px-2 sm:px-3 pb-3 sm:pb-4">
                         <div className="pt-2 sm:pt-3">
-                            <ProductCategory />
-                            <div className='mt-4 sm:mt-6'>
+                           
+                            
                                 <ProductTable />
-                            </div>
                         </div>
                     </div>
                 )}
