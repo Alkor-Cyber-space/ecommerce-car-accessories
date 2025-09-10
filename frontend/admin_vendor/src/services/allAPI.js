@@ -711,3 +711,19 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
+
+export const createPromotionApi = async (promoData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(`${serverurl}/coupon_promo/promotion/`, promoData, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating promotion:", error);
+    throw error;
+  }
+};
