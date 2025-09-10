@@ -21,7 +21,7 @@ class productSerializer(serializers.ModelSerializer):
 class ApplyCouponSerializer(serializers.Serializer):
     coupon_code =serializers.CharField(max_length=255)
     product_id=serializers.IntegerField()
-
+    
     def validate(self, data):
         try:
             coupon=Coupon.objects.get(name=data['coupon_code'])
