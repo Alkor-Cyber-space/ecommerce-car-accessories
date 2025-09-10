@@ -7,7 +7,6 @@ import { toast } from "react-toastify";
 
 export default function AdminOverview() {
   const [admins, setAdmins] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [formData, setFormData] = useState({
@@ -24,7 +23,7 @@ export default function AdminOverview() {
       try {
         const data = await getAdminsList();
         setAdmins(data);
-        localStorage.setItem("adminsList", JSON.stringify(data)); // ✅ store in localStorage
+        localStorage.setItem("adminsList", JSON.stringify(data)); 
       } catch (error) {
         console.error("Error fetching admin user list:", error);
       }
@@ -90,7 +89,6 @@ export default function AdminOverview() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  // ✅ Updated handleDelete to call backend API
   const handleDelete = async (id) => {
     
    

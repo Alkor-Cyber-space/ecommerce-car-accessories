@@ -1,31 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import { GoArrowDownRight, GoArrowUpRight } from 'react-icons/go';
 import { HiOutlineDotsVertical } from 'react-icons/hi';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
+import { getUserOrderListApi } from '../../../services/allAPI'; 
 
 const UserDetails = () => {
   // State
   const [userorders, setUserOrders] = useState([]);
   const [activeDropdown, setActiveDropdown] = useState(null);
 
-  // Example statuses (replace with real API data if needed)
-  const statusArray = ["Live", "Draft", "Inactive", "Live"];
+  const { id: vendorId } = useParams(); 
 
-  // Orders data
-  const orders = statusArray.map((status, index) => ({
-    id: index + 1,
-    name: 'Alloy Wheel XZR16',
-    sku: 'BRK-BCS-CBP-STD-0001',
-    stock: status === 'Live' ? 34 : 0,
-    status,
-    price: '₹4,499',
-  }));
-
-  // Load orders into state once
   useEffect(() => {
-    setUserOrders(orders);
-  }, []);
+    const fetchOrders = async () => {
+      try {
+        const data = await getUserOrderListApi(vendorId);
+        console.log(data);
 
+        setUserOrders(data);
+      } catch (error) {
+        console.error("Error fetching user orders:", error);
+      }
+    };
+
+    if (vendorId) { 
+      fetchOrders();
+    }
+  }, [vendorId]); 
   // Dropdown toggle
   const handleDropdownToggle = (id) => {
     setActiveDropdown(activeDropdown === id ? null : id);
@@ -39,7 +40,7 @@ const UserDetails = () => {
 
   return (
     <div className='w-full min-h-screen p-4 md:p-6 text-[#232323] space-y-6 bg-gray-100 rounded-xl'>
-
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-lg md:text-xl font-semibold">User Details</h1>
@@ -82,47 +83,6 @@ const UserDetails = () => {
         </div>
       </div>
 
-      {/* Basic Details / Address / Company / Customer */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl p-4">
-          <h3 className="font-bold mb-3">Basic Details</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex"><span className="font-medium w-24">Name</span><span className="ml-4"> </span></div>
-            <div className="flex"><span className="font-medium w-24">Email</span><span className="ml-4"></span></div>
-            <div className="flex"><span className="font-medium w-24">Phone</span><span className="ml-4"></span></div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4">
-          <h3 className="font-bold mb-3">Address</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex"><span className="font-medium w-28">Line 1</span><span className="ml-4">rD</span></div>
-            <div className="flex"><span className="font-medium w-28">Line 2</span><span className="ml-4">rD</span></div>
-            <div className="flex"><span className="font-medium w-28">Landmark</span><span className="ml-4"></span></div>
-            <div className="flex"><span className="font-medium w-28">Pincode</span><span className="ml-4"></span></div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4">
-          <h3 className="font-bold mb-3">Company Details</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex"><span className="font-medium w-40">Company Name</span><span className="ml-4">r</span></div>
-            <div className="flex"><span className="font-medium w-40">Company Email</span><span className="ml-4">r</span></div>
-            <div className="flex"><span className="font-medium w-40">Company Number</span><span className="ml-4">nd</span></div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-4">
-          <h3 className="font-bold mb-3">Customer Details</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex"><span className="font-medium w-24">Name</span><span className="ml-4"></span></div>
-            <div className="flex"><span className="font-medium w-24">Designation</span><span className="ml-4"></span></div>
-            <div className="flex"><span className="font-medium w-24">Email</span><span className="ml-4"></span></div>
-            <div className="flex"><span className="font-medium w-24">Phone</span><span className="ml-4"></span></div>
-          </div>
-        </div>
-      </div>
-
       {/* Orders Table */}
       <div className="flex justify-between items-center mt-8 mb-4">
         <h2 className="font-semibold text-lg">All Orders List</h2>
@@ -146,7 +106,7 @@ const UserDetails = () => {
           </thead>
           <tbody>
             {userorders.map((order, index) => (
-              <tr key={order.id} className="hover:bg-gray-50">
+              <tr key={order.id || index} className="hover:bg-gray-50">
                 <td className="px-3 py-2">{index + 1}</td>
                 <td className="px-3 py-2 text-[#5737B4] font-semibold cursor-pointer">
                   {order.name}
@@ -203,7 +163,7 @@ const UserDetails = () => {
           </tbody>
         </table>
       </div>
- 
+
     </div>
   );
 };
