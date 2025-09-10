@@ -5,9 +5,12 @@ import axios from 'axios';
 import loggo from '../../assets/loggo.png';
 import { AdminLoginApi } from '../../services/allAPI';
 import { toast } from 'react-toastify';
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
+
 
 export default function AdminSignIn() {
   const navigate = useNavigate();
+  const [showPassword, setShowPassword] = useState(false);
 
   // 🔐 Form state
   const [formData, setFormData] = useState({
@@ -24,36 +27,36 @@ export default function AdminSignIn() {
   };
 
   //  Submit handler
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    const response = await AdminLoginApi(formData); 
-    console.log(response.data);
-    if (response.status === 200) {
-      toast.success('Login successful');
-      const { access, refresh } = response.data;
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-      setTimeout(() => {
-        navigate('/admin/dashboard');
-      }, 2000);
-    }else{
-      toast.error(response.data.error || 'Login failed' );
-      console.error('Login failed:', response.data);
+    try {
+      const response = await AdminLoginApi(formData);
+      console.log(response.data);
+      if (response.status === 200) {
+        toast.success('Login successful');
+        const { access, refresh } = response.data;
+        localStorage.setItem('access_token', access);
+        localStorage.setItem('refresh_token', refresh);
+        setTimeout(() => {
+          navigate('/admin/dashboard');
+        }, 2000);
+      } else {
+        toast.error(response.data.error || 'Login failed');
+        console.error('Login failed:', response.data);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(
+        error.response?.data?.error ||
+        error.response?.data?.detail ||
+        'Login failed'
+      );
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error(error);
-    toast.error(
-      error.response?.data?.error ||
-      error.response?.data?.detail ||
-      'Login failed'
-    );
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -78,16 +81,23 @@ const handleSubmit = async (e) => {
               required
             />
 
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
-              required
-            />
-
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+                required
+              />
+              <span
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 cursor-pointer"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? <FaRegEyeSlash size={20} /> : <FaRegEye size={20} />}
+              </span>
+            </div>
             <div className="flex justify-between items-center text-sm text-gray-600">
               <label className="flex items-center gap-2">
                 <input type="checkbox" className="accent-blue-900" />

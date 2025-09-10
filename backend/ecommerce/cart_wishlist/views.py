@@ -20,8 +20,15 @@ class WishlistViewSet(viewsets.ModelViewSet):
         return Wishlist.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-        # If token exists, send notification
+        # Get or create the wishlist for the user
+        wishlist, created = Wishlist.objects.get_or_create(user=self.request.user)
+        
+        # Add products from serializer to the wishlist
+        products = serializer.validated_data.get('products', [])
+        for product in products:
+            wishlist.products.add(product)
+        
+        # Send push notification
         send_push_notification(
             user=self.request.user,
             title="Wishlist Updated",

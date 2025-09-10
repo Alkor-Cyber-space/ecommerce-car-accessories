@@ -5,6 +5,7 @@ import axios from 'axios';
 import loggo from '../../assets/loggo.png';
 import { vendorLoginApi } from '../../services/allAPI';
 import { toast } from 'react-toastify';
+import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 
 export default function VendorSignIn() {
   const navigate = useNavigate();
@@ -14,8 +15,8 @@ export default function VendorSignIn() {
     email_or_username: '',
     password: '',
   });
-
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // 🎯 Input change handler
   const handleChange = (e) => {
@@ -77,16 +78,23 @@ const handleSubmit = async (e) => {
               className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
               required
             />
-
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
-              required
-            />
+            <div className="relative">
+              <input
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-2xl text-lg focus:outline-none focus:ring-2 focus:ring-blue-900 pr-12"
+                required
+                type={showPassword ? "text" : "password"}
+              />
+              <span
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 cursor-pointer"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? <FaRegEyeSlash size={20} />   : <FaRegEye size={20} />}
+              </span>
+            </div>
 
             <div className="flex justify-between items-center text-sm text-gray-600">
               <label className="flex items-center gap-2">

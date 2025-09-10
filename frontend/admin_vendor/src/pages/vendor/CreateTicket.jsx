@@ -4,13 +4,14 @@ import { Link } from 'react-router-dom';
 const CreateTicket = () => {
   return (
     <div className="bg-[#ECECF0] min-h-screen py-6 px-4 md:px-6 rounded-2xl w-full">
+      {/* Page Title */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-6">
-        <h1 className="text-[#232832] text-xl font-semibold">
+        <h1 className="text-[#232832] text-lg md:text-xl font-semibold">
           <span className="text-[#5737B4]">Support or Help</span> / Create a Ticket
         </h1>
       </div>
 
-      {/* Form container aligned to left */}
+      {/* Form container */}
       <div className="bg-white w-full md:w-3/4 p-6 rounded-xl shadow-md">
         
         {/* Row 1: Subject + Category */}
@@ -60,18 +61,19 @@ const CreateTicket = () => {
             rows="5"
           ></textarea>
         </div>
-      </div>
-      {/* Buttons aligned right */}
-        <div className="flex justify-end space-x-3 px-80 py-6">
+
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row justify-end gap-3">
           <Link to="/vendor/support-help">
-            <button className="border border-[#5737B4] text-[#5737B4] px-6 py-1 rounded-md text-sm hover:bg-[#5737B4] hover:text-white">
+            <button className="w-full sm:w-auto border border-[#5737B4] text-[#5737B4] px-6 py-2 rounded-md text-sm hover:bg-[#5737B4] hover:text-white transition">
               Cancel
             </button>
           </Link>
-          <button className="bg-[#5737B4] text-white px-6 py-1 rounded-md text-sm hover:bg-[#432d9c]">
+          <button className="w-full sm:w-auto bg-[#5737B4] text-white px-6 py-2 rounded-md text-sm hover:bg-[#432d9c] transition">
             Create Ticket
           </button>
         </div>
+      </div>
     </div>
   );
 };
