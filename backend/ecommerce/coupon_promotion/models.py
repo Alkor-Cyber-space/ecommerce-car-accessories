@@ -17,7 +17,8 @@ class Promotion(models.Model):
     end_date=models.DateTimeField()
     activate=models.BooleanField(default=True)
     applicable_product=models.ManyToManyField('products.Product',blank=True,related_name='promotions')
-
+    applicable_category=models.ManyToManyField('products.Category',blank=True,related_name='category')
+    
     def is_activate(self):
         now=timezone.now()
         return self.activate and self.start_date<=self.end_date

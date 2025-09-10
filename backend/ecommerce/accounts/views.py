@@ -843,3 +843,4 @@ class VendorDocumentsFinalApprovalView(APIView):
             "profile_status": documents.profile_status,
             "is_verified": documents.is_verified,
         }, status=status.HTTP_200_OK)
+    
