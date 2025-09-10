@@ -39,7 +39,7 @@ class UserViewSet(viewsets.ViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
         email = request.data.get('email')
-
+        phone_number = request.data.get('phone_number')
         existing_user = User.objects.filter(email=email).first()
         if existing_user:
             if not existing_user.is_active:
@@ -47,6 +47,13 @@ class UserViewSet(viewsets.ViewSet):
             else:
                 return Response({"error": "A user with this email already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if phone_number:
+            existing_phone_user = User.objects.filter(phone_number=phone_number).first()
+            if existing_phone_user:
+                if not existing_phone_user.is_active:
+                    existing_phone_user.delete()
+                else:
+                    return Response({"error": "A user with this phone number already exists."}, status=status.HTTP_400_BAD_REQUEST)
         
         serializer = CreateUserSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
