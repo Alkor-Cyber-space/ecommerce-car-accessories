@@ -120,7 +120,35 @@ class AdminUserListAPIView(APIView):
         serializer = UserSerializer(admin_users, many=True)
         return Response(serializer.data)
 
+class VendorDetailsList(APIView):
+    def post(self, request, *args, **kwargs):
+        pk = request.data.get("pk")
+        if not pk:
+            return Response(
+                {"message": "pk is required", "status": status.HTTP_400_BAD_REQUEST}
+            )
+        print("above the try")
+        try:
+            print("inside the try")
+            print(f"filter :{Group.objects.get(name="Vendor")}")
+            vendor_group = Group.objects.get(name="Vendor")
+            print(f"vendor_group: {vendor_group}")
 
+        except Exception as e:
+            message = str(e)
+            return Response({"status":"failed","response_code":status.HTTP_500_INTERNAL_SERVER_ERROR,"message":message})
+        user = (CustomUser.objects.filter(id=pk, groups=vendor_group).select_related("vendor_profile").first())
+
+        if not user:
+            return Response(
+                {"message": "Vendor user does not exist", "status": status.HTTP_404_NOT_FOUND}
+            )
+
+        serializer = VendorDetailsSerializer(user)
+        return Response(
+            {"message": "Successfully fetched vendor data", "data": serializer.data},
+            status=status.HTTP_200_OK,
+        )
 class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
