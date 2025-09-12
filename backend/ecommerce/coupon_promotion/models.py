@@ -18,7 +18,8 @@ class Promotion(models.Model):
     activate=models.BooleanField(default=True)
     applicable_product=models.ManyToManyField('products.Product',blank=True,related_name='promotions')
     applicable_category=models.ManyToManyField('products.Category',blank=True,related_name='category')
-    
+    price_range=models.DecimalField(max_digits=10,decimal_places=2,help_text="price range", null=True)
+
     def is_activate(self):
         now=timezone.now()
         return self.activate and self.start_date<=self.end_date
