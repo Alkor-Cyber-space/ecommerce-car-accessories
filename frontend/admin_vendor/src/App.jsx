@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-confirm-alert/src/react-confirm-alert.css";
 
@@ -73,9 +73,40 @@ import Promotions from './pages/admin/Promotions';
 import PromotionLayout from './pages/admin/PromotionLayout';
 
 
-
+import { useEffect } from "react";
+import { generateToken, messaging, onMessageListener } from "./firebase/firebase";
 
 function App() {
+    useEffect(() => {
+      generateToken();
+    // (async () => {
+    //   try {
+    //     const VAPID_KEY = ""; // from Firebase console
+    //     const token = await generateToken(VAPID_KEY);
+
+    //     if (token) {
+    //       // Send to backend (authenticated request if needed)
+    //       await axios.post("/api/save-fcm-token/", { token });
+    //       console.log("Saved FCM token to backend:", token);
+    //     } else {
+    //       console.log("No token obtained (permission denied?).");
+    //     }
+    //   } catch (err) {
+    //     console.error("Error getting FCM token:", err);
+    //   }
+    // })();
+
+    // Foreground message listener
+    onMessageListener(messaging, (payload) => {
+      console.log("Foreground message:", payload);
+      toast(
+        (payload.notification?.title || "") +
+          "\n" +
+          (payload.notification?.body || "")
+      );
+    });
+  }, []);
+
   return (
     <>
       <Routes>
@@ -97,7 +128,7 @@ function App() {
           <Route path="users" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-          <Route path="vendor-documents" element={<VendorsDoc />} />
+          {/* <Route path="vendor-documents" element={<VendorsDoc />} /> */}
           <Route path="Sales-Report" element={<SalesReport />} />
           <Route path="returns" element={<ReturnsReport />} />
           <Route path="transaction" element={<TransactionReport />} />
@@ -113,7 +144,8 @@ function App() {
           <Route path='support-response' element={<SupportResponse />} />
           <Route path='index-catogery' element={<IndexCatogery />} />
           <Route path='new-vendor-request' element={<NewVendorRequest />} />
-          <Route path='vendor-details/:id'element={<VendorDetails />} />
+          <Route path='vendor-details/:id' element={<VendorDetails />} />
+          <Route path='vendor-documents/:id' element={<VendorsDoc />} />
 
         </Route>
 
