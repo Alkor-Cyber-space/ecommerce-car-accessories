@@ -26,9 +26,9 @@ const VendorDetails = () => {
     status,
     price: '₹4,499',
   }));
-  const {id} = useParams();
+  const { id } = useParams();
 
-useEffect(() => {
+  useEffect(() => {
     const fetchVendorProducts = async () => {
       try {
         const token = localStorage.getItem("access_token");
@@ -46,9 +46,9 @@ useEffect(() => {
             },
           }
         );
-          setVendorProducts(response.data.data);
-          console.log(response);
-          
+        setVendorProducts(response.data.data);
+        console.log(response);
+
       } catch (error) {
         console.error("Error fetching vendor products:", error.response || error.message);
       }
@@ -85,9 +85,8 @@ useEffect(() => {
   const fetchVendorDetails = async (vendorId) => {
     try {
       const data = await getVendorByIdApi(vendorId);
-      console.log(data);
-      
-      setVendorData(data);
+      console.log(data.data);
+      setVendorData(data.data);
     } catch (error) {
       console.error("Error loading vendor details:", error);
     }
@@ -102,7 +101,7 @@ useEffect(() => {
         </h1>
         <div className="flex gap-2 ml-auto">
           <Link
-            to="/admin/vendor-documents"
+            to={`/admin/vendor-documents/${id}`}
             className="border border-[#5737B4] text-[#5737B4] px-4 py-2 rounded text-sm"
           >
             View Documents
@@ -162,63 +161,95 @@ useEffect(() => {
         <div className="bg-white rounded-xl p-4">
           <h3 className="font-bold mb-3">Address</h3>
           <div className="space-y-2 text-sm">
-            <div className="flex">
-              <span className="font-medium w-28">Line 1</span>
-              <span className="ml-4">{vendorData?.address_line1 || 'N/A'}</span>
-            </div>
-            <div className="flex">
-              <span className="font-medium w-28">Line 2</span>
-              <span className="ml-4">{vendorData?.address_line2 || 'N/A'}</span>
-            </div>
-            <div className="flex">
-              <span className="font-medium w-28">Landmark</span>
-              <span className="ml-4">{vendorData?.landmark || 'N/A'}</span>
-            </div>
-            <div className="flex">
-              <span className="font-medium w-28">Pincode</span>
-              <span className="ml-4">{vendorData?.pincode || 'N/A'}</span>
-            </div>
+            {vendorData?.addresses?.length > 0 ? (
+              vendorData.addresses.map(addr => (
+                <div key={addr.id} className="mb-3 space-y-2">
+                  <div className="flex">
+                    <span className="font-medium w-28">Line 1</span>
+                    <span className="ml-4">{addr.line1 || 'N/A'}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="font-medium w-28">Line 2</span>
+                    <span className="ml-4">{addr.line2 || 'N/A'}</span>
+                  </div>
+                  {/* <div className="flex">
+        <span className="font-medium w-28">Landmark</span>
+        <span className="ml-4">{addr.landmark || 'N/A'}</span>
+      </div> */}
+                  <div className="flex">
+                    <span className="font-medium w-28">City</span>
+                    <span className="ml-4">{addr.city || 'N/A'}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="font-medium w-28">State</span>
+                    <span className="ml-4">{addr.state || 'N/A'}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="font-medium w-28">Country</span>
+                    <span className="ml-4">{addr.country || 'N/A'}</span>
+                  </div>
+                  <div className="flex">
+                    <span className="font-medium w-28">Pincode</span>
+                    <span className="ml-4">{addr.postal_code || 'N/A'}</span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p>No addresses available</p>
+            )}
+
           </div>
         </div>
 
         <div className="bg-white rounded-xl p-4">
           <h3 className="font-bold mb-3">Company Details</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex">
-              <span className="font-medium w-40">Company Name</span>
-              <span className="ml-4">{vendorData?.company_name || 'N/A'}</span>
+          {vendorData?.vendor_profile ? (
+            <div className="space-y-3 text-sm">
+              <div className="flex">
+                <span className="font-medium w-40">Company Name</span>
+                <span className="ml-4">{vendorData.vendor_profile.company_name || 'N/A'}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-40">Company Email</span>
+                <span className="ml-4">{vendorData.vendor_profile.company_email || 'N/A'}</span>
+              </div>
+              <div className="flex">
+                <span className="font-medium w-40">Company Number</span>
+                <span className="ml-4">{vendorData.vendor_profile.company_number || 'N/A'}</span>
+              </div>
             </div>
-            <div className="flex">
-              <span className="font-medium w-40">Company Email</span>
-              <span className="ml-4">{vendorData?.company_mail || 'N/A'}</span>
-            </div>
-            <div className="flex">
-              <span className="font-medium w-40">Company Number</span>
-              <span className="ml-4">{vendorData?.gst_number || 'N/A'}</span>
-            </div>
-          </div>
+          ) : (
+            <p>No vendor data available</p>
+          )}
+
+
         </div>
         <div className="bg-white rounded-xl p-4">
           <h3 className="font-bold mb-3">Customer Details</h3>
           <div className="space-y-2 text-sm">
             <div className="flex">
               <span className="font-medium w-24">Name</span>
-              <span className="ml-4">{vendorData?.username || 'N/A'}</span>
+              <span className="ml-4">{vendorData?.vendor_profile?.contact_name || 'N/A'}</span>
             </div>
             <div className="flex">
               <span className="font-medium w-24">Designation</span>
-              <span className="ml-4">{vendorData?.designation || 'N/A'}</span>
+              <span className="ml-4">{vendorData?.vendor_profile?.designation || 'N/A'}</span>
             </div>
             <div className="flex">
               <span className="font-medium w-24">Email</span>
-              <span className="ml-4">{vendorData?.email || 'N/A'}</span>
+              <span className="ml-4">{vendorData?.vendor_profile?.contact_email || 'N/A'}</span>
             </div>
             <div className="flex">
               <span className="font-medium w-24">Phone</span>
-              <span className="ml-4">{vendorData?.contact_number || 'N/A'}</span>
+              <span className="ml-4">{vendorData?.vendor_profile?.contact_number || 'N/A'}</span>
+            </div>
+            <div className="flex">
+              <span className="font-medium w-24">Vendor Type</span>
+              <span className="ml-4">{vendorData?.vendor_profile?.type_of_vendor || 'N/A'}</span>
             </div>
           </div>
         </div>
+
       </div>
 
       {/* Product List Header */}
@@ -244,7 +275,7 @@ useEffect(() => {
             </tr>
           </thead>
           <tbody>
-            { vendorProducts.map((product, index) => (
+            {vendorProducts.map((product, index) => (
 
               <tr key={index} className="hover:bg-gray-50">
                 <td className="px-3 py-2">{index + 1}</td>
@@ -255,13 +286,12 @@ useEffect(() => {
                 <td className="px-3 py-2">{product.stock}</td>
                 <td className="px-3 py-2">
                   <span
-                    className={`px-2 py-1 text-xs rounded-full font-medium ${
-                      product.status === 'Live'
-                        ? 'bg-green-100 text-green-700'
-                        : product.status === 'Draft'
+                    className={`px-2 py-1 text-xs rounded-full font-medium ${product.status === 'Live'
+                      ? 'bg-green-100 text-green-700'
+                      : product.status === 'Draft'
                         ? 'bg-blue-100 text-blue-700'
                         : 'bg-red-100 text-red-700'
-                    }`}
+                      }`}
                   >
                     {product.status}
                   </span>
@@ -305,7 +335,7 @@ useEffect(() => {
       </div>
 
       {/* Pagination */}
-      
+
     </div>
   );
 };

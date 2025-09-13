@@ -98,7 +98,6 @@ const handleSaveAddress = async () => {
         company_name: profileData.company_name || "",
         company_email: profileData.company_email || "",
         company_number: profileData.company_number || "",
-        gstin: profileData.gstin || "",
       });
     } else if (section === "location") {
       setEditForm({
@@ -227,8 +226,7 @@ setAddresses(prev => ({ ...prev, ...editForm }));
       <p>{profileData.company_email || ""}</p>
       <p className="font-semibold">Phone</p>
       <p>{profileData.company_number || ""}</p>
-      <p className="font-semibold">GSTIN</p>
-      <p>{profileData.company_gstin || ""}</p>
+      
     </div>
   </div>
 
@@ -1049,14 +1047,7 @@ setAddresses(prev => ({ ...prev, ...editForm }));
                     onChange={handleChange}
                     className="w-full px-4 py-3 border rounded-md"
                   />
-                  <input
-                    type="text"
-                    name="gstin"
-                    placeholder="GSTIN"
-                    value={editForm.gstin}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border rounded-md"
-                  />
+                
                 </>
               )}
 

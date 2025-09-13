@@ -62,4 +62,4 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VendorDocuments
-        fields = ['id', 'vendor_profile', 'is_verified', 'profile_status']
+        fields = ['id', 'user_id', 'vendor_profile', 'is_verified', 'profile_status']
