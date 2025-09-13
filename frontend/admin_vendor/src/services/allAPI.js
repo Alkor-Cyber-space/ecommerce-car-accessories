@@ -365,7 +365,7 @@ export const getVendorList = async () => {
   }
 }
 
-export const productcategory = async (productData) => {
+export const productcategories = async (productData) => {
 
   const token = localStorage.getItem("access_token");
 
@@ -598,9 +598,9 @@ export const resetPasswordApi = async (uidb64, token, currentPassword, newPasswo
   try {
     const response = await axios.post(
       `${serverurl}/auth/password/reset-password/${uidb64}/${token}/`,
-      { 
-        current_password: currentPassword, 
-        new_password: newPassword 
+      {
+        current_password: currentPassword,
+        new_password: newPassword
       },
       {
         headers: {
@@ -695,7 +695,7 @@ export const deleteAdminApi = async (adminId) => {
 
 
 export const getUserOrderListApi = async (vendorId) => {
-  try{
+  try {
     const token = localStorage.getItem("access_token");
     const response = await axios.get(
       `${serverurl}/auth/addresses/`, // ✅ added trailing slash
@@ -724,6 +724,92 @@ export const createPromotionApi = async (promoData) => {
     return response.data;
   } catch (error) {
     console.error("Error creating promotion:", error);
+    throw error;
+  }
+};
+
+export const getCategoriesByAll = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/products/categories/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error fetching categories:", error);
+    throw error;
+  }
+};
+
+export const getProductsByCategory = async (categoryId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/products/categories/${categoryId}/products/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
+  }
+};
+
+export const getAllPromotionsApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/promotion/all/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching promotions:", error);
+    throw error;
+  }
+};
+
+export const promotionByIdApi = async (promotionId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/promotion/${promotionId}/`, {
+      headers: {  
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error fetching promotion by ID:", error);
+    throw error;
+  }
+};
+
+export const editPromotionApi = async (promotionId, updatedData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.put(
+      `${serverurl}/coupon_promo/promotion/${promotionId}/`,
+      updatedData, // send updated fields
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error updating promotion:", error);
     throw error;
   }
 };

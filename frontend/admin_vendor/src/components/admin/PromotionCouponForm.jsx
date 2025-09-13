@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BsArrowLeft, BsTag, BsPercent, BsGift, BsCheckCircle, BsExclamationCircle } from 'react-icons/bs';
 import { AiOutlinePlus, AiOutlineCalendar } from 'react-icons/ai';
-import { createPromotionApi } from '../../services/allAPI';
+import { createPromotionApi, getCategoriesByAll, getProductsByCategory } from '../../services/allAPI';
 
 const PromotionCouponForm = () => {
   const [activeTab, setActiveTab] = useState('promotion');
@@ -49,6 +49,48 @@ const PromotionCouponForm = () => {
     setFormRows(updatedRows);
   };
 
+  const [categories, setCategories] = useState([]);
+  const [selectedProducts, setSelectedProducts] = useState({});
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await getCategoriesByAll();
+        setCategories(data);
+        console.log("Categories fetched:", data);
+        // Assuming the API returns an array of categories
+      } catch (error) {
+        console.error("Failed to load categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
+  const fetchProductsForCategory = async (categoryId) => {
+    try {
+      const products = await getProductsByCategory(categoryId);
+      setCategories((prevCategories) =>
+        prevCategories.map((cat) =>
+          cat.id === categoryId ? { ...cat, products } : cat
+        )
+      );
+    } catch (error) {
+      console.error("Error loading products:", error);
+      toast.error("Failed to load products");
+    }
+  };
+
+  const handleCheckboxChange = (productId, checked) => {
+    setSelectedProducts((prev) => {
+      const newSelected = { ...prev };
+      if (checked) {
+        newSelected[productId] = true;
+      } else {
+        delete newSelected[productId];
+      }
+      return newSelected;
+    });
+  };
 
   const [couponData, setCouponData] = useState({
     name: '',
@@ -78,16 +120,27 @@ const PromotionCouponForm = () => {
       [name]: type === 'checkbox' ? checked : value,
     });
   };
-
   const submitPromotion = async () => {
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
-    if (!promotionData.name || !promotionData.code || !promotionData.description || !promotionData.promotion_type || !promotionData.value || !promotionData.start_date || !promotionData.end_date) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
-      setIsSubmitting(false);
-      return;
-    }
+   // Check required fields
+if (
+  !promotionData.name ||
+  !promotionData.code ||
+  !promotionData.description ||
+  !promotionData.promotion_type ||
+  (!promotionData.value && promotionData.promotion_type !== 'BOGO') || // Skip value check for BOGO
+  !promotionData.start_date ||
+  !promotionData.end_date
+) {
+  setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+  setIsSubmitting(false);
+  setTimeout(() => {
+    setMessage({ type: '', text: '' });
+  }, 10000);
+  return;
+}
 
     for (let row of formRows) {
       if (!row.category) {
@@ -98,15 +151,46 @@ const PromotionCouponForm = () => {
     }
 
     try {
+      // Collect applicable categories as an array of IDs
+      const applicable_category = [...new Set(
+        formRows.map(row => row.category).filter(Boolean)
+      )];
+
+      // Collect applicable products as an array of IDs
+      const applicable_product = formRows.reduce((acc, row) => {
+        if (row.products && row.products.length > 0) {
+          acc.push(...row.products);
+        }
+        return acc;
+      }, []);
+
       const payload = {
         ...promotionData,
-        details: formRows,  // Include the rows data here if required by the API
+          value: promotionData.promotion_type === 'BOGO' ? 0 : promotionData.value,
+        applicable_category: applicable_category,
+        applicable_product: applicable_product,
+        details: formRows.map(row => ({
+          ...row,
+          category_name: categories.find(cat => cat.id === row.category)?.name,
+          selected_products: row.products.map(productId => {
+            const product = row.productsList?.find(p => p.id === productId);
+            return {
+              id: productId,
+              name: product?.name
+            };
+          })
+        }))
       };
-      const response = await createPromotionApi(payload);
-      setMessage({ type: 'success', text: 'Promotion created successfully!' });
-      console.log('Promotion response:', response);
 
-      // Reset form
+      console.log('Sending payload:', payload);
+
+      const response = await createPromotionApi(payload);
+
+      setMessage({ type: 'success', text: 'Promotion created successfully!' });
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 10000);
+
       setPromotionData({
         name: '',
         code: '',
@@ -117,12 +201,14 @@ const PromotionCouponForm = () => {
         end_date: '',
         activate: true,
       });
+
       setFormRows([{
         category: '',
         products: [],
         min_price: 0,
         max_price: 2000
       }]);
+
     } catch (error) {
       setMessage({ type: 'error', text: 'Error creating promotion. Please try again.' });
       console.error("API error:", error.response ? error.response.data : error.message);
@@ -131,7 +217,82 @@ const PromotionCouponForm = () => {
     }
   };
 
+  // const submitPromotion = async () => {
+  //   setIsSubmitting(true);
+  //   setMessage({ type: '', text: '' });
 
+  //   if (!promotionData.name || !promotionData.code || !promotionData.description || !promotionData.promotion_type || !promotionData.value || !promotionData.start_date || !promotionData.end_date) {
+  //     setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+  //     setIsSubmitting(false);
+
+  //     // Clear the message after 10 seconds
+  //     setTimeout(() => {
+  //       setMessage({ type: '', text: '' });
+  //     }, 10000);
+
+  //     return;
+  //   }
+
+
+  //   for (let row of formRows) {
+  //     if (!row.category) {
+  //       setMessage({ type: 'error', text: 'Please select a category in all rows.' });
+  //       setIsSubmitting(false);
+  //       return;
+  //     }
+  //   }
+
+  //   try {
+  //     // Collect applicable categories and products from formRows
+  //     const applicable_category = [...new Set(
+  //       formRows.map(row => row.category).filter(Boolean)
+  //     )];
+  //     // unique categories
+  //     const applicable_product = formRows.reduce((acc, row) => {
+  //       if (row.products && row.products.length > 0) {
+  //         acc.push(...row.products);
+  //       }
+  //       return acc;
+  //     }, []);
+
+  //     const payload = {
+  //       ...promotionData,
+  //       applicable_category,
+  //       applicable_product,
+  //       details: formRows,  // optional, depending on API
+  //     };
+
+  //     const response = await createPromotionApi(payload);
+  //     setMessage({ type: 'success', text: 'Promotion created successfully!' });
+  //     setTimeout(() => {
+  //       setMessage({ type: '', text: '' });
+  //     }, 10000);
+  //     console.log('Promotion response:', response);
+
+  //     // Reset form
+  //     setPromotionData({
+  //       name: '',
+  //       code: '',
+  //       description: '',
+  //       promotion_type: 'percentage',
+  //       value: '',
+  //       start_date: '',
+  //       end_date: '',
+  //       activate: true,
+  //     });
+  //     setFormRows([{
+  //       category: '',
+  //       products: [],
+  //       min_price: 0,
+  //       max_price: 2000
+  //     }]);
+  //   } catch (error) {
+  //     setMessage({ type: 'error', text: 'Error creating promotion. Please try again.' });
+  //     console.error("API error:", error.response ? error.response.data : error.message);
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   const getPromotionTypeColor = (type) => {
     switch (type) {
@@ -145,6 +306,52 @@ const PromotionCouponForm = () => {
         return 'bg-gray-100 text-gray-600';
     }
   };
+
+  const submitCoupon = async () => {
+    setIsSubmitting(true);
+    setMessage({ type: '', text: '' });
+
+    if (!couponData.name || !couponData.discount_value || !couponData.start_date || !couponData.end_date) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+      setIsSubmitting(false);
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 10000);
+      return;
+    }
+
+    try {
+      // Replace this with your actual API call
+      // const response = await createCouponApi(couponData);
+      const response = { status: 'success', data: couponData }; // Mock response for now
+
+      setMessage({ type: 'success', text: 'Coupon created successfully!' });
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 10000);
+
+      console.log('Coupon created:', response);
+
+      setCouponData({
+        name: '',
+        discount_value: '',
+        min_purchase_amount: 0,
+        start_date: '',
+        end_date: '',
+        activate: true,
+        useage_limit: 1,
+      });
+    } catch (error) {
+      console.error('Error creating coupon:', error);
+      setMessage({ type: 'error', text: 'Error creating coupon. Please try again.' });
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 10000);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
 
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
@@ -284,6 +491,7 @@ const PromotionCouponForm = () => {
                       onChange={handlePromotionChange}
                       className="w-full p-3 bg-transparent focus:outline-none"
                     >
+                      <option value="select" disabled>Select Option</option>
                       <option value="percentage">Percentage Discount</option>
                       <option value="FIXED">Fixed Amount Off</option>
                       <option value="BOGO">Buy One Get One</option>
@@ -291,7 +499,7 @@ const PromotionCouponForm = () => {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Value *</label>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Value {promotionData.promotion_type !== "BOGO" && '*'}</label>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg">
                     <input
                       name="value"
@@ -300,13 +508,15 @@ const PromotionCouponForm = () => {
                       placeholder="10.00"
                       value={promotionData.value}
                       onChange={handlePromotionChange}
-                      required
+                      required={promotionData.promotion_type !== "BOGO"}  // ✅ Apply conditional required attribute
                       className="w-full p-3 bg-transparent focus:outline-none"
                     />
                   </div>
                 </div>
               </div>
             </div>
+
+
 
             {/* Date Range */}
             <div>
@@ -348,19 +558,35 @@ const PromotionCouponForm = () => {
             <div className="space-y-4 w-full">
               {formRows.map((row, index) => (
                 <div key={index} className="flex gap-4 w-full items-start bg-white border border-gray-200 rounded-lg p-4">
+
                   {/* Category */}
                   <div className="flex-1 w-full">
-                    <label className="block text-sm font-medium text-gray-600 mb-1">Category <span className='text-red-500'>*</span>  </label>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">
+                      Category <span className='text-red-500'>*</span>
+                    </label>
                     <div className="bg-gray-50 border border-gray-200 rounded-lg">
                       <select
                         value={row.category}
-                        onChange={(e) => handleRowChange(index, 'category', e.target.value)}
+                        onChange={async (e) => {
+                          const categoryId = Number(e.target.value);
+                          handleRowChange(index, 'category', categoryId);
+
+                          // Fetch products for this category and update the row
+                          try {
+                            const productsList = await getProductsByCategory(categoryId); // call your API here
+                            handleRowChange(index, 'productsList', productsList);
+                            handleRowChange(index, 'products', []); // Reset selected products
+                          } catch (error) {
+                            console.error("Error loading products:", error);
+                          }
+                        }}
                         required
                         className="w-full p-3 bg-transparent focus:outline-none"
                       >
                         <option value="" disabled>Select Category</option>
-                        <option value="interior">Interior</option>
-                        <option value="exterior">Exterior</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id}>{category.name}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -369,25 +595,29 @@ const PromotionCouponForm = () => {
                   <div className="flex-1 w-full">
                     <label className="block text-sm font-medium text-gray-600 mb-1">Products</label>
                     <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 space-y-2 max-h-40 overflow-y-auto">
-                      {['Seat Cover', 'Steering Cover', 'Floor Mat', 'Air Freshener', 'Car Vacuum Cleaner'].map((product) => (
-                        <div key={product} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={row.products.includes(product)}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              const selectedProducts = row.products;
-                              const updatedProducts = checked
-                                ? [...selectedProducts, product]
-                                : selectedProducts.filter((p) => p !== product);
-                              handleRowChange(index, 'products', updatedProducts);
-                            }}
-                            className="h-4 w-4 border-gray-300 rounded"
-                            style={{ accentColor: '#5737B4' }}
-                          />
-                          <label className="ml-2 text-sm text-gray-700">{product}</label>
-                        </div>
-                      ))}
+                      {row.productsList && row.productsList.length > 0 ? (
+                        row.productsList.map((product) => (
+                          <div key={product.id} className="flex items-center">
+                            <input
+                              type="checkbox"
+                              checked={row.products.includes(product.id)}
+                              onChange={(e) => {
+                                const checked = e.target.checked;
+                                const selectedProducts = row.products;
+                                const updatedProducts = checked
+                                  ? [...selectedProducts, product.id]
+                                  : selectedProducts.filter((id) => id !== product.id);
+                                handleRowChange(index, 'products', updatedProducts);
+                              }}
+                              className="h-4 w-4 border-gray-300 rounded"
+                              style={{ accentColor: '#5737B4' }}
+                            />
+                            <label className="ml-2 text-sm text-gray-700">{product.name}</label>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-sm text-gray-500">Select a category to load products</p>
+                      )}
                     </div>
                   </div>
 
@@ -448,6 +678,7 @@ const PromotionCouponForm = () => {
                 </button>
               </div>
             </div>
+
 
             {/* Settings */}
             <div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { productcategory } from '../../../services/allAPI';
+import { productcategories } from '../../../services/allAPI';
 import { toast } from 'react-toastify';
 
 const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
@@ -15,7 +15,7 @@ const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
 
         try {
             setLoading(true);
-            const response = await productcategory({ name: categoryName });
+            const response = await productcategories  ({ name: categoryName });
             console.log("Response:", response);
             toast.success('Product category created successfully!');
             
