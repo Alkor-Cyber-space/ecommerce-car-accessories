@@ -29,7 +29,11 @@ class Product(models.Model):
     is_top_rated = models.BooleanField(default=False)
     is_popular = models.BooleanField(default=False)
     compatible_varient_year = models.ManyToManyField('vehicles.VehicleVariant', blank=True, related_name='compatible_products')
-
+    length=models.DecimalField(max_digits=10, decimal_places=2)
+    breadth=models.DecimalField(max_digits=10, decimal_places=2)
+    height=models.DecimalField(max_digits=10, decimal_places=2)
+    weight=models.DecimalField(max_digits=10, decimal_places=2)
+    
     def __str__(self):
         return self.name
     

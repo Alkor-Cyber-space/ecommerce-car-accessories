@@ -9,6 +9,7 @@ export default function AdminOverview() {
   const [admins, setAdmins] = useState([]);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [showModal,setShowModal] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",

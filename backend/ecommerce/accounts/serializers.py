@@ -765,3 +765,36 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
                 )
 
         return instance
+    
+class VendorAuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=VendorAuditLog
+        fields='__all__'
+
+class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
+    incomplete_fileds=serializers.SerializerMethodField()
+    
+    class Meta:
+        model=VendorDocuments
+        fields="__all__"
+
+    def get_incomplete_fileds(self,obj):
+        incomplete=[]
+        for field in [
+            "pan_card",
+            "aadhar_passport_dl",
+            "gst_certificate",
+            "business_registration_cert",
+            "shop_license",
+            "cancelled_cheque",
+            "bank_statement",
+            "it_return",
+            "financial_statement",
+            "dealership_letter",
+            "authorized_signatory_letter",
+            "vendor_registration_form",
+            "signed_terms_and_con",
+        ]:
+            if not getattr(obj, field):  
+                incomplete.append(field)
+        return incomplete
