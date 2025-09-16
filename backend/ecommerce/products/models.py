@@ -5,13 +5,13 @@ from vehicles.models import VehicleVariant
 from django.core.validators import MinValueValidator, MaxValueValidator
 # Create your models here.
 
-
 class Product(models.Model):
     vendor = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='products'
     )
+    
     category = models.ForeignKey('Category', on_delete=models.CASCADE, related_name='products')
     name = models.CharField(max_length=255)
     description = models.TextField()

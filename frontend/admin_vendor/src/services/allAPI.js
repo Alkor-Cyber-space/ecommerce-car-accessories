@@ -24,23 +24,80 @@ const refreshToken = async () => {
   }
 };
 
+  const api = axios.create({
+    baseURL: serverurl , 
+  });
 
-//admin register & login
+  // Request interceptor: attach token
+  api.interceptors.request.use(
+    (config) => {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        config.headers["Authorization"] = `JWT ${token}`;
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  // Response interceptor: refresh on 401
+  api.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const originalRequest = error.config;
+
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+
+        try {
+          const refresh = localStorage.getItem("refresh_token");
+          if (!refresh) throw new Error("No refresh token");
+
+          const res = await axios.post(`${serverurl}/token/refresh/`, { refresh });
+
+          const newAccessToken = res.data.access;
+          localStorage.setItem("access_token", newAccessToken);
+
+          // Update request with new token
+          originalRequest.headers["Authorization"] = `JWT ${newAccessToken}`;
+          return api(originalRequest); // retry
+        } catch (err) {
+          console.error("Refresh token failed:", err);
+          // Optional: redirect to login
+        }
+      }
+
+      return Promise.reject(error);
+    }
+  );
+
+  export default api;
+
+// auth.js
+export const logout = () => {
+  // Clear tokens
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+
+  // Optional: clear other user info
+  localStorage.removeItem("user");
+
+  // Redirect to login page
+  window.location.href = "/login";
+};
+//-------------------------------------------------------------auth
+// Admin Login
 export const AdminLoginApi = async (adminData) => {
   return await commonAPI("POST", `${serverurl}/admin/login/`, adminData, {
     "Content-Type": "application/json"
   });
 }
-
-
-// auth
-// vendor register & login
+// vendor login & register
 export const vendorLoginApi = async (vendorData) => {
   return await commonAPI("POST", `${serverurl}/auth/vendor/login/`, vendorData, {
     "Content-Type": "application/json"
   });
 }
-
 
 export const vendorRegisterApi = async (vendorData) => {
   console.log("inside register", vendorData);
@@ -131,78 +188,56 @@ export const uploadAgreementsApi = async (vendorId, formData) => {
 
 // vendor product
 export const addProductApi = async (productData) => {
-
-    const token = localStorage.getItem("access_token");
-
-    const response = await axios.post(`${serverurl}/vendor/products/`, productData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "multipart/form-data"
-      }
-    })
-    return response.data
-  } 
+  const response = await api.post("/vendor/products/", productData, {
+    headers: {
+      "Content-Type": "multipart/form-data"
+    }
+  })
+  return response.data
+}
 
 export const getProductsApi = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-
-    const response = await axios.get(`${serverurl}/vendor/products/`, {
-      headers: {
-        Authorization: `JWT ${token}`
-      },
-    });
+    const response = await api.get("/vendor/products/");
     return response.data;
   } catch (error) {
     console.error("Error fetching products:", error);
     throw error;
   }
-}
+};
+
 export const getProductByIdApi = async (productId) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/vendor/products/${productId}/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
-    });
+    const response = await api.get(`/vendor/products/${productId}/`);
     return response; // ✅ return full response
   } catch (error) {
     console.error("Error fetching product by ID:", error);
     throw error;
   }
 };
-// delete product by id
-// export const deleteProductByIdApi = async (productId) => {
-//   try {
-//     const token = localStorage.getItem("access_token");
-//     const response = await axios.delete(`${serverurl}/vendor/products/${productId}/`, {
-//       headers: {
-//         Authorization: `JWT ${token}`,
-//       },
-//     });
-//     return response.data; 
-//   } catch (error) {
-//     console.error("Error deleting product by ID:", error);
-//     throw error;
-//   }
-// };
 
 export const deleteProductApi = async (productId) => {
-  const token = localStorage.getItem("access_token");
-  return await commonAPI("DELETE", `${serverurl}/vendor/products/${productId}/`, "", {
-    Authorization: `JWT ${token}`,
-  });
+  try {
+    const response = await api.delete(`/vendor/products/${productId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    throw error;
+  }
 };
+
+
 export const updateProductApi = async (productId, productData) => {
   try {
-    const token = localStorage.getItem("access_token");   
-    const response = await axios.patch(`${serverurl}/vendor/products/${productId}/`, productData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "multipart/form-data"
+    const response = await api.patch(
+      `/vendor/products/${productId}/`,
+      productData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       }
-    });
+    );
     return response.data;
   } catch (error) {
     console.error("Error updating product:", error);
@@ -210,34 +245,22 @@ export const updateProductApi = async (productId, productData) => {
   }
 };
 
+
 // categories
 export const getCategoriesApi = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-
-    const response = await axios.get(`${serverurl}/products/categories/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
+    const response = await api.get("/products/categories/");
     return response.data;
   } catch (error) {
     console.error("Error fetching categories:", error);
     throw error;
   }
 };
-    const token = localStorage.getItem("access_token");
+
 export const getVariantYearsApi = async () => {
   try {
-    const response = await axios.get(`${serverurl}/vehicles/compatible-year/`,{
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data; // ✅ return data directly
+    const response = await api.get("/vehicles/compatible-year/");
+    return response.data;
   } catch (error) {
     console.error("Error fetching variant years:", error);
     throw error;
@@ -245,38 +268,30 @@ export const getVariantYearsApi = async () => {
 };
 
 // Account Settings
-// Get current user profile
+// Get logged-in vendor profile
 export const getMeApi = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/auth/vendor/me/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
-    });
-    return response;
+    const response = await api.get("/auth/vendor/me/");
+    return response.data; // return only data, not the whole axios response
   } catch (error) {
     console.error("Error fetching account settings:", error);
     throw error;
   }
-}
+};
+
 
 // Update user profile
 export const updateAccountApi = async (userData) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.patch(`${serverurl}/auth/vendor/edit_account/`, userData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    return response;
+    const response = await api.patch("/auth/vendor/edit_account/", userData);
+    return response.data;
   } catch (error) {
     console.error("Error updating account:", error);
     throw error;
   }
-}
+};
+
+
 
 // Change password
 // export const changePasswordApi = async (passwordData) => {
@@ -295,52 +310,34 @@ export const updateAccountApi = async (userData) => {
 //   }
 // }
 
-// Deactivate account
+// Deactivate vendor account
 export const deactivateAccountApi = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.post(`${serverurl}/auth/vendor/deactivate_account/`, {}, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    return response;
-  } catch (error) {
-    console.error("Error deactivating account:", error);
-  }
-}
-
-
-
-// profile & kyc
-
-
-
-export const getVendorProfileApi = async () => {
-  try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/auth/vendor/profile_details/`, {
-      headers: {
-        Authorization: `JWT ${token}`
-      },
-    });
+    const response = await api.post(
+      "/auth/vendor/deactivate_account/",
+      {} // empty body
+    );
     return response.data;
   } catch (error) {
-    console.error("Error fetching vendor profile:", error);
+    console.error("Error deactivating account:", error);
     throw error;
   }
 };
 
+
+// profile & kyc
+export const getVendorProfileApi = async () => {
+  const response = await api.get("/auth/vendor/profile_details/");
+  return response.data;
+};
+
+// Update vendor profile
 export const updateVendorProfileApi = async (profileData) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.patch(`${serverurl}/auth/vendor/edit_profile/`, profileData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await api.patch(
+      "/auth/vendor/edit_profile/",
+      profileData
+    );
     return response.data;
   } catch (error) {
     console.error("Error updating vendor profile:", error);
@@ -348,62 +345,60 @@ export const updateVendorProfileApi = async (profileData) => {
   }
 };
 
+
 // admin 
 // vendor list
+// export const getVendorList = async () => {
+//   try {
+//     const token = localStorage.getItem("access_token");
+//     const response = await axios.get(`${serverurl}/admin/vendors/`, {
+//       headers: {
+//         Authorization: `JWT ${token}`
+//       },
+//     });
+//     return response.data;
+//   } catch (error) {
+//     console.error("Error fetching vendors:", error);
+//     throw error;
+//   }
+// }
 export const getVendorList = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/admin/vendors/`, {
-      headers: {
-        Authorization: `JWT ${token}`
-      },
-    });
+    const response = await api.get("/admin/vendors/");
     return response.data;
   } catch (error) {
     console.error("Error fetching vendors:", error);
     throw error;
   }
-}
-
+};
 export const productcategory = async (productData) => {
-
-    const token = localStorage.getItem("access_token");
-
-    const response = await axios.post(`${serverurl}/admin/categories/`, productData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json"
-      }
-    })
-    return response.data
-  } 
-
-  export const getProductcategorylist = async () => {
   try {
-        const token = localStorage.getItem("access_token");
-
-    const response = await axios.get(`${serverurl}/admin/categories/`,{
+    const response = await api.post("/admin/categories/", productData, {
       headers: {
-        Authorization: `JWT ${token}`
-      },
-    } );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching vendors:", error);
-    throw error;
-  }
-}
-
-export const updateProductCategoryApi = async (categoryid,category) => {
-  try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.put(`${serverurl}/admin/categories/${categoryid}/`, category, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
+        "Content-Type": "application/json", 
       },
     });
-    return response;
+    return response.data;
+  } catch (error) {
+    console.error("Error creating product category:", error);
+    throw error;
+  }
+};
+
+export const getProductcategorylist = async () => {
+  try {
+    const response = await api.get("/admin/categories/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching product categories:", error);
+    throw error;
+  }
+};
+
+export const updateProductCategoryApi = async (categoryid, category) => {
+  try {
+    const response = await api.put(`/admin/categories/${categoryid}/`, category);
+    return response.data;
   } catch (error) {
     console.error("Error updating account:", error);
     throw error;
@@ -412,56 +407,90 @@ export const updateProductCategoryApi = async (categoryid,category) => {
 
 export const getVendorByIdApi = async (vendorId) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/admin/vendors/${vendorId}/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
+    const response = await api.post("/admin/vendor/details/", {
+      pk: vendorId, // send ID in body
     });
-    return response.data; // ✅ return data directly
+    return response.data;
   } catch (error) {
     console.error("Error fetching vendor by ID:", error);
     throw error;
   }
 };
 
+export const getUnverifiedVendorsApi = async () => {
+  try {
+    const response = await api.get("/admin/vendors/unverified/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching unverified vendors:", error);
+    throw error;
+  }
+};
+ 
+export const getVendorProfileDocumentsApi = async (vendorId) => {
+  try {
+    const response = await api.get(`/auth/vendor_profile_update/${vendorId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor profile documents:", error);
+    throw error;
+  }
+};
+
+
+export const ApproveorRejectApi = async (vendorId, documentKey, action) => {
+  try {
+    const response = await api.put(
+      `/auth/vendor_profile_update/${vendorId}/`,
+      { [documentKey]: action }, // dynamic key update (e.g. "pan_card_status": "approved")
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error approving/rejecting document:", error);
+    throw error;
+  }
+};
+
+export const FinalApproveVendorApi = async (vendorId, finalStatus = 'approved') => {
+  try {
+    const response = await api.post(
+      `/auth/vendor-final-approve/${vendorId}/`,
+      { final_status: finalStatus }, // Send status in body
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("Error updating final status for vendor:", error);
+    throw error;
+  }
+};
+
+
 
 export const getUserList = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/admin/users/`, {
-      headers: {
-        Authorization: `JWT ${token}`
-      },
-    });
+    const response = await api.get(`/admin/users/`);
     return response.data;
   } catch (error) {
     console.error("Error fetching admin users:", error);
-  }}
-  
+  }
+}
+
+// Delete product category
 export const deleteProductCategoryApi = async (categoryId) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.delete(`${serverurl}/admin/categories/${categoryId}/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
-    });
-    return response.data; // ✅ return data directly
+    const response = await api.delete(`/admin/categories/${categoryId}/`);
+    return response.data;
   } catch (error) {
     console.error("Error deleting product category:", error);
     throw error;
   }
-}
+};
+
 
 export const getAdminsList = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/admin/list_admins/`, {
-      headers: {
-        Authorization: `JWT ${token}`
-      },
-    });
+    const response = await api.get(`/admin/list_admins/`);
     return response.data;
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -470,45 +499,38 @@ export const getAdminsList = async () => {
 }
 
 // vehicle category
+// Create vehicle category
 export const vehicleCategoryApi = async (vehicleData) => {
-  const token = localStorage.getItem("access_token");
-
-  const response = await axios.post(`${serverurl}/admin/vehicle-create/`, vehicleData, {
-    headers: {
-      Authorization: `JWT ${token}`,
-      "Content-Type": "application/json"
-    }
-  });
-  return response.data;
-};
-
-export const getVehicleCategoriesApi = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/vehicles/compatible-year/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
-    });
-    return response.data; // ✅ return data directly
+    const response = await api.post(
+      `/admin/vehicle-create/`,
+      vehicleData
+    );
+    return response.data;
   } catch (error) {
-    console.error("Error fetching vendor by ID:", error);
+    console.error("Error creating vehicle category:", error);
     throw error;
   }
 };
 
-export const editVehicleCategoryApi = async (categoryId, updatedData) => { 
+
+export const getVehicleCategoriesApi = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.put(
-      `${serverurl}/admin/vehicles/${categoryId}/update/`,
-      updatedData, // send updated fields
-      {
-        headers: {
-          Authorization: `JWT ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
+    const response = await api.get("/vehicles/compatible-year/");
+    return response.data; // ✅ return only data
+  } catch (error) {
+    console.error("Error fetching vehicle categories:", error);
+    throw error;
+  }
+};
+
+
+// Update vehicle category
+export const editVehicleCategoryApi = async (categoryId, updatedData) => {
+  try {
+    const response = await api.put(
+      `/admin/vehicles/${categoryId}/update/`,
+      updatedData
     );
     return response.data;
   } catch (error) {
@@ -518,17 +540,10 @@ export const editVehicleCategoryApi = async (categoryId, updatedData) => {
 };
 
 
+// Delete vehicle category
 export const deletevehiclecategory = async (categoryId) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.delete(
-      `${serverurl}/admin/vehicles/${categoryId}/delete/`, // Added trailing slash
-      {
-        headers: {
-          Authorization: `JWT ${token}`,
-        },
-      }
-    );
+    const response = await api.delete(`/admin/vehicles/${categoryId}/delete/`);
     return response.data;
   } catch (error) {
     console.error("Error deleting vehicle category:", error);
@@ -536,38 +551,39 @@ export const deletevehiclecategory = async (categoryId) => {
   }
 };
 
+// Forgot password request
+export const forgotPasswordApi = async (email) => {
+  try {
+    const response = await api.post(
+      "/auth/password/forgot-password/",
+      { email },
+      {
+        headers: { "Content-Type": "application/json" }, 
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error sending forgot password request:", error);
+    throw error;
+  }
+};
 
 export const getVendorProductListApi = async (vendorId) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/admin/list-vendor-products/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
-    });
-    return response.data; // ✅ return data directly
+    const response = await api.post(`/admin/list-vendor-products/`, { pk: vendorId });
+    return response.data;
   } catch (error) {
     console.error("Error fetching vendor details:", error);
     throw error;
   }
-} 
-
-
+}
 
 // Create vendor address
 export const VendorAddressesApi = async (address) => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.post(
-      `${serverurl}/auth/addresses/`,
-      address,
-      {
-        headers: {
-          Authorization: `JWT ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await api.post("/auth/addresses/", address, {
+      headers: { "Content-Type": "application/json" }, 
+    });
     return response.data;
   } catch (error) {
     console.error("Error creating vendor address:", error);
@@ -575,18 +591,31 @@ export const VendorAddressesApi = async (address) => {
   }
 };
 
+
+export const resetPasswordApi = async (uidb64, token, currentPassword, newPassword) => {
+  try {
+    const response = await api.post(
+      `/auth/password/reset-password/${uidb64}/${token}/`,
+      {
+        current_password: currentPassword,
+        new_password: newPassword
+      },
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error resetting password:", error);
+    throw error;
+  }
+}
 // Get vendor address by ID
 export const getVendorAddressesApi = async () => {
   try {
-    const token = localStorage.getItem("access_token");
-    const response = await axios.get(
-      `${serverurl}/auth/addresses/`, // ✅ added trailing slash
-      {
-        headers: {
-          Authorization: `JWT ${token}`,
-        },
-      }
-    );
+    const response = await api.get(`/auth/addresses/`); 
     return response.data;
   } catch (error) {
     console.error("Error fetching vendor addresses:", error);
@@ -602,17 +631,12 @@ export const updateVendorAddressApi = async (id, address) => {
     const token = localStorage.getItem("access_token");
     if (!token) throw new Error("No access token found");
 
-    const res = await axios.patch(
-      `${serverurl}/auth/addresses/${id}/`, // trailing slash is good for Django REST
-      address,
-      {
-        headers: {
-          Authorization: `JWT ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
+    const res = await api.patch(`/auth/addresses/${id}/`, address, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
     return res.data;
   } catch (err) {
     console.error("Error updating vendor address:", err.response?.data || err.message);
@@ -620,4 +644,44 @@ export const updateVendorAddressApi = async (id, address) => {
   }
 };
 
+//Adding new sub-admins
+export const addSubAdminApi = async (adminData) => {
+  try {
+    const response = await api.post("/admin/create_admin/", adminData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error adding sub-admin:", error);
+    throw error;
+  }
+};
 
+
+export const deleteAdminApi = async (adminId) => {
+  try {
+    const response = await api.delete(`/admin/delete_admins/${adminId}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+      data: { id: adminId } // Sending adminId in the request body
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting admin:", error);
+    throw error;
+  }
+}
+
+
+export const getUserOrderListApi = async (vendorId) => {
+  try {
+    const response = await api.get(`/auth/addresses/`); 
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor addresses:", error);
+    throw error;
+  }
+};
+   

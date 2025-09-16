@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-confirm-alert/src/react-confirm-alert.css";
 
@@ -51,7 +51,6 @@ import OrderManagement from './pages/vendor/orders/OrderManagement';
 import OrdersLayout from './pages/vendor/orders/OrdersLayout';
 import SupportHelp from './pages/vendor/SupportHelp';
 import CreateTicket from './pages/vendor/CreateTicket';
-import Promotions from './pages/vendor/Promotions';
 import PaymentsEarnings from './pages/vendor/PaymentsEarnings';
 import SearchFilter from './pages/admin/SearchFilter';
 import AuditLogs from './pages/admin/AuditLogs';
@@ -67,12 +66,42 @@ import StockTable from './components/admin/inventoryControl/StockManagement';
 import VendorsDoc from './components/admin/userAndVendor/VendorsDoc';
 import IndexCatogery from './pages/admin/Catogery/IndexCatogery';
 import NewVendorRequest from './components/admin/userAndVendor/NewVendorRequest';
-import AdminAccounts from './pages/admin/AdminAccounts';
 
 
-
+import { useEffect } from "react";
+import { generateToken, messaging, onMessageListener } from "./firebase/firebase";
 
 function App() {
+    useEffect(() => {
+      generateToken();
+    // (async () => {
+    //   try {
+    //     const VAPID_KEY = ""; // from Firebase console
+    //     const token = await generateToken(VAPID_KEY);
+
+    //     if (token) {
+    //       // Send to backend (authenticated request if needed)
+    //       await axios.post("/api/save-fcm-token/", { token });
+    //       console.log("Saved FCM token to backend:", token);
+    //     } else {
+    //       console.log("No token obtained (permission denied?).");
+    //     }
+    //   } catch (err) {
+    //     console.error("Error getting FCM token:", err);
+    //   }
+    // })();
+
+    // Foreground message listener
+    onMessageListener(messaging, (payload) => {
+      console.log("Foreground message:", payload);
+      toast(
+        (payload.notification?.title || "") +
+          "\n" +
+          (payload.notification?.body || "")
+      );
+    });
+  }, []);
+
   return (
     <>
       <Routes>
@@ -80,6 +109,7 @@ function App() {
         <Route path="/signin" element={<AdminSignIn />} />
         <Route path="/login" element={<VendorSignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+<Route path="/api/auth/password/reset-password/:uidb64/:token/" element={<ResetPassword />} />
         <Route path="/register/verifyOtp" element={<Verify />} />
         <Route path='/register' element={<VendorRegister />} />
 
@@ -93,12 +123,16 @@ function App() {
           <Route path="users" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-          <Route path="vendor-documents" element={<VendorsDoc />} />
+          {/* <Route path="vendor-documents" element={<VendorsDoc />} /> */}
           <Route path="Sales-Report" element={<SalesReport />} />
           <Route path="returns" element={<ReturnsReport />} />
           <Route path="transaction" element={<TransactionReport />} />
           <Route path='tax-reports' element={<TaxReport />} />
           <Route path='search-filter' element={<SearchFilter />} />
+          <Route path='promotions' element={<PromotionLayout />}>
+                <Route index element={<Promotions />} />
+                  <Route path="promotion-form" element={<PromotionCouponForm/>} />
+             </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
           <Route path='admin-accounts' element={<AdminAccounts />} />
           <Route path='user-details/:id' element={<UserDetails />} />
@@ -106,6 +140,8 @@ function App() {
           <Route path='support-response' element={<SupportResponse />} />
           <Route path='index-catogery' element={<IndexCatogery />} />
           <Route path='new-vendor-request' element={<NewVendorRequest />} />
+          <Route path='vendor-details/:id' element={<VendorDetails />} />
+          <Route path='vendor-documents/:id' element={<VendorsDoc />} />
 
         </Route>
 
@@ -145,12 +181,17 @@ function App() {
              <Route path='notification' element={<Notification />}/>
              <Route path='support-help' element={<SupportHelp />}/> 
              <Route path='createticket' element={<CreateTicket />}/>
-             <Route path='promotions' element={<Promotions />}/>
+             {/* <Route path='promotions' element={<PromotionLayout />}>
+                <Route index element={<Promotions />} />
+                  <Route path="promotion-form" element={<PromotionCouponForm/>} />
+             </Route> */}
              <Route path='payments-earnings' element={<PaymentsEarnings />} />
-             
+
              
 
         </Route>
+                           
+
       </Routes>
 
       <ToastContainer position="top-right" autoClose={3000} />

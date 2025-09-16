@@ -10,8 +10,8 @@ from django.utils import timezone
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    username = models.CharField(max_length=255, unique=True)
+    phone_number = models.CharField(unique=True, max_length=15, blank=True, null=True, default=None)
     is_admin_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
@@ -19,7 +19,7 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
-# models.py
+
 
 class VendorProfile(models.Model):
 
@@ -39,7 +39,7 @@ class VendorProfile(models.Model):
      contact_name = models.CharField(max_length=255, null=True, blank=True)
      contact_email = models.EmailField(null=True, blank=True)
      contact_number = models.IntegerField(null=True, blank=True)
-     designation = models.CharField(null=True, blank=True)
+     designation = models.CharField(null=True, blank=True,max_length=255)
      # # Step 4: KYC Documents
      # pan_card = models.FileField(upload_to='kyc/pan/', null=True, blank=True)
      # aadhar_passport_dl = models.FileField(upload_to='kyc/id/', null=True, blank=True)
@@ -194,8 +194,8 @@ class VendorDocuments(models.Model):
           elif all( status =='approved' for status in document_statuses if status !='pending'):
                self.profile_status='approved'
           else:
-               self.profile_status=='pending'
-          self.is_verified=self.profile_status=='approved' and self.is_registration_complete()
+               self.profile_status='pending'
+          self.is_verified=(self.profile_status=='approved') and self.is_registration_complete()
           self.save()
 
      def __str__(self):

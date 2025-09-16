@@ -698,8 +698,7 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
                 new_status = data[status_field]
                 
                 # doc_value=getattr(instance,doc_field) if instance else None
-                print(f"docvalues: {doc_value}")
-                
+
                 if new_status in ['approved', 'rejected'] :
                     # errors[status_field] = f"Cannot set {status_field} to {new_status} because {doc_field} is not uploaded."
                     # Check if the document file exists
@@ -712,7 +711,7 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
                         print(f"current: {current_status}")
                         if current_status == 'approved':
                             errors[status_field] = f"Cannot change {status_field} from 'approved' to 'rejected'."
-
+    
         if errors:
             raise serializers.ValidationError(errors)
 

@@ -10,7 +10,7 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
     queryset=Promotion.objects.all()
     serializer_class=PromrotionSerializers
 
-    def post(self,request,*args,**kwargs):
+    def post(self,request,args,*kwargs):
         serializers=self.get_serializer(data=request.data)
         if serializers.is_valid():
             serializers.save()
@@ -25,7 +25,7 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
             "message": serializers.errors
         })
     
-    def get(self,request,pk,*args,**kwargs):
+    def get(self,request,pk,args,*kwargs):
         try:
             instance=Promotion.objects.get(pk=pk)
         except Promotion.DoesNotExist:
@@ -65,7 +65,7 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
                 "message" : serializer.errors
             },status.HTTP_400_BAD_REQUEST)
     
-    def delete(self,request,*args,**kwargs):
+    def delete(self,request,args,*kwargs):
         pk=self.kwargs['pk']
         try:
             instance=Promotion.objects.get(pk=pk)
@@ -80,7 +80,7 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
                 "code" : status.HTTP_400_BAD_REQUEST,
                 "message" : "promotion does not exist"
             },status.HTTP_400_BAD_REQUEST)
-        
+         
 class promotionAllAPIView(generics.GenericAPIView):
     queryset=Promotion.objects.all()
     serializer_class=PromrotionSerializers

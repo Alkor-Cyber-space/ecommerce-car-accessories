@@ -14,7 +14,8 @@ import {
   FaUserTie,
   FaUser,
   FaBars,
-  FaTimes
+  FaTimes,
+  FaTags
 } from 'react-icons/fa';
 import { HiArrowTrendingUp } from "react-icons/hi2";
 import { GrNotification, GrUserSettings } from "react-icons/gr";
@@ -211,6 +212,7 @@ const AdminHome = () => {
               </ul>
             )}
           </li>
+          <SidebarItem to="/admin/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
           <SidebarItem to="/admin/index-catogery" label="Manage Category" icon={<MdOutlineCategory />} activePath={activePath} />
           <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />

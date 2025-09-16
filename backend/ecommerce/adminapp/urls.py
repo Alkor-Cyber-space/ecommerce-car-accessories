@@ -22,5 +22,6 @@ urlpatterns = [
 
     path('vehicles/<int:pk>/update/', AdminVehicleUpdate.as_view(), name='vehicle-update'),
     path('vehicles/<int:pk>/delete/', AdminVehicleDelete.as_view(), name='vehicle-delete'),
+    path("vendor/details/", VendorDetailsList.as_view(), name="vendor-details"),
 
 ]
