@@ -67,6 +67,7 @@ import StockTable from './components/admin/inventoryControl/StockManagement';
 import VendorsDoc from './components/admin/userAndVendor/VendorsDoc';
 import IndexCatogery from './pages/admin/Catogery/IndexCatogery';
 import NewVendorRequest from './components/admin/userAndVendor/NewVendorRequest';
+import AdminAccounts from './pages/admin/AdminAccounts';
 
 
 
@@ -99,6 +100,7 @@ function App() {
           <Route path='tax-reports' element={<TaxReport />} />
           <Route path='search-filter' element={<SearchFilter />} />
           <Route path='auditlogs' element={<AuditLogs />} />
+          <Route path='admin-accounts' element={<AdminAccounts />} />
           <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
