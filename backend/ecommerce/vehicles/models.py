@@ -47,6 +47,6 @@ class SavedVehicle(models.Model):
 
     class Meta:
         unique_together = ('user', 'vehicle_variant')  # Prevent saving same vehicle twice
-
+                                                                                            
     def __str__(self):
         return f"{self.user.username} saved {self.vehicle_variant}"

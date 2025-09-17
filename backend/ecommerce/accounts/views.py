@@ -729,8 +729,7 @@ class VendorProfileUpdateView(APIView):
 
     def get_object(self, pk):
         try:
-            profile = VendorProfile.objects.get(user_id=pk)
-            
+            profile = VendorProfile.objects.get(user_id=pk) 
             return profile
         except VendorProfile.DoesNotExist:
             return None
@@ -842,4 +841,43 @@ class VendorDocumentsFinalApprovalView(APIView):
             "message": f"Vendor documents have been {final_status}.",
             "profile_status": documents.profile_status,
             "is_verified": documents.is_verified,
+        }, status=status.HTTP_200_OK)
+    
+class VendorAuditLogAll(APIView):
+    def get(self,request):
+        data=VendorAuditLog.objects.all()
+        if not data:
+            return Response({
+                "status": "failed",
+                "status_code":status.HTTP_400_BAD_REQUEST,
+                "message": "Audit Log is empty"
+            })
+        serializer=VendorAuditLogSerializer(data,many=True)
+        return Response({
+            "status": "success",
+            "status_code": status.HTTP_200_OK,
+            "data": serializer.data
+        })
+    
+class VendorDocumentCheck(APIView):
+    
+    def get_object(self, pk):
+        try:
+            profile = VendorProfile.objects.get(user_id=pk) 
+            return profile
+        except VendorProfile.DoesNotExist:
+            return None
+    def get(self, request, pk):
+        profile = self.get_object(pk)    
+        if not profile:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=profile)
+        serializer=VendorDocumentsFetchIncompleteSerializer(documents)
+        
+        return Response({
+            "vendor": profile.company_name or profile.user.email,
+            "documents": serializer.data,
         }, status=status.HTTP_200_OK)

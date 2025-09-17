@@ -8,9 +8,13 @@ from rest_framework.generics import GenericAPIView
 
 class PromotionListCreateAPIView(generics.GenericAPIView):
     queryset=Promotion.objects.all()
-    serializer_class=PromrotionSerializers
-
-    def post(self,request,*args,**kwargs):
+    # serializer_class=PromrotionSerializers
+    def get_serializer_class(self):
+        if self.request.method in ["POST","GET","PUT"]:
+            return PromrotionSerializers
+        return PromotionReadSerializer
+             
+    def post(self,request):
         serializers=self.get_serializer(data=request.data)
         if serializers.is_valid():
             serializers.save()
@@ -25,7 +29,7 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
             "message": serializers.errors
         })
     
-    def get(self,request,pk,*args,**kwargs):
+    def get(self,request,pk):
         try:
             instance=Promotion.objects.get(pk=pk)
         except Promotion.DoesNotExist:
@@ -66,7 +70,7 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
             },status.HTTP_400_BAD_REQUEST)
     
     def delete(self,request,*args,**kwargs):
-        pk=self.kwargs['pk']
+        pk=kwargs.get("pk")
         try:
             instance=Promotion.objects.get(pk=pk)
             instance.delete()
@@ -80,7 +84,7 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
                 "code" : status.HTTP_400_BAD_REQUEST,
                 "message" : "promotion does not exist"
             },status.HTTP_400_BAD_REQUEST)
-        
+         
 class promotionAllAPIView(generics.GenericAPIView):
     queryset=Promotion.objects.all()
     serializer_class=PromrotionSerializers
