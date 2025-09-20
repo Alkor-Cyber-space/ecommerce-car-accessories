@@ -134,27 +134,42 @@ class UserViewSet(viewsets.ViewSet):
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
-        print("Email or Username:", email_or_username)
-        print("Password:", password)
+        fcm_token = request.data.get('fcm_token')
+
         if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        
-        user = authenticate(request, username=email_or_username, password=password)
-        print("User found:", user)
+        # Try to fetch user by email OR username
+        try:
+            if "@" in email_or_username:  # assume email
+                user_obj = User.objects.get(email=email_or_username)
+            else:  # assume username
+                user_obj = User.objects.get(username=email_or_username)
+        except User.DoesNotExist:
+            return Response({"error": "User does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Authenticate using the found username
+        user = authenticate(request, username=user_obj.username, password=password)
+
         if user:
             if not user.is_active:
                 return Response({"error": "User account is not active."}, status=status.HTTP_403_FORBIDDEN)
             if user.groups.filter(name='User').exists():
+                # Store multiple tokens
+                if fcm_token:
+                    FCMToken.objects.get_or_create(user=user, token=fcm_token)
+
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "access": str(refresh.access_token),
-                    "refresh": str(refresh),    
+                    "refresh": str(refresh),
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Only user can login here"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def home(self, request):
