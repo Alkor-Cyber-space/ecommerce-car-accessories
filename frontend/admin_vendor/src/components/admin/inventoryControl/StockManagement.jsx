@@ -52,14 +52,23 @@ export default function StockTable() {
     'Out of Stock': 'bg-red-100 text-red-700',
   };
 
-  const filteredData = data.filter((item) => {
+const stockOrder = {
+  "Out of Stock": 1,
+  "Low Stock": 2,
+  "In Stock": 3,
+};
+
+const filteredData = data
+  .filter((item) => {
     return (
       item.name.toLowerCase().includes(search.toLowerCase()) &&
-      (category === 'All' || item.category === category) &&
-      (status === 'All' || item.status === status) &&
-      (vendor === 'All' || item.vendor === vendor)
+      (category === "All" || item.category === category) &&
+      (status === "All" || item.status === status) &&
+      (vendor === "All" || item.vendor === vendor)
     );
-  });
+  })
+  .sort((a, b) => stockOrder[a.status] - stockOrder[b.status]);
+
 
   const openModal = (item) => {
     setSelectedProduct({ ...item });
@@ -99,17 +108,17 @@ export default function StockTable() {
           className="p-2 border rounded w-full"
         />
         <select value={category} onChange={(e) => setCategory(e.target.value)} className="p-2 border rounded w-full">
-          <option>All</option>
+          <option value="All">  Categories</option>
           <option>Engine</option>
           <option>Brakes</option>
         </select>
         <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-2 border rounded w-full">
-          <option>All</option>
+          <option value="All"> Status</option>
           <option>In Stock</option>
           <option>Low Stock</option>
         </select>
         <select value={vendor} onChange={(e) => setVendor(e.target.value)} className="p-2 border rounded w-full">
-          <option>All</option>
+          <option value="All"> Vendors</option>
           <option>XYZ Motors</option>
           <option>Autoplus</option>
         </select>

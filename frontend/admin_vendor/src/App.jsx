@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import './App.css';
-import { ToastContainer } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "react-confirm-alert/src/react-confirm-alert.css";
 
@@ -74,9 +74,41 @@ import PromotionLayout from './pages/admin/PromotionLayout';
 import PromotionBanner from './pages/admin/PromotionBanner';
 
 
-
+import { useEffect } from "react";
+import { generateToken, messaging, onMessageListener } from "./firebase/firebase";
+import VendorStockTable from './pages/vendor/inventory/StockMangementByVendor';
 
 function App() {
+  useEffect(() => {
+    generateToken();
+    // (async () => {
+    //   try {
+    //     const VAPID_KEY = ""; // from Firebase console
+    //     const token = await generateToken(VAPID_KEY);
+
+    //     if (token) {
+    //       // Send to backend (authenticated request if needed)
+    //       await axios.post("/api/save-fcm-token/", { token });
+    //       console.log("Saved FCM token to backend:", token);
+    //     } else {
+    //       console.log("No token obtained (permission denied?).");
+    //     }
+    //   } catch (err) {
+    //     console.error("Error getting FCM token:", err);
+    //   }
+    // })();
+
+    // Foreground message listener
+    onMessageListener(messaging, (payload) => {
+      console.log("Foreground message:", payload);
+      toast(
+        (payload.notification?.title || "") +
+        "\n" +
+        (payload.notification?.body || "")
+      );
+    });
+  }, []);
+
   return (
     <>
       <Routes>
@@ -84,7 +116,7 @@ function App() {
         <Route path="/signin" element={<AdminSignIn />} />
         <Route path="/login" element={<VendorSignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/api/auth/password/reset-password/:uidb64/:token/" element={<ResetPassword />} />
+        <Route path="/api/auth/password/reset-password/:uidb64/:token/" element={<ResetPassword />} />
         <Route path="/register/verifyOtp" element={<Verify />} />
         <Route path='/register' element={<VendorRegister />} />
 
@@ -98,7 +130,7 @@ function App() {
           <Route path="users" element={<UserDataTable />} />
           <Route path="vendors" element={<VendorDataTable />} />
           <Route path="admins" element={<AdminOverview />} />
-          <Route path="vendor-documents" element={<VendorsDoc />} />
+          {/* <Route path="vendor-documents" element={<VendorsDoc />} /> */}
           <Route path="Sales-Report" element={<SalesReport />} />
           <Route path="returns" element={<ReturnsReport />} />
           <Route path="transaction" element={<TransactionReport />} />
@@ -115,7 +147,8 @@ function App() {
           <Route path='support-response' element={<SupportResponse />} />
           <Route path='index-catogery' element={<IndexCatogery />} />
           <Route path='new-vendor-request' element={<NewVendorRequest />} />
-          <Route path='vendor-details/:id'element={<VendorDetails />} />
+          <Route path='vendor-details/:id' element={<VendorDetails />} />
+          <Route path='vendor-documents/:id' element={<VendorsDoc />} />
 
         </Route>
 
@@ -137,34 +170,32 @@ function App() {
             <Route path="add" element={<AddProduct />} />
             <Route path=":id" element={<ProductDetailView />} />
             <Route path=":id/edit" element={<EditProduct />} />
-          
+
           </Route>
 
           <Route path='returns' element={<ReturnsRefundsTable />} />
           <Route path='reviews' element={<RatingAndReviewLayout />} />
-            
-          <Route path='account-settings' element={<AccountSettings />}></Route>
-         
-
+          <Route path='stock-management' element={<VendorStockTable />} />
+          <Route path='account-settings' element={<AccountSettings />}/>
           <Route path='orders' element={<OrdersLayout />} >
             <Route index element={<OrderManagement />} />
             <Route path='order-detail' element={<OrderDetailView />} />
             <Route path='edit-order' element={<OrderDetailEdit />} />
           </Route>
 
-             <Route path='notification' element={<Notification />}/>
-             <Route path='support-help' element={<SupportHelp />}/> 
-             <Route path='createticket' element={<CreateTicket />}/>
-             {/* <Route path='promotions' element={<PromotionLayout />}>
+          <Route path='notification' element={<Notification />} />
+          <Route path='support-help' element={<SupportHelp />} />
+          <Route path='createticket' element={<CreateTicket />} />
+          {/* <Route path='promotions' element={<PromotionLayout />}>
                 <Route index element={<Promotions />} />
                   <Route path="promotion-form" element={<PromotionCouponForm/>} />
              </Route> */}
-             <Route path='payments-earnings' element={<PaymentsEarnings />} />
+          <Route path='payments-earnings' element={<PaymentsEarnings />} />
 
-             
+
 
         </Route>
-                           
+
 
       </Routes>
 

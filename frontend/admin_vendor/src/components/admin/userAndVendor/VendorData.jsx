@@ -9,23 +9,71 @@ export default function VendorDataTable() {
   const [statusFilter, setStatusFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [search, setSearch] = useState('');
-  const [activeDropdown, setActiveDropdown] = useState(null);
+    const hasPendingVendors = vendors?.some((vendor) => vendor.status === "pending");
 
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedVendor, setSelectedVendor] = useState(null);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [filteredVendors, setFilteredVendors] = useState([]);
+
+  const [filters, setFilters] = useState({
+    year: '',
+    location: '',
+    status: '',
+    regDateFrom: '',
+    regDateTo: '',
+  });
+
+  const handleReset = () => {
+    setFilters({
+      year: '',
+      location: '',
+      status: '',
+      regDateFrom: '',
+      regDateTo: '',
+    });
+    setFilteredVendors(vendors);
+  };
+  const handleSearch = () => {
+    const filtered = vendors.filter(vendor => {
+      const matchesYear = filters.year
+        ? new Date(vendor.date_joined).getFullYear().toString() === filters.year
+        : true;
+
+      const matchesLocation = filters.location
+        ? vendor.location?.toLowerCase().includes(filters.location.toLowerCase())
+        : true;
+
+      const matchesStatus = filters.status
+        ? vendor.status === filters.status
+        : true;
+
+      const matchesRegDateFrom = filters.regDateFrom
+        ? new Date(vendor.date_joined) >= new Date(filters.regDateFrom)
+        : true;
+
+      const matchesRegDateTo = filters.regDateTo
+        ? new Date(vendor.date_joined) <= new Date(filters.regDateTo)
+        : true;
+
+      return matchesYear && matchesLocation && matchesStatus && matchesRegDateFrom && matchesRegDateTo;
+    });
+
+    setFilteredVendors(filtered);
+  };
 
   useEffect(() => {
     const fetchVendorList = async () => {
       try {
         const data = await getVendorList();
         setVendors(data);
+        console.log("Fetched vendor list:", data);
+        setFilteredVendors(data);
       } catch (error) {
         console.error("Error fetching vendor list:", error);
       }
     };
     fetchVendorList();
   }, []);
+
 
   const handleStatusChange = (id, newStatus) => {
     const updated = vendors.map(vendor =>
@@ -34,18 +82,18 @@ export default function VendorDataTable() {
     setVendors(updated);
   };
 
-  const filteredVendors = vendors.filter(vendor => {
-    const matchesSearch = search === '' ||
-      vendor.name?.toLowerCase().includes(search.toLowerCase()) ||
-      vendor.email?.toLowerCase().includes(search.toLowerCase()) ||
-      vendor.id?.toString().includes(search);
+  // const filteredVendors = vendors.filter(vendor => {
+  //   const matchesSearch = search === '' ||
+  //     vendor.name?.toLowerCase().includes(search.toLowerCase()) ||
+  //     vendor.email?.toLowerCase().includes(search.toLowerCase()) ||
+  //     vendor.id?.toString().includes(search);
 
-    return (
-      matchesSearch &&
-      (statusFilter ? vendor.status === statusFilter : true) &&
-      (locationFilter ? vendor.location === locationFilter : true)
-    );
-  });
+  //   return (
+  //     matchesSearch &&
+  //     (statusFilter ? vendor.status === statusFilter : true) &&
+  //     (locationFilter ? vendor.location === locationFilter : true)
+  //   );
+  // });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -69,10 +117,6 @@ export default function VendorDataTable() {
     if (action === 'View') {
       localStorage.setItem("selected_vendor", JSON.stringify(vendor));
     }
-    if (action === 'Edit') {
-      setSelectedVendor(vendor);
-      setIsModalOpen(true);
-    }
     console.log(`${action} vendor with ID: ${vendor.id}`);
     setActiveDropdown(null);
   };
@@ -87,17 +131,8 @@ export default function VendorDataTable() {
     };
   }, [activeDropdown]);
 
-  // Save edited vendor
-  const handleSave = () => {
-    setVendors(prev =>
-      prev.map(v => (v.id === selectedVendor.id ? selectedVendor : v))
-    );
-    setIsModalOpen(false);
-  };
-
   return (
     <div className="bg-[#ECECF0] px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-10 rounded-2xl w-full space-y-4 sm:space-y-6">
-
       {/* Header */}
       <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
         <h1 className="text-[#232832] text-lg sm:text-xl font-bold">Vendors Overview</h1>
@@ -113,8 +148,21 @@ export default function VendorDataTable() {
       </div>
 
       {/* New Vendor Request Banner */}
-      {/* New Vendor Request Banner */}
-      {vendors.length > 0 && (
+      <div className="border-2 border-green-600 bg-green-50 hover:bg-green-100 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300 ease-in-out mb-4 w-full max-w-md">
+        <h2 className="font-semibold text-gray-800 text-lg sm:text-xl">New vendor request</h2>
+        <p className="text-sm mt-2 text-gray-600 rounded-lg bg-green-100/50">
+          New vendor request received. Click here to review and approve.
+        </p>
+        <div className="mt-2 flex justify-end">
+          <Link
+            to="/admin/new-vendor-request"
+            className="px-4 py-1 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors duration-200"
+          >
+            View
+          </Link>
+        </div>
+      </div>
+{/* {hasPendingVendors && (
         <div className="border-2 border-green-600 bg-green-50 hover:bg-green-100 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300 ease-in-out mb-4 w-full max-w-md">
           <h2 className="font-semibold text-gray-800 text-lg sm:text-xl">New vendor request</h2>
           <p className="text-sm mt-2 text-gray-600 rounded-lg bg-green-100/50">
@@ -122,24 +170,29 @@ export default function VendorDataTable() {
           </p>
           <div className="mt-2 flex justify-end">
             <Link
-              to={`/admin/user-details/${vendors[0].id}`}
-              onClick={() => localStorage.setItem("selected_vendor", JSON.stringify(vendors[0]))}
+              to="/admin/new-vendor-request"
               className="px-4 py-1 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors duration-200"
             >
               View
             </Link>
           </div>
         </div>
-      )}
-
-
+      )} */}
       {/* Filters */}
-      <SearchFilter />
+      <SearchFilter
+        filters={filters}
+        setFilters={setFilters}
+        onSearch={handleSearch}
+        onReset={handleReset}
+        showYear={true}
+        showLocation={true}
+        showStatus={true}
+      />
 
       {/* Unified Responsive Table */}
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm  scrollbar-none">
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm  scrollbar-none p-3">
         <table className="min-w-[800px] w-full text-sm">
-          <thead className="bg-gray-50 text-gray-600">
+          <thead className=" text-gray-600">
             <tr>
               <th className="py-3 px-4 text-left">User ID</th>
               <th className="py-3 px-4 text-left">Vendor Name</th>
@@ -158,7 +211,8 @@ export default function VendorDataTable() {
               <tr key={`${vendor.id}-${index}`} className=" hover:bg-gray-50 text-gray-800">
                 <td className="py-3 px-4">{vendor.id}</td>
                 <td className="py-3 px-4 font-semibold text-[#5737B4]">
-                  <Link to={`/admin/vendor-details/${vendor.id}`}
+                  <Link
+                    to={`/admin/vendor-details/${vendor.id}`}
                     onClick={() => localStorage.setItem("selected_vendor", JSON.stringify(vendor))}
                   >
                     {vendor.username}
@@ -175,7 +229,7 @@ export default function VendorDataTable() {
                 <td className="py-3 px-4">{formatDate(vendor.date_joined)}</td>
                 <td className="py-3 px-4 font-medium">{vendor.totalProducts || 0}</td>
                 <td className="py-3 px-4 font-medium">{vendor.totalOrders || 0}</td>
-                <td className="py-3 px-4">
+                <td className="py-3 px-4 relative">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -187,7 +241,7 @@ export default function VendorDataTable() {
                   </button>
 
                   {activeDropdown === vendor.id + index && (
-                    <div className="flex absolute right-13 mt-2 w-50 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                    <div className="absolute right-0 top-0 translate-y-[-10px] w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                       <Link
                         to={`/admin/vendor-details/${vendor.id}`}
                         onClick={() => handleAction('View', vendor)}
@@ -220,61 +274,6 @@ export default function VendorDataTable() {
       {filteredVendors.length === 0 && (
         <div className="bg-white rounded-lg p-8 text-center">
           <p className="text-gray-500">No vendors found matching your criteria.</p>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {isModalOpen && selectedVendor && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg shadow-lg relative">
-            <h2 className="text-lg font-semibold mb-4">Edit Vendor</h2>
-
-            <div className="space-y-4">
-              <input
-                type="text"
-                value={selectedVendor.username}
-                onChange={(e) => setSelectedVendor({ ...selectedVendor, username: e.target.value })}
-                placeholder="Vendor Name"
-                className="w-full border rounded-md px-3 py-2"
-              />
-              <input
-                type="email"
-                value={selectedVendor.email}
-                onChange={(e) => setSelectedVendor({ ...selectedVendor, email: e.target.value })}
-                placeholder="Email"
-                className="w-full border rounded-md px-3 py-2"
-              />
-              <input
-                type="text"
-                value={selectedVendor.contact_number || ''}
-                onChange={(e) => setSelectedVendor({ ...selectedVendor, contact_number: e.target.value })}
-                placeholder="Phone"
-                className="w-full border rounded-md px-3 py-2"
-              />
-              <input
-                type="text"
-                value={selectedVendor.location || ''}
-                onChange={(e) => setSelectedVendor({ ...selectedVendor, location: e.target.value })}
-                placeholder="Location"
-                className="w-full border rounded-md px-3 py-2"
-              />
-            </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 rounded-md border text-gray-600"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                className="px-4 py-2 rounded-md bg-[#5737B4] text-white"
-              >
-                Save
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

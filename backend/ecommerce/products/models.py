@@ -17,6 +17,12 @@ class Product(models.Model):
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock = models.PositiveIntegerField(default=0)
+
+    weight = models.DecimalField(max_digits=6, decimal_places=2, help_text="Weight in KG", default=0.5)
+    length = models.DecimalField(max_digits=6, decimal_places=2, help_text="Length in CM", default=10)
+    breadth = models.DecimalField(max_digits=6, decimal_places=2, help_text="Breadth in CM", default=10)
+    height = models.DecimalField(max_digits=6, decimal_places=2, help_text="Height in CM", default=10)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     size = models.CharField(max_length=50, null=True, blank=True)
@@ -29,7 +35,11 @@ class Product(models.Model):
     is_top_rated = models.BooleanField(default=False)
     is_popular = models.BooleanField(default=False)
     compatible_varient_year = models.ManyToManyField('vehicles.VehicleVariant', blank=True, related_name='compatible_products')
-
+    length=models.DecimalField(max_digits=10, decimal_places=2)
+    breadth=models.DecimalField(max_digits=10, decimal_places=2)
+    height=models.DecimalField(max_digits=10, decimal_places=2)
+    weight=models.DecimalField(max_digits=10, decimal_places=2)
+    
     def __str__(self):
         return self.name
     

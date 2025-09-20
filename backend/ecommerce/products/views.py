@@ -134,3 +134,86 @@ class ReviewViewSet(viewsets.ModelViewSet):
 #             return Response({"error": "Variant not found."}, status=status.HTTP_404_NOT_FOUND)
 #         except VariantYear.DoesNotExist:
 #             return Response({"error": "Variant-Year combination not found."}, status=status.HTTP_404_NOT_FOUND)
+
+class VendorCategoryRequest(APIView):
+    def post(self,request):
+        all=Category.objects.all()
+        data=request.data.get("name")
+        discription=request.data.get("discription")
+        print(f"all :{all}")
+        if not data:
+              return Response({
+                        "status": "Failed",
+                        "code" : status.HTTP_400_BAD_REQUEST,
+                        "message" : "category name is required"
+                    },status.HTTP_400_BAD_REQUEST)
+        if Category.objects.filter(name__iexact=data).exists():
+            return Response({
+                        "status": "Failed",
+                        "code" : status.HTTP_400_BAD_REQUEST,
+                        "message" : "same name category item is already there"
+                    },status.HTTP_400_BAD_REQUEST)
+        serializer=CategorySerializer(data={"name": data,"available": False,"discription":discription})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                    "status": "Updated successfully",
+                    "code" : status.HTTP_200_OK,
+                    "message" : serializer.data
+                })
+        else:
+            return Response({
+                    "status": "Failed",
+                    "code" : status.HTTP_400_BAD_REQUEST,
+                    "message" : serializer.errors
+                },status.HTTP_400_BAD_REQUEST)
+        
+
+class VendorCategoryApprove(APIView):
+    def get(self,requst):
+        obj=Category.objects.filter(available=False)
+        if obj:
+            try:
+                serializer=CategorySerializer(obj,many=True)
+                return Response({
+                    "status": " successfully",
+                    "code" : status.HTTP_200_OK,
+                    "message" : serializer.data
+                    })
+            except:
+                return Response({
+                    "status": " failed",
+                    "code" : status.HTTP_400_BAD_REQUEST,
+                    "message" : "internalservererror"
+                    })
+    def post(self,request):
+
+        id=request.data.get("id")
+        if not id:
+            return Response({"status": " failed","code" : status.HTTP_400_BAD_REQUEST,"message" : "internalservererror"})
+        try:
+            queryset=Category.objects.get(id=id)
+        except Category.DoesNotExist:
+            return Response({
+                "status": "failed",
+                "code": status.HTTP_404_NOT_FOUND,
+                "message": f"Category with id {id} does not exist."
+            }, status=status.HTTP_404_NOT_FOUND)
+        request_status=request.data.get("status")
+        
+
+        if request_status=="approved":
+            serializer=CategorySerializer(queryset,data={"available": True},partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"status": "Updated SuccessFully","code" : status.HTTP_200_OK,"message" : serializer.data})
+            return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
+
+        if request_status=="rejected":
+            queryset.delete()
+            return Response({"status": "rejected SuccessFully","code" : status.HTTP_200_OK,"message" : "rejected"})
+        return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
+
+        
+
+

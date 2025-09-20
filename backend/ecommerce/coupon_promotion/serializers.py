@@ -4,10 +4,38 @@ from products.models import *
 from decimal import Decimal
 from django.core.exceptions import ValidationError
 class PromrotionSerializers(serializers.ModelSerializer):
+    value = serializers.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        required=False,  # 👈 not required
+        allow_null=True
+    )
     class Meta:
         model=Promotion
         fields='__all__'
 
+class categorySerilzier(serializers.ModelSerializer):
+    class Meta:
+        model=Category
+        fields=["id","name","discription","image","available"]
+
+class ProductSerilaizer(serializers.ModelSerializer):
+    class Meta:
+        model=Product
+        fields = ["id", "name", "description", "price", "stock"]
+
+class PromotionReadSerializer(serializers.ModelSerializer):
+    
+    applicable_product = ProductSerilaizer(many=True,read_only=True)
+    applicable_category= categorySerilzier(many=True,read_only=True)
+
+    class Meta:
+        model=Promotion
+        fields=[
+            "id", "name", "code", "description", "promotion_type", "value",
+            "start_date", "end_date", "activate", "price_range",
+            "applicable_product", "applicable_category"
+        ]
 class CouponSerializer(serializers.ModelSerializer):
      class Meta:
         model=Coupon
