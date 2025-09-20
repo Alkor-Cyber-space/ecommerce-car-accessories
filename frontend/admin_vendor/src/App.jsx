@@ -71,14 +71,16 @@ import VendorDetails from './components/admin/userAndVendor/VendorDetails';
 import PromotionCouponForm from './components/admin/PromotionCouponForm';
 import Promotions from './pages/admin/Promotions';
 import PromotionLayout from './pages/admin/PromotionLayout';
+import PromotionBanner from './pages/admin/PromotionBanner';
 
 
 import { useEffect } from "react";
 import { generateToken, messaging, onMessageListener } from "./firebase/firebase";
+import VendorStockTable from './pages/vendor/inventory/StockMangementByVendor';
 
 function App() {
-    useEffect(() => {
-      generateToken();
+  useEffect(() => {
+    generateToken();
     // (async () => {
     //   try {
     //     const VAPID_KEY = ""; // from Firebase console
@@ -101,8 +103,8 @@ function App() {
       console.log("Foreground message:", payload);
       toast(
         (payload.notification?.title || "") +
-          "\n" +
-          (payload.notification?.body || "")
+        "\n" +
+        (payload.notification?.body || "")
       );
     });
   }, []);
@@ -114,7 +116,7 @@ function App() {
         <Route path="/signin" element={<AdminSignIn />} />
         <Route path="/login" element={<VendorSignIn />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-<Route path="/api/auth/password/reset-password/:uidb64/:token/" element={<ResetPassword />} />
+        <Route path="/api/auth/password/reset-password/:uidb64/:token/" element={<ResetPassword />} />
         <Route path="/register/verifyOtp" element={<Verify />} />
         <Route path='/register' element={<VendorRegister />} />
 
@@ -137,6 +139,7 @@ function App() {
           <Route path='promotions' element={<PromotionLayout />}>
                 <Route index element={<Promotions />} />
                   <Route path="promotion-form" element={<PromotionCouponForm/>} />
+                  <Route path='promotion_banner' element={<PromotionBanner/>}/>
              </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
           <Route path='user-details/:id' element={<UserDetails />} />
@@ -167,34 +170,32 @@ function App() {
             <Route path="add" element={<AddProduct />} />
             <Route path=":id" element={<ProductDetailView />} />
             <Route path=":id/edit" element={<EditProduct />} />
-          
+
           </Route>
 
           <Route path='returns' element={<ReturnsRefundsTable />} />
           <Route path='reviews' element={<RatingAndReviewLayout />} />
-            
-          <Route path='account-settings' element={<AccountSettings />}></Route>
-         
-
+          <Route path='stock-management' element={<VendorStockTable />} />
+          <Route path='account-settings' element={<AccountSettings />}/>
           <Route path='orders' element={<OrdersLayout />} >
             <Route index element={<OrderManagement />} />
             <Route path='order-detail' element={<OrderDetailView />} />
             <Route path='edit-order' element={<OrderDetailEdit />} />
           </Route>
 
-             <Route path='notification' element={<Notification />}/>
-             <Route path='support-help' element={<SupportHelp />}/> 
-             <Route path='createticket' element={<CreateTicket />}/>
-             {/* <Route path='promotions' element={<PromotionLayout />}>
+          <Route path='notification' element={<Notification />} />
+          <Route path='support-help' element={<SupportHelp />} />
+          <Route path='createticket' element={<CreateTicket />} />
+          {/* <Route path='promotions' element={<PromotionLayout />}>
                 <Route index element={<Promotions />} />
                   <Route path="promotion-form" element={<PromotionCouponForm/>} />
              </Route> */}
-             <Route path='payments-earnings' element={<PaymentsEarnings />} />
+          <Route path='payments-earnings' element={<PaymentsEarnings />} />
 
-             
+
 
         </Route>
-                           
+
 
       </Routes>
 

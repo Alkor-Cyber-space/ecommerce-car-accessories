@@ -913,6 +913,7 @@ class VendorAuditLogAll(APIView):
             "status_code": status.HTTP_200_OK,
             "data": serializer.data
         })    
+    
 class VendorDocumentCheck(APIView):
     
     def get_object(self, pk):
@@ -953,7 +954,8 @@ class AdminProfileEdit(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        serializer = UserEditSerializer(user, data=request.data, partial=True, context={"request": request})
+
+        serializer=UserEditSerializer(user,data=request.data,partial=True,context={'request': request})
         if serializer.is_valid():
             serializer.save()
             return Response({
@@ -980,5 +982,6 @@ class AdminRetrieveByIdAPIView(generics.GenericAPIView):
             return Response({"status": "Failed","status_code":status.HTTP_400_BAD_REQUEST,"message": "Admin with this ID does not exist or is not staff." })
         serializer = self.get_serializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 

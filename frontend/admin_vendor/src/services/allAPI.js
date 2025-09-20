@@ -370,20 +370,22 @@ export const getVendorList = async () => {
     console.error("Error fetching vendors:", error);
     throw error;
   }
-};
-export const productcategory = async (productData) => {
-  try {
+}
+
+export const productcategories = async (productData) => {
+
+  const token = localStorage.getItem("access_token");
+
     const response = await api.post("/admin/categories/", productData, {
-      headers: {
-        "Content-Type": "application/json", 
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error("Error creating product category:", error);
-    throw error;
-  }
-};
+    headers: {
+      Authorization: `JWT ${token}`,
+        "Content-Type": "multipart/form-data", // ✅ important
+    }
+  })
+  return response.data
+}
+
+
 
 export const getProductcategorylist = async () => {
   try {
@@ -397,8 +399,13 @@ export const getProductcategorylist = async () => {
 
 export const updateProductCategoryApi = async (categoryid, category) => {
   try {
-    const response = await api.put(`/admin/categories/${categoryid}/`, category);
-    return response.data;
+    const response = await api.put(`/admin/categories/${categoryid}/`, category, {
+      headers: {
+        Authorization: `JWT ${token}`,
+               "Content-Type": "multipart/form-data", // ✅ important
+      },
+    });
+    return response;
   } catch (error) {
     console.error("Error updating account:", error);
     throw error;
@@ -594,6 +601,7 @@ export const VendorAddressesApi = async (address) => {
 
 export const resetPasswordApi = async (uidb64, token, currentPassword, newPassword) => {
   try {
+
     const response = await api.post(
       `/auth/password/reset-password/${uidb64}/${token}/`,
       {
@@ -677,6 +685,7 @@ export const deleteAdminApi = async (adminId) => {
 
 export const getUserOrderListApi = async (vendorId) => {
   try {
+
     const response = await api.get(`/auth/addresses/`); 
     return response.data;
   } catch (error) {
@@ -684,4 +693,265 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
-   
+
+export const createPromotionApi = async (promoData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(`${serverurl}/coupon_promo/promotion/`, promoData, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating promotion:", error);
+  }}
+   export const VendorDocumentCheckApi = async()=>{
+    try {
+      const response = await api.get(`/auth/vendor-document-check/`);
+      return response.data
+    } catch (error) {
+      console.log("error fetching vendordocumentcheck", error);
+      throw error
+    }
+   }
+
+export const getVendorKycDocuments = async (vendorId) => {
+  try {
+    const response = await api.get(`/auth/vendor_profile_update/${vendorId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error loading KYC documents:", error);
+    throw error;
+  }
+};
+
+export const getCategoriesByAll = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/products/categories/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error fetching categories:", error);
+    throw error;
+  }
+};
+
+export const getProductsByCategory = async (categoryId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/products/categories/${categoryId}/products/`, {
+      headers: {
+        Authorization: `JWT ${token}`
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    throw error;
+  }
+};
+
+export const getAllPromotionsApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/promotion/all/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching promotions:", error);
+    throw error;
+  }
+};
+
+export const promotionByIdApi = async (promotionId) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/promotion/${promotionId}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data; // ✅ return data directly
+  } catch (error) {
+    console.error("Error fetching promotion by ID:", error);
+    throw error;
+  }
+};
+
+export const editPromotionApi = async (promotionId, updatedData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.put(
+      `${serverurl}/coupon_promo/promotion/${promotionId}/`,
+      updatedData, // send updated fields
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+            }})}
+  catch (error) {
+    console.error("Error updating promotion:", error);
+    throw error;
+  }
+};
+
+export const updateKycDocuments = async (vendorId, formData) => {
+  try {
+    const response = await api.put(
+      `/auth/vendor_profile_update/${vendorId}/`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+      } catch (error) {
+    console.error("Error updating KYC documents:", error.response?.data || error);
+    throw error;
+  }
+};
+
+
+export const createCouponApi = async (couponData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(`${serverurl}/coupon_promo/coupon/`, couponData, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error creating coupon:", error);
+    throw error;
+  }
+};
+
+export const getAllCouponsApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/coupon/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error fetching coupons:", error);
+    throw error;
+  }
+};
+export const deleteCouponsApi = async (id) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/coupon_promo/coupon/${id}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting coupon:", error);
+    throw error;
+  }
+};
+
+export const deletePromotionApi = async (id) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/coupon_promo/promotion/${id}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error deleting promotion:", error);
+    throw error;
+  }
+};
+export const deleteProductImageAPi = async (id) =>{
+  try{
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/vendor/products/${id}/delete-image/`, {
+      headers: {
+        Authorization: `JWT ${token}`, 
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data; 
+  } catch (error) {
+    console.error("Error deleting product image:", error);
+    throw error;
+  }
+}
+export const createPromotionBannerApi = async (bannerData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(`${serverurl}/coupon_promo/banner-create/`, bannerData, { 
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating promotion banner:", error);
+    throw error;
+  }
+};
+export const getAllPromotionBannersApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/banner-create/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data.message || [];
+  } catch (error) {
+    console.error("Error fetching promotion banners:", error);
+    throw error;
+  }
+};
+export const deletePromotionBannerApi = async (id) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/coupon_promo/banner-update-delete/${id}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting promotion banner:", error);
+    throw error;
+  }
+};
+
+
