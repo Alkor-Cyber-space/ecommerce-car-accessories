@@ -17,7 +17,7 @@ export default function AdminOverview() {
     role: "Admin",
     status: "",
   });
-
+const [showModal, setShowModal] = useState(false); 
   useEffect(() => {
     const fetchAdminsList = async () => {
       try {
@@ -69,6 +69,8 @@ export default function AdminOverview() {
       const updatedAdmins = await getAdminsList();
       setAdmins(updatedAdmins);
       localStorage.setItem("adminsList", JSON.stringify(updatedAdmins));
+
+      
 
       setShowModal(false);
       setFormData({

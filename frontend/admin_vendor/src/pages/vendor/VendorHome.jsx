@@ -65,8 +65,8 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/payments-earnings" label="Payments & Earnings" icon={<PiBuildings />} activePath={activePath} />
           <SidebarItem to="/vendor/reviews" label="Ratings & Reviews" icon={<IoStarHalf />} activePath={activePath} />
           {/* <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} /> */}
-          <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
-          <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} />
+          {/* <SidebarItem to="/vendor/settlements" label="Settlements" icon="💰" activePath={activePath} />
+          <SidebarItem to="/vendor/performance" label="Performance Metrics" icon={<FaChartBar />} activePath={activePath} /> */}
           <SidebarItem to="/vendor/profile" label="Profile & KYC" icon={<FaUserCircle />} activePath={activePath} />
           <SidebarItem to="/vendor/notification" label="Notifications" icon={<MdNotificationsNone />} activePath={activePath} />
           <SidebarItem to="/vendor/support-help" label="Support/Help" icon={<FaRegQuestionCircle />} activePath={activePath} />

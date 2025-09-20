@@ -372,7 +372,7 @@ export const productcategories = async (productData) => {
   const response = await axios.post(`${serverurl}/admin/categories/`, productData, {
     headers: {
       Authorization: `JWT ${token}`,
-      "Content-Type": "application/json"
+        "Content-Type": "multipart/form-data", // ✅ important
     }
   })
   return response.data
@@ -400,7 +400,8 @@ export const updateProductCategoryApi = async (categoryid, category) => {
     const response = await axios.put(`${serverurl}/admin/categories/${categoryid}/`, category, {
       headers: {
         Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
+               "Content-Type": "multipart/form-data", // ✅ important
+
       },
     });
     return response;
@@ -781,7 +782,7 @@ export const promotionByIdApi = async (promotionId) => {
   try {
     const token = localStorage.getItem("access_token");
     const response = await axios.get(`${serverurl}/coupon_promo/promotion/${promotionId}/`, {
-      headers: {  
+      headers: {
         Authorization: `JWT ${token}`,
         "Content-Type": "application/json",
       },
@@ -813,3 +814,131 @@ export const editPromotionApi = async (promotionId, updatedData) => {
     throw error;
   }
 };
+
+export const createCouponApi = async (couponData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(`${serverurl}/coupon_promo/coupon/`, couponData, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error creating coupon:", error);
+    throw error;
+  }
+};
+
+export const getAllCouponsApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/coupon/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error fetching coupons:", error);
+    throw error;
+  }
+};
+export const deleteCouponsApi = async (id) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/coupon_promo/coupon/${id}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting coupon:", error);
+    throw error;
+  }
+};
+
+export const deletePromotionApi = async (id) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/coupon_promo/promotion/${id}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  }
+  catch (error) {
+    console.error("Error deleting promotion:", error);
+    throw error;
+  }
+};
+export const deleteProductImageAPi = async (id) =>{
+  try{
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/vendor/products/${id}/delete-image/`, {
+      headers: {
+        Authorization: `JWT ${token}`, 
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data; 
+  } catch (error) {
+    console.error("Error deleting product image:", error);
+    throw error;
+  }
+}
+export const createPromotionBannerApi = async (bannerData) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.post(`${serverurl}/coupon_promo/banner-create/`, bannerData, { 
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating promotion banner:", error);
+    throw error;
+  }
+};
+export const getAllPromotionBannersApi = async () => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.get(`${serverurl}/coupon_promo/banner-create/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data.message || [];
+  } catch (error) {
+    console.error("Error fetching promotion banners:", error);
+    throw error;
+  }
+};
+export const deletePromotionBannerApi = async (id) => {
+  try {
+    const token = localStorage.getItem("access_token");
+    const response = await axios.delete(`${serverurl}/coupon_promo/banner-update-delete/${id}/`, {
+      headers: {
+        Authorization: `JWT ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting promotion banner:", error);
+    throw error;
+  }
+};
+
+

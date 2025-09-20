@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { BsArrowLeft, BsTag, BsPercent, BsGift, BsCheckCircle, BsExclamationCircle } from 'react-icons/bs';
 import { AiOutlinePlus, AiOutlineCalendar } from 'react-icons/ai';
-import { createPromotionApi, getCategoriesByAll, getProductsByCategory } from '../../services/allAPI';
+import { createCouponApi, createPromotionApi, getCategoriesByAll, getProductsByCategory } from '../../services/allAPI';
 
 const PromotionCouponForm = () => {
   const [activeTab, setActiveTab] = useState('promotion');
@@ -49,6 +49,8 @@ const PromotionCouponForm = () => {
     setFormRows(updatedRows);
   };
 
+
+
   const [categories, setCategories] = useState([]);
   const [selectedProducts, setSelectedProducts] = useState({});
   useEffect(() => {
@@ -92,15 +94,7 @@ const PromotionCouponForm = () => {
     });
   };
 
-  const [couponData, setCouponData] = useState({
-    name: '',
-    discount_value: '',
-    min_purchase_amount: 0,
-    start_date: '',
-    end_date: '',
-    activate: true,
-    useage_limit: 1,
-  });
+  // Removed duplicate couponData declaration here
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -112,35 +106,27 @@ const PromotionCouponForm = () => {
       [name]: type === 'checkbox' ? checked : value,
     });
   };
-
-  const handleCouponChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setCouponData({
-      ...couponData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-  };
   const submitPromotion = async () => {
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
-   // Check required fields
-if (
-  !promotionData.name ||
-  !promotionData.code ||
-  !promotionData.description ||
-  !promotionData.promotion_type ||
-  (!promotionData.value && promotionData.promotion_type !== 'BOGO') || // Skip value check for BOGO
-  !promotionData.start_date ||
-  !promotionData.end_date
-) {
-  setMessage({ type: 'error', text: 'Please fill in all required fields.' });
-  setIsSubmitting(false);
-  setTimeout(() => {
-    setMessage({ type: '', text: '' });
-  }, 10000);
-  return;
-}
+    // Check required fields
+    if (
+      !promotionData.name ||
+      !promotionData.code ||
+      !promotionData.description ||
+      !promotionData.promotion_type ||
+      (!promotionData.value && promotionData.promotion_type !== 'BOGO') || // Skip value check for BOGO
+      !promotionData.start_date ||
+      !promotionData.end_date
+    ) {
+      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
+      setIsSubmitting(false);
+      setTimeout(() => {
+        setMessage({ type: '', text: '' });
+      }, 10000);
+      return;
+    }
 
     for (let row of formRows) {
       if (!row.category) {
@@ -166,7 +152,7 @@ if (
 
       const payload = {
         ...promotionData,
-          value: promotionData.promotion_type === 'BOGO' ? 0 : promotionData.value,
+        value: promotionData.promotion_type === 'BOGO' ? 0 : promotionData.value,
         applicable_category: applicable_category,
         applicable_product: applicable_product,
         details: formRows.map(row => ({
@@ -294,6 +280,50 @@ if (
   //   }
   // };
 
+  // 
+  const [couponData, setCouponData] = useState({
+    name: '',
+    code: '',
+    discount_value: '',
+    min_purchase_amount: 0,
+    start_date: '',
+    end_date: '',
+    activate: true,
+    useage_limit: 1,
+    applicable_products: [] // If needed, depending on API
+  });
+
+  const [couponRows, setCouponRows] = useState([
+    {
+      applicable_products: [],
+      min_purchase_amount: 0,
+      max_purchase_amount: 2000
+    }
+  ]);
+
+  // Handle changes in individual coupon rows
+  const handleCouponRowChange = (index, field, value) => {
+    const updatedRows = [...couponRows];
+    updatedRows[index][field] = value;
+    setCouponRows(updatedRows);
+  };
+
+  // Add a new row
+  const addCouponRow = () => {
+    setCouponRows([...couponRows, {
+      applicable_products: [],
+      min_purchase_amount: 0,
+      max_purchase_amount: 2000
+    }]);
+  };
+
+  // Delete a row
+  const deleteCouponRow = (index) => {
+    const updatedRows = couponRows.filter((_, i) => i !== index);
+    setCouponRows(updatedRows);
+  };
+
+
   const getPromotionTypeColor = (type) => {
     switch (type) {
       case 'percentage':
@@ -306,51 +336,56 @@ if (
         return 'bg-gray-100 text-gray-600';
     }
   };
+  const handleCouponChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setCouponData({
+      ...couponData,
+      [name]: type === 'checkbox' ? checked : value,
+    });
+  };
+
 
   const submitCoupon = async () => {
-    setIsSubmitting(true);
-    setMessage({ type: '', text: '' });
+  setIsSubmitting(true);
+  setMessage({ type: '', text: '' });
 
-    if (!couponData.name || !couponData.discount_value || !couponData.start_date || !couponData.end_date) {
-      setMessage({ type: 'error', text: 'Please fill in all required fields.' });
-      setIsSubmitting(false);
-      setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, 10000);
-      return;
-    }
+  if (!couponData.name.trim() || !couponData.code.trim() || !couponData.discount_value || !couponData.start_date || !couponData.end_date) {
+    setIsSubmitting(false);
+    setMessage({ type: 'error', text: 'Please fill all required fields.' });
+    setTimeout(() => setMessage({ type: '', text: '' }), 10000);
+    return;
+  }
 
-    try {
-      // Replace this with your actual API call
-      // const response = await createCouponApi(couponData);
-      const response = { status: 'success', data: couponData }; // Mock response for now
+  try {
+    const response = await createCouponApi({
+      ...couponData,
+      applicable_products: couponData.applicable_products || []
+    });
 
-      setMessage({ type: 'success', text: 'Coupon created successfully!' });
-      setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, 10000);
+    setMessage({ type: 'success', text: 'Coupon created successfully!' });
+    setTimeout(() => setMessage({ type: '', text: '' }), 10000);
 
-      console.log('Coupon created:', response);
+    setCouponData({
+      name: '',
+      code: '',
+      discount_value: '',
+      min_purchase_amount: 0,
+      start_date: '',
+      end_date: '',
+      activate: true,
+      useage_limit: 1,
+      applicable_products: []
+    });
+  } catch (error) {
+    console.error('Error creating coupon:', error);
+    setMessage({ type: 'error', text: 'Error creating coupon. Please try again.' });
+    setTimeout(() => setMessage({ type: '', text: '' }), 10000);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
-      setCouponData({
-        name: '',
-        discount_value: '',
-        min_purchase_amount: 0,
-        start_date: '',
-        end_date: '',
-        activate: true,
-        useage_limit: 1,
-      });
-    } catch (error) {
-      console.error('Error creating coupon:', error);
-      setMessage({ type: 'error', text: 'Error creating coupon. Please try again.' });
-      setTimeout(() => {
-        setMessage({ type: '', text: '' });
-      }, 10000);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+
 
 
   return (
@@ -568,7 +603,7 @@ if (
                       <select
                         value={row.category}
                         onChange={async (e) => {
-                          const categoryId = Number(e.target.value);
+                          const categoryId = e.target.value; // keep as string for API compatibility
                           handleRowChange(index, 'category', categoryId);
 
                           // Fetch products for this category and update the row
@@ -742,7 +777,7 @@ if (
             {/* Basic Information */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-3">Basic Information</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Coupon Name *</label>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg">
@@ -757,6 +792,23 @@ if (
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">Coupon Code *</label>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg relative">
+                    <BsTag className="absolute left-3 top-3 text-gray-400" />
+                    <input
+                      name="code"
+                      type="text"
+                      placeholder="COUPON2024"
+                      value={couponData.code}
+                      onChange={handleCouponChange}
+                      required
+                      className="w-full pl-10 p-3 bg-transparent focus:outline-none"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-600 mb-1">Discount Value (%) *</label>
                   <div className="bg-gray-50 border border-gray-200 rounded-lg">
@@ -772,40 +824,38 @@ if (
                     />
                   </div>
                 </div>
+
+                {/* Now Minimum Purchase and Usage Limit */}
+
               </div>
             </div>
-
-            {/* Coupon Settings */}
-            <div>
-              <label className="block text-sm font-medium text-gray-600 mb-3">Coupon Settings</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Minimum Purchase Amount</label>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg">
-                    <input
-                      name="min_purchase_amount"
-                      type="number"
-                      step="0.01"
-                      placeholder="0.00"
-                      value={couponData.min_purchase_amount}
-                      onChange={handleCouponChange}
-                      className="w-full p-3 bg-transparent focus:outline-none"
-                    />
-                  </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Minimum Purchase Amount</label>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg">
+                  <input
+                    name="min_purchase_amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={couponData.min_purchase_amount}
+                    onChange={handleCouponChange}
+                    className="w-full p-3 bg-transparent focus:outline-none"
+                  />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">Usage Limit</label>
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg">
-                    <input
-                      name="useage_limit"
-                      type="number"
-                      min="1"
-                      placeholder="100"
-                      value={couponData.useage_limit}
-                      onChange={handleCouponChange}
-                      className="w-full p-3 bg-transparent focus:outline-none"
-                    />
-                  </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Usage Limit</label>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg">
+                  <input
+                    name="useage_limit"
+                    type="number"
+                    min="1"
+                    placeholder="100"
+                    value={couponData.useage_limit}
+                    onChange={handleCouponChange}
+                    className="w-full p-3 bg-transparent focus:outline-none"
+                  />
                 </div>
               </div>
             </div>
@@ -887,6 +937,7 @@ if (
               <button
                 onClick={() => setCouponData({
                   name: '',
+                  code: '',
                   discount_value: '',
                   min_purchase_amount: 0,
                   start_date: '',

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Star, Tag, Calendar, Users, TrendingUp, Award, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { editPromotionApi, getAllPromotionsApi, getCategoriesApi, getProductsByCategory, promotionByIdApi } from '../../services/allAPI';
+import PromotionsList from '../PromotionList';
+import CouponList from '../Coupons/CouponList';
+import PromotionBanner from './PromotionBanner';
 
 const Promotions = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -16,107 +19,54 @@ const Promotions = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    description: '',
-    value: '',
-    start_date: '',
-    end_date: '',
-    applicable_category: [],
-    applicable_product: []
-  });
-
-  // Fetch categories when edit modal opens
   useEffect(() => {
     if (isEditModalOpen) {
       fetchCategories();
+      // If editing, ensure categories/products are loaded for the selected promotion
+      if (selectedPromotion) {
+        const categoryIds = selectedPromotion.applicable_category
+          ? selectedPromotion.applicable_category.map(cat => cat.id)
+          : [];
+        setSelectedCategories(categoryIds);
+        if (categoryIds.length > 0) {
+          getProductsByCategory(categoryIds[0]).then((response) => {
+            setProducts(response.data);
+          }).catch(() => setProducts([]));
+        } else {
+          setProducts([]);
+        }
+        setSelectedProducts(selectedPromotion.applicable_product
+          ? selectedPromotion.applicable_product.map(prod => prod.id)
+          : []
+        );
+      }
+    } else {
+      setProducts([]);
+      setSelectedCategories([]);
+      setSelectedProducts([]);
     }
   }, [isEditModalOpen]);
 
   const fetchCategories = async () => {
     try {
       const response = await getCategoriesApi();
-      setAllCategories(response.data || []);
+      setAllCategories(response.data);
     } catch (error) {
       console.error("Error fetching categories:", error);
-      setAllCategories([]); // Set empty array on error
     }
   };
 
-  // Initialize edit form data when selectedPromotion changes
-  useEffect(() => {
-    if (selectedPromotion) {
-      const categoryIds = selectedPromotion.applicable_category
-        ? selectedPromotion.applicable_category.map(cat => cat.id)
-        : [];
-      
-      const productIds = selectedPromotion.applicable_product
-        ? selectedPromotion.applicable_product.map(prod => prod.id)
-        : [];
-
-      setEditFormData({
-        name: selectedPromotion.name || '',
-        description: selectedPromotion.description || '',
-        value: selectedPromotion.value || '',
-        start_date: selectedPromotion.start_date || '',
-        end_date: selectedPromotion.end_date || '',
-        applicable_category: categoryIds,
-        applicable_product: productIds
-      });
-
-      // Set selected categories and products
-      setSelectedCategories(categoryIds);
-      setSelectedProducts(productIds);
-
-      // If there are selected categories, load products for the first one
-      if (categoryIds.length > 0) {
-        loadProductsForCategory(categoryIds[0]);
-      }
-    }
-  }, [selectedPromotion]);
-
-  // Function to load products for a specific category
-  const loadProductsForCategory = async (categoryId) => {
+  const handleCategoryClick = async (categoryId) => {
     try {
       const response = await getProductsByCategory(categoryId);
       setProducts(response.data);
+      setSelectedCategories([categoryId]);
+      setSelectedProducts([]);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
   };
 
-  // Handle category selection in edit modal
-  const handleCategoryClick = async (categoryId) => {
-    try {
-      // Toggle category selection
-      let updatedCategories;
-      if (selectedCategories.includes(categoryId)) {
-        // Remove category
-        updatedCategories = selectedCategories.filter(id => id !== categoryId);
-        // Clear products if no categories selected
-        if (updatedCategories.length === 0) {
-          setProducts([]);
-          setSelectedProducts([]);
-        }
-      } else {
-        // Add category (for single category selection)
-        updatedCategories = [categoryId]; // Replace with [categoryId] for single selection
-        // For multiple category selection, use: [...selectedCategories, categoryId]
-        
-        // Load products for this category
-        const response = await getProductsByCategory(categoryId);
-        setProducts(response.data);
-        // Clear previously selected products when switching categories
-        setSelectedProducts([]);
-      }
-      
-      setSelectedCategories(updatedCategories);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
-
-  // Handle product selection in edit modal
   const handleProductSelection = (productId) => {
     setSelectedProducts((prev) =>
       prev.includes(productId)
@@ -125,101 +75,60 @@ const Promotions = () => {
     );
   };
 
-  // Handle opening edit modal
-  const handleEditModalOpen = () => {
-    setIsEditModalOpen(true);
-    setMessage({ type: '', text: '' }); // Clear any previous messages
-  };
-
-  const handleSaveChanges = async () => {
+const handleSaveChanges = async () => {
     try {
       setIsSubmitting(true);
       setMessage({ type: '', text: '' });
 
       const updatedData = {
         ...editFormData,
-        value: parseFloat(editFormData.value),
-        applicable_category: selectedCategories.map(catId => {
-          const category = allCategories.find(cat => cat.id === catId);
-          return {
-            id: catId,
-            name: category?.name
-          };
-        }),
-        applicable_product: selectedProducts.map(prodId => {
-          const product = products.find(prod => prod.id === prodId);
-          return {
-            id: prodId,
-            name: product?.name
-          };
-        })
+        applicable_category: selectedCategories,
+        applicable_product: selectedProducts
       };
 
-      // Add these console logs in handleSaveChanges
-      console.log('Selected Categories:', selectedCategories);
-      console.log('All Categories:', allCategories);
-      console.log('Selected Products:', selectedProducts);
-      console.log('All Products:', products);
-      console.log('Updated Data:', updatedData);
-
-      const result = await editPromotionApi(selectedPromotion.id, updatedData);
-      console.log('API Response:', result);
-
-      // Create updated promotion object with all necessary data
-      const updatedPromotion = {
-        ...selectedPromotion,
-        ...updatedData,
-        applicable_category: updatedData.applicable_category,
-        applicable_product: updatedData.applicable_product
-      };
-
-      // Update all states that contain promotion data
-      setPromotions(prevPromotions => 
-        prevPromotions.map(p => 
-          p.id === selectedPromotion.id ? updatedPromotion : p
-        )
-      );
-      setselectedPromotion(updatedPromotion);
-      setPromotionDetails(updatedPromotion);
-      
+      await editPromotionApi(selectedPromotion.id, updatedData);
       setMessage({ type: 'success', text: 'Promotion updated successfully!' });
-      
-      // Add this after successful update
-      const fetchUpdatedPromotion = async () => {
-        try {
-          const updatedData = await promotionByIdApi(selectedPromotion.id);
-          setselectedPromotion(updatedData);
-          setPromotionDetails(updatedData);
-          setPromotions(prevPromotions => 
-            prevPromotions.map(p => 
-              p.id === selectedPromotion.id ? updatedData : p
-            )
-          );
-        } catch (error) {
-          console.error('Error fetching updated promotion:', error);
-        }
-      };
-
-      // Call this after successful update
-      await fetchUpdatedPromotion();
-      
-      // Modify the setTimeout to ensure data is updated before closing
-      setTimeout(() => {
-        setIsEditModalOpen(false);
-        setMessage({ type: '', text: '' });
-        // Reset other states
-        setSelectedCategories([]);
-        setSelectedProducts([]);
-        setProducts([]);
-      }, 1500);
-      
+      setIsEditModalOpen(false);
+      setselectedPromotion(null);
+      // Optionally, refresh promotions list
+      const data = await getAllPromotionsApi();
+      setPromotions(Array.isArray(data.message) ? data.message : []);
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update promotion.' });
-      console.error("Error saving changes:", error);
+      console.error(error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (selectedPromotion) {
+      setEditFormData({
+  name: selectedPromotion.name || '',
+  description: selectedPromotion.description || '',
+  value: selectedPromotion.value || '',
+  start_date: selectedPromotion.start_date || '',
+  end_date: selectedPromotion.end_date || '',
+  applicable_category: selectedPromotion.applicable_category
+    ? selectedPromotion.applicable_category.map(cat => cat.id)
+    : [],
+  applicable_product: selectedPromotion.applicable_product
+    ? selectedPromotion.applicable_product.map(prod => prod.id)
+    : []
+});
+
+    }
+  }, [selectedPromotion]);
+
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    value: '',
+    start_date: '',
+    end_date: '',
+    applicable_category: [],  // always an array
+    applicable_product: []    // always an array
+  });
 
   const featuredPromotions = [
     {
@@ -337,6 +246,7 @@ const Promotions = () => {
       try {
         const data = await promotionByIdApi(selectedPromotion.id);
         console.log("Fetched promotion details:", data);
+
         setPromotionDetails(data);
       } catch (error) {
         console.error('Error fetching promotion details:', error);
@@ -354,6 +264,7 @@ const Promotions = () => {
     setCurrentSlide((prev) => (prev - 1 + featuredPromotions.length) % featuredPromotions.length);
   };
 
+
   return (
     <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
       {/* Header */}
@@ -363,7 +274,7 @@ const Promotions = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {discountTypes.map((item, index) => (
           <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
             <div className="flex items-center justify-between mb-4">
@@ -376,10 +287,10 @@ const Promotions = () => {
             <p className="text-gray-600 text-sm">Active campaigns</p>
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* Featured Promotions Carousel */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
           <Award className="mr-2 text-purple-600" />
           Featured Promotions
@@ -408,6 +319,7 @@ const Promotions = () => {
             ))}
           </div>
 
+
           <button
             onClick={prevSlide}
             className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50">
@@ -428,21 +340,23 @@ const Promotions = () => {
             ))}
           </div>
         </div>
-      </div>
-
+      </div> */}
+      <PromotionBanner/>
       {/* Active Promotions Grid */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
           <Tag className="mr-2 text-blue-600" />
           Active Promotions
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
           {promotions.length > 0 ? (
             promotions.map((promo) => (
               <div
                 key={promo.id}
                 onClick={() => setselectedPromotion(promo)}
-                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
               >
                 <div className="bg-[#5737B4] text-white p-3 rounded-lg w-fit mb-4">
                   <ShoppingCart size={20} />
@@ -455,6 +369,7 @@ const Promotions = () => {
                       ? promo.applicable_category[0].name
                       : "No category"}
                   </span>
+
                   <span>{getProductCount(promo)}</span>
                 </div>
               </div>
@@ -463,7 +378,11 @@ const Promotions = () => {
             <p className="text-gray-600 col-span-full text-center">No active promotions available.</p>
           )}
         </div>
-      </div>
+
+      </div> */}
+      <PromotionsList/>
+
+      <CouponList/>
 
       {/* Customer Testimonials */}
       <div className="mb-8">
@@ -512,7 +431,6 @@ const Promotions = () => {
         </div>
       </div>
 
-      {/* Promotion Details Modal */}
       {selectedPromotion && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] overflow-hidden">
@@ -679,7 +597,7 @@ const Promotions = () => {
             <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
               <button
                 className="px-6 py-2.5 bg-[#5737B4] text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 flex items-center shadow-sm hover:shadow-md"
-                onClick={handleEditModalOpen}
+                onClick={() => setIsEditModalOpen(true)}
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -699,11 +617,9 @@ const Promotions = () => {
           </div>
         </div>
       )}
-
-      {/* Edit Modal */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 relative">
             <h3 className="text-xl font-bold mb-4">Edit Promotion</h3>
 
             {message.text && (
@@ -724,7 +640,7 @@ const Promotions = () => {
                 placeholder="Description"
                 value={editFormData.description}
                 onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                className="w-full p-2 border rounded h-20"
+                className="w-full p-2 border rounded"
               />
               <input
                 type="number"
@@ -751,39 +667,27 @@ const Promotions = () => {
 
             <div className="mt-4">
               <h4 className="font-medium mb-2">Categories</h4>
-              <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
+              <div className="flex flex-wrap gap-2">
                 {(Array.isArray(allCategories) ? allCategories : []).map((category) => (
                   <button
                     key={category.id}
                     onClick={() => handleCategoryClick(category.id)}
-                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                      selectedCategories.includes(category.id) 
-                        ? 'bg-blue-500 text-white' 
-                        : 'bg-gray-200 hover:bg-gray-300'
-                    }`}
-                  >
+                    className={`px-3 py-1 rounded-full text-sm ${selectedCategories.includes(category.id) ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}>
                     {category.name}
                   </button>
                 ))}
               </div>
             </div>
 
-            {Array.isArray(products) && products.length > 0 && (
+            {products.length > 0 && (
               <div className="mt-4">
-                <h4 className="font-medium mb-2">
-                  Products {selectedCategories.length > 0 && `(for selected category)`}
-                </h4>
-                <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+                <h4 className="font-medium mb-2">Products</h4>
+                <div className="flex flex-wrap gap-2">
                   {products.map((product) => (
                     <button
                       key={product.id}
                       onClick={() => handleProductSelection(product.id)}
-                      className={`px-3 py-1 rounded-full text-sm transition-colors ${
-                        selectedProducts.includes(product.id) 
-                          ? 'bg-green-500 text-white' 
-                          : 'bg-gray-200 hover:bg-gray-300'
-                      }`}
-                    >
+                      className={`px-3 py-1 rounded-full text-sm ${selectedProducts.includes(product.id) ? 'bg-green-500 text-white' : 'bg-gray-200'}`}>
                       {product.name}
                     </button>
                   ))}
@@ -791,41 +695,16 @@ const Promotions = () => {
               </div>
             )}
 
-            {selectedCategories.length === 0 && (
-              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-700">
-                  <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.936-.833-2.707 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                  Please select a category to view available products
-                </p>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="flex justify-end gap-3 mt-4">
               <button
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400 transition-colors"
-                onClick={() => {
-                  setIsEditModalOpen(false);
-                  setMessage({ type: '', text: '' });
-                  setProducts([]);
-                }}
-              >
+                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                onClick={() => setIsEditModalOpen(false)}>
                 Cancel
               </button>
               <button
-                className={`px-4 py-2 bg-[#5737B4] text-white rounded hover:bg-blue-700 transition-colors flex items-center ${
-                  isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                className={`px-4 py-2 bg-[#5737B4] text-white rounded hover:bg-blue-700 ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={handleSaveChanges}
-                disabled={isSubmitting}
-              >
-                {isSubmitting && (
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                )}
+                disabled={isSubmitting}>
                 {isSubmitting ? 'Updating...' : 'Save Changes'}
               </button>
             </div>
