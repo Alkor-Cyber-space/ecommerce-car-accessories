@@ -416,15 +416,15 @@ const handleSaveChanges = async () => {
         <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
         <div className="flex flex-wrap gap-4">
           <button onClick={goToPromotionForm}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+            className="bg-[#5737B4] hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Create New Promotion
           </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+          <button className="bg-[#5737B4] hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             View Analytics
           </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+          {/* <button className="bg-[#5737B4] hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Export Report
-          </button>
+          </button> */}
           <button className="border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
             Manage Categories
           </button>

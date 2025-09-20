@@ -20,19 +20,31 @@ const PromotionBanner = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [bannerToDelete, setBannerToDelete] = useState(null);
 
-  useEffect(() => {
-    fetchBanners();
-  }, []);
+useEffect(() => {
+  fetchBanners();
+}, []);
 
-  const fetchBanners = async () => {
-    try {
-      const data = await getAllPromotionBannersApi();
-      setBanners(data);
-    } catch (error) {
-      console.error("Failed to fetch banners", error);
-      toast.error("Failed to load banners");
-    }
-  };
+const fetchBanners = async () => {
+  try {
+    const data = await getAllPromotionBannersApi();
+
+    // ✅ sort by id or created_at depending on your API response
+    const sortedData = [...(data || [])].sort((a, b) => {
+      // If API has created_at field
+      return new Date(b.created_at) - new Date(a.created_at);
+      
+      // Or, if you want to sort by ID (assuming higher ID = newer)
+      // return b.id - a.id;
+    });
+
+    setBanners(sortedData);
+    console.log("Sorted banners:", sortedData);
+
+  } catch (error) {
+    console.error("Failed to fetch banners", error);
+    toast.error("Failed to load banners");
+  }
+};
 
   const handleCreateBanner = async (e) => {
     e.preventDefault();
@@ -110,26 +122,24 @@ const PromotionBanner = () => {
             className="flex transition-transform duration-500 ease-in-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
-            {banners.map((promo) => (
-              <div key={promo.id} className="w-full flex-shrink-0 relative">
-                <div className="flex flex-col items-center p-8">
-                  <img
-                    src={promo.image}
-                    className="w-full h-64 object-cover rounded mb-4"
-                  />
-                  {/* <h3 className="text-xl font-bold text-gray-800">
-                    {promo.title}
-                  </h3> */}
-                </div>
-                {/* Delete Button */}
-                <button
-                  onClick={() => confirmDeleteBanner(promo.id)}
-                  className="text-red-700  p-2 rounded-lg flex items-center justify-center hover:text-red-700 transition-colors shadow cursor-pointer absolute top-10 right-10 bg-white/70 hover:bg-white"
-                >
-                  <RiDeleteBin6Line size={20} />
-                </button>
-              </div>
-            ))}
+           {Array.isArray(banners) && banners.map((promo) => (
+  <div key={promo.id} className="w-full flex-shrink-0 relative">
+    <div className="flex flex-col items-center p-8">
+      <img
+        src={promo.image}
+        className="w-full h-64 object-cover rounded mb-4"
+      />
+    </div>
+
+    <button
+      onClick={() => confirmDeleteBanner(promo.id)}
+      className="text-red-700 p-2 rounded-lg flex items-center justify-center hover:text-red-700 transition-colors shadow cursor-pointer absolute top-10 right-10 bg-white/70 hover:bg-white"
+    >
+      <RiDeleteBin6Line size={20} />
+    </button>
+  </div>
+))}
+
           </div>
 
           {/* Slider Controls */}

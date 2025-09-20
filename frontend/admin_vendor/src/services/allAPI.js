@@ -929,7 +929,6 @@ export const getAllPromotionBannersApi = async () => {
     const response = await axios.get(`${serverurl}/coupon_promo/banner-create/`, {
       headers: {
         Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
       },
     });
     return response.data.message || [];
