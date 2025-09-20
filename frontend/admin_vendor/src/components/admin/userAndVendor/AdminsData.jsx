@@ -69,9 +69,6 @@ const [showModal, setShowModal] = useState(false);
       const updatedAdmins = await getAdminsList();
       setAdmins(updatedAdmins);
       localStorage.setItem("adminsList", JSON.stringify(updatedAdmins));
-
-      
-
       setShowModal(false);
       setFormData({
         name: "",
