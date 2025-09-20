@@ -12,7 +12,52 @@ from payment.razorpay_payment import *
 from decimal import Decimal
 from django.conf import settings
 import razorpay
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+import json
+from rest_framework.views import APIView
+from .shiprocket_client import calculate_shipping_rate
+class ShippingOptionsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def post(self, request):
+        """
+        Calculate available shipping rates from Shiprocket.
+        Expects:
+        {
+            "pickup_postcode": "400001",
+            "delivery_postcode": "411001",
+            "weight": 2.0,
+            "cod": 1,
+            "declared_value": 999
+        }
+        """
+        payload = {
+            "pickup_postcode": request.data.get("pickup_postcode"),
+            "delivery_postcode": request.data.get("delivery_postcode"),
+            "weight": float(request.data.get("weight", 0.5)),
+            "cod": int(request.data.get("cod", 0)),
+            "declared_value": float(request.data.get("declared_value", 0)),
+        }
+        print(payload)
+
+        try:
+            rates = calculate_shipping_rate(payload)
+            if rates.get("data") and "available_courier_companies" in rates["data"]:
+                options = []
+                for courier in rates["data"]["available_courier_companies"]:
+                    options.append({
+                        "courier_name": courier["courier_name"],
+                        "rate": Decimal(str(courier["rate"])),
+                        "etd": courier.get("etd"),  # estimated days
+                        "courier_company_id": courier["courier_company_id"],
+                    })
+                return Response({"options": options}, status=status.HTTP_200_OK)
+
+            return Response({"error": "No couriers available"}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # class CheckoutViewSet(viewsets.ViewSet):
@@ -96,7 +141,8 @@ class CheckoutViewSet(viewsets.ViewSet):
 
         subtotal = Decimal("0.00")
         tax_rate = Decimal("0.18")
-        shipping_fee = Decimal("50.00")
+        shipping_fee = Decimal(str(request.data.get("shipping_fee", "0.00")))
+        courier_company_id = request.data.get("courier_company_id")
 
         for item in items:
             product = item['product']
@@ -114,7 +160,8 @@ class CheckoutViewSet(viewsets.ViewSet):
             shipping_cost=shipping_fee,
             total_price=total,
             status="pending",
-            payment_method=payment_method
+            payment_method=payment_method,
+            courier_company_id = courier_company_id
         )
 
         for item in items:
@@ -187,3 +234,14 @@ class UserOrderViewSet(viewsets.ViewSet):
             'status': order.status,
             'last_updated': order.updated_at,
         })
+    
+@csrf_exempt
+def shiprocket_webhook(request):
+    if request.method != "POST":
+        return JsonResponse({"detail":"method not allowed"}, status=405)
+    payload = json.loads(request.body.decode("utf-8"))
+    order_id = payload.get("order_id") or payload.get("order")  # check actual key
+    status = payload.get("status")
+    # Update your Order/Shipment models accordingly
+    # Order.objects.filter(order_id=order_id).update(shipment_status=status, last_payload=payload)
+    return JsonResponse({"ok": True})

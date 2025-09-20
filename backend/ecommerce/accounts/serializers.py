@@ -772,15 +772,25 @@ class VendorAuditLogSerializer(serializers.ModelSerializer):
         fields='__all__'
 
 class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
-    incomplete_fileds=serializers.SerializerMethodField()
-    
-    class Meta:
-        model=VendorDocuments
-        fields="__all__"
+    missing_count = serializers.SerializerMethodField()
+    missing_fields = serializers.SerializerMethodField()
 
-    def get_incomplete_fileds(self,obj):
-        incomplete=[]
-        for field in [
+    class Meta:
+        model = VendorDocuments
+        fields = [
+            "id",
+            "vendor_profile",
+            "profile_status",
+            "is_verified",
+            "submitted_at",
+            "missing_count",
+            "missing_fields",
+        ]
+
+    def get_missing_fields(self, obj):
+        """Return names of missing/null documents"""
+        missing = []
+        document_fields = [
             "pan_card",
             "aadhar_passport_dl",
             "gst_certificate",
@@ -794,7 +804,16 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
             "authorized_signatory_letter",
             "vendor_registration_form",
             "signed_terms_and_con",
-        ]:
-            if not getattr(obj, field):  
-                incomplete.append(field)
-        return incomplete
+        ]
+        for field in document_fields:
+            if not getattr(obj, field):
+                missing.append(field)
+        return missing
+
+    def get_missing_count(self, obj):
+        return len(self.get_missing_fields(obj))
+    
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=CustomUser
+        fields = ["id", "email", "username", "phone_number", "is_admin_staff"]

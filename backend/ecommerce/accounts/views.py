@@ -1,5 +1,8 @@
 import random
 from django.shortcuts import render
+from orders.shiprocket_client import create_pickup_location
+import requests
+
 from django.contrib.auth import get_user_model
 from . serializers import *
 from rest_framework import viewsets
@@ -28,6 +31,7 @@ from firebase_admin import auth as firebase_auth
 from . import firebase_config 
 from django.db.models import Q
 from .utils import log_action
+from rest_framework import generics, status
 
 User = get_user_model()
 
@@ -763,11 +767,16 @@ class VendorProfileUpdateView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+import traceback
 class VendorDocumentsFinalApprovalView(APIView):
 
     def post(self, request, vendor_profile_id):
         try:
             vendor_profile = VendorProfile.objects.get(id=vendor_profile_id)
+            print(vendor_profile)
+            
+            
+            
             documents = VendorDocuments.objects.get(vendor_profile=vendor_profile)
         except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
             return Response({"error": "Vendor profile or documents not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -814,6 +823,51 @@ class VendorDocumentsFinalApprovalView(APIView):
         user_email = vendor_profile.user.email
         subject = "Vendor Documents Final Approval Status"
         if final_status == 'approved':
+            if not vendor_profile.pickup_location:
+                pickup_code = f"VENDOR_{vendor_profile.id}"  # must be unique
+                print("All addresses:", vendor_profile.user.addresses.all())
+                primary_address = vendor_profile.user.addresses.filter(is_primary=True).first()
+                print(primary_address)
+                if not primary_address:
+                    return Response({
+                        "status": "failed",
+                        "message": "No primary address found for this vendor. Please add one before approval."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                print("above the pickupload")
+                pickup_payload = {
+                    "pickup_location": "VENDOR_2",
+                    "name": "Teqora Solution",
+                    "email": "nadeem@gmail.com",  # fixed typo
+                    "phone": "9876543210",      # added country code
+                    "address": "Mutant Facility, Sector 3",
+                    "address_2": "kundanoor",
+                    "city": "South West Delhi",          # safer than "Kochi"
+                    "state": "Maharshtra",
+                    "country": "India",
+                    "pin_code": "110022"
+                }
+                print(pickup_payload)
+                try:
+                    resp = create_pickup_location(pickup_payload)
+                    if resp.get("error"):
+                        return Response({
+                            "status": "failed",
+                            "message": "Shiprocket rejected the pickup payload",
+                            "details": resp["details"]
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+                    vendor_profile.pickup_location = pickup_code
+                    vendor_profile.save()
+                except Exception as e:
+                    print("=== Shiprocket Pickup Error ===")
+                    print(str(e))
+                    print(traceback.format_exc())
+                    return Response({
+                        "status": "failed",
+                        "message": f"Vendor approved but failed to create pickup in Shiprocket: {str(e)}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             message = (
                 f"Dear {vendor_profile.user.username},\n\n"
                 "Congratulations! Your vendor documents have been fully approved.\n"
@@ -844,6 +898,7 @@ class VendorDocumentsFinalApprovalView(APIView):
         }, status=status.HTTP_200_OK)
     
 class VendorAuditLogAll(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self,request):
         data=VendorAuditLog.objects.all()
         if not data:
@@ -857,8 +912,7 @@ class VendorAuditLogAll(APIView):
             "status": "success",
             "status_code": status.HTTP_200_OK,
             "data": serializer.data
-        })
-    
+        })    
 class VendorDocumentCheck(APIView):
     
     def get_object(self, pk):
@@ -867,7 +921,8 @@ class VendorDocumentCheck(APIView):
             return profile
         except VendorProfile.DoesNotExist:
             return None
-    def get(self, request, pk):
+    def get(self, request):
+        pk=request.user
         profile = self.get_object(pk)    
         if not profile:
             return Response(
@@ -881,3 +936,49 @@ class VendorDocumentCheck(APIView):
             "vendor": profile.company_name or profile.user.email,
             "documents": serializer.data,
         }, status=status.HTTP_200_OK)
+    
+class AdminProfileEdit(APIView):
+    
+    def post(self,request,pk):
+        try:
+            user=CustomUser.objects.get(id=pk)
+        except CustomUser.DoesNotExist:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if not user.is_admin_staff:
+            return Response(
+                {"error": "This user is not an admin"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = UserEditSerializer(user, data=request.data, partial=True, context={"request": request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "status": "successfully UPdated",
+                "status_code": status.HTTP_201_CREATED,
+                "message": "Updated Successfully"
+            })
+        return Response({
+                "status": "failed",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": serializer.errors
+            })
+    
+class AdminRetrieveByIdAPIView(generics.GenericAPIView):
+
+    serializer_class=AdminUserSerializer
+    def post(self,request):
+        admin_id=request.data.get("id",None)
+        if not admin_id:
+            return Response({"status": "Failed","status_code":status.HTTP_400_BAD_REQUEST,"message": "id not provided" })
+        try:
+            user=CustomUser.objects.get(id=admin_id,is_admin_staff=True)
+        except CustomUser.DoesNotExist:
+            return Response({"status": "Failed","status_code":status.HTTP_400_BAD_REQUEST,"message": "Admin with this ID does not exist or is not staff." })
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
