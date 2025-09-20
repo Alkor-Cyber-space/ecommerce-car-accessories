@@ -684,4 +684,40 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
-   
+   export const VendorDocumentCheckApi = async()=>{
+    try {
+      const response = await api.get(`/auth/vendor-document-check/`);
+      return response.data
+    } catch (error) {
+      console.log("error fetching vendordocumentcheck", error);
+      throw error
+    }
+   }
+
+export const getVendorKycDocuments = async (vendorId) => {
+  try {
+    const response = await api.get(`/auth/vendor_profile_update/${vendorId}/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error loading KYC documents:", error);
+    throw error;
+  }
+};
+
+export const updateKycDocuments = async (vendorId, formData) => {
+  try {
+    const response = await api.put(
+      `/auth/vendor_profile_update/${vendorId}/`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating KYC documents:", error.response?.data || error);
+    throw error;
+  }
+};

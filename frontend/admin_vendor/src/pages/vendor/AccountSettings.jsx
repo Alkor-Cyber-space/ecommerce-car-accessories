@@ -10,23 +10,41 @@ const AccountSettings = () => {
     old_password: '',
     new_password: ''
   });
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    username: "",
+    first_name: "",
+    last_name: "",
+    email: "",
+    contact_number: "",
+    old_password: "",
+    new_password: "",
+    company: ""
+  });
+
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchMeApi = async () => {
-      try {
-        const response = await getMeApi();
-        console.log(response);
-        // setUserProfile(response.data);
-        setFormData(response.data); // Initialize form data for editing
-      } catch (error) {
-        console.error("Error fetching account settings:", error);
-        toast.error("Failed to fetch account settings");
-      }
-    };
-    fetchMeApi();
-  }, []);
+useEffect(() => {
+  const fetchProfile = async () => {
+    try {
+      const res = await getMeApi(); // your API call
+      setFormData({
+        username: res.username || "",
+        first_name: res.first_name || "",
+        last_name: res.last_name || "",
+        email: res.email || "",
+        contact_number: res.contact_number || "",
+        old_password: "",
+        new_password: "",
+        company: res.company || ""
+      });
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  };
+
+  fetchProfile();
+}, []);
+
 
   // Handle form input changes for profile data
   const handleFormChange = (e) => {
@@ -42,6 +60,8 @@ const AccountSettings = () => {
   const handleEditProfile = async () => {
     setLoading(true);
     const form = new FormData();
+    form.append('first_name', formData.first_name || 'ajayesshh');
+    form.append('last_name', formData.last_name || 'ajayesshh');
     form.append('username', formData.username || '');
     form.append('email', formData.email || '');
     form.append('contact_number', formData.contact_number || '');
@@ -51,7 +71,7 @@ const AccountSettings = () => {
       const response = await updateAccountApi(formData);
       console.log("Profile update response:", response);
       if (response.status === 200) {
-      toast.success("Profile updated successfully!");
+        toast.success("Profile updated successfully!");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -87,20 +107,20 @@ const AccountSettings = () => {
       const response = await deactivateAccountApi();
       console.log("Deactivation response:", response);
       if (response.status === 200) {
-      toast.success("Account deactivated successfully!");
-      
-      // Clear localStorage and redirect to login
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('refresh_token');
-      
-      // Redirect to login page after a delay
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
-    }else{
-      toast.error(response.data.message);
-      console.error("Deactivation failed:", response);
-    }
+        toast.success("Account deactivated successfully!");
+
+        // Clear localStorage and redirect to login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+
+        // Redirect to login page after a delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      } else {
+        toast.error(response.data.message);
+        console.error("Deactivation failed:", response);
+      }
     } catch (error) {
       console.error("Error deactivating account:", error);
       toast.error("Failed to deactivate account");
@@ -124,8 +144,8 @@ const AccountSettings = () => {
             <div className="flex items-center gap-3">
               <img src={user} alt="profile" className="w-16 h-16 rounded-full object-cover" />
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{formData.username || ''}</h2>
-                <p className="text-sm text-gray-500">{formData.company || ''}</p>
+                <h2 className="text-lg font-semibold text-gray-900">{formData?.username || ''}</h2>
+                <p className="text-sm text-gray-500">{formData?.company || ''}</p>
               </div>
             </div>
 
@@ -134,7 +154,7 @@ const AccountSettings = () => {
               <button className="px-3 py-1 border border-[#5737B3] text-[#5737B3] rounded-md text-sm hover:bg-[#f3f0ff]">
                 Replace Profile Picture
               </button>
-              <button 
+              <button
                 onClick={handleDeactivateConfirm}
                 className="px-3 py-1 border border-red-300 text-red-500 rounded-md text-sm bg-red-200 hover:bg-red-50"
               >
@@ -150,7 +170,7 @@ const AccountSettings = () => {
               <input
                 type="text"
                 name="username"
-                value={formData.first_name || formData.username || ''}
+                value={formData?.username || ''}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -160,7 +180,7 @@ const AccountSettings = () => {
               <input
                 type="text"
                 name="last_name"
-                value={formData.last_name || ''}
+                value={formData?.last_name || ''}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -170,7 +190,7 @@ const AccountSettings = () => {
               <input
                 type="email"
                 name="email"
-                value={formData.email || ''}
+                value={formData?.email || ''}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -180,7 +200,7 @@ const AccountSettings = () => {
               <input
                 type="tel"
                 name="contact_number"
-                value={formData.contact_number || ''}
+                value={formData?.contact_number || ''}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -198,7 +218,7 @@ const AccountSettings = () => {
               <input
                 type="password"
                 name="old_password"
-                value={formData.old_password}
+                value={formData?.old_password}
                 onChange={handleFormChange}
                 placeholder="Enter current password"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
@@ -209,7 +229,7 @@ const AccountSettings = () => {
               <input
                 type="password"
                 name="new_password"
-                value={formData.new_password}
+                value={formData?.new_password}
                 onChange={handleFormChange}
                 placeholder="Enter new password"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
@@ -232,14 +252,14 @@ const AccountSettings = () => {
 
       {/* Footer Buttons */}
       <div className="flex gap-2 flex-wrap items-center justify-end mt-6">
-        <button 
+        <button
           onClick={handleDeactivateConfirm}
           disabled={loading}
           className="px-8 py-1 border border-red-500 text-red-500 rounded-md text-sm bg-red-200 hover:bg-red-300 disabled:opacity-50"
         >
           Deactivate Account
         </button>
-        <button 
+        <button
           onClick={handleEditProfile}
           disabled={loading}
           className="px-9 py-1 border border-gray-200 text-white rounded-md text-sm bg-[#5737B3] hover:bg-[#5737B3]/80 disabled:opacity-50"
