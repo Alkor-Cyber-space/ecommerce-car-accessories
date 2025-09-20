@@ -25,7 +25,6 @@ from django.core.mail import send_mail
 from .serializers import *
 from rest_framework.generics import GenericAPIView
 from firebase_admin import auth as firebase_auth
-from . import firebase_config 
 from django.db.models import Q
 from .utils import log_action
 
