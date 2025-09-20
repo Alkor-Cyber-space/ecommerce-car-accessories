@@ -71,6 +71,7 @@ import VendorDetails from './components/admin/userAndVendor/VendorDetails';
 import PromotionCouponForm from './components/admin/PromotionCouponForm';
 import Promotions from './pages/admin/Promotions';
 import PromotionLayout from './pages/admin/PromotionLayout';
+import PromotionBanner from './pages/admin/PromotionBanner';
 
 
 import { useEffect } from "react";
@@ -136,9 +137,10 @@ function App() {
           <Route path='tax-reports' element={<TaxReport />} />
           <Route path='search-filter' element={<SearchFilter />} />
           <Route path='promotions' element={<PromotionLayout />}>
-            <Route index element={<Promotions />} />
-            <Route path="promotion-form" element={<PromotionCouponForm />} />
-          </Route>
+                <Route index element={<Promotions />} />
+                  <Route path="promotion-form" element={<PromotionCouponForm/>} />
+                  <Route path='promotion_banner' element={<PromotionBanner/>}/>
+             </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
           <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />

@@ -47,7 +47,9 @@ class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='products_image/')
     is_main = models.BooleanField(default=False)
+    slot = models.CharField(max_length=50, null=True, blank=True)  # "main_image", "close_view", etc.
     created_at = models.DateTimeField(auto_now_add=True)
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100)

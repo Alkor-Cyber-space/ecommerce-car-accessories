@@ -1,349 +1,25 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, Star, Tag, Calendar, Users, TrendingUp, Award, ShoppingCart } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { editPromotionApi, getAllPromotionsApi, getCategoriesApi, getProductsByCategory, promotionByIdApi } from '../../services/allAPI';
-import PromotionsList from '../PromotionList';
-import CouponList from '../Coupons/CouponList';
-import PromotionBanner from './PromotionBanner';
+import { promotionByIdApi } from '../../services/allAPI';
 
-const Promotions = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [promotions, setPromotions] = useState([]);
-  const [selectedPromotion, setselectedPromotion] = useState(null);
-  const [promotionDetails, setPromotionDetails] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [allCategories, setAllCategories] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedProducts, setSelectedProducts] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState({ type: '', text: '' });
+const PromotionCard = ({ promotion }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (isEditModalOpen) {
-      fetchCategories();
-      // If editing, ensure categories/products are loaded for the selected promotion
-      if (selectedPromotion) {
-        const categoryIds = selectedPromotion.applicable_category
-          ? selectedPromotion.applicable_category.map(cat => cat.id)
-          : [];
-        setSelectedCategories(categoryIds);
-        if (categoryIds.length > 0) {
-          getProductsByCategory(categoryIds[0]).then((response) => {
-            setProducts(response.data);
-          }).catch(() => setProducts([]));
-        } else {
-          setProducts([]);
-        }
-        setSelectedProducts(selectedPromotion.applicable_product
-          ? selectedPromotion.applicable_product.map(prod => prod.id)
-          : []
-        );
-      }
-    } else {
-      setProducts([]);
-      setSelectedCategories([]);
-      setSelectedProducts([]);
-    }
-  }, [isEditModalOpen]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await getCategoriesApi();
-      setAllCategories(response.data);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-
-  const handleCategoryClick = async (categoryId) => {
-    try {
-      const response = await getProductsByCategory(categoryId);
-      setProducts(response.data);
-      setSelectedCategories([categoryId]);
-      setSelectedProducts([]);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
-
-  const handleProductSelection = (productId) => {
-    setSelectedProducts((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
-  };
-
-const handleSaveChanges = async () => {
-    try {
-      setIsSubmitting(true);
-      setMessage({ type: '', text: '' });
-
-      const updatedData = {
-        ...editFormData,
-        applicable_category: selectedCategories,
-        applicable_product: selectedProducts
-      };
-
-      await editPromotionApi(selectedPromotion.id, updatedData);
-      setMessage({ type: 'success', text: 'Promotion updated successfully!' });
-      setIsEditModalOpen(false);
-      setselectedPromotion(null);
-      // Optionally, refresh promotions list
-      const data = await getAllPromotionsApi();
-      setPromotions(Array.isArray(data.message) ? data.message : []);
-    } catch (error) {
-      setMessage({ type: 'error', text: 'Failed to update promotion.' });
-      console.error(error);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  useEffect(() => {
-    if (selectedPromotion) {
-      setEditFormData({
-  name: selectedPromotion.name || '',
-  description: selectedPromotion.description || '',
-  value: selectedPromotion.value || '',
-  start_date: selectedPromotion.start_date || '',
-  end_date: selectedPromotion.end_date || '',
-  applicable_category: selectedPromotion.applicable_category
-    ? selectedPromotion.applicable_category.map(cat => cat.id)
-    : [],
-  applicable_product: selectedPromotion.applicable_product
-    ? selectedPromotion.applicable_product.map(prod => prod.id)
-    : []
-});
-
-    }
-  }, [selectedPromotion]);
-
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    description: '',
-    value: '',
-    start_date: '',
-    end_date: '',
-    applicable_category: [],  // always an array
-    applicable_product: []    // always an array
-  });
-
-  const featuredPromotions = [
-    {
-      id: 1,
-      title: "Summer Sale Extravaganza",
-      discount: "Up to 50% OFF",
-      description: "Massive discounts on brake pads, oil filters, and engine parts",
-      image: "🚗",
-      validUntil: "Aug 31, 2025",
-      category: "Car Parts"
-    },
-    {
-      id: 2,
-      title: "Motorcycle Madness",
-      discount: "Buy 2 Get 1 FREE",
-      description: "Special offer on motorcycle chains, sprockets, and filters",
-      image: "🏍️",
-      validUntil: "Sep 15, 2025",
-      category: "Bike Parts"
-    },
-    {
-      id: 3,
-      title: "Premium Oil Special",
-      discount: "30% OFF",
-      description: "Top quality engine oils and lubricants at unbeatable prices",
-      image: "🛢️",
-      validUntil: "Aug 25, 2025",
-      category: "Oils & Lubricants"
-    }
-  ];
-
-  const discountTypes = [
-    { type: "Percentage Off", count: 24, color: "bg-blue-500", icon: <Tag size={20} /> },
-    { type: "Buy X Get Y", count: 12, color: "bg-green-500", icon: <ShoppingCart size={20} /> },
-    { type: "Free Shipping", count: 18, color: "bg-purple-500", icon: <TrendingUp size={20} /> },
-    { type: "Bundle Deals", count: 8, color: "bg-orange-500", icon: <Award size={20} /> }
-  ];
-
-  const testimonials = [
-    {
-      id: 1,
-      name: "Rajesh Kumar",
-      location: "Mumbai",
-      rating: 5,
-      comment: "Amazing discounts on genuine parts! Saved 40% on my car's brake service.",
-      avatar: "👨‍🔧"
-    },
-    {
-      id: 2,
-      name: "Priya Sharma",
-      location: "Delhi",
-      rating: 5,
-      comment: "The motorcycle parts promotion was fantastic. Great quality at unbeatable prices!",
-      avatar: "👩‍🔧"
-    },
-    {
-      id: 3,
-      name: "Arjun Patel",
-      location: "Bangalore",
-      rating: 4,
-      comment: "Excellent customer service and genuine promotional offers. Highly recommended!",
-      avatar: "👨‍💼"
-    }
-  ];
-
-  const navigate = useNavigate();
-
-  const goToPromotionForm = () => {
-    navigate('promotion-form');
-  };
-
-  useEffect(() => {
-    const fetchPromotions = async () => {
+    const fetchPromotion = async () => {
       try {
-        const data = await getAllPromotionsApi();
-        console.log("Promotions API response:", data);
-        setPromotions(Array.isArray(data.message) ? data.message : []);
-      } catch (error) {
-        console.error("Failed to load promotions:", error);
-      }
-    };
-    fetchPromotions();
-  }, []);
-
-  const formatDiscount = (promo) => {
-    if (promo.promotion_type === 'PERCENTAGE') {
-      return `${promo.value}% OFF`;
-    } else if (promo.promotion_type === 'FIXED') {
-      return `₹${promo.value} OFF`;
-    } else if (promo.promotion_type === 'BOGO') {
-      return "Buy One Get One Free";
-    } else {
-      return promo.value || "Special Offer";
-    }
-  };
-
-  const getCategoryNames = (promo) => {
-    if (promo.applicable_category && promo.applicable_category.length > 0) {
-      return promo.applicable_category.map(cat => cat.name || cat).join(", ");
-    }
-    return "General";
-  };
-
-  const getProductCount = (promo) => {
-    if (promo.applicable_product && promo.applicable_product.length > 0) {
-      return `${promo.applicable_product.length} items`;
-    }
-    return "0 items";
-  };
-
-  useEffect(() => {
-    if (!selectedPromotion) return;
-
-    const fetchPromotionDetails = async () => {
-      try {
-        const data = await promotionByIdApi(selectedPromotion.id);
+        const data = await promotionByIdApi(promotion.id);
         console.log("Fetched promotion details:", data);
-
-        setPromotionDetails(data);
+        // You can set the fetched data to state if needed
       } catch (error) {
         console.error('Error fetching promotion details:', error);
       }
     };
-
-    fetchPromotionDetails();
-  }, [selectedPromotion]);
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % featuredPromotions.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + featuredPromotions.length) % featuredPromotions.length);
-  };
-
+    fetchPromotion();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Promotions & Offers</h1>
-        <p className="text-gray-600">Manage and track your promotional campaigns for vehicle spare parts</p>
-      </div>
-
-      {/* Stats Cards */}
-      {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {discountTypes.map((item, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-            <div className="flex items-center justify-between mb-4">
-              <div className={`${item.color} text-white p-3 rounded-lg`}>
-                {item.icon}
-              </div>
-              <span className="text-2xl font-bold text-gray-800">{item.count}</span>
-            </div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-1">{item.type}</h3>
-            <p className="text-gray-600 text-sm">Active campaigns</p>
-          </div>
-        ))}
-      </div> */}
-
-      {/* Featured Promotions Carousel */}
-      {/* <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-          <Award className="mr-2 text-purple-600" />
-          Featured Promotions
-        </h2>
-        <div className="relative bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="flex transition-transform duration-500 ease-in-out"
-            style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
-            {featuredPromotions.map((promo) => (
-              <div key={promo.id} className="w-full flex-shrink-0">
-                <div className="flex flex-col md:flex-row items-center p-8">
-                  <div className="text-8xl mb-4 md:mb-0 md:mr-8">{promo.image}</div>
-                  <div className="flex-1 text-center md:text-left">
-                    <span className="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium mb-2">
-                      {promo.category}
-                    </span>
-                    <h3 className="text-3xl font-bold text-gray-800 mb-2">{promo.title}</h3>
-                    <p className="text-4xl font-bold text-purple-600 mb-2">{promo.discount}</p>
-                    <p className="text-gray-600 mb-4">{promo.description}</p>
-                    <div className="flex items-center justify-center md:justify-start text-gray-500">
-                      <Calendar size={16} className="mr-2" />
-                      <span>Valid until {promo.validUntil}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-
-          <button
-            onClick={prevSlide}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50">
-            <ChevronLeft size={24} className="text-gray-600" />
-          </button>
-          <button
-            onClick={nextSlide}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white shadow-lg rounded-full p-2 hover:bg-gray-50">
-            <ChevronRight size={24} className="text-gray-600" />
-          </button>
-
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {featuredPromotions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full ${currentSlide === index ? 'bg-purple-600' : 'bg-gray-300'}`} />
-            ))}
-          </div>
-        </div>
-      </div> */}
-      <PromotionBanner/>
-      {/* Active Promotions Grid */}
-      {/* <div className="mb-8">
+    <>
+         <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
           <Tag className="mr-2 text-blue-600" />
           Active Promotions
@@ -364,6 +40,7 @@ const handleSaveChanges = async () => {
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{promo.name}</h3>
                 <p className="text-2xl font-bold text-gray-800 mb-2">{formatDiscount(promo)}</p>
                 <div className="flex justify-between items-center text-sm text-gray-600">
+                  {/* Display first applicable category name */}
                   <span>
                     {promo.applicable_category && promo.applicable_category.length > 0
                       ? promo.applicable_category[0].name
@@ -379,59 +56,10 @@ const handleSaveChanges = async () => {
           )}
         </div>
 
-      </div> */}
-      <PromotionsList/>
-
-      <CouponList/>
-
-      {/* Customer Testimonials */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-          <Users className="mr-2 text-green-600" />
-          Customer Testimonials
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {testimonials.map((testimonial) => (
-            <div key={testimonial.id} className="bg-white rounded-lg shadow-md p-6">
-              <div className="flex items-center mb-4">
-                <div className="text-3xl mr-3">{testimonial.avatar}</div>
-                <div>
-                  <h4 className="font-semibold text-gray-800">{testimonial.name}</h4>
-                  <p className="text-gray-600 text-sm">{testimonial.location}</p>
-                </div>
-              </div>
-              <div className="flex mb-3">
-                {[...Array(testimonial.rating)].map((_, i) => (
-                  <Star key={i} size={16} className="text-yellow-400 fill-current" />
-                ))}
-              </div>
-              <p className="text-gray-700 italic">"{testimonial.comment}"</p>
-            </div>
-          ))}
-        </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Quick Actions</h2>
-        <div className="flex flex-wrap gap-4">
-          <button onClick={goToPromotionForm}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            Create New Promotion
-          </button>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            View Analytics
-          </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            Export Report
-          </button>
-          <button className="border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
-            Manage Categories
-          </button>
-        </div>
-      </div>
-
-      {selectedPromotion && (
+      {/* Promotion Card */}
+         {selectedPromotion && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] overflow-hidden">
             {/* Header Section */}
@@ -711,8 +339,104 @@ const handleSaveChanges = async () => {
           </div>
         </div>
       )}
+
+    </>
+  );
+};
+
+// Usage Example
+const PromotionsList = ({ promotions, handleEdit, handleDelete }) => {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {promotions.map(promo => (
+        <PromotionCard
+          key={promo.id}
+          promotion={promo}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
+      ))}
     </div>
   );
 };
 
-export default Promotions;
+export default PromotionsList;
+      {/* <div
+        className="bg-white rounded-lg shadow p-4 cursor-pointer hover:shadow-md transition"
+        onClick={() => setIsModalOpen(true)}
+      >
+        <div className="flex items-center mb-2">
+          <div className="bg-red-500 text-white p-2 rounded-full mr-2">🛒</div>
+          <div>
+            <h3 className="font-semibold">{promotion.name}</h3>
+            <p className="text-sm font-bold">
+              {promotion.promotion_type === 'BOGO'
+                ? 'Buy One Get One Free'
+                : `₹${promotion.value} OFF`}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500">
+          {promotion.details?.map(d => d.category_name).join(', ')}
+        </p>
+        <p className="text-xs text-gray-500">{promotion.details?.length} items</p>
+      </div>
+
+      {isModalOpen && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-lg w-96 p-6 relative">
+            <h2 className="text-xl font-bold mb-4">{promotion.name}</h2>
+            <p className="mb-2">
+              <strong>Type:</strong>{' '}
+              {promotion.promotion_type === 'BOGO'
+                ? 'Buy One Get One Free'
+                : promotion.promotion_type}
+            </p>
+            {promotion.promotion_type !== 'BOGO' && (
+              <p className="mb-2">
+                <strong>Value:</strong> ₹{promotion.value}
+              </p>
+            )}
+            <p className="mb-2">
+              <strong>Code:</strong> {promotion.code}
+            </p>
+            <p className="mb-2">
+              <strong>Description:</strong> {promotion.description}
+            </p>
+            <p className="mb-2">
+              <strong>Start Date:</strong> {promotion.start_date}
+            </p>
+            <p className="mb-2">
+              <strong>End Date:</strong> {promotion.end_date}
+            </p>
+
+            <div className="mt-4 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  onEdit(promotion);
+                  setIsModalOpen(false);
+                }}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(promotion.id);
+                  setIsModalOpen(false);
+                }}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )} */}

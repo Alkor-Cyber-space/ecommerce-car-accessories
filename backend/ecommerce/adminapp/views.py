@@ -39,17 +39,22 @@ class AdminLoginAPIView(APIView):
 
         # Try fetching user by email or username
         user = User.objects.filter(email=email_or_username).first()
+        print(f'User fetched by email: {user}')
         if not user:
             user = User.objects.filter(username=email_or_username).first()
+            print(f'User fetched by username: {user}')
         
         if not user:
             return Response({"error": "No account found with the provided email/username."}, status=status.HTTP_404_NOT_FOUND)
 
         if not user.check_password(password):
+            print(password)
+            print(f'Password check failed for user: {user.username}')
             return Response({"error": "Incorrect password."}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user and user.check_password(password):
             if user.groups.filter(name='Admin').exists():  # or `user.role == 'admin'` if you're using a field
+                print(f'Admin user {user.username} logged in successfully.')
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "access": str(refresh.access_token),
