@@ -860,14 +860,15 @@ class VendorAuditLogAll(APIView):
         })
     
 class VendorDocumentCheck(APIView):
-    
+    permission_classes = [IsAuthenticated]
     def get_object(self, pk):
         try:
             profile = VendorProfile.objects.get(user_id=pk) 
             return profile
         except VendorProfile.DoesNotExist:
             return None
-    def get(self, request, pk):
+    def get(self, request):
+        pk=request.user
         profile = self.get_object(pk)    
         if not profile:
             return Response(

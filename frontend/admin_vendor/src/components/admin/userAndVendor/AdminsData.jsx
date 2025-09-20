@@ -19,7 +19,6 @@ export default function AdminOverview() {
     status: "",
   });
   const [filteredAdmins, setFilteredAdmins] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [filters, setFilters] = useState({
     year: '',
     location: '',
