@@ -183,41 +183,45 @@ export default function EditProduct() {
   };
 
   const handleDeleteConfirm = () => {
-    confirmAlert({
-      title: "Confirm Deletion",
-      message: "Are you sure you want to delete this product?",
-      buttons: [
-        {
-          label: "Yes",
-          onClick: () => handleDelete(id),
-        },
-        { label: "No" },
-      ],
-      closeOnEscape: true,
-      closeOnClickOutside: true,
-    });
-  };
+  confirmAlert({
+    title: "Confirm Deletion",
+    message: "Are you sure you want to delete this product?",
+    buttons: [
+      {
+        label: "Yes",
+        onClick: () => handleDelete(id),
+      },
+      { label: "No" },
+    ],
+    closeOnEscape: true,
+    closeOnClickOutside: true,
+  });
+};
 
-  const handleDelete = async (id) => {
-    try {
-      const response = await deleteProductApi(id);
-      if (response.status === 204) {
-        toast.success("Product deleted successfully!");
-        setTimeout(() => {
-          navigate("/vendor/products");
-        }, 1500);
-      }
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      toast.error("Failed to delete product.");
-    }
-  };
+const handleDelete = async (id) => {
+  try {
+    const response = await deleteProductApi(id);
+
+      
+      toast.success(" Product deleted successfully!",response);
+
+      
+      setTimeout(() => {
+        navigate("/vendor/products", { replace: true });
+      }, 1000);
+    
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    toast.error(" Failed to delete product.");
+  }
+};
+ 
 
   const handleCancel = () => {
     navigate(`/vendor/products/`);
   };
 
-  // ✅ Product Images Section
+  
   const ProductImagesSection = () => (
     <div className="bg-white rounded-xl p-6 shadow">
       <h2 className="text-lg font-semibold mb-4">Product Images</h2>
