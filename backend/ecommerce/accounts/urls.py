@@ -26,4 +26,5 @@ urlpatterns = [
     # path('user-profile/<int:user_id>/', UserProfileEditAPIView.as_view(), name='user-profile-edit'),
     path('vendor-audit-log-all/',VendorAuditLogAll.as_view(),name="vendor-audit-log"),
     path('vendor-document-check/',VendorDocumentCheck.as_view(),name="vendor-document-check"),
+    path('admin-profile-edit/<int:pk>/',AdminProfileEdit.as_view(),name="admin-profile-edit"),
 ]

@@ -19,7 +19,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'is_main']
+        fields = ['id', 'image', 'is_main', 'slot']
 
 
 
@@ -85,13 +85,40 @@ class ProductSerializer(serializers.ModelSerializer):
         if not attrs.get("weight"):
             raise serializers.ValidationError("weight is mandatory field")
 
+        # if attrs.get('price') <= 0:
+        #     raise serializers.ValidationError("Price must be greater than zero.")
+        # if not attrs.get("length")z:
+        #     raise serializers.ValidationError("length is mandatory field")
+        # if not attrs.get("breadth"):
+        #     raise serializers.ValidationError("breadth is mandatory field")
+        # if not attrs.get("height"):
+        #     raise serializers.ValidationError("height is mandatory field")
+        # if not attrs.get("weight"):
+        #     raise serializers.ValidationError("weight is mandatory field")
+
         return attrs
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        tags_str = ret.get('tag', '')
-        ret['tag'] = [t.strip() for t in tags_str.split(',')] if tags_str else []
+        
+        # Convert tags string into list
+        if ret.get("tag"):
+            ret["tag"] = [tag.strip() for tag in ret["tag"].split(",") if tag.strip()]
+        else:
+            ret["tag"] = []
+        
+        # Keep your existing images_by_slot logic
+        ret['images_by_slot'] = {
+            img.slot: {
+                "id": img.id,
+                "image": img.image.url if img.image else None,
+                "is_main": img.is_main
+            }
+            for img in instance.images.all()
+        }
         return ret
+
+
 
     def to_internal_value(self, data):
         tags = data.get('tag', [])
