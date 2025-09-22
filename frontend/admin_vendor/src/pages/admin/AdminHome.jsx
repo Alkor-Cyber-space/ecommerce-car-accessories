@@ -54,11 +54,12 @@ import AuditLogs from './AuditLogs';
 import SalesAnalytics from './SalesAnalytics';
 import RevenueTrends from './RevenueTrends';
 import { BsGraphUpArrow } from 'react-icons/bs';
-import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
   const [openDropdown, setOpenDropdown] = useState('');
+  const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(true); // NEW
 
   const handleClick = (component) => {
@@ -69,7 +70,6 @@ const AdminHome = () => {
     setOpenDropdown(openDropdown === menuName ? '' : menuName);
   };
   const location = useLocation();
-  const navigate = useNavigate()
 
   const activePath = location.pathname;
 
@@ -84,15 +84,7 @@ const AdminHome = () => {
       </Link>
     </li>
   );
-  const handleLogout = () => {
-     // Clear tokens
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
 
-  // Optional: clear other user info
-  localStorage.removeItem("vendorId");
-    navigate("/signin");
-  };
   const renderContent = () => {
     switch (activeTab) {
       case 'Dashboard':
@@ -134,6 +126,11 @@ const AdminHome = () => {
         return <div>Select a tab</div>;
     }
   };
+  const handleLogout = () => {
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+  navigate("/signin", { replace: true });
+};
 
   return (
     <div className='flex-1 px-1 bg-white transition-all duration-500 '>
@@ -226,11 +223,11 @@ const AdminHome = () => {
           <SidebarItem to="/admin/index-catogery" label="Manage Category" icon={<MdOutlineCategory />} activePath={activePath} />
           <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />
-          <SidebarItem to="/admin/profile" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
+          <SidebarItem to="/admin/account-settings" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
           <SidebarItem to="/admin/support-admin" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
-              <li
+          <li
                       className="cursor-pointer hover:bg-red-600 hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2"
                       onClick={handleLogout}
                     >
