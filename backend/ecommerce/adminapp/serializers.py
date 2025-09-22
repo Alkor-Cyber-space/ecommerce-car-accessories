@@ -87,9 +87,14 @@ class VendorProfileSerializer(serializers.ModelSerializer):
 
 class VendorDocumentsSerializer(serializers.ModelSerializer):
     vendor_profile = VendorProfileSerializer()
-
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.all(),  # 🔹 allow passing user_id
+        source='user',                # maps to FK field user
+        write_only=True               # hide from response if you want
+    )
     class Meta:
         model = VendorDocuments
+
         fields = ['id', 'user_id', 'vendor_profile', 'is_verified', 'profile_status']
 
 
@@ -106,3 +111,4 @@ class NotificationSerializer(serializers.ModelSerializer):
         if value and not Group.objects.filter(id=value.id).exists():
             raise serializers.ValidationError("Invalid group ID. This group does not exist.")
         return value
+

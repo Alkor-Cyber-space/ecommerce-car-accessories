@@ -68,16 +68,17 @@ const ProductTable = () => {
     }
 
     try {
-      const updatedCategory = { name: editedName };
+      const updatedCategory = {
+        name: editedName,
+        image: selectedCategory.image, // include new image if chosen
+      };
+
       const response = await updateProductCategoryApi(selectedCategory.id, updatedCategory);
 
       if (response.status === 200 || response.status === 201) {
-        // Update the category in the list immediately
-        setProductcategorylist(prev => 
-          prev.map(cat => 
-            cat.id === selectedCategory.id 
-              ? { ...cat, name: editedName }
-              : cat
+        setProductcategorylist(prev =>
+          prev.map(cat =>
+            cat.id === selectedCategory.id ? response.data : cat
           )
         );
         toast.success("Category updated successfully!");
@@ -96,7 +97,7 @@ const ProductTable = () => {
     try {
       await deleteProductCategoryApi(categoryToDelete.id);
       // Remove the category from the list immediately
-      setProductcategorylist(prev => 
+      setProductcategorylist(prev =>
         prev.filter(cat => cat.id !== categoryToDelete.id)
       );
       toast.success(`Category "${categoryToDelete.name}" deleted successfully!`);
@@ -113,63 +114,80 @@ const ProductTable = () => {
     <div className="space-y-6">
       {/* Add Category Form */}
       <ProductCategory onCategoryCreated={handleCategoryCreated} />
-
       {/* Categories Table */}
       <div className="bg-white rounded-lg overflow-hidden shadow-md">
-       <div className="overflow-x-auto">
-  {productcategorylist.length > 0 ? (
-    <table className="w-full min-w-[350px]">
-      <thead className="bg-gray-50">
-        <tr>
-          <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Category Name
-          </th>
-          <th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-            Actions
-          </th>
-        </tr>
-      </thead>
-      <tbody className="">
-        {productcategorylist.map((item, index) => (
-          <tr
-            key={item.id}
-            className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
-          >
-            <td className="px-2 md:px-4 py-2 md:py-3 text-sm text-gray-900 break-words max-w-[120px] md:max-w-none">
-              {item.name}
-            </td>
-            <td className="px-2 md:px-4 py-2 md:py-3 text-center space-x-1 md:space-x-2 flex justify-center">
-              <button
-                onClick={() => handleEditClick(item)}
-                className="p-1 md:p-2 rounded-full hover:bg-blue-100 transition-colors text-blue-600"
-                title="Edit Category"
-              >
-                <Edit className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDeleteClick(item)}
-                className="p-1 md:p-2 rounded-full hover:bg-red-100 transition-colors text-red-600"
-                title="Delete Category"
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDisableClick(item)}
-                className="p-1 md:p-2 rounded-full hover:bg-orange-100 transition-colors text-orange-600"
-                title="Disable Category"
-              >
-                <Ban className="w-4 h-4" />
-              </button>
-            </td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  ) : (
-    ''
-  )}
-</div>
+        <div className="overflow-x-auto">
+          {productcategorylist.length > 0 ? (
+            <table className="w-full min-w-[350px]">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product Name
+                  </th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Image
+                  </th>
+                  <th className="px-2 md:px-4 py-2 md:py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {productcategorylist.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
+                  >
+                    {/* Category Name */}
+                    <td className="px-2 md:px-4 py-2 md:py-3 text-sm text-gray-900 break-words max-w-[120px] md:max-w-none">
+                      {item.name}
+                    </td>
 
+                    {/* Category Image */}
+                    <td className="px-2 md:px-4 py-2 md:py-3 text-sm text-gray-900 text-left">
+                      {item.image ? (
+                        <img
+                          src={item.image}
+                          alt={item.image}
+                          className="w-12 h-12 object-cover rounded-md mx-auto"
+                        />
+                      ) : (
+                        <span className="text-gray-400 italic">No Image</span>
+                      )}
+                    </td>
+
+                    {/* Actions */}
+                    <td className="px-2 md:px-4 py-2 md:py-3 text-center space-x-1 md:space-x-2 flex justify-center">
+                      <button
+                        onClick={() => handleEditClick(item)}
+                        className="p-1 md:p-2 rounded-full hover:bg-blue-100 transition-colors text-blue-600"
+                        title="Edit Category"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(item)}
+                        className="p-1 md:p-2 rounded-full hover:bg-red-100 transition-colors text-red-600"
+                        title="Delete Category"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDisableClick(item)}
+                        className="p-1 md:p-2 rounded-full hover:bg-orange-100 transition-colors text-orange-600"
+                        title="Disable Category"
+                      >
+                        <Ban className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            ''
+          )}
+        </div>
       </div>
       {showEditModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -187,6 +205,32 @@ const ProductTable = () => {
               onChange={(e) => setEditedName(e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+
+            {/* Image input */}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setSelectedCategory({ ...selectedCategory, image: e.target.files[0] })
+              }
+              className="w-full border border-gray-300 rounded px-3 py-2 mb-4"
+            />
+
+            {/* Preview */}
+            {selectedCategory?.image && typeof selectedCategory.image === "string" ? (
+              <img
+                src={selectedCategory.image}
+                alt="Category"
+                className="w-20 h-20 object-cover rounded mb-4"
+              />
+            ) : selectedCategory?.image instanceof File ? (
+              <img
+                src={URL.createObjectURL(selectedCategory.image)}
+                alt="Preview"
+                className="w-20 h-20 object-cover rounded mb-4"
+              />
+            ) : null}
+
             <div className="flex justify-end space-x-3">
               <button
                 className="px-4 py-2 text-sm bg-gray-200 hover:bg-gray-300 rounded"

@@ -18,8 +18,8 @@ export default function AdminOverview() {
     role: "Admin",
     status: "",
   });
+
   const [filteredAdmins, setFilteredAdmins] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [filters, setFilters] = useState({
     year: '',
     location: '',
@@ -110,7 +110,6 @@ export default function AdminOverview() {
       const updatedAdmins = await getAdminsList();
       setAdmins(updatedAdmins);
       localStorage.setItem("adminsList", JSON.stringify(updatedAdmins));
-
       setShowModal(false);
       setFormData({
         name: "",

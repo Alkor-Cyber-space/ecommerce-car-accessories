@@ -23,6 +23,7 @@ const ProductDetailView = () => {
     useEffect(() => {
         if (id) fetchProduct();
     }, [id]);
+
     const navigate = useNavigate();
     if (!product) return <p>Loading product...</p>;
 
@@ -53,7 +54,6 @@ const ProductDetailView = () => {
                         className="flex items-center justify-between gap-2 border border-[#5737B4] text-[#5737B4] rounded-md px-3 py-1">
                         Edit Product <FiEdit3 />
                     </button>
-
                 </div>
             </div>
 
@@ -102,6 +102,33 @@ const ProductDetailView = () => {
                                     </>
                                 ) : null}
                             </div>
+                            {/* Dimensions */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="flex flex-col">
+                                    <label className="font-medium">Length</label>
+                                    <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">
+                                        {product.length ? `${product.length} cm` : "N/A"}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="font-medium">Weight</label>
+                                    <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">
+                                        {product.weight ? `${product.weight} kg` : "N/A"}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="font-medium">Height</label>
+                                    <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">
+                                        {product.height ? `${product.height} cm` : "N/A"}
+                                    </p>
+                                </div>
+                                <div className="flex flex-col">
+                                    <label className="font-medium">Breadth</label>
+                                    <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">
+                                        {product.breadth ? `${product.breadth} cm` : "N/A"}
+                                    </p>
+                                </div>
+                            </div>
                             <div className="flex-1">
                                 <label className="font-medium">Manufacturing Date</label>
                                 <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">{product.manufacturing_date}</p>
@@ -114,23 +141,6 @@ const ProductDetailView = () => {
                             </p>
                         </div>
                     </div>
-
-                    {/* Compatible Variant Years */}
-                    {product.compatible_varient_year?.length > 0 && (
-                        <div className="bg-white rounded-xl p-6 shadow">
-                            <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                                {product.compatible_varient_year.map((id) => (
-                                    <span
-                                        key={id}
-                                        className="mt-1 border w-full px-2 py-2 text-[#7F7F7F] rounded-md"
-                                    >
-                                        {id}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
 
                 {/* Right Column */}
@@ -165,17 +175,43 @@ const ProductDetailView = () => {
                     <div className="bg-white rounded-xl p-6 shadow">
                         <h2 className="text-lg font-semibold mb-2">Tags</h2>
                         <div className="flex flex-wrap gap-2">
-                            {product.tag?.length > 0 ? (
-                                product.tag.map((tagItem, index) => (
+                            {Array.isArray(product.tag)
+                                ? product.tag.map((tagItem, index) => (
                                     <span key={index} className="bg-gray-100 text-sm px-2 py-1 rounded">
                                         {tagItem}
                                     </span>
                                 ))
-                            ) : (
-                                <span className="text-sm text-gray-500">No tags</span>
-                            )}
+                                : typeof product.tag === "string" && product.tag.trim() !== ""
+                                    ? product.tag.split(",").map((tagItem, index) => (
+                                        <span key={index} className="bg-gray-100 text-sm px-2 py-1 rounded">
+                                            {tagItem.trim()}
+                                        </span>
+                                    ))
+                                    : (
+                                        <span className="text-gray-500 text-sm">No tags available</span>
+                                    )
+                            }
                         </div>
                     </div>
+                    {/* Compatible Variant Years */}
+                    <div className="bg-white rounded-xl p-6 shadow">
+                        <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
+                        {product.compatible_varient_year && product.compatible_varient_year.length > 0 ? (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                                {product.compatible_varient_year.map((variant) => (
+                                    <span
+                                        key={variant.id}
+                                        className="border px-3 py-2 rounded-md text-gray-700 bg-gray-50"
+                                    >
+                                        {variant.make} {variant.model} {variant.variant} ({variant.year})
+                                    </span>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500">No compatible years</p>
+                        )}
+                    </div>
+
 
                 </div>
             </div>
