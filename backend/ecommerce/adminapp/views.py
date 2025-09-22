@@ -35,6 +35,7 @@ class AdminLoginAPIView(APIView):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
 
+
         if not email_or_username or not password:
             return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -316,7 +317,20 @@ class AdminVehicleDelete(APIView):
         except VehicleVariant.DoesNotExist:
             return Response({"error": "Vehicle entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
-class notificationViewSet(viewsets.ModelViewSet):
-    queryset = Notification.objects.all()
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all().order_by("-created_at")
     serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated,IsAdmin]
+    permission_classes = [permissions.IsAuthenticated]  # or add IsAdmin
+
+    def perform_create(self, serializer):
+        users = self.request.data.get("users", None)
+        group = serializer.validated_data.get("group", None)
+
+        notification = serializer.save()  # create base notification
+
+        if users:
+            notification.users.set(users)  # attach multiple users
+        elif group:
+            members = group.user_set.all()
+            notification.users.set(members)
