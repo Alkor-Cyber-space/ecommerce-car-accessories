@@ -2,6 +2,7 @@ from rest_framework import serializers
 from accounts.models import *
 from products.models import *
 from products.models import Product  
+from . models import *
 # from accour.models import VendorDocuments
 
 class UserSerializer(serializers.ModelSerializer):
@@ -90,3 +91,8 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = VendorDocuments
         fields = ['id', 'user_id', 'vendor_profile', 'is_verified', 'profile_status']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'

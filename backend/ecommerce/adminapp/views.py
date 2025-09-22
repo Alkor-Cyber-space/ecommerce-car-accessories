@@ -21,6 +21,7 @@ from products.models import Category
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
 from .serializers import *
+from . models import *
 from accounts.models import VendorDocuments
 from accounts.mixin import AuditLogMixin
 
@@ -315,3 +316,7 @@ class AdminVehicleDelete(APIView):
         except VehicleVariant.DoesNotExist:
             return Response({"error": "Vehicle entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
+class notificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated,IsAdmin]
