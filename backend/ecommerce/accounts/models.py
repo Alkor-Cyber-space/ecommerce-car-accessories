@@ -39,7 +39,7 @@ class VendorProfile(models.Model):
      contact_name = models.CharField(max_length=255, null=True, blank=True)
      contact_email = models.EmailField(null=True, blank=True)
      contact_number = models.IntegerField(null=True, blank=True)
-     designation = models.CharField(null=True, blank=True)
+     designation = models.CharField(null=True, blank=True,max_length=255)
      # # Step 4: KYC Documents
      # pan_card = models.FileField(upload_to='kyc/pan/', null=True, blank=True)
      # aadhar_passport_dl = models.FileField(upload_to='kyc/id/', null=True, blank=True)
@@ -265,6 +265,7 @@ class Address(models.Model):
      postal_code = models.CharField(max_length=20)
      country = models.CharField(max_length=100)
      is_primary = models.BooleanField(default=False)
+     is_pickup = models.BooleanField(default=False)
 
      def __str__(self):
           return f"{self.line1}, {self.city}, {self.country}"

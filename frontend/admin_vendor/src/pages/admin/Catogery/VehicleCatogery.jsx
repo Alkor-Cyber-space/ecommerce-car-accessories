@@ -43,14 +43,20 @@ const VehicleCategory = () => {
         try {
             const response = await vehicleCategoryApi(formData); 
             console.log("Response:", response);
-                toast.success(response.message || 'Vehicle category created successfully!');
-                handleCancel();
+            toast.success(response.message || 'Vehicle category created successfully!');
+            
+            // Dispatch custom event to notify VehicleTable to refresh
+            const refreshEvent = new CustomEvent('vehicleCreated', {
+                detail: { newVehicle: response.data || formData }
+            });
+            window.dispatchEvent(refreshEvent);
+            
+            handleCancel();
         } catch (error) {
             console.error('Error creating vehicle category:', error);
             toast.error(error.response?.data || 'An error occurred while creating the vehicle category.');
         }
     };
-
 
     return (
         <div className="bg-white rounded-lg">
@@ -118,6 +124,9 @@ const VehicleCategory = () => {
                             >
                                 <option value="">Select Type</option>
                                 <option value="Petrol">Petrol</option>
+                                <option value="Diesel">Diesel</option>
+                                <option value="CNG">CNG</option>
+                                <option value="Electric">Electric</option>
                             </select>
                             <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                         </div>

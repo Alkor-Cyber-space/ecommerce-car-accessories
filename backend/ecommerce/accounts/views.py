@@ -743,8 +743,7 @@ class VendorProfileUpdateView(APIView):
 
     def get_object(self, pk):
         try:
-            profile = VendorProfile.objects.get(user_id=pk)
-            
+            profile = VendorProfile.objects.get(user_id=pk) 
             return profile
         except VendorProfile.DoesNotExist:
             return None
@@ -857,3 +856,76 @@ class VendorDocumentsFinalApprovalView(APIView):
             "profile_status": documents.profile_status,
             "is_verified": documents.is_verified,
         }, status=status.HTTP_200_OK)
+    
+class VendorAuditLogAll(APIView):
+    def get(self,request):
+        data=VendorAuditLog.objects.all()
+        if not data:
+            return Response({
+                "status": "failed",
+                "status_code":status.HTTP_400_BAD_REQUEST,
+                "message": "Audit Log is empty"
+            })
+        serializer=VendorAuditLogSerializer(data,many=True)
+        return Response({
+            "status": "success",
+            "status_code": status.HTTP_200_OK,
+            "data": serializer.data
+        })
+    
+
+class VendorDocumentCheck(APIView):
+    
+    def get_object(self, pk):
+        try:
+            profile = VendorProfile.objects.get(user_id=pk) 
+            return profile
+        except VendorProfile.DoesNotExist:
+            return None
+    def get(self, request):
+        pk=request.user
+
+        profile = self.get_object(pk)    
+        if not profile:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=profile)
+        serializer=VendorDocumentsFetchIncompleteSerializer(documents)
+        
+        return Response({
+            "vendor": profile.company_name or profile.user.email,
+            "documents": serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    
+class AdminProfileEdit(APIView):
+    
+    def post(self,request,pk):
+        try:
+            user=CustomUser.objects.get(id=pk)
+        except CustomUser.DoesNotExist:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if not user.is_admin_staff:
+            return Response(
+                {"error": "This user is not an admin"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer=UserEditSerializer(user,data=request.data,partial=True,context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "status": "successfully UPdated",
+                "status_code": status.HTTP_201_CREATED,
+                "message": "Updated Successfully"
+            })
+        return Response({
+                "status": "failed",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": serializer.errors
+            })

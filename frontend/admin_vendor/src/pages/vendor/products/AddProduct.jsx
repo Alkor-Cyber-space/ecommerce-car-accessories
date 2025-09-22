@@ -69,7 +69,11 @@ const AddProduct = () => {
         category: '',
         sizes: '',
         compatible_varient_year: [],
-        images: {}
+        images: {},
+        length: '',
+        weight: '',
+        height: '',
+        breadth: ''
     });
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
     const [dragActiveIndex, setDragActiveIndex] = useState(null);
@@ -97,6 +101,8 @@ const AddProduct = () => {
             try {
                 const data = await getVariantYearsApi();
                 setvarientYears(data);
+                console.log(data);
+
             } catch (error) {
                 setvarientYears([]);
             }
@@ -130,19 +136,42 @@ const AddProduct = () => {
         formDataToSend.append("price", formData.price);
         formDataToSend.append("stock", formData.stock);
         formDataToSend.append("manufacturing_date", formData.manufactureDate);
-        formDataToSend.append("tag", formData.tags.join(','));
         formDataToSend.append("category_id", formData.category);
+        formDataToSend.append("length", formData.length);
+        formDataToSend.append("weight", formData.weight);
+        formDataToSend.append("height", formData.height);
+        formDataToSend.append("breadth", formData.breadth);
+        if (formData.compatible_varient_year) {
+            const yearIds = Array.isArray(formData.compatible_varient_year)
+                ? formData.compatible_varient_year
+                : [formData.compatible_varient_year];
 
+            yearIds.forEach((id) => {
+                formDataToSend.append("compatible_varient_year_ids", id);
+            });
+        }
+
+
+        // ✅ Append each tag individually
+        if (formData.tags && formData.tags.length > 0) {
+            formData.tags.forEach(tag => {
+                formDataToSend.append("tag", tag);
+            });
+        }
+
+        // ✅ Append size if available
         if (formData.sizes) {
             formDataToSend.append("size", formData.sizes);
         }
 
-        if (formData.compatible_varient_year && Array.isArray(formData.compatible_varient_year)) {
-            formData.compatible_varient_year.forEach((id) => {
-                formDataToSend.append("compatible_varient_year", id);
-            });
+
+
+        // 🔍 debug check
+        for (let pair of formDataToSend.entries()) {
+            console.log(pair[0], pair[1]);
         }
 
+        // ✅ Append images
         imageKeys.forEach((key) => {
             if (formData.images?.[key]) {
                 formDataToSend.append("images", formData.images[key]);
@@ -152,6 +181,8 @@ const AddProduct = () => {
         try {
             const response = await addProductApi(formDataToSend);
             toast.success("Product added successfully");
+
+            // Reset form
             setFormData({
                 name: '',
                 description: '',
@@ -162,11 +193,16 @@ const AddProduct = () => {
                 category: '',
                 sizes: '',
                 compatible_varient_year: [],
-                images: {}
+                images: {},
+                length: '',
+                weight: '',
+                height: '',
+                breadth: ''
             });
             setImagePreviews(Array(6).fill(null));
             navigate("/vendor/products");
         } catch (error) {
+            console.error("Error adding product:", error.response?.data || error.message);
             toast.error("Failed to add product");
         }
     };
@@ -285,8 +321,68 @@ const AddProduct = () => {
                         <div className="flex gap-4 flex-col ">
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Sizes Available</label>
-                                <input name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" />
+                                <select name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" >
+                                    <option value="" disabled>(Optional)</option>
+                                    <option value="Small">Small</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Large">Large</option>
+                                    <option value="X-Large">X-Large</option>
+                                </select>
                             </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* First row: Length and weight */}
+                                <div className="flex flex-col">
+                                    <label htmlFor="length" className="font-medium">Length </label>
+                                    <input
+                                        id="length"
+                                        name="length"
+                                        value={formData.length || ''}
+                                        onChange={handleChange}
+                                        type="number"
+                                        className="border rounded px-4 py-2 mt-1"
+                                        placeholder="0 cm"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label htmlFor="weight" className="font-medium">weight </label>
+                                    <input
+                                        id="weight"
+                                        name="weight"
+                                        value={formData.weight || ''}
+                                        onChange={handleChange}
+                                        type="number"
+                                        className="border rounded px-4 py-2 mt-1"
+                                        placeholder="0 cm"
+                                    />
+                                </div>
+
+                                {/* Second row: Height and Breadth */}
+                                <div className="flex flex-col">
+                                    <label htmlFor="height" className="font-medium">Height </label>
+                                    <input
+                                        id="height"
+                                        name="height"
+                                        value={formData.height || ''}
+                                        onChange={handleChange}
+                                        type="number"
+                                        className="border rounded px-4 py-2 mt-1"
+                                        placeholder="0 cm"
+                                    />
+                                </div>
+                                <div className="flex flex-col">
+                                    <label htmlFor="breadth" className="font-medium">Breadth </label>
+                                    <input
+                                        id="breadth"
+                                        name="breadth"
+                                        value={formData.breadth || ''}
+                                        onChange={handleChange}
+                                        type="number"
+                                        className="border rounded px-4 py-2 mt-1"
+                                        placeholder="0 cm"
+                                    />
+                                </div>
+                            </div>
+
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Manufacturing Date</label>
                                 <input name="manufactureDate" value={formData.manufactureDate || ''} onChange={handleChange} type="date" className="border rounded px-4 py-2 mt-1" />
@@ -309,28 +405,6 @@ const AddProduct = () => {
                             </select>
                         </div>
                     </div>
-
-                    {/* Stock */}
-                    <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-2">Compatible varient Years</h2>
-                        {Array.isArray(varientYears) && varientYears.length > 0 ? (
-                            <select
-                                name="compatible_varient_year"
-                                value={formData.compatible_varient_year || ''}
-                                onChange={handleChange}
-                                className="border rounded px-4 py-2 w-full mt-1"
-                            >
-                                <option value="">Select Year</option>
-                                {varientYears.map((year) => (
-                                    <option key={year.id} value={year.id}>{year.id}</option>
-                                ))}
-                            </select>
-                        ) : (
-                            <p className="text-sm text-gray-500">Loading or no data</p>
-                        )}
-
-                    </div>
-
                 </div>
 
                 {/* Right Column */}
@@ -424,6 +498,53 @@ const AddProduct = () => {
                             }
                         />
                     </div>
+
+                    {/* Stock */}
+                    <div className="bg-white rounded-xl p-6 shadow overflow-y-auto max-h-30 scrollbar-none">
+                        <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
+
+                        {Array.isArray(varientYears) && varientYears.length > 0 ? (
+                            <div className="space-y-2">
+                                {varientYears.map((year) => (
+                                    <label
+                                        key={year.id}
+                                        className="flex items-center space-x-2 cursor-pointer"
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            name="compatible_varient_year"
+                                            value={year.id}
+                                            checked={formData.compatible_varient_year?.includes(year.id)}
+                                            onChange={(e) => {
+                                                const checked = e.target.checked;
+                                                let updated = [...(formData.compatible_varient_year || [])];
+
+                                                if (checked) {
+                                                    updated.push(year.id);
+                                                } else {
+                                                    updated = updated.filter((id) => id !== year.id);
+                                                }
+
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    compatible_varient_year: updated,
+                                                }));
+                                            }}
+                                            className="h-4 w-4 text-[#5737B4] focus:ring-[#5737B4] border-gray-300 rounded"
+                                        />
+                                        <span>
+                                            {year.make} {year.model} {year.variant} ({year.year})
+                                        </span>
+                                    </label>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-gray-500">Loading or no data</p>
+                        )}
+                    </div>
+
+
+
                 </div>
             </div>
 

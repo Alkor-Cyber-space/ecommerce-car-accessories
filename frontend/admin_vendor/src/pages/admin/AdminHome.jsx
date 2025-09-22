@@ -14,7 +14,9 @@ import {
   FaUserTie,
   FaUser,
   FaBars,
-  FaTimes
+  FaTimes,
+  FaTags,
+  FaSignOutAlt
 } from 'react-icons/fa';
 import { HiArrowTrendingUp } from "react-icons/hi2";
 import { GrNotification, GrUserSettings } from "react-icons/gr";
@@ -52,7 +54,7 @@ import AuditLogs from './AuditLogs';
 import SalesAnalytics from './SalesAnalytics';
 import RevenueTrends from './RevenueTrends';
 import { BsGraphUpArrow } from 'react-icons/bs';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -67,6 +69,7 @@ const AdminHome = () => {
     setOpenDropdown(openDropdown === menuName ? '' : menuName);
   };
   const location = useLocation();
+  const navigate = useNavigate()
 
   const activePath = location.pathname;
 
@@ -81,7 +84,15 @@ const AdminHome = () => {
       </Link>
     </li>
   );
+  const handleLogout = () => {
+     // Clear tokens
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
 
+  // Optional: clear other user info
+  localStorage.removeItem("vendorId");
+    navigate("/signin");
+  };
   const renderContent = () => {
     switch (activeTab) {
       case 'Dashboard':
@@ -211,6 +222,7 @@ const AdminHome = () => {
               </ul>
             )}
           </li>
+          <SidebarItem to="/admin/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
           <SidebarItem to="/admin/index-catogery" label="Manage Category" icon={<MdOutlineCategory />} activePath={activePath} />
           <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
           <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />
@@ -218,6 +230,12 @@ const AdminHome = () => {
           <SidebarItem to="/admin/support-admin" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
+              <li
+                      className="cursor-pointer hover:bg-red-600 hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2"
+                      onClick={handleLogout}
+                    >
+                      <FaSignOutAlt /> Logout
+                    </li>
         </ul>
 
     

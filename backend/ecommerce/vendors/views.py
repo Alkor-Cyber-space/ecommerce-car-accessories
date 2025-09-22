@@ -55,26 +55,43 @@ class VendorProductViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         product = serializer.save(vendor=self.request.user)
-
         # Get image files from request.FILES
         images = self.request.FILES.getlist('images')
-        print(images)
+        print(f"images: {images}")
         for image in images:
             ProductImage.objects.create(product=product, image=image)
 
     def perform_update(self, serializer):
+        print("reached update")
         product = serializer.save()
-        new_images = self.request.FILES.getlist('images')
-        if new_images:
-            for img in product.images.all():
-                if img.image:
-                    img.image.delete(save=False)
-            
-            product.images.all().delete()
+        new_images = self.request.FILES
+
+        for key in new_images.keys():
+            # delete old image for this slot
+            ProductImage.objects.filter(product=product, slot=key).delete()
+
+            for file in new_images.getlist(key):  # handle multiple files in same slot
+                ProductImage.objects.create(
+                    product=product,
+                    image=file,
+                    slot=key,
+                    is_main=(key == "main_image")
+                )
+
+        return product
 
 
-        for image in new_images:
-            ProductImage.objects.create(product=product, image=image)
+
+    @action(detail=True, methods=['delete'], url_path='delete-image')
+    def delete_image(self, request, pk=None):
+        try:
+            image = ProductImage.objects.get(pk=pk, product__vendor=request.user)
+            print(f"image : {image}")
+            image.delete()
+            return Response({'message': 'Image deleted successfully.'}, status=status.HTTP_200_OK)
+        except ProductImage.DoesNotExist:
+            return Response({'error': 'Image not found.'}, status=status.HTTP_404_NOT_FOUND)
+    
 # Category CRUD by Vendor
 class VendorCategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()

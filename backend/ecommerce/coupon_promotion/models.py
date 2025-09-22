@@ -17,6 +17,8 @@ class Promotion(models.Model):
     end_date=models.DateTimeField()
     activate=models.BooleanField(default=True)
     applicable_product=models.ManyToManyField('products.Product',blank=True,related_name='promotions')
+    applicable_category=models.ManyToManyField('products.Category',blank=True,related_name='category')
+    price_range=models.DecimalField(max_digits=10,decimal_places=2,help_text="price range", null=True)
 
     def is_activate(self):
         now=timezone.now()
@@ -28,6 +30,7 @@ class Promotion(models.Model):
 
 class Coupon(models.Model):
     name=models.CharField(max_length=255,unique=True)
+    code=models.CharField(max_length=255, unique=True)
     discount_value=models.DecimalField(max_digits=5,decimal_places=2,help_text="enter the discount percentage" )
     min_purchase_amount=models.DecimalField(max_digits=10,decimal_places=2,default=0)
     start_date=models.DateTimeField(default=timezone.now)

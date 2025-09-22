@@ -351,12 +351,14 @@ class UserEditSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         old_password = attrs.get('old_password')
         new_password = attrs.get('new_password')
-
+        print(f'old_password: {old_password}, new_password: {new_password}')
+        
         if old_password or new_password:
             if not old_password or not new_password:
                 raise serializers.ValidationError("Both old and new passwords are required to change password.")
 
             user = self.context['request'].user
+            print(f'user: {user}, user.password: {user.password}')
             if not check_password(old_password, user.password):
                 raise serializers.ValidationError({"old_password": "Old password is incorrect."})
 
@@ -765,3 +767,79 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
                 )
 
         return instance
+    
+class VendorAuditLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=VendorAuditLog
+        fields='__all__'
+
+
+class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
+    missing_count = serializers.SerializerMethodField()
+    missing_fields = serializers.SerializerMethodField()
+
+    class Meta:
+        model = VendorDocuments
+        fields = [
+            "id",
+            "vendor_profile",
+            "profile_status",
+            "is_verified",
+            "submitted_at",
+            "missing_count",
+            "missing_fields",
+        ]
+
+    def get_missing_fields(self, obj):
+        """Return names of missing/null documents"""
+        missing = []
+        document_fields = [
+            "pan_card",
+            "aadhar_passport_dl",
+            "gst_certificate",
+            "business_registration_cert",
+            "shop_license",
+            "cancelled_cheque",
+            "bank_statement",
+            "it_return",
+            "financial_statement",
+            "dealership_letter",
+            "authorized_signatory_letter",
+            "vendor_registration_form",
+            "signed_terms_and_con",
+        ]
+        for field in document_fields:
+            if not getattr(obj, field):
+                missing.append(field)
+        return missing
+
+    def get_missing_count(self, obj):
+        return len(self.get_missing_fields(obj))
+
+    incomplete_fileds=serializers.SerializerMethodField()
+    
+    class Meta:
+        model=VendorDocuments
+        fields="__all__"
+
+    def get_incomplete_fileds(self,obj):
+        incomplete=[]
+        for field in [
+            "pan_card",
+            "aadhar_passport_dl",
+            "gst_certificate",
+            "business_registration_cert",
+            "shop_license",
+            "cancelled_cheque",
+            "bank_statement",
+            "it_return",
+            "financial_statement",
+            "dealership_letter",
+            "authorized_signatory_letter",
+            "vendor_registration_form",
+            "signed_terms_and_con",
+        ]:
+            if not getattr(obj, field):  
+                incomplete.append(field)
+        return incomplete
+

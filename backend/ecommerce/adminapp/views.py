@@ -39,17 +39,22 @@ class AdminLoginAPIView(APIView):
 
         # Try fetching user by email or username
         user = User.objects.filter(email=email_or_username).first()
+        print(f'User fetched by email: {user}')
         if not user:
             user = User.objects.filter(username=email_or_username).first()
+            print(f'User fetched by username: {user}')
         
         if not user:
             return Response({"error": "No account found with the provided email/username."}, status=status.HTTP_404_NOT_FOUND)
 
         if not user.check_password(password):
+            print(password)
+            print(f'Password check failed for user: {user.username}')
             return Response({"error": "Incorrect password."}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user and user.check_password(password):
             if user.groups.filter(name='Admin').exists():  # or `user.role == 'admin'` if you're using a field
+                print(f'Admin user {user.username} logged in successfully.')
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "access": str(refresh.access_token),
@@ -119,8 +124,44 @@ class AdminUserListAPIView(APIView):
 
         serializer = UserSerializer(admin_users, many=True)
         return Response(serializer.data)
+    def post(self,request):
+        id=request.data.get("id",None)
+        if not id :
+            return Response({"status":"failed","status_code":status.HTTP_400_BAD_REQUEST,"message": "Id ismandatory"})
+        user=CustomUser.objects.filter(id=id,is_admin_staff=True)
+        if not user:
+            return Response({"status":"failed","status_code":status.HTTP_400_BAD_REQUEST,"message":"not an employee"})
+        serializer= UserSerializer(user,many=True)
+        return Response({"status":"success","status_code":status.HTTP_200_OK,"data":serializer.data})
+class VendorDetailsList(APIView):
+    def post(self, request, *args, **kwargs):
+        pk = request.data.get("pk")
+        if not pk:
+            return Response(
+                {"message": "pk is required", "status": status.HTTP_400_BAD_REQUEST}
+            )
+        print("above the try")
+        try:
+            print("inside the try")
+            print(f"filter :{Group.objects.get(name="Vendor")}")
+            vendor_group = Group.objects.get(name="Vendor")
+            print(f"vendor_group: {vendor_group}")
 
+        except Exception as e:
+            message = str(e)
+            return Response({"status":"failed","response_code":status.HTTP_500_INTERNAL_SERVER_ERROR,"message":message})
+        user = (CustomUser.objects.filter(id=pk, groups=vendor_group).select_related("vendor_profile").first())
 
+        if not user:
+            return Response(
+                {"message": "Vendor user does not exist", "status": status.HTTP_404_NOT_FOUND}
+            )
+
+        serializer = VendorDetailsSerializer(user)
+        return Response(
+            {"message": "Successfully fetched vendor data", "data": serializer.data},
+            status=status.HTTP_200_OK,
+        )
 class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
