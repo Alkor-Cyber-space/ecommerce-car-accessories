@@ -257,7 +257,9 @@ const AdminHome = () => {
           </div>
 
           {/* Profile Info */}
-          <div className="flex w-60 items-center gap-3">
+          <div className="flex w-60 items-center gap-3"
+          onClick={() => navigate('/admin/account-settings')}
+          >
             <img
               src={user}
               alt="profile"

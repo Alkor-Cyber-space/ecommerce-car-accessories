@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { toast } from "react-toastify";
 import { confirmAlert } from "react-confirm-alert";
 import user from "../../assets/user.jpg";
-import { getMeApi, updateAccountApi, deactivateAccountApi } from "../../services/allAPI";
 
 const AdminAccountSettings = () => {
   const [userProfile, setUserProfile] = useState({});
@@ -13,20 +12,20 @@ const AdminAccountSettings = () => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    const fetchMeApi = async () => {
-      try {
-        const response = await getMeApi();
-        console.log(response);
-        // setUserProfile(response.data);
-        setFormData(response.data); // Initialize form data for editing
-      } catch (error) {
-        console.error("Error fetching account settings:", error);
-        toast.error("Failed to fetch account settings");
-      }
-    };
-    fetchMeApi();
-  }, []);
+  // useEffect(() => {
+  //   const fetchMeApi = async () => {
+  //     try {
+  //       const response = await getMeApi();
+  //       console.log(response);
+  //       // setUserProfile(response.data);
+  //       setFormData(response.data); // Initialize form data for editing
+  //     } catch (error) {
+  //       console.error("Error fetching account settings:", error);
+  //       toast.error("Failed to fetch account settings");
+  //     }
+  //   };
+  //   fetchMeApi();
+  // }, []);
 
   // Handle form input changes for profile data
   const handleFormChange = (e) => {
