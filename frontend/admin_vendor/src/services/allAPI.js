@@ -685,3 +685,12 @@ export const getUserOrderListApi = async (vendorId) => {
   }
 };
    
+export const getAuditLogsApi = async () => {
+  try {
+    const response = await api.get("/auth/vendor-audit-log-all/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    throw error;
+  }
+};
