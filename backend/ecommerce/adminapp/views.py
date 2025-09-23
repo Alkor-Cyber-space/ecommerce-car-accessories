@@ -21,6 +21,7 @@ from products.models import Category
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
 from .serializers import *
+from . models import *
 from accounts.models import VendorDocuments
 from accounts.mixin import AuditLogMixin
 
@@ -34,22 +35,28 @@ class AdminLoginAPIView(APIView):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
 
+
         if not email_or_username or not password:
             return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Try fetching user by email or username
         user = User.objects.filter(email=email_or_username).first()
+        print(f'User fetched by email: {user}')
         if not user:
             user = User.objects.filter(username=email_or_username).first()
+            print(f'User fetched by username: {user}')
         
         if not user:
             return Response({"error": "No account found with the provided email/username."}, status=status.HTTP_404_NOT_FOUND)
 
         if not user.check_password(password):
+            print(password)
+            print(f'Password check failed for user: {user.username}')
             return Response({"error": "Incorrect password."}, status=status.HTTP_401_UNAUTHORIZED)
 
         if user and user.check_password(password):
             if user.groups.filter(name='Admin').exists():  # or `user.role == 'admin'` if you're using a field
+                print(f'Admin user {user.username} logged in successfully.')
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "access": str(refresh.access_token),
@@ -119,7 +126,15 @@ class AdminUserListAPIView(APIView):
 
         serializer = UserSerializer(admin_users, many=True)
         return Response(serializer.data)
-
+    def post(self,request):
+        id=request.data.get("id",None)
+        if not id :
+            return Response({"status":"failed","status_code":status.HTTP_400_BAD_REQUEST,"message": "Id ismandatory"})
+        user=CustomUser.objects.filter(id=id,is_admin_staff=True)
+        if not user:
+            return Response({"status":"failed","status_code":status.HTTP_400_BAD_REQUEST,"message":"not an employee"})
+        serializer= UserSerializer(user,many=True)
+        return Response({"status":"success","status_code":status.HTTP_200_OK,"data":serializer.data})
 class VendorDetailsList(APIView):
     def post(self, request, *args, **kwargs):
         pk = request.data.get("pk")
@@ -307,3 +322,20 @@ class AdminVehicleDelete(APIView):
         except VehicleVariant.DoesNotExist:
             return Response({"error": "Vehicle entry not found."}, status=status.HTTP_404_NOT_FOUND)
 
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all().order_by("-created_at")
+    serializer_class = NotificationSerializer
+    permission_classes = [permissions.IsAuthenticated]  # or add IsAdmin
+
+    def perform_create(self, serializer):
+        users = self.request.data.get("users", None)
+        group = serializer.validated_data.get("group", None)
+
+        notification = serializer.save()  # create base notification
+
+        if users:
+            notification.users.set(users)  # attach multiple users
+        elif group:
+            members = group.user_set.all()
+            notification.users.set(members)

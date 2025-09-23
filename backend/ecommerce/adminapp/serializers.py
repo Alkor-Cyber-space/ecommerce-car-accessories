@@ -2,6 +2,7 @@ from rest_framework import serializers
 from accounts.models import *
 from products.models import *
 from products.models import Product  
+from . models import *
 # from accour.models import VendorDocuments
 
 class UserSerializer(serializers.ModelSerializer):
@@ -86,7 +87,28 @@ class VendorProfileSerializer(serializers.ModelSerializer):
 
 class VendorDocumentsSerializer(serializers.ModelSerializer):
     vendor_profile = VendorProfileSerializer()
-
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=CustomUser.objects.all(),  # 🔹 allow passing user_id
+        source='user',                # maps to FK field user
+        write_only=True               # hide from response if you want
+    )
     class Meta:
         model = VendorDocuments
+
         fields = ['id', 'user_id', 'vendor_profile', 'is_verified', 'profile_status']
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+        extra_kwargs = {
+            'users': {'required': False},
+            'group': {'required': False, 'allow_null': True},
+        }
+
+    def validate_group(self, value):
+        if value and not Group.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("Invalid group ID. This group does not exist.")
+        return value
+

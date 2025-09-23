@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { productcategory } from '../../../services/allAPI';
+import { productcategories } from '../../../services/allAPI';
 import { toast } from 'react-toastify';
 
-const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
+const ProductCategory = ({ onCategoryCreated }) => {
     const [categoryName, setCategoryName] = useState('');
+    const [categoryImage, setCategoryImage] = useState(null);
     const [loading, setLoading] = useState(false);
 
     const handleCancel = () => {
         setCategoryName('');
+        setCategoryImage(null);
     };
 
     const handleCreateCategory = async (e) => {
@@ -15,16 +17,25 @@ const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
 
         try {
             setLoading(true);
-            const response = await productcategory({ name: categoryName });
+
+            // Use FormData to send text + image
+            const formData = new FormData();
+            formData.append("name", categoryName);
+            if (categoryImage) {
+                formData.append("image", categoryImage);
+            }
+
+            const response = await productcategories(formData);
             console.log("Response:", response);
+
             toast.success('Product category created successfully!');
-            
-            // Call the callback function with the new category
+
             if (onCategoryCreated) {
                 onCategoryCreated(response);
             }
-            
+
             setCategoryName('');
+            setCategoryImage(null);
         } catch (error) {
             console.error('Error creating category:', error);
             toast.error(error?.response?.data?.message || 'An error occurred while creating the category.');
@@ -40,6 +51,7 @@ const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
 
                 {/* Input Form */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {/* Category Name */}
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                             Product category
@@ -52,7 +64,21 @@ const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
                             onChange={(e) => setCategoryName(e.target.value)}
                         />
                     </div>
+
+                    {/* Category Image */}
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Category Image
+                        </label>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setCategoryImage(e.target.files[0])}
+                            className="w-full p-2 border border-gray-300 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-[#5727B4]"
+                        />
+                    </div>
                 </div>
+
                 {/* Action Buttons */}
                 <div className="flex justify-end space-x-3">
                     <button
@@ -75,3 +101,4 @@ const ProductCategory = ({ onCategoryCreated }) => {  // Add this prop
 };
 
 export default ProductCategory;
+    

@@ -209,13 +209,13 @@ export default function UserDataTable() {
                     >
                       <button
                         onClick={() => handleAction('View', activeDropdown)}
-                        className="text-sm text-gray-700 hover:text-gray-900"
+                        className="text-sm text-gray-800 hover:text-gray-900"
                       >
                         View
                       </button>
                       <button
                         onClick={() => handleAction('Edit', activeDropdown)}
-                        className="text-sm text-gray-700 hover:text-gray-900"
+                        className="text-sm text-gray-800 hover:text-gray-900"
                       >
                         Edit
                       </button>

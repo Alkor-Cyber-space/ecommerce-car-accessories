@@ -2,30 +2,65 @@ from django.shortcuts import render
 from rest_framework import generics,status
 from rest_framework.response import Response
 from .models import *
+from accounts.models import FCMToken
 from .serializers import *
 from rest_framework.generics import GenericAPIView
+from firebase_admin import messaging
 # Create your views here.
 
 class PromotionListCreateAPIView(generics.GenericAPIView):
     queryset=Promotion.objects.all()
     serializer_class=PromrotionSerializers
 
-    def post(self,request,args,*kwargs):
-        serializers=self.get_serializer(data=request.data)
-        if serializers.is_valid():
-            serializers.save()
+        # serializer_class=PromrotionSerializers
+    def get_serializer_class(self):
+        if self.request.method in ["POST","GET","PUT"]:
+            return PromrotionSerializers
+        return PromotionReadSerializer
+        
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            instance = serializer.save()
+
+            # Send FCM notifications
+            tokens = FCMToken.objects.values_list('token', flat=True)
+            for token in tokens:
+                try:
+                    self.send_notification(
+                        token,
+                        f"New Promotion: {instance.name}",   # 👈 changed here
+                        instance.description
+                    )
+                except Exception as e:
+                    print(f"Failed to send notification to {token}: {e}")
+
             return Response({
-                "status":"created successfully",
-                "code":status.HTTP_201_CREATED,
-                "message": serializers.data
+                "status": "created successfully",
+                "code": status.HTTP_201_CREATED,
+                "message": serializer.data
             })
+
         return Response({
-            "status":"Failed",
-            "code":status.HTTP_400_BAD_REQUEST,
-            "message": serializers.errors
+            "status": "Failed",
+            "code": status.HTTP_400_BAD_REQUEST,
+            "message": serializer.errors
         })
-    
-    def get(self,request,pk,args,*kwargs):
+
+    @staticmethod
+    def send_notification(token, title, body):
+        message = messaging.Message(
+            notification=messaging.Notification(
+                title=title,
+                body=body
+            ),
+            token=token
+        )
+        response = messaging.send(message)
+        print('Successfully sent message:', response)
+
+
+    def get(self,request,pk,*args,**kwargs):
         try:
             instance=Promotion.objects.get(pk=pk)
         except Promotion.DoesNotExist:
@@ -65,8 +100,8 @@ class PromotionListCreateAPIView(generics.GenericAPIView):
                 "message" : serializer.errors
             },status.HTTP_400_BAD_REQUEST)
     
-    def delete(self,request,args,*kwargs):
-        pk=self.kwargs['pk']
+    def delete(self,request,*args,**kwargs):
+        pk=kwargs.get("pk")
         try:
             instance=Promotion.objects.get(pk=pk)
             instance.delete()
@@ -106,22 +141,47 @@ class CouponAPIView(generics.GenericAPIView):
     queryset=Coupon.objects.all()
     serializer_class=CouponSerializer
 
-    def post(self,request):
-        
-        serializer=self.get_serializer(data=request.data)
+    @staticmethod
+    def send_notification(token, title, body):
+        """Send FCM push notification to a single token"""
+        try:
+            message = messaging.Message(
+                notification=messaging.Notification(
+                    title=title,
+                    body=body
+                ),
+                token=token
+            )
+            response = messaging.send(message)
+            print(f"Successfully sent message to {token}: {response}")
+        except Exception as e:
+            print(f"Failed to send notification to {token}: {e}")
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            coupon = serializer.save()
+
+            # Send notification to all users with FCM tokens
+            tokens = FCMToken.objects.values_list('token', flat=True)
+            for token in tokens:
+                self.send_notification(
+                    token,
+                    title=f"New Coupon: {coupon.title}",
+                    body=f"Use code {coupon.code} to get your discount!"
+                )
+
             return Response({
                 "status": "Created successfully",
-                "code" : status.HTTP_200_OK,
-                "message" : serializer.data
+                "code": status.HTTP_201_CREATED,
+                "message": serializer.data
             })
         else:
             return Response({
                 "status": "Failed",
-                "code" : status.HTTP_400_BAD_REQUEST,
-                "message" : serializer.errors
-            },status.HTTP_400_BAD_REQUEST)
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": serializer.errors
+            }, status.HTTP_400_BAD_REQUEST)
         
     def get(self,request,*args,**kwargs):
         pk=kwargs.get('pk',None)

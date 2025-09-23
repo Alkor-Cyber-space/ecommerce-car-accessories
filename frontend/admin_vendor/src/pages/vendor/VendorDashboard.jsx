@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import SalesTrends from '../../components/admin/adminDashboard/SalesTrends';
 import RegisteredUsersChart from '../../components/admin/adminDashboard/RegisteredUsersChart';
 import TopProductsTable from '../../components/admin/adminDashboard/TopProducts';
@@ -12,6 +12,8 @@ import { FiArrowUpRight } from 'react-icons/fi';
 import { PiToolboxLight } from 'react-icons/pi';
 import { AiOutlineInfoCircle } from 'react-icons/ai';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
+import { VendorDocumentCheckApi } from '../../services/allAPI';
 
 const stats = [
   { icon: <IoPricetagOutline />, title: "Total Sales", value: "50.8K" },
@@ -20,15 +22,40 @@ const stats = [
 
 ];
 
-const islogined = true;
-
 
 const AdminDashboard = () => {
+  const [docStatus, setDocStatus] = useState()
+
+useEffect(() => {
+  const fetchDocStatus = async () => {
+    try {
+      const response = await VendorDocumentCheckApi();  // <-- await here
+      setDocStatus(response.documents);
+      console.log(response.documents);
+      
+    } catch (error) {
+      console.error("Error fetching vendor document status:", error);
+    }
+  };
+
+  fetchDocStatus();
+}, []);
+
+// const shouldShowBanner =
+//   docStatus &&
+//   docStatus.missing_count > 0 && 
+//   (docStatus.profile_status == "pending"
+//   || docStatus.profile_status == "rejected"
+//     //  || !docStatus.is_verified
+//     );
+const shouldShowBanner = docStatus && docStatus.missing_count > 0;
+
+
   return (
     <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl'>
 
       {/* Notification Banner */}
- {!islogined && (
+ {/* {!islogined && (
   <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
     <div className="flex items-center gap-4">
       <AiOutlineInfoCircle className="text-3xl md:text-4xl" />
@@ -44,8 +71,27 @@ const AdminDashboard = () => {
       <Link to="/vendor/profile" >Finish Setup </Link>
     </button>
   </div>
-)}
+)} */}
+ {shouldShowBanner && (
+        <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <AiOutlineInfoCircle className="text-3xl md:text-4xl" />
+            <div>
+              <h3 className="font-semibold text-md md:text-md text-black">
+                Complete Your Account Setup to Start Selling
+              </h3>
+              <p className="text-md md:text-sm text-gray-600">
+                You’ve skipped some required steps ({docStatus.missing_count} missing). 
+                Please finish your account setup to add products and start selling on your store.
+              </p>
+            </div>
+          </div>
 
+          <button className="border border-[#5737B4] text-[#5737B4] px-4 py-1.5 lg:w-40 md:w-50 sm:w-40 rounded-md text-sm hover:bg-[#5737B4] hover:text-white transition">
+            <Link to="/vendor/profile">Finish Setup</Link>
+          </button>
+        </div>
+      )}
 
       {/* Dashboard Header */}
       <div className='flex justify-between items-center'>

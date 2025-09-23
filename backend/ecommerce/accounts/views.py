@@ -25,7 +25,6 @@ from django.core.mail import send_mail
 from .serializers import *
 from rest_framework.generics import GenericAPIView
 from firebase_admin import auth as firebase_auth
-from . import firebase_config 
 from django.db.models import Q
 from .utils import log_action
 from rest_framework import generics, status
@@ -135,27 +134,42 @@ class UserViewSet(viewsets.ViewSet):
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
-        print("Email or Username:", email_or_username)
-        print("Password:", password)
+        fcm_token = request.data.get('fcm_token')
+
         if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        
-        user = authenticate(request, username=email_or_username, password=password)
-        print("User found:", user)
+        # Try to fetch user by email OR username
+        try:
+            if "@" in email_or_username:  # assume email
+                user_obj = User.objects.get(email=email_or_username)
+            else:  # assume username
+                user_obj = User.objects.get(username=email_or_username)
+        except User.DoesNotExist:
+            return Response({"error": "User does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Authenticate using the found username
+        user = authenticate(request, username=user_obj.username, password=password)
+
         if user:
             if not user.is_active:
                 return Response({"error": "User account is not active."}, status=status.HTTP_403_FORBIDDEN)
             if user.groups.filter(name='User').exists():
+                # Store multiple tokens
+                if fcm_token:
+                    FCMToken.objects.get_or_create(user=user, token=fcm_token)
+
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "access": str(refresh.access_token),
-                    "refresh": str(refresh),    
+                    "refresh": str(refresh),
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Only user can login here"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def home(self, request):
@@ -730,8 +744,7 @@ class VendorProfileUpdateView(APIView):
 
     def get_object(self, pk):
         try:
-            profile = VendorProfile.objects.get(user_id=pk)
-            
+            profile = VendorProfile.objects.get(user_id=pk) 
             return profile
         except VendorProfile.DoesNotExist:
             return None
@@ -845,3 +858,75 @@ class VendorDocumentsFinalApprovalView(APIView):
             "is_verified": documents.is_verified,
         }, status=status.HTTP_200_OK)
     
+class VendorAuditLogAll(APIView):
+    def get(self,request):
+        data=VendorAuditLog.objects.all()
+        if not data:
+            return Response({
+                "status": "failed",
+                "status_code":status.HTTP_400_BAD_REQUEST,
+                "message": "Audit Log is empty"
+            })
+        serializer=VendorAuditLogSerializer(data,many=True)
+        return Response({
+            "status": "success",
+            "status_code": status.HTTP_200_OK,
+            "data": serializer.data
+        })
+    
+
+class VendorDocumentCheck(APIView):
+    
+    def get_object(self, pk):
+        try:
+            profile = VendorProfile.objects.get(user_id=pk) 
+            return profile
+        except VendorProfile.DoesNotExist:
+            return None
+    def get(self, request):
+        pk=request.user
+
+        profile = self.get_object(pk)    
+        if not profile:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        documents, _ = VendorDocuments.objects.get_or_create(vendor_profile=profile)
+        serializer=VendorDocumentsFetchIncompleteSerializer(documents)
+        
+        return Response({
+            "vendor": profile.company_name or profile.user.email,
+            "documents": serializer.data,
+        }, status=status.HTTP_200_OK)
+
+    
+class AdminProfileEdit(APIView):
+    
+    def post(self,request,pk):
+        try:
+            user=CustomUser.objects.get(id=pk)
+        except CustomUser.DoesNotExist:
+            return Response(
+                {"error": "Vendor profile not found"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        if not user.is_admin_staff:
+            return Response(
+                {"error": "This user is not an admin"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer=UserEditSerializer(user,data=request.data,partial=True,context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                "status": "successfully UPdated",
+                "status_code": status.HTTP_201_CREATED,
+                "message": "Updated Successfully"
+            })
+        return Response({
+                "status": "failed",
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "message": serializer.errors
+            })

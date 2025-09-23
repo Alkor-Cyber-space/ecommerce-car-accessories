@@ -9,6 +9,7 @@ export default function AdminOverview() {
   const [admins, setAdmins] = useState([]);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [showModal,setShowModal] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -17,8 +18,8 @@ export default function AdminOverview() {
     role: "Admin",
     status: "",
   });
+
   const [filteredAdmins, setFilteredAdmins] = useState([]);
-  const [showModal, setShowModal] = useState(false);
   const [filters, setFilters] = useState({
     year: '',
     location: '',
@@ -109,7 +110,6 @@ export default function AdminOverview() {
       const updatedAdmins = await getAdminsList();
       setAdmins(updatedAdmins);
       localStorage.setItem("adminsList", JSON.stringify(updatedAdmins));
-
       setShowModal(false);
       setFormData({
         name: "",
