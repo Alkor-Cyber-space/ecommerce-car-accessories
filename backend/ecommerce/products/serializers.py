@@ -10,14 +10,16 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, attrs):
-        if not attrs.get('name'):
+        name= attrs.get('name') or getattr(self.instance,'name',None)
+        print(f"serailzier name: {name}")
+        if not name:
             raise serializers.ValidationError("Name is required.")
         return attrs
     
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'is_main']
+        fields = ['id', 'image', 'is_main', 'slot']
 
 
 
@@ -44,12 +46,17 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at',
+            'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at', 'weight', 'length', 'breadth', 'height',
             "manufacturing_date", "tag", "size", 'category', 'category_id',
-            "image_list","compatible_varient_year_ids" , 'compatible_varient_year'
+            "image_list","compatible_varient_year_ids" , 'compatible_varient_year',
+            "length","breadth","height","weight"
         ]
         extra_kwargs = {
             'size': {'required': False, 'allow_null': True, 'allow_blank': True},
+            'weight': {'required': True},
+            'length': {'required': True},
+            'breadth': {'required': True},
+            'height': {'required': True},
         }
 
     def validate(self, attrs):
@@ -59,13 +66,59 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Name is required.")
         if attrs.get('price') <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
+
+        if attrs.get('weight') is not None and attrs.get('weight') <= 0:
+            raise serializers.ValidationError("Weight must be greater than zero.")
+        if attrs.get('length') is not None and attrs.get('length') <= 0:
+            raise serializers.ValidationError("Length must be greater than zero.")
+        if attrs.get('breadth') is not None and attrs.get('breadth') <= 0:
+            raise serializers.ValidationError("Breadth must be greater than zero.")
+        if attrs.get('height') is not None and attrs.get('height') <= 0:
+            raise serializers.ValidationError("Height must be greater than zero.")
+
+        if not attrs.get("length"):
+            raise serializers.ValidationError("length is mandatory field")
+        if not attrs.get("breadth"):
+            raise serializers.ValidationError("breadth is mandatory field")
+        if not attrs.get("height"):
+            raise serializers.ValidationError("height is mandatory field")
+        if not attrs.get("weight"):
+            raise serializers.ValidationError("weight is mandatory field")
+
+        # if attrs.get('price') <= 0:
+        #     raise serializers.ValidationError("Price must be greater than zero.")
+        # if not attrs.get("length")z:
+        #     raise serializers.ValidationError("length is mandatory field")
+        # if not attrs.get("breadth"):
+        #     raise serializers.ValidationError("breadth is mandatory field")
+        # if not attrs.get("height"):
+        #     raise serializers.ValidationError("height is mandatory field")
+        # if not attrs.get("weight"):
+        #     raise serializers.ValidationError("weight is mandatory field")
+
         return attrs
 
     def to_representation(self, instance):
         ret = super().to_representation(instance)
-        tags_str = ret.get('tag', '')
-        ret['tag'] = [t.strip() for t in tags_str.split(',')] if tags_str else []
+        
+        # Convert tags string into list
+        if ret.get("tag"):
+            ret["tag"] = [tag.strip() for tag in ret["tag"].split(",") if tag.strip()]
+        else:
+            ret["tag"] = []
+        
+        # Keep your existing images_by_slot logic
+        ret['images_by_slot'] = {
+            img.slot: {
+                "id": img.id,
+                "image": img.image.url if img.image else None,
+                "is_main": img.is_main
+            }
+            for img in instance.images.all()
+        }
         return ret
+
+
 
     def to_internal_value(self, data):
         tags = data.get('tag', [])
