@@ -24,6 +24,7 @@ from .serializers import *
 from . models import *
 from accounts.models import VendorDocuments
 from accounts.mixin import AuditLogMixin
+from accounts.serializers import UserEditSerializer
 
 User = get_user_model()
 # Create your views here.
@@ -135,6 +136,8 @@ class AdminUserListAPIView(APIView):
             return Response({"status":"failed","status_code":status.HTTP_400_BAD_REQUEST,"message":"not an employee"})
         serializer= UserSerializer(user,many=True)
         return Response({"status":"success","status_code":status.HTTP_200_OK,"data":serializer.data})
+
+
 class VendorDetailsList(APIView):
     def post(self, request, *args, **kwargs):
         pk = request.data.get("pk")
@@ -339,3 +342,21 @@ class NotificationViewSet(viewsets.ModelViewSet):
         elif group:
             members = group.user_set.all()
             notification.users.set(members)
+
+class AdminProfileView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        user = request.user
+        serializer = UserSerializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def put(self, request):
+        user = request.user
+        serializer = UserEditSerializer(user,data=request.data,
+            partial=True,
+            context={'request': request})
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
