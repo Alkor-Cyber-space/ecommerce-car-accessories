@@ -27,6 +27,7 @@ from rest_framework.generics import GenericAPIView
 from firebase_admin import auth as firebase_auth
 from django.db.models import Q
 from .utils import log_action
+from rest_framework import generics, status
 
 User = get_user_model()
 

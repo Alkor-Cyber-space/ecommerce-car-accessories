@@ -693,6 +693,17 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
+   
+export const getAuditLogsApi = async () => {
+  try {
+    const response = await api.get("/auth/vendor-audit-log-all/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    throw error;
+  }
+};
+
 
 export const createPromotionApi = async (promoData) => {
   try {

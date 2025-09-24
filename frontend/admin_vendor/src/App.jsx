@@ -42,6 +42,7 @@ import AccountSettings from "./pages/vendor/AccountSettings";
 
 import Notification from "./pages/vendor/Notification";
 
+
 import ReturnsRefundsTable from "./components/vendor/ReturnsRefundsTable";
 import OrderDetailView from "./pages/vendor/orders/OrderDetailView";
 import OrderDetailEdit from "./pages/vendor/orders/OrderDetailEdit";
@@ -171,22 +172,24 @@ function App() {
           <Route path="Sales-Report" element={<SalesReport />} />
           <Route path="returns" element={<ReturnsReport />} />
           <Route path="transaction" element={<TransactionReport />} />
-          <Route path="tax-reports" element={<TaxReport />} />
-          <Route path="search-filter" element={<SearchFilter />} />
-          <Route path="promotions" element={<PromotionLayout />}>
-            <Route index element={<Promotions />} />
-            <Route path="promotion-form" element={<PromotionCouponForm />} />
-          </Route>
-          <Route path="auditlogs" element={<AuditLogs />} />
-          <Route path="user-details/:id" element={<UserDetails />} />
-          <Route path="support-admin" element={<SupportHelpAdmin />} />
-          <Route path="support-response" element={<SupportResponse />} />
-          <Route path="index-catogery" element={<IndexCatogery />} />
-          <Route path="new-vendor-request" element={<NewVendorRequest />} />
-          <Route path="vendor-details/:id" element={<VendorDetails />} />
-          <Route path="vendor-documents/:id" element={<VendorsDoc />} />
-          <Route path="support-admin" element={<SupportHelpAdmin />} />
-          <Route path="account-settings" element={<AdminAccountSettings />} />
+
+          <Route path='tax-reports' element={<TaxReport />} />
+          <Route path='search-filter' element={<SearchFilter />} />
+          <Route path='promotions' element={<PromotionLayout />}>
+                <Route index element={<Promotions />} />
+                  <Route path="promotion-form" element={<PromotionCouponForm/>} />
+                  <Route path='promotion_banner' element={<PromotionBanner/>}/>
+             </Route>
+          <Route path='auditlogs' element={<AuditLogs />} />
+          <Route path='admin-accounts' element={<AdminAccounts />} />
+          <Route path='user-details/:id' element={<UserDetails />} />
+          <Route path='support-admin' element={<SupportHelpAdmin />} />
+          <Route path='support-response' element={<SupportResponse />} />
+          <Route path='index-catogery' element={<IndexCatogery />} />
+          <Route path='new-vendor-request' element={<NewVendorRequest />} />
+          <Route path='vendor-details/:id' element={<VendorDetails />} />
+          <Route path='vendor-documents/:id' element={<VendorsDoc />} />
+
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}
