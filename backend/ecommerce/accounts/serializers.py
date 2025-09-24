@@ -337,10 +337,11 @@ class ChangePasswordSerializer(serializers.Serializer):
 class UserEditSerializer(serializers.ModelSerializer):
     old_password = serializers.CharField(write_only=True, required=False)
     new_password = serializers.CharField(write_only=True, required=False)
+    profile_image = serializers.ImageField(source="profile.profile_image", required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name','username', 'email', 'phone_number', 'old_password', 'new_password']
+        fields = ['first_name', 'last_name','username', 'email', 'phone_number', 'old_password', 'new_password', 'profile_image'    ]
 
     def validate_email(self, value):
         user = self.context['request'].user
@@ -369,6 +370,7 @@ class UserEditSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         old_password = validated_data.pop('old_password', None)
         new_password = validated_data.pop('new_password', None)
+        profile_data = validated_data.pop("profile", {})
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -377,6 +379,12 @@ class UserEditSerializer(serializers.ModelSerializer):
             instance.set_password(new_password)
 
         instance.save()
+
+        profile, created = UserProfile.objects.get_or_create(user=instance)
+        if "profile_image" in profile_data:
+            profile.profile_image = profile_data["profile_image"]
+        profile.save()
+        
         return instance
 
     

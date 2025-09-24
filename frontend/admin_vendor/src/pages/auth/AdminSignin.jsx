@@ -12,7 +12,7 @@ export default function AdminSignIn() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
 
-  // 🔐 Form state
+  //  Form state
   const [formData, setFormData] = useState({
     email_or_username: '',
     password: '',
@@ -20,7 +20,7 @@ export default function AdminSignIn() {
 
   const [loading, setLoading] = useState(false);
 
-  // 🎯 Input change handler
+  //  Input change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

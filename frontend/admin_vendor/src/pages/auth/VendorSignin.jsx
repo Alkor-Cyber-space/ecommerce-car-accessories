@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -33,14 +32,16 @@ const handleSubmit = async (e) => {
     const response = await vendorLoginApi(formData);
     console.log(response.data);
     if (response.status === 200) {
-      toast.success('Login successful');
-      const { access, refresh } = response.data;
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-      setTimeout(() => {
-        navigate('/vendor/dashboard');
-      }, 2000);
-    }else{
+  toast.success('Login successful');
+  const { access, refresh } = response.data;
+  localStorage.setItem('access_token', access);
+  localStorage.setItem('refresh_token', refresh);
+
+  setTimeout(() => {
+    navigate('/vendor/dashboard', { replace: true }); // ⬅ replace removes /login from history
+  }, 2000);
+}
+else{
       toast.error(response.data.error || 'Login failed' );
       console.error('Login failed:', response.data);
     }
