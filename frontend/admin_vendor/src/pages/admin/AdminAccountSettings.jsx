@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { confirmAlert } from "react-confirm-alert";
 import user from "../../assets/user.jpg";
 
+
 const AdminAccountSettings = () => {
   const [userProfile, setUserProfile] = useState({});
   const [passwordData, setPasswordData] = useState({
@@ -37,6 +38,7 @@ const AdminAccountSettings = () => {
   };
 
 
+
   // Handle profile update submission
   const handleEditProfile = async () => {
     setLoading(true);
@@ -60,7 +62,6 @@ const AdminAccountSettings = () => {
     }
   };
 
-  // Handle account deactivation with confirmation
   const handleDeactivateConfirm = () => {
     confirmAlert({
       title: "Confirm Account Deactivation",
@@ -85,6 +86,7 @@ const AdminAccountSettings = () => {
     try {
       const response = await deactivateAccountApi();
       console.log("Deactivation response:", response);
+
       if (response.status === 200) {
       toast.success("Account deactivated successfully!");
       
@@ -119,6 +121,7 @@ const AdminAccountSettings = () => {
         {/* Profile Card */}
         <div className="bg-white p-6 pb-16 rounded-xl shadow-md">
           <div className="flex flex-col lg:flex-row justify-between gap-3 items-start lg:items-center">
+
             {/* Profile Info */}
             <div className="flex items-center gap-3">
               <img src={user} alt="profile" className="w-16 h-16 rounded-full object-cover" />
@@ -179,6 +182,7 @@ const AdminAccountSettings = () => {
               <input
                 type="tel"
                 name="contact_number"
+
                 value={formData?.contact_number || ''}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
@@ -249,5 +253,6 @@ const AdminAccountSettings = () => {
     </div>
   );
 };
+
 
 export default AdminAccountSettings;

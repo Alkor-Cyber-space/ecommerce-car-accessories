@@ -72,12 +72,12 @@ import Promotions from "./pages/admin/Promotions";
 import PromotionLayout from "./pages/admin/PromotionLayout";
 
 import { useEffect } from "react";
-import {
-  generateToken,
-  messaging,
-  onMessageListener,
-} from "./firebase/firebase";
-import AdminAccountSettings from "./pages/admin/AdminAccountSettings";
+
+import { generateToken, messaging, onMessageListener } from "./firebase/firebase";
+import VendorStockTable from './pages/vendor/inventory/StockMangementByVendor';
+import AdminAccountSettings from './pages/admin/AdminAccountSettings';
+import NotificationAdmin from './pages/admin/NotificationAdmin';
+
 
 function App() {
   useEffect(() => {
@@ -181,7 +181,10 @@ function App() {
                   <Route path='promotion_banner' element={<PromotionBanner/>}/>
              </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
-          <Route path='admin-accounts' element={<AdminAccounts />} />
+
+          <Route path='notification-admin' element={<NotificationAdmin />} />
+          <Route path='account-settings-admin' element={<AdminAccountSettings />} />
+
           <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
@@ -189,6 +192,7 @@ function App() {
           <Route path='new-vendor-request' element={<NewVendorRequest />} />
           <Route path='vendor-details/:id' element={<VendorDetails />} />
           <Route path='vendor-documents/:id' element={<VendorsDoc />} />
+
 
         </Route>
 
