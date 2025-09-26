@@ -140,6 +140,7 @@ class VendorCategoryRequest(APIView):
         all=Category.objects.all()
         data=request.data.get("name")
         discription=request.data.get("discription")
+        image = request.FILES.get("image")
         print(f"all :{all}")
         if not data:
               return Response({
@@ -153,7 +154,7 @@ class VendorCategoryRequest(APIView):
                         "code" : status.HTTP_400_BAD_REQUEST,
                         "message" : "same name category item is already there"
                     },status.HTTP_400_BAD_REQUEST)
-        serializer=CategorySerializer(data={"name": data,"available": False,"discription":discription})
+        serializer=CategorySerializer(data={"name": data,"available": False,"discription":discription,"image":image})
         if serializer.is_valid():
             serializer.save()
             return Response({
