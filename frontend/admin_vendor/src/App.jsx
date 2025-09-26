@@ -43,7 +43,6 @@ import AccountSettings from "./pages/vendor/AccountSettings";
 import Notification from "./pages/vendor/Notification";
 
 
-import ReturnsRefundsTable from "./components/vendor/ReturnsRefundsTable";
 import OrderDetailView from "./pages/vendor/orders/OrderDetailView";
 import OrderDetailEdit from "./pages/vendor/orders/OrderDetailEdit";
 import OrderManagement from "./pages/vendor/orders/OrderManagement";
@@ -77,6 +76,8 @@ import { generateToken, messaging, onMessageListener } from "./firebase/firebase
 import VendorStockTable from './pages/vendor/inventory/StockMangementByVendor';
 import AdminAccountSettings from './pages/admin/AdminAccountSettings';
 import NotificationAdmin from './pages/admin/NotificationAdmin';
+import PromotionBanner from "./pages/admin/PromotionBanner";
+import ReturnsRefundsTable from "./pages/vendor/ReturnsRefundsTable";
 
 
 function App() {

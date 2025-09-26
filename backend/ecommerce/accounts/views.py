@@ -40,6 +40,8 @@ class UserViewSet(viewsets.ViewSet):
     def register(self, request):
         email = request.data.get('email')
         phone_number = request.data.get('phone_number')
+        print(email)    
+        print(phone_number)
         existing_user = User.objects.filter(email=email).first()
         if existing_user:
             if not existing_user.is_active:

@@ -1,52 +1,116 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { FiEdit3 } from "react-icons/fi";
-import { PiPencilSimpleLineLight } from "react-icons/pi";
-
-
-const products = [
-  { name: "Wheel Rim Refund", refundId: "RR4001", customer: "Arjun Nair", reason: "Damaged on delivery", status: "Approved", price: "₹4,499" },
-  { name: "LED Light Return", refundId: "RR4523", customer: "Riya Sharma", reason: "Wrong item received", status: "Pending", price: "₹2,699" },
-  { name: "Seat Cover Refund", refundId: "RR0233", customer: "Karthik Menon", reason: "Item not as described", status: "Expired", price: "₹1,449" },
-  { name: "Brake Pad Return", refundId: "RR1007", customer: "Divya Singh", reason: "Product quality issue", status: "Returned", price: "₹5,699" },
-  { name: "Wiper Refund", refundId: "RR6523", customer: "Aditya Roy", reason: "Missing parts", status: "Received", price: "₹999" },
-  { name: "Dashboard Camera", refundId: "RR8201", customer: "Sneha Joshi", reason: "Not compatible with vehicle", status: "Approved", price: "₹3,499" },
-  { name: "Sunshade", refundId: "RR1098", customer: "Rohan Das", reason: "Changed mind", status: "Returned", price: "₹599" },
-  { name: "Tyre Inflator Return", refundId: "RR3301", customer: "Anjali Verma", reason: "Defective product", status: "Pending", price: "₹2,299" },
-  { name: "LED Fog Light", refundId: "RR7323", customer: "Nikhil Rao", reason: "Packaging damaged", status: "Expired", price: "₹1,899" },
-  { name: "Rearview Mirror", refundId: "RR4529", customer: "Meera Pillai", reason: "Wrong color sent", status: "Received", price: "₹1,199" },
-  { name: "Floor Mat Set", refundId: "RR5621", customer: "Vikram Shetty", reason: "Late delivery", status: "Approved", price: "₹1,799" },
-  { name: "Car Charger Return", refundId: "RR6790", customer: "Isha Kapoor", reason: "Doesn't work", status: "Returned", price: "₹649" },
-  { name: "Mobile Holder Refund", refundId: "RR3443", customer: "Aryan Thomas", reason: "Duplicate order", status: "Received", price: "₹349" }
-];
+import bmw from '../../../assets/bmw.jpg'
+import { PiCreditCardBold } from "react-icons/pi";
+import { BsChevronDown, BsChevronUp } from "react-icons/bs";
 
 const OrderManagement = () => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const itemsPerPage = 5;
+  const [expandedOrder, setExpandedOrder] = useState(null);
 
+  const orders = [
+    {
+      id: '12345769087',
+      date: '20 May 2025',
+      time: '3.30 PM',
+      status: 'Return Initiated',
+      total: '41600 ₽',
 
-  const totalItems = products.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+      products: [
+        {
+          name: 'Alloy Wheel XZR15',
+          img: bmw,
+          details: 'Color - Black, Size - XL',
+          quantity: 4,
+          price: '800₹',
+          totalPrice: '20800₹'
 
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-  const currentItems = products.slice(startIndex, endIndex);
-
-  const handlePrev = () => {
-    if (currentPage > 1) setCurrentPage(currentPage - 1);
-  };
-
-  const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage(currentPage + 1);
+        },
+        {
+          name: 'Alloy Wheel XZR15',
+          img: bmw,
+          details: 'Color - Black, Size - XL',
+          quantity: 4,
+          price: '800₹',
+          totalPrice: '20800₹'
+        }
+      ],
+      refundStatus: 'Waiting For Product Delivery',
+      refundMethod: 'Mastercard ending 3035'
+    },
+    {
+      id: '12345769088',
+      date: '21 May 2025',
+      time: '10.15 AM',
+      status: 'Returned',
+      total: '32500 ₽',
+      paymentMethod: 'Visa ending 4242',
+      products: [
+        {
+          name: 'Car Seat Cover',
+          details: 'Material - Leather, Color - Beige',
+          quantity: 2,
+          price: '1200₹',
+          totalPrice: '2400₹'
+        },
+        {
+          name: 'Steering Wheel Cover',
+          details: 'Material - Rubber, Color - Black',
+          quantity: 1,
+          price: '500₹',
+          totalPrice: '500₹'
+        }
+      ],
+      refundStatus: 'Refund Processed',
+      refundMethod: 'Visa ending 4242'
+    },
+    {
+      id: '12345769089',
+      date: '22 May 2025',
+      time: '12:00 PM',
+      status: 'Approved',
+      total: '15400 ₽',
+      paymentMethod: 'UPI ID: user@upi',
+      products: [
+        {
+          name: 'LED Headlights',
+          details: 'Model - H4, White Light',
+          quantity: 2,
+          price: '7700₹',
+          totalPrice: '15400₹'
+        }
+      ],
+      refundStatus: 'Not Applicable',
+      refundMethod: '—'
+    },
+    {
+      id: '12345769090',
+      date: '23 May 2025',
+      time: '5:45 PM',
+      status: 'Expired',
+      total: '9800 ₽',
+      paymentMethod: 'Cash on Delivery',
+      products: [
+        {
+          name: 'Car Perfume',
+          details: 'Color - Black, Size - XL, Any other important details',
+          quantity: 4,
+          price: '2450₹',
+          totalPrice: '9800₹'
+        }
+      ],
+      refundStatus: 'Not Applicable',
+      refundMethod: '—'
+    }
+  ];
+  const toggleOrder = (orderId) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
 
   return (
-    <div className=" bg-[#ECECF0] rounded-2xl min-h-screen px-4 sm:px-6 py-8">
+    <div className="min-h-screen bg-gray-100 p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">Order Management</h2>
-        <button className="bg-[#5737B4] text-white text-sm px-4 py-2 rounded  flex items-center">
+        <button className="bg-[#5737B4] text-white text-sm px-4 py-2 rounded hover:bg-[#5737B4] flex items-center">
           Download Report
         </button>
       </div>
@@ -110,84 +174,114 @@ const OrderManagement = () => {
           </button>
         </div>
       </div>
-
-      {/* Products Table */}
-      <div className="overflow-auto">
-        <table className="min-w-full bg-white rounded-md shadow text-sm">
-          <thead className="text-gray-600">
-            <tr>
-              <th className="p-3 text-left"></th>
-              <th className="p-3 text-left">Product Name</th>
-              <th className="p-3 text-left">Customer</th>
-              <th className="p-3 text-left">Reason</th>
-              <th className="p-3 text-left">Status</th>
-              <th className="p-3 text-left">Price</th>
-              <th className="p-3 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.map((product, idx) => (
-              <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
-                <td className="p-3">
-                  <input type="checkbox" />
-                </td>
-                <td className="p-3 text-indigo-600 font-medium">{product.name}</td>
-                <td className="p-3">{product.customer}</td>
-                <td className="p-3">{product.reason}</td>
-                <td className="p-3">
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <div key={order.id} className="border-b border-gray-200 ">
+            {/* Order Summary */}
+            <div
+              className="flex justify-between items-center bg-white p-4 hover:bg-gray-50 cursor-pointer"
+              onClick={() => toggleOrder(order.id)}
+            >
+              <div className="flex gap-26 items-center ">
+                <div className="font-medium">Order Number: {order.id}</div>
+                <div className="font-medium ">
+                  Order Placed At: <span className="text-gray-500">Date: {order.date}, Time: {order.time}</span>
+                </div>
+                <div className="mt-1">
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${product.status === "Approved"
-                        ? "bg-green-100 text-green-600"
-                        : product.status === "Pending"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : product.status === "Expired"
-                            ? "bg-red-100 text-red-600"
-                            : product.status === "Received"
-                              ? "bg-blue-100 text-blue-600"
-                              : product.status === "Returned"
-                                ? "bg-purple-100 text-purple-600"
-                                : "bg-gray-100 text-gray-600"
-                      }`}
-                  >
-                    {product.status}
+                    className={`inline-block w-40 px-4 py-2 text-sm rounded text-left
+      ${order.status.includes('Initiated') ? 'bg-red-100 text-red-800' :
+                        order.status.includes('Returned') ? 'bg-green-100 text-green-800' :
+                          order.status.includes('Approved') ? 'bg-blue-100 text-blue-800' :
+                            order.status.includes('Expired') ? 'bg-orange-100 text-orange-800' :
+                              'bg-gray-100 text-black'
+                      }`}>
+                    <span className="mr-1">•</span>{order.status}
                   </span>
-                </td>
-                <td className="p-3">{product.price}</td>
-                <td className="flex p-3 gap-4 text-gray-500 hover:text-black cursor-pointer">
-                  <Link to={`/vendor/orders/edit-order`}>
-                    <PiPencilSimpleLineLight className="text-lg mb-2 text-gray-700" />
-                  </Link>
-                  <Link to={`/vendor/orders/order-detail`} className="flex items-center text-[#5737B4] font-semibold">
-                    View More
-                  </Link>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="mr-4 text-right text-[#5737B4] font-semibold">
+                  <div className="font-medium" />Update Status
+                </div>
+                {expandedOrder === order.id ? (
+                  <BsChevronUp className="text-gray-500" />
+                ) : (
+                  <BsChevronDown className="text-gray-500" />
+                )}
+              </div>
+            </div>
+            {/* Expanded Details */}
+            {expandedOrder === order.id && (
+              <div className="p-4 bg-gray-50">
+                <div className="flex  font-semibold justify-between ">
+                  <p className="fl">Amount Total : <span>₹ 410000</span> </p>
+                  <div className="ml-5">
+                    <p className="pr-113 flex gap-3">PaymentMethod : <span className="flex gap-3"><PiCreditCardBold className="w-5 h-5 mt-1" /></span>{order.refundMethod} </p>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <table className="min-w-full  divide-gray-200 text-sm align-items-lg-end">
+                    <thead className="bg-black-100 text-left">
+                      <tr>
+                        <th className="px-4 py-2">Product</th>
+                        <th className="px-4 py-2"></th>
+                        <th className="px-4 py-2">Qty</th>
+                        <th className="px-4 py-2">Price</th>
+                        <th className="px-4 py-2">Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-gray-200">
+                      {order.products.map((product, index) => (
+                        <tr key={index}>
+                          <td className="px-4 py-2">
+                            {product.img && (
+                              <img
+                                src={product.img}
+                                alt={product.name}
+                                className="w-16 h-16 object-cover rounded"
+                              />
+                            )}
+                          </td>
+                          <td className="px-2 py-8 font-bold text-[#5737B4]">{product.name}<span className="block font-semibold text-gray-600">{product.details}</span><span className="block font-semibold  text-gray-600">Any other important details</span></td>
+                          <td className="px-4 py-2">{product.quantity}</td>
+                          <td className="px-4 py-2">{product.price}</td>
+                          <td className="px-4 py-2">{product.totalPrice}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className=" items-right gap-4">
+                  <div className="flex gap-8">
+                    <h3 className="font-medium mb-1 ">Refund Info</h3>
+                    <span className={`px-2 py-1 text-sm ${order.refundStatus.includes('Waiting') ? 'bg-blue-100 text-blue-500' :
+                      order.refundStatus.includes('Processed') ? 'bg-blue-100 text-blue-800' :
+                        'bg-blue-100 text-blue-800'
+                      }`}>
+                      {order.refundStatus}
+                    </span>
+                    <div className="ml-5">
+                      <p className="pr-90 flex gap-3">Refund Method : <span className="flex gap-3"><PiCreditCardBold className="w-5 h-5 mt-1" /></span>{order.refundMethod}  </p>
+                    </div>
+                  </div>
+                  <div className="flex justify-end items-end">
+                    <div className="mr-4 text-right text-[#5737B4] font-semibold">
+                      Update Status
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
-      {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 text-sm">
-        <span className="text-[#505050] font-medium ">
-          Showing {endIndex} of {totalItems}
-        </span>
-        <div className="flex gap-2">
-          <button
-            onClick={handlePrev}
-            disabled={currentPage === 1}
-            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={currentPage === totalPages}
-            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+      <div className="mt-6">
+        <button className="border border-[#5737B4] text-[#5737B4] px-4 py-2 rounded hover:bg-[#5737B4] hover:text-white">
+          Back
+        </button>
       </div>
     </div>
   );
