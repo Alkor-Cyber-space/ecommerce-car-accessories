@@ -95,9 +95,12 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         product = serializer.save(vendor=self.request.user)
         # Get image files from request.FILES
         images = self.request.FILES.getlist('images')
-        print(f"images: {images}")
-        for image in images:
-            ProductImage.objects.create(product=product, image=image)
+        for index, image in enumerate(images):
+            ProductImage.objects.create(
+                product=product,
+                image=image,
+                is_main=(index == 0)  # First image is_main=True
+            )
 
     def perform_update(self, serializer):
         print("reached update")

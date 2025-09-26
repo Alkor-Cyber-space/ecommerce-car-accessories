@@ -23,6 +23,23 @@ class OrderSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['user', 'status', 'created_at', 'updated_at', 'total_price', 'tax', 'shipping_cost']
 
+class VendorOrderItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_image = serializers.SerializerMethodField()
+    product_size = serializers.CharField(source='product.size', read_only=True)
+    product_price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2, read_only=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'product_name', 'product_image', 'product_size', 'product_price', 'quantity']
+
+    def get_product_image(self, obj):
+        a = obj.product.images.all()
+        main_image = obj.product.images.filter(is_main=True).first()
+        if main_image:
+            return main_image.image.url
+        return None
+
 
 class VendorOrderItemSerializer(serializers.ModelSerializer):
     product_name = serializers.CharField(source='product.name', read_only=True)
