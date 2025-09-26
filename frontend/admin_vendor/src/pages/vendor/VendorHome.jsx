@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import {
-  FaBoxOpen, FaListAlt, FaTruckLoading, FaChartBar,
+   FaListAlt, FaTruckLoading, FaChartBar,
   FaTags, FaUserCircle, FaChevronRight, FaChevronDown,
   FaSignOutAlt,
   FaRegQuestionCircle
 } from "react-icons/fa";
+import { GiProgression } from "react-icons/gi";
 import { MdNotificationsNone, MdOutlineDashboard } from "react-icons/md";
 import { IoNotificationsOutline, IoSearchOutline, IoStarHalf, IoStarOutline } from "react-icons/io5";
 import logo from "../../assets/logo.png";
@@ -69,6 +70,7 @@ const VendorHome = () => {
           <SidebarItem to="/vendor/products" label="Product Management" icon={<PiChartLine />} activePath={activePath} />
           <SidebarItem to="/vendor/orders" label="Order Management" icon={<HiArrowTrendingUp  />} activePath={activePath} />
           <SidebarItem to="/vendor/returns" label="Returns & Refunds" icon={<TbUsersGroup  />} activePath={activePath} />
+          <SidebarItem to="/vendor/stock-management" label="Inventory Management" icon={<GiProgression />} activePath={activePath} />
           <SidebarItem to="/vendor/payments-earnings" label="Payments & Earnings" icon={<PiBuildings />} activePath={activePath} />
           <SidebarItem to="/vendor/reviews" label="Ratings & Reviews" icon={<IoStarHalf />} activePath={activePath} />
           {/* <SidebarItem to="/vendor/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} /> */}
