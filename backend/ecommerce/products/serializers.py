@@ -9,6 +9,8 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
+    available = serializers.BooleanField(default=True)
+
     def validate(self, attrs):
         name= attrs.get('name') or getattr(self.instance,'name',None)
         print(f"serailzier name: {name}")
