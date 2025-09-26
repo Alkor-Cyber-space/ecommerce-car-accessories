@@ -4,12 +4,14 @@ import VehicleCategory from './VehicleCatogery';
 import ProductCategory from './ProductCatogery';
 import VehicleTable from './VehiclTable';
 import ProductTable from './ProductTable';
+import CategoryRequestApproving from '../../../components/admin/CategoryRequestApproving';
 
 const IndexCategory = () => {
     const [isFirstExpanded, setIsFirstExpanded] = useState(false);
     const [isSecondExpanded, setIsSecondExpanded] = useState(false);
 
     return (
+        <div>
         <div className="bg-[#ECECF0] px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-10 rounded-2xl w-full space-y-4 sm:space-y-6">
             {/* Header */}
             <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4'>
@@ -75,9 +77,13 @@ const IndexCategory = () => {
                             
                                 <ProductTable />
                         </div>
+                        
                     </div>
                 )}
             </div>
+            
+        </div>
+        <CategoryRequestApproving/>
         </div>
     );
 };

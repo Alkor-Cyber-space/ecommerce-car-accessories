@@ -17,6 +17,7 @@ import KYCDocumentsUpload from "./pages/vendor/registerforms/KYCDocUpload";
 import BusinessDocumentsUpload from "./pages/vendor/registerforms/BusinessDocumentsUpload";
 import BankTaxDetailsUpload from "./pages/vendor/registerforms/BankTaxDetailsUpload";
 import AgreementsUpload from "./pages/vendor/registerforms/AgreementsUpload";
+import PromotionBanner from "./pages/admin/PromotionBanner";
 
 // admin routes
 import AdminHome from "./pages/admin/AdminHome";
@@ -77,6 +78,8 @@ import { generateToken, messaging, onMessageListener } from "./firebase/firebase
 import VendorStockTable from './pages/vendor/inventory/StockMangementByVendor';
 import AdminAccountSettings from './pages/admin/AdminAccountSettings';
 import NotificationAdmin from './pages/admin/NotificationAdmin';
+import NewCategoryRequest from "./components/vendor/NewCategoryRequest";
+import CategoryRequestApproving from "./components/admin/CategoryRequestApproving";
 
 
 function App() {
@@ -104,8 +107,8 @@ function App() {
       console.log("Foreground message:", payload);
       toast(
         (payload.notification?.title || "") +
-          "\n" +
-          (payload.notification?.body || "")
+        "\n" +
+        (payload.notification?.body || "")
       );
     });
   }, []);
@@ -176,10 +179,10 @@ function App() {
           <Route path='tax-reports' element={<TaxReport />} />
           <Route path='search-filter' element={<SearchFilter />} />
           <Route path='promotions' element={<PromotionLayout />}>
-                <Route index element={<Promotions />} />
-                  <Route path="promotion-form" element={<PromotionCouponForm/>} />
-                  <Route path='promotion_banner' element={<PromotionBanner/>}/>
-             </Route>
+            <Route index element={<Promotions />} />
+            <Route path="promotion-form" element={<PromotionCouponForm />} />
+            <Route path='promotion_banner' element={<PromotionBanner />} />
+          </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
 
           <Route path='notification-admin' element={<NotificationAdmin />} />
@@ -192,6 +195,7 @@ function App() {
           <Route path='new-vendor-request' element={<NewVendorRequest />} />
           <Route path='vendor-details/:id' element={<VendorDetails />} />
           <Route path='vendor-documents/:id' element={<VendorsDoc />} />
+          <Route path='category-request-approving' element={<CategoryRequestApproving />} />
 
 
         </Route>
@@ -210,23 +214,24 @@ function App() {
         </Route>
         {/* Vendor Dashboard */}
         <Route
-  path="/vendor"
-  element={
-    <ProtectedRoute redirectTo="/login">
-      <VendorHome />
-    </ProtectedRoute>
-  }
->
-  <Route index element={<Navigate to="dashboard" />} />
-  <Route path="dashboard" element={<VendorDashboard />} />
+          path="/vendor"
+          element={
+            <ProtectedRoute redirectTo="/login">
+              <VendorHome />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" />} />
+          <Route path="dashboard" element={<VendorDashboard />} />
           <Route path="profile" element={<VendorProfile />} />
           <Route path="products" element={<ProductLayout />}>
             <Route index element={<ProductList />} />
             <Route path="add" element={<AddProduct />} />
             <Route path=":id" element={<ProductDetailView />} />
             <Route path=":id/edit" element={<EditProduct />} />
+            <Route path="new-category-request" element={<NewCategoryRequest />} />
           </Route>
-
+          <Route path="stock-management" element={<VendorStockTable />} />
           <Route path="returns" element={<ReturnsRefundsTable />} />
           <Route path="reviews" element={<RatingAndReviewLayout />} />
 
@@ -241,10 +246,10 @@ function App() {
           <Route path="notification" element={<Notification />} />
           <Route path="support-help" element={<SupportHelp />} />
           <Route path="createticket" element={<CreateTicket />} />
-          {/* <Route path='promotions' element={<PromotionLayout />}>
-                <Route index element={<Promotions />} />
-                  <Route path="promotion-form" element={<PromotionCouponForm/>} />
-             </Route> */}
+          <Route path='promotions' element={<PromotionLayout />}>
+            <Route index element={<Promotions />} />
+            <Route path="promotion-form" element={<PromotionCouponForm />} />
+          </Route>
           <Route path="payments-earnings" element={<PaymentsEarnings />} />
         </Route>
       </Routes>
