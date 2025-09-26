@@ -2,10 +2,17 @@ import React, { useState } from "react";
 import bmw from '../../../assets/bmw.jpg'
 import { PiCreditCardBold } from "react-icons/pi";
 import { BsChevronDown, BsChevronUp } from "react-icons/bs";
+import { useEffect } from "react";
+import { getOrdersApi } from "../../../services/allAPI";
+import { toast } from "react-toastify";
+import SearchFilter from "../../admin/SearchFilter";
 
 const OrderManagement = () => {
   const [expandedOrder, setExpandedOrder] = useState(null);
+  const [userOrders, setUserOrders] = useState([])
+  const serverurl = "http://127.0.0.1:8000/"
 
+  // dummydata
   const orders = [
     {
       id: '12345769087',
@@ -101,6 +108,86 @@ const OrderManagement = () => {
       refundMethod: '—'
     }
   ];
+  const [filteredOrders, setFilteredOrders] = useState([]); // new state for filtered data
+  const [filters, setFilters] = useState({
+    regDateFrom: "",
+    regDateTo: "",
+    orderId: "",
+    buyerName: "",
+    orderStatus: "",
+  });
+  // Search handler
+  const handleSearch = () => {
+    const filtered = userOrders.filter((order) => {
+      const matchesStatus = filters.orderStatus
+        ? order.status?.toLowerCase() === filters.orderStatus.toLowerCase()
+        : true;
+
+      const matchesDateFrom = filters.regDateFrom
+        ? new Date(order.created_at) >= new Date(filters.regDateFrom)
+        : true;
+
+      const matchesDateTo = filters.regDateTo
+        ? new Date(order.created_at) <= new Date(filters.regDateTo)
+        : true;
+
+      const matchesOrderId = filters.orderId
+        ? order.id.toString().includes(filters.orderId)
+        : true;
+
+      const matchesBuyerName = filters.buyerName
+        ? order.buyerName?.toLowerCase().includes(filters.buyerName.toLowerCase())
+        : true;
+
+      return matchesStatus && matchesDateFrom && matchesDateTo && matchesOrderId && matchesBuyerName;
+    });
+
+    setFilteredOrders(filtered);
+  };
+
+  // Fetch orders
+  const fetchOrders = async () => {
+    try {
+      const response = await getOrdersApi();
+      setUserOrders(response);
+      setFilteredOrders(response); // initialize filtered list
+      console.log(response);
+    } catch (error) {
+      console.error("Error fetching orders", error);
+      toast.error("Failed to fetch orders");
+    }
+  };
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // Reset handler
+  const handleReset = () => {
+    setFilters({
+      regDateFrom: "",
+      regDateTo: "",
+      orderId: "",
+      buyerName: "",
+      orderStatus: "",
+    });
+    setFilteredOrders(userOrders);
+  };
+
+  // useEffect(() => {
+  //   const fetchOrders = async () => {
+  //     try {
+  //       const response = await getOrdersApi()
+  //       setUserOrders(response)
+  //       console.log(response);
+  //     } catch (error) {
+  //       console.log("errror fetching orders", error);
+  //       toast.error(error)
+  //     }
+  //   }
+  //   fetchOrders()
+  // }, [])
+
   const toggleOrder = (orderId) => {
     setExpandedOrder(expandedOrder === orderId ? null : orderId);
   };
@@ -115,66 +202,144 @@ const OrderManagement = () => {
         </button>
       </div>
 
-      {/* Filter Form */}
-      <div className="bg-white w-4xl py-4 px-6 rounded-lg shadow-sm mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
-              <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5737B4]">
-                <option>Select Status</option>
-                <option>Approved</option>
-                <option>Pending</option>
-                <option>Returned</option>
-                <option>Expired</option>
-              </select>
-            </div>
-          </div>
+      <SearchFilter
+        filters={filters}
+        setFilters={setFilters}
+        onSearch={handleSearch}
+        onReset={handleReset}
+        showStatus={false}
+        showYear={false}
+        showLocation={false}
+      />
+      <div className="space-y-4 mt-4">
+        {filteredOrders.length === 0 ? (
+          <p className="text-gray-500">No orders found.</p>
+        ) : (
+          filteredOrders.map((order) => (
+            <div key={order.id} className="border-b border-gray-200">
+              <div
+                className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 hover:bg-gray-50 cursor-pointer"
+                onClick={() => toggleOrder(order.id)}
+              >
+                <div className="flex flex-col md:flex-row flex-wrap sm:gap-2 md:gap-6 lg:gap-12 items-start md:items-center w-full md:w-auto gap-15">
+                  <div className="font-medium">Order Number: {order.id}</div>
+                  <div className="font-medium">
+                    Order Placed At:{" "}
+                    <span className="text-gray-500">
+                      Date: {new Date(order.created_at).toLocaleDateString()} , Time:{" "}
+                      {new Date(order.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
 
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Buyer Name</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date - From</label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-                />
+                  <div className="mt-1">
+                    <span
+                      className={`inline-block px-2 md:px-4 py-1 md:py-2 text-sm rounded text-left
+                  ${order.status.includes("pending")
+                          ? "bg-red-100 text-red-800"
+                          : order.status.includes("returned")
+                            ? "bg-green-100 text-green-800"
+                            : order.status.includes("approved")
+                              ? "bg-blue-100 text-blue-800"
+                              : order.status.includes("expired")
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-gray-100 text-black"
+                        }`}
+                    >
+                      <span className="mr-1">•</span>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center mt-2 md:mt-0">
+                  <div className="mr-4 text-right text-[#5737B4] font-semibold">Update Status</div>
+                  {expandedOrder === order.id ? <BsChevronUp className="text-gray-500" /> : <BsChevronDown className="text-gray-500" />}
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date - To</label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="mt-8 flex justify-end space-x-4">
-          <button className="border border-gray-300 text-gray-700 px-6 py-2 text-sm rounded-md hover:bg-gray-50">
-            Reset
-          </button>
-          <button className="bg-[#5737B4] text-white px-6 py-2 text-sm rounded-md hover:bg-[#5737B4]">
-            Search
-          </button>
-        </div>
+              {/* Expanded Details */}
+              {expandedOrder === order.id && (
+                <div className="p-4 bg-gray-50">
+                  <div className="flex flex-col md:flex-row font-semibold justify-between md:justify-evenly gap-2 md:gap-0 mb-4">
+                    <p>
+                      Amount Total : <span>₹ {order.total_price}</span>
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="flex gap-1 md:gap-3 items-center">
+                        Payment Method :
+                        <span className="flex gap-1 md:gap-3 items-center">
+                          <PiCreditCardBold className="w-5 h-5" />
+                        </span>
+                        {order.payment_method}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 text-sm">
+                      <thead className="bg-gray-100 text-left">
+                        <tr>
+                          <th className="px-4 py-2">Product</th>
+                          <th className="px-4 py-2"></th>
+                          <th className="px-4 py-2">Qty</th>
+                          <th className="px-4 py-2">Price</th>
+                          <th className="px-4 py-2">Total</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {order.items.map((item, index) => (
+                          <tr key={index}>
+                            <td className="px-2 py-2">
+                              {item.product_image && (
+                                <img
+                                  src={`${serverurl}${item.product_image}`}
+                                  alt={item.product_name}
+                                  className="w-12 h-12 md:w-16 md:h-16 object-cover rounded"
+                                />
+                              )}
+                            </td>
+                            <td className="px-2 py-2 md:py-8 font-bold text-[#5737B4]">
+                              {item.product_name}
+                              <span className="block font-semibold text-gray-600">Size: {item.product_size}</span>
+                            </td>
+                            <td className="px-2 py-2">{item.quantity}</td>
+                            <td className="px-2 py-2">₹{item.product_price}</td>
+                            <td className="px-2 py-2">₹{(item.quantity * parseFloat(item.product_price)).toFixed(2)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                      <tfoot className="bg-gray-50">
+                        <tr>
+                          <td colSpan="4" className="px-4 py-2 text-right font-medium">
+                            Shipping Cost:
+                          </td>
+                          <td className="px-4 py-2">₹{order.shipping_cost}</td>
+                        </tr>
+                        <tr>
+                          <td colSpan="4" className="px-4 py-2 text-right font-medium">
+                            Tax:
+                          </td>
+                          <td className="px-4 py-2">₹{order.tax}</td>
+                        </tr>
+                        <tr>
+                          <td colSpan="4" className="px-4 py-2 text-right font-bold">
+                            Grand Total:
+                          </td>
+                          <td className="px-4 py-2 font-bold text-[#5737B4]">₹{order.total_price}</td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )))}
       </div>
-      <div className="space-y-4">
+      <hr className="h-4" />
+
+      <hr className="h-2 my-2" />
+
+      {/* dummy */}
+      <div className="space-y-4 py-2">
         {orders.map((order) => (
           <div key={order.id} className="border-b border-gray-200 ">
             {/* Order Summary */}
