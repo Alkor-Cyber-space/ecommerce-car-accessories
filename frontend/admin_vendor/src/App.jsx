@@ -44,7 +44,6 @@ import AccountSettings from "./pages/vendor/AccountSettings";
 import Notification from "./pages/vendor/Notification";
 
 
-import ReturnsRefundsTable from "./components/vendor/ReturnsRefundsTable";
 import OrderDetailView from "./pages/vendor/orders/OrderDetailView";
 import OrderDetailEdit from "./pages/vendor/orders/OrderDetailEdit";
 import OrderManagement from "./pages/vendor/orders/OrderManagement";
@@ -80,6 +79,8 @@ import AdminAccountSettings from './pages/admin/AdminAccountSettings';
 import NotificationAdmin from './pages/admin/NotificationAdmin';
 import NewCategoryRequest from "./components/vendor/NewCategoryRequest";
 import CategoryRequestApproving from "./components/admin/CategoryRequestApproving";
+import PromotionBanner from "./pages/admin/PromotionBanner";
+import ReturnsRefundsTable from "./pages/vendor/ReturnsRefundsTable";
 
 
 function App() {

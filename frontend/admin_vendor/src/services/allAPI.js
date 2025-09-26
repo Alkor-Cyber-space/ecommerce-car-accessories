@@ -1027,3 +1027,14 @@ export const approveOrRejectCategoryApi = async (categoryId, action) => {
     throw error;
   }
 };
+
+// -------------------------------------order-management
+export const getOrdersApi = async ()=>{
+    try {
+    const response = await api.get("/orders/vendor/orders/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching orders by vendor:", error);
+    throw error;
+  }
+}
