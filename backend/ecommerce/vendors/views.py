@@ -32,7 +32,7 @@ class VendorDashboardViewSet(viewsets.ViewSet):
         try:
             profile = user.vendor_profile
             registration_complete = profile.vendordocuments.is_registration_complete()
-        except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
+        except (VendorProfile.DoesNotExist):
             registration_complete = False
 
         
