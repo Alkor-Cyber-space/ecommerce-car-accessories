@@ -234,7 +234,7 @@ class UserSerializer(serializers.ModelSerializer):
             'is_admin_staff',
             'is_superuser',
             'date_joined',
-            'contact_number'  # from VendorProfile
+            'contact_number', # from VendorProfile
             'profile_image', 
         ]
 

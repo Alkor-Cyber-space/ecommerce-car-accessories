@@ -974,3 +974,13 @@ export const getOrdersApi = async ()=>{
     throw error;
   }
 }
+// -------------------------------------ratings & reviews
+export const getProductReviewsApi = async () =>{
+      try {
+    const response = await api.get("/vendor/product-reviews/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reviews by product:", error);
+    throw error;
+  }
+}
