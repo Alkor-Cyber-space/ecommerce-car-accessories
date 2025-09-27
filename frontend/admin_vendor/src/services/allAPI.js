@@ -976,6 +976,7 @@ export const getAdminAccountSettingsApi = async (id) => {
   } 
 };
 
+
 export const updateStockApi = async (productId, stock) => {
   try {
     const response = await api.patch(
@@ -1006,6 +1007,7 @@ export const updateAdminAccountSettingsApi = async (id, data) => {
     throw error;
   }
 };
+
 export const requestCategoryApi = async (categoryData) => {
   try {
     const token = localStorage.getItem("access_token");

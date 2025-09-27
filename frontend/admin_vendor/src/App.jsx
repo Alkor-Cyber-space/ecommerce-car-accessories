@@ -73,7 +73,6 @@ import PromotionLayout from "./pages/admin/PromotionLayout";
 
 import { useEffect } from "react";
 
-
 import { generateToken, messaging, onMessageListener } from "./firebase/firebase";
 import VendorStockTable from './pages/vendor/inventory/StockMangementByVendor';
 import AdminAccountSettings from './pages/admin/AdminAccountSettings';
@@ -186,11 +185,8 @@ function App() {
             <Route path='promotion_banner' element={<PromotionBanner />} />
           </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
-
-
           <Route path='notification-admin' element={<NotificationAdmin />} />
           <Route path='account-settings-admin' element={<AdminAccountSettings />} />
-
           <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
