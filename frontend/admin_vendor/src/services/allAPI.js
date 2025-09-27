@@ -972,8 +972,9 @@ export const getAdminAccountSettingsApi = async (id) => {
     return response.data;
   } catch (error) {
     console.error("Error fetching admin details:", error);
-    throw err;
-  }};
+    throw error;
+  } 
+};
 
 
 export const updateStockApi = async (productId, stock) => {
@@ -1003,8 +1004,10 @@ export const updateAdminAccountSettingsApi = async (id, data) => {
     return response.data;
   } catch (error) {
     console.error("Error updating admin details:", error);
-throw error;
-  }};
+    throw error;
+  }
+};
+
 export const requestCategoryApi = async (categoryData) => {
   try {
     const token = localStorage.getItem("access_token");
