@@ -78,6 +78,7 @@ import {
   onMessageListener,
 } from "./firebase/firebase";
 import AdminAccountSettings from "./pages/admin/AdminAccountSettings";
+import PromotionBanner from "./pages/admin/PromotionBanner";
 
 function App() {
   useEffect(() => {
@@ -181,7 +182,7 @@ function App() {
                   <Route path='promotion_banner' element={<PromotionBanner/>}/>
              </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
-          <Route path='admin-accounts' element={<AdminAccounts />} />
+          <Route path='admin-accounts-admin' element={<AdminAccountSettings/>} />
           <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />

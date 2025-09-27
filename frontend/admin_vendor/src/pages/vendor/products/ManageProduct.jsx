@@ -54,13 +54,15 @@ const ProductList = () => {
   );
 
   // ✅ page size options logic
-  const baseSizes = [10, 20, 50];
-  const extraSizes = [100, 500];
-  const pageSizeOptions =
-    pageSize >= 50 && products.length > 50
-      ? [...baseSizes, ...extraSizes.filter(size => size <= products.length)]
-      : baseSizes;
+ const baseSizes = [1, 10, 20, 50];
+const extraSizes = [100, 500];
 
+const productCount = products?.length ?? 0;
+
+const pageSizeOptions =
+  pageSize >= 50 && productCount > 50
+    ? [...baseSizes.filter(s => s <= productCount), ...extraSizes.filter(s => s <= productCount)]
+    : baseSizes.filter(s => s <= productCount);
   const stats = [
     { icon: <IoPricetagOutline />, title: "Total Products", value: totalProducts },
     { icon: <PiToolboxLight />, title: "Total Orders", value: totalOrders },
@@ -201,7 +203,7 @@ const ProductList = () => {
       <div className="mt-6 flex flex-wrap justify-end items-center gap-4 text-sm">
         {/* Page Size Selector */}
         <div className="flex gap-2 items-center">
-          <span>Show:</span>
+          {/* <span>Show:</span> */}
           {pageSizeOptions.map((size) => (
             <button
               key={size}
