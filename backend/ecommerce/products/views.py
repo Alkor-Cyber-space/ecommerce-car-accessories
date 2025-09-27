@@ -140,6 +140,7 @@ class VendorCategoryRequest(APIView):
         all=Category.objects.all()
         data=request.data.get("name")
         discription=request.data.get("discription")
+        image = request.FILES.get("image")
         print(f"all :{all}")
         if not data:
               return Response({
@@ -153,7 +154,7 @@ class VendorCategoryRequest(APIView):
                         "code" : status.HTTP_400_BAD_REQUEST,
                         "message" : "same name category item is already there"
                     },status.HTTP_400_BAD_REQUEST)
-        serializer=CategorySerializer(data={"name": data,"available": False,"discription":discription})
+        serializer=CategorySerializer(data={"name": data,"available": False,"discription":discription,"image":image})
         if serializer.is_valid():
             serializer.save()
             return Response({
@@ -170,50 +171,76 @@ class VendorCategoryRequest(APIView):
         
 
 class VendorCategoryApprove(APIView):
-    def get(self,requst):
-        obj=Category.objects.filter(available=False)
-        if obj:
+    def get(self, request):
+        obj = Category.objects.filter(available=False)
+        if obj.exists():
             try:
-                serializer=CategorySerializer(obj,many=True)
+                serializer = CategorySerializer(obj, many=True)
                 return Response({
-                    "status": " successfully",
-                    "code" : status.HTTP_200_OK,
-                    "message" : serializer.data
-                    })
-            except:
+                    "status": "success",
+                    "code": status.HTTP_200_OK,
+                    "message": serializer.data
+                })
+            except Exception as e:
                 return Response({
-                    "status": " failed",
-                    "code" : status.HTTP_400_BAD_REQUEST,
-                    "message" : "internalservererror"
-                    })
-    def post(self,request):
+                    "status": "failed",
+                    "code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "message": str(e)
+                })
+        return Response({
+            "status": "failed",
+            "code": status.HTTP_404_NOT_FOUND,
+            "message": "No pending categories"
+        })
 
-        id=request.data.get("id")
-        if not id:
-            return Response({"status": " failed","code" : status.HTTP_400_BAD_REQUEST,"message" : "internalservererror"})
+    def post(self, request):
+        id = request.data.get("id")
+        request_status = request.data.get("status")
+
+        if not id or not request_status:
+            return Response({
+                "status": "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "Missing id or status field"
+            })
+
         try:
-            queryset=Category.objects.get(id=id)
+            queryset = Category.objects.get(id=id)
         except Category.DoesNotExist:
             return Response({
                 "status": "failed",
                 "code": status.HTTP_404_NOT_FOUND,
                 "message": f"Category with id {id} does not exist."
-            }, status=status.HTTP_404_NOT_FOUND)
-        request_status=request.data.get("status")
-        
+            })
 
-        if request_status=="approved":
-            serializer=CategorySerializer(queryset,data={"available": True},partial=True)
+        
+        if request_status == "approved":
+            serializer = CategorySerializer(queryset, data={"available": True}, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response({"status": "Updated SuccessFully","code" : status.HTTP_200_OK,"message" : serializer.data})
-            return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
+                return Response({
+                    "status": "success",
+                    "code": status.HTTP_200_OK,
+                    "message": serializer.data
+                })
+            return Response({
+                "status": "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": serializer.errors
+            })
 
-        if request_status=="rejected":
+       
+        elif request_status == "rejected":
             queryset.delete()
-            return Response({"status": "rejected SuccessFully","code" : status.HTTP_200_OK,"message" : "rejected"})
-        return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
+            return Response({
+                "status": "success",
+                "code": status.HTTP_200_OK,
+                "message": "Category rejected and deleted successfully"
+            })
 
-        
-
-
+        else:
+            return Response({
+                "status": "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "Invalid status. Use 'approved' or 'rejected'."
+            })

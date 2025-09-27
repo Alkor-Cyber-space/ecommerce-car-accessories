@@ -8,6 +8,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { addProductApi, getCategoriesApi, getVariantYearsApi } from "../../../services/allAPI";
+import NewCategoryRequest from "../../../components/vendor/NewCategoryRequest";
 
 // tags component
 const TagInput = ({ value, onChange }) => {
@@ -29,6 +30,8 @@ const TagInput = ({ value, onChange }) => {
         updated.splice(index, 1);
         onChange(updated);
     };
+
+
 
     return (
         <div className="border rounded px-2 py-2 w-full mt-2  flex flex-wrap items-center gap-2">
@@ -84,17 +87,21 @@ const AddProduct = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const data = await getCategoriesApi();
-                setCategories(data);
-            } catch (error) {
-                toast.error('Error fetching categories');
-            }
-        };
+    const fetchCategories = async () => {
+        try {
+            const data = await getCategoriesApi();
 
-        fetchCategories();
-    }, []);
+            const availableCategories = data.filter(cat => cat.available === true);
+
+            setCategories(availableCategories);
+        } catch (error) {
+            toast.error('Error fetching categories');
+        }
+    };
+
+    fetchCategories();
+}, []);
+
 
     useEffect(() => {
         const fetchVariantYears = async () => {
@@ -152,26 +159,21 @@ const AddProduct = () => {
         }
 
 
-        // ✅ Append each tag individually
         if (formData.tags && formData.tags.length > 0) {
             formData.tags.forEach(tag => {
                 formDataToSend.append("tag", tag);
             });
         }
 
-        // ✅ Append size if available
         if (formData.sizes) {
             formDataToSend.append("size", formData.sizes);
         }
 
 
-
-        // 🔍 debug check
         for (let pair of formDataToSend.entries()) {
             console.log(pair[0], pair[1]);
         }
 
-        // ✅ Append images
         imageKeys.forEach((key) => {
             if (formData.images?.[key]) {
                 formDataToSend.append("images", formData.images[key]);
@@ -352,7 +354,7 @@ const AddProduct = () => {
                                         onChange={handleChange}
                                         type="number"
                                         className="border rounded px-4 py-2 mt-1"
-                                        placeholder="0 cm"
+                                        placeholder="0 grams"
                                     />
                                 </div>
 
@@ -542,9 +544,7 @@ const AddProduct = () => {
                             <p className="text-sm text-gray-500">Loading or no data</p>
                         )}
                     </div>
-
-
-
+                    <NewCategoryRequest />
                 </div>
             </div>
 

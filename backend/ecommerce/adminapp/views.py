@@ -167,6 +167,7 @@ class VendorDetailsList(APIView):
             {"message": "Successfully fetched vendor data", "data": serializer.data},
             status=status.HTTP_200_OK,
         )
+      
 class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin, IsAuthenticated]

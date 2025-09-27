@@ -7,6 +7,7 @@ import {
   updateAdminAccountSettingsApi, 
 } from "../../services/allAPI";
 
+
 const AdminAccountSettings = () => {
   const [formData, setFormData] = useState({
     username: "",
@@ -71,7 +72,7 @@ const AdminAccountSettings = () => {
     }
   };
 
-  // Confirm account deactivation
+
   const handleDeactivateConfirm = () => {
     confirmAlert({
       title: "Confirm Account Deactivation",
@@ -96,6 +97,7 @@ const AdminAccountSettings = () => {
     try {
       const response = await deactivateAdminAccountApi();
       console.log("Deactivation response:", response);
+
       if (response.status === 200) {
         toast.success("Account deactivated successfully!");
         localStorage.removeItem('access_token');
@@ -125,6 +127,7 @@ const AdminAccountSettings = () => {
         {/* Profile Card */}
         <div className="bg-white p-6 pb-16 rounded-xl shadow-md">
           <div className="flex flex-col lg:flex-row justify-between gap-3 items-start lg:items-center">
+
             {/* Profile Info */}
             <div className="flex items-center gap-3">
               <img src={user} alt="profile" className="w-16 h-16 rounded-full object-cover" />
@@ -186,6 +189,7 @@ const AdminAccountSettings = () => {
                 type="tel"
                 name="phone_number"
                 value={formData?.phone_number || ''}
+
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -243,5 +247,6 @@ const AdminAccountSettings = () => {
     </div>
   );
 };
+
 
 export default AdminAccountSettings;
