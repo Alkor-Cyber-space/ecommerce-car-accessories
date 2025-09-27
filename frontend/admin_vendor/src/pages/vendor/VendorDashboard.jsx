@@ -23,7 +23,7 @@ const stats = [
 ];
 
 
-const AdminDashboard = () => {
+const VendorDashboard = () => {
   const [docStatus, setDocStatus] = useState()
 
 useEffect(() => {
@@ -158,4 +158,4 @@ const shouldShowBanner = docStatus && docStatus.missing_count > 0;
   )
 }
 
-export default AdminDashboard;
+export default VendorDashboard;

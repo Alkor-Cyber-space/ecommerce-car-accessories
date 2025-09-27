@@ -966,6 +966,16 @@ export const deletePromotionBannerApi = async (id) => {
     throw error;
   }
 };
+export const getAdminAccountSettingsApi = async (id) => {
+  try {
+    const response = await api.get(`${serverurl}/admin/profile/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin details:", error);
+    throw err;
+  }};
+
+
 export const updateStockApi = async (productId, stock) => {
   try {
     const response = await api.patch(
@@ -987,6 +997,14 @@ export const updateStockApi = async (productId, stock) => {
   }
 };
 
+export const updateAdminAccountSettingsApi = async (id, data) => {
+  try {
+    const response = await api.put(`${serverurl}/admin/profile/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating admin details:", error);
+throw error;
+  }};
 export const requestCategoryApi = async (categoryData) => {
   try {
     const token = localStorage.getItem("access_token");
