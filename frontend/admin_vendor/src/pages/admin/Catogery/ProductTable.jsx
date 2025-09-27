@@ -32,7 +32,9 @@ const ProductTable = () => {
         ? data
         : data?.results || [];
 
-      const sortedData = [...categoryArray].sort((a, b) => b.id - a.id);
+      const availableCategories = categoryArray.filter(item => item.available === true);
+
+      const sortedData = [...availableCategories].sort((a, b) => b.id - a.id);
       setProductcategorylist(sortedData);
     } catch (error) {
       console.error("Error fetching productcategorylist:", error);

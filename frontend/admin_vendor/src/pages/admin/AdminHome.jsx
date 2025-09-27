@@ -222,7 +222,10 @@ const AdminHome = () => {
           <SidebarItem to="/admin/promotions" label="Promotions" icon={<FaTags />} activePath={activePath} />
           <SidebarItem to="/admin/index-catogery" label="Manage Category" icon={<MdOutlineCategory />} activePath={activePath} />
           <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
-          <SidebarItem to="/admin/profile" label="Notifications" icon={<GrNotification />} activePath={activePath} />
+
+          <SidebarItem to="/admin/notification-admin" label="Notifications" icon={<GrNotification />} activePath={activePath} />
+          <SidebarItem to="/admin/account-settings-admin" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
+
 
           <SidebarItem to="/admin/support-admin" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
           <SidebarItem to="/admin/admin-accounts-admin" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />

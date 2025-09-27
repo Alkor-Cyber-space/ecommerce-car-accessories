@@ -1,24 +1,26 @@
 
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions,status
 from rest_framework.response import Response
-from rest_framework import status
 from products.models import Product, Category,ProductImage
 from vehicles.models import *
 from products.serializers import ProductSerializer, CategorySerializer
 from vehicles.serializers import *
 from accounts.permissions import IsVendor,IsVendorProfileComplete
-from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer
+from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer,VendorReviewSerializer
+from products.models import Review
 import csv
 import io
 import pandas as pd
-from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
 from accounts.models import VendorProfile
+from orders.models import Order, OrderItem
+from django.db.models import Sum, F, Count
+from django.db.models.functions import TruncMonth
+from django.contrib.auth.models import Group
 
 
 class VendorDashboardViewSet(viewsets.ViewSet):
@@ -29,17 +31,53 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 
         try:
             profile = user.vendor_profile
-            registration_complete = profile.is_registration_complete()
-        except VendorProfile.DoesNotExist:
+            registration_complete = profile.vendordocuments.is_registration_complete()
+        except (VendorProfile.DoesNotExist):
             registration_complete = False
 
+        
         total_products = Product.objects.filter(vendor=user).count()
-        recent_products = Product.objects.filter(vendor=user).order_by('-created_at')[:5]
+        recent_products = Product.objects.filter(vendor=user).order_by('-created_at')[:10]
+
+        
+        order_items = OrderItem.objects.filter(product__vendor=user)
+
+        total_sales = order_items.aggregate(
+            total=Sum(F('price') * F('quantity'))
+        )['total'] or 0
+
+        total_orders = Order.objects.filter(items__product__vendor=user).distinct().count()
+        total_profit = total_sales  
+
+        monthly_sales_qs = (
+            order_items.annotate(month=TruncMonth('order__created_at'))
+            .values('month')
+            .annotate(total_sales=Sum(F('price') * F('quantity')))
+            .order_by('month')
+        )
+
+        sales_trends = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_sales": float(item["total_sales"] or 0)
+            }
+            for item in monthly_sales_qs
+        ]
+
+        print(sales_trends)
+        total_users = Group.objects.get(name="User").user_set.count()
+        total_vendors = Group.objects.get(name="Vendor").user_set.count()
 
         data = {
             'total_products': total_products,
             'recent_products': recent_products,
-            'registration_complete': registration_complete
+            'registration_complete': registration_complete,
+            'total_sales': total_sales,
+            'total_orders': total_orders,
+            'total_profit': total_profit,
+            'total_users': total_users,
+            'total_vendors': total_vendors,
+            'sales_trends': sales_trends,
         }
 
         serializer = VendorDashboardSerializer(data)
@@ -57,9 +95,12 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         product = serializer.save(vendor=self.request.user)
         # Get image files from request.FILES
         images = self.request.FILES.getlist('images')
-        print(f"images: {images}")
-        for image in images:
-            ProductImage.objects.create(product=product, image=image)
+        for index, image in enumerate(images):
+            ProductImage.objects.create(
+                product=product,
+                image=image,
+                is_main=(index == 0)  # First image is_main=True
+            )
 
     def perform_update(self, serializer):
         print("reached update")
@@ -254,4 +295,34 @@ class InventoryUpdateViewSet(viewsets.ViewSet):
             return Response({'message': 'Stock updated successfully.'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
+
+
+class VendorReviewViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+
+    def list(self, request):
+        vendor = request.user
+
+        # Filter reviews for products created by this vendor
+        reviews = Review.objects.filter(product__vendor=vendor).order_by('-created_at')
+
+        serializer = VendorReviewSerializer(reviews, many=True)
+        total_reviews = reviews.count()
+
+        # Monthly review count
+        monthly_reviews_qs = (
+            reviews.annotate(month=TruncMonth('created_at'))
+                   .values('month')
+                   .annotate(count=Count('id'))
+                   .order_by('month')
+        )
+        monthly_reviews = [
+            {"month": item["month"].strftime("%Y-%m"), "count": item["count"]}
+            for item in monthly_reviews_qs
+        ]
+
+        return Response({
+            "total_reviews": total_reviews,
+            "monthly_reviews": monthly_reviews,
+            "reviews": serializer.data
+        })

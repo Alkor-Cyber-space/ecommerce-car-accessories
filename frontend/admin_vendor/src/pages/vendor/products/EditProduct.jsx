@@ -376,7 +376,7 @@ const handleDelete = async (id) => {
                 <div className="flex flex-col flex-1">
                   <label className="font-medium">Sizes Available</label>
                   <select name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" >
-                    <option value="" disabled>(Optional)</option>
+                    <option value="" >(Optional)</option>
                     <option value="Small">Small</option>
                     <option value="Medium">Medium</option>
                     <option value="Large">Large</option>
@@ -406,7 +406,7 @@ const handleDelete = async (id) => {
                       onChange={handleChange}
                       type="number"
                       className="border rounded px-4 py-2 mt-1"
-                      placeholder="0 cm"
+                      placeholder="0 grams"
                     />
                   </div>
 

@@ -3,7 +3,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import ValidationError
 from .models import Order,OrderItem
-from .serializers import OrderSerializer
+from .serializers import *
 from rest_framework.decorators import action
 from rest_framework import status
 from payment.stripe_payment import initiate_payment_intent
@@ -12,6 +12,8 @@ from payment.razorpay_payment import *
 from decimal import Decimal
 from django.conf import settings
 import razorpay
+from rest_framework import generics, permissions
+from django.db.models import Q
 
 
 
@@ -187,3 +189,16 @@ class UserOrderViewSet(viewsets.ViewSet):
             'status': order.status,
             'last_updated': order.updated_at,
         })
+
+class VendorOrderListView(generics.ListAPIView):
+    serializer_class = VendorOrderSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # Ensure only vendors can access
+        if not user.groups.filter(name="Vendor").exists():
+            return Order.objects.none()
+
+        return Order.objects.filter(items__product__vendor=user).distinct()
