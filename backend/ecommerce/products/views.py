@@ -140,8 +140,7 @@ class VendorCategoryRequest(APIView):
         all=Category.objects.all()
         data=request.data.get("name")
         discription=request.data.get("discription")
-        image=request.FILES.get("image")
-        print(image)
+        image = request.FILES.get("image")
         print(f"all :{all}")
         if not data:
               return Response({

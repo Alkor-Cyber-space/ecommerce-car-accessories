@@ -222,6 +222,7 @@ class Step6AgreementsSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     contact_number = serializers.SerializerMethodField()
+    profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
 
     class Meta:
         model = CustomUser
@@ -229,11 +230,14 @@ class UserSerializer(serializers.ModelSerializer):
             'id',
             'email',
             'username',
+            'first_name',
+            'last_name',
             'phone_number',
             'is_admin_staff',
             'is_superuser',
             'date_joined',
-            'contact_number'  # from VendorProfile
+            'contact_number', # from VendorProfile
+            'profile_image', 
         ]
 
     def get_contact_number(self, obj):

@@ -966,6 +966,17 @@ export const deletePromotionBannerApi = async (id) => {
     throw error;
   }
 };
+export const getAdminAccountSettingsApi = async (id) => {
+  try {
+    const response = await api.get(`${serverurl}/admin/profile/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin details:", error);
+    throw error;
+  } 
+};
+
+
 export const updateStockApi = async (productId, stock) => {
   try {
     const response = await api.patch(
@@ -983,6 +994,16 @@ export const updateStockApi = async (productId, stock) => {
     return response.data;
   } catch (error) {
     console.error("Error updating stock:", error);
+    throw error;
+  }
+};
+
+export const updateAdminAccountSettingsApi = async (id, data) => {
+  try {
+    const response = await api.put(`${serverurl}/admin/profile/`, data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating admin details:", error);
     throw error;
   }
 };
@@ -1027,3 +1048,24 @@ export const approveOrRejectCategoryApi = async (categoryId, action) => {
     throw error;
   }
 };
+
+// -------------------------------------order-management
+export const getOrdersApi = async ()=>{
+    try {
+    const response = await api.get("/orders/vendor/orders/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching orders by vendor:", error);
+    throw error;
+  }
+}
+// -------------------------------------ratings & reviews
+export const getProductReviewsApi = async () =>{
+      try {
+    const response = await api.get("/vendor/product-reviews/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reviews by product:", error);
+    throw error;
+  }
+}
