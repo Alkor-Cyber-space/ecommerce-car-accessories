@@ -2,6 +2,8 @@ from rest_framework import serializers
 from products.models import Product, Category, Review
 
 from products.serializers import ProductSerializer, CategorySerializer
+from orders.models import Order, OrderItem
+from orders.serializers import OrderSerializer
 
 
 class VendorDashboardSerializer(serializers.Serializer):
@@ -11,10 +13,18 @@ class VendorDashboardSerializer(serializers.Serializer):
     total_sales = serializers.DecimalField(max_digits=12, decimal_places=2)
     total_orders = serializers.IntegerField()
     total_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
-    total_users = serializers.IntegerField()
-    total_vendors = serializers.IntegerField()
+    
+    stock_summary = serializers.DictField(child=serializers.IntegerField())
+    recent_orders = OrderSerializer(many=True)  
+    
+    sales_trend = serializers.SerializerMethodField()
+    monthly_orders = serializers.SerializerMethodField()
 
-
+    def get_sales_trend(self, obj):                           
+        return obj.get("sales_trends", [])
+    
+    def get_monthly_orders(self, obj):
+        return obj.get("monthly_orders", [])
 
 
 class ProductStockUpdateSerializer(serializers.ModelSerializer):
