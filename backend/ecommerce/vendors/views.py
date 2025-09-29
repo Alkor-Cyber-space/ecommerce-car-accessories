@@ -65,9 +65,6 @@ class VendorDashboardViewSet(viewsets.ViewSet):
         ]
 
         print(sales_trends)
-        total_users = Group.objects.get(name="User").user_set.count()
-        total_vendors = Group.objects.get(name="Vendor").user_set.count()
-
         data = {
             'total_products': total_products,
             'recent_products': recent_products,
@@ -75,8 +72,6 @@ class VendorDashboardViewSet(viewsets.ViewSet):
             'total_sales': total_sales,
             'total_orders': total_orders,
             'total_profit': total_profit,
-            'total_users': total_users,
-            'total_vendors': total_vendors,
             'sales_trends': sales_trends,
         }
 

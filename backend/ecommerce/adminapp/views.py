@@ -1,6 +1,5 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from .serializers import UserSerializer, VendorSerializer
 from accounts.models import CustomUser, VendorProfile
 from accounts.permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
@@ -24,7 +23,7 @@ from .serializers import *
 from . models import *
 from accounts.models import VendorDocuments
 from accounts.mixin import AuditLogMixin
-from accounts.serializers import UserEditSerializer
+from accounts.serializers import UserEditSerializer,UserSerializer
 
 User = get_user_model()
 # Create your views here.
@@ -331,6 +330,18 @@ class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all().order_by("-created_at")
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]  # or add IsAdmin
+
+    def get_queryset(self):
+        user = self.request.user
+
+        # notifications assigned directly to user
+        qs = Notification.objects.filter(users=user)
+
+        
+        group_ids = user.groups.values_list("id", flat=True)
+        qs |= Notification.objects.filter(group_id__in=group_ids)
+
+        return qs.distinct().order_by("-created_at")
 
     def perform_create(self, serializer):
         users = self.request.data.get("users", None)

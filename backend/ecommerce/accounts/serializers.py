@@ -230,6 +230,8 @@ class UserSerializer(serializers.ModelSerializer):
             'id',
             'email',
             'username',
+            'first_name',
+            'last_name',
             'phone_number',
             'is_admin_staff',
             'is_superuser',
