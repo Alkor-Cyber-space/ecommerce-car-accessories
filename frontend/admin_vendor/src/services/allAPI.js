@@ -693,6 +693,17 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
+   
+export const getAuditLogsApi = async () => {
+  try {
+    const response = await api.get("/auth/vendor-audit-log-all/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching audit logs:", error);
+    throw error;
+  }
+};
+
 
 export const createPromotionApi = async (promoData) => {
   try {
@@ -953,4 +964,23 @@ export const deletePromotionBannerApi = async (id) => {
   }
 };
 
-
+// -------------------------------------order-management
+export const getOrdersApi = async ()=>{
+    try {
+    const response = await api.get("/orders/vendor/orders/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching orders by vendor:", error);
+    throw error;
+  }
+}
+// -------------------------------------ratings & reviews
+export const getProductReviewsApi = async () =>{
+      try {
+    const response = await api.get("/vendor/product-reviews/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reviews by product:", error);
+    throw error;
+  }
+}

@@ -27,6 +27,7 @@ from rest_framework.generics import GenericAPIView
 from firebase_admin import auth as firebase_auth
 from django.db.models import Q
 from .utils import log_action
+from rest_framework import generics, status
 
 User = get_user_model()
 
@@ -39,6 +40,8 @@ class UserViewSet(viewsets.ViewSet):
     def register(self, request):
         email = request.data.get('email')
         phone_number = request.data.get('phone_number')
+        print(email)    
+        print(phone_number)
         existing_user = User.objects.filter(email=email).first()
         if existing_user:
             if not existing_user.is_active:
