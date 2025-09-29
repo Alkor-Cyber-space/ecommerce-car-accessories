@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { getCategoriesApi } from "../../services/allAPI";
-import { approveOrRejectCategoryApi } from "../../services/allAPI"; // ✅ imported
+import { getCategoriesApi, approveOrRejectCategoryApi } from "../../services/allAPI";
 
 const CategoryRequestApproving = () => {
   const [requests, setRequests] = useState([]);
@@ -10,7 +9,6 @@ const CategoryRequestApproving = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
-  // 🔹 Fetch pending requests
   useEffect(() => {
     const fetchRequests = async () => {
       try {
@@ -24,16 +22,14 @@ const CategoryRequestApproving = () => {
         setLoading(false);
       }
     };
-
     fetchRequests();
   }, []);
 
   // 🔹 Approve category
   const handleApprove = async (id) => {
     try {
-      const res = await approveOrRejectCategoryApi(id, "approved");
+      await approveOrRejectCategoryApi(id, "approved");
       toast.success("Category approved successfully");
-      // remove it from list after approval
       setRequests((prev) => prev.filter((req) => req.id !== id));
     } catch (error) {
       console.error("Error approving category:", error);
@@ -41,16 +37,16 @@ const CategoryRequestApproving = () => {
     }
   };
 
-  // 🔹 Reject button click — open modal
+  // 🔹 Reject button click
   const handleRejectClick = (id) => {
     setSelectedId(id);
     setShowModal(true);
   };
 
-  // 🔹 Confirm reject (delete)
+  // 🔹 Confirm reject
   const confirmReject = async () => {
     try {
-      const res = await approveOrRejectCategoryApi(selectedId, "rejected");
+      await approveOrRejectCategoryApi(selectedId, "rejected");
       toast.success("Category rejected successfully");
       setRequests((prev) => prev.filter((req) => req.id !== selectedId));
     } catch (error) {
@@ -90,15 +86,27 @@ const CategoryRequestApproving = () => {
               </th>
             </tr>
           </thead>
+
           <tbody>
-            {requests.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="text-center py-4 text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            ) : requests.length > 0 ? (
               requests.map((req, index) => (
                 <tr
                   key={req.id}
                   className={index % 2 === 0 ? "bg-white" : "bg-gray-50"}
                 >
                   <td className="px-4 py-2">{req.name}</td>
-                  <td className="px-4 py-2">{req.description}</td>
+
+
+                  <td className="px-4 py-2">
+                    <DescriptionWithToggle description={req.discription} />
+                  </td>
+
                   <td className="px-4 py-2">
                     <img
                       src={req.image}
@@ -106,6 +114,7 @@ const CategoryRequestApproving = () => {
                       className="w-16 h-16 object-cover rounded-md"
                     />
                   </td>
+
                   <td className="px-4 py-5 flex justify-center">
                     <button
                       onClick={() => handleApprove(req.id)}
@@ -143,9 +152,7 @@ const CategoryRequestApproving = () => {
             <h3 className="text-lg font-semibold mb-3">
               Are you sure you want to reject this category?
             </h3>
-            <p className="text-gray-600 mb-5">
-              This action cannot be undone.
-            </p>
+            <p className="text-gray-600 mb-5">This action cannot be undone.</p>
             <div className="flex justify-center gap-4">
               <button
                 onClick={confirmReject}
@@ -162,6 +169,26 @@ const CategoryRequestApproving = () => {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+};
+
+const DescriptionWithToggle = ({ description }) => {
+  const [showFull, setShowFull] = useState(false);
+  const words = description.split(" ");
+  const shortText = words.slice(0, 6).join(" ") + (words.length > 6 ? "..." : "");
+
+  return (
+    <div>
+      <span>{showFull ? description : shortText}</span>
+      {words.length > 6 && (
+        <button
+          onClick={() => setShowFull(!showFull)}
+          className="text-blue-500 font-medium ml-2 hover:underline"
+        >
+          {showFull ? "Show Less" : "Read More"}
+        </button>
       )}
     </div>
   );
