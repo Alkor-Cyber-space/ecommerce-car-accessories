@@ -17,7 +17,6 @@ import KYCDocumentsUpload from "./pages/vendor/registerforms/KYCDocUpload";
 import BusinessDocumentsUpload from "./pages/vendor/registerforms/BusinessDocumentsUpload";
 import BankTaxDetailsUpload from "./pages/vendor/registerforms/BankTaxDetailsUpload";
 import AgreementsUpload from "./pages/vendor/registerforms/AgreementsUpload";
-import PromotionBanner from "./pages/admin/PromotionBanner";
 
 // admin routes
 import AdminHome from "./pages/admin/AdminHome";
@@ -186,7 +185,7 @@ function App() {
           </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
           <Route path='notification-admin' element={<NotificationAdmin />} />
-          <Route path='account-settings-admin' element={<AdminAccountSettings />} />
+          <Route path='admin-accounts-admin' element={<AdminAccountSettings />} />
           <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />
