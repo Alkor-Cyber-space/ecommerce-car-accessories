@@ -5,7 +5,14 @@ from products.models import Product
 from . models import *
 # from accour.models import VendorDocuments
 
-
+class AdminDashboardSerializer(serializers.Serializer):
+    total_users = serializers.IntegerField()
+    total_vendors = serializers.IntegerField()
+    total_products = serializers.IntegerField()
+    total_orders = serializers.IntegerField()
+    total_sales = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
+    sales_trend = serializers.ListField(child=serializers.DictField(), default=[])
 
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -80,6 +87,7 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    created_by = serializers.StringRelatedField()
     class Meta:
         model = Notification
         fields = '__all__'

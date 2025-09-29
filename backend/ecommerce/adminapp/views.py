@@ -19,6 +19,7 @@ from vehicles.serializers import VehicleFullEntrySerializer
 from products.models import Category
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
+from orders.models import Order
 from .serializers import *
 from . models import *
 from accounts.models import VendorDocuments
@@ -27,6 +28,28 @@ from accounts.serializers import UserEditSerializer,UserSerializer
 
 User = get_user_model()
 # Create your views here.
+
+class AdminDashboardAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        total_users = CustomUser.objects.filter(groups__name='User').count()
+        total_vendors = CustomUser.objects.filter(groups__name='Vendor').count()
+        total_orders = Order.objects.count()
+        total_sales = Order.objects.filter(status='paid').aggregate(total_sales=models.Sum('total_price'))['total_sales'] or 0
+        total_products = Product.objects.count()
+        recent_orders = Order.objects.all().order_by('-created_at')[:10]
+        recent_orders_data = OrderSerializer(recent_orders, many=True).data
+
+        data = {
+            'total_users': total_users,
+            'total_vendors': total_vendors,
+            'total_orders': total_orders,
+            'total_sales': total_sales,
+            'total_products': total_products,
+            'recent_orders': recent_orders_data,
+        }
+        return Response(data, status=status.HTTP_200_OK)
 
 class AdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -347,13 +370,21 @@ class NotificationViewSet(viewsets.ModelViewSet):
         users = self.request.data.get("users", None)
         group = serializer.validated_data.get("group", None)
 
-        notification = serializer.save()  # create base notification
+        notification = serializer.save(created_by=self.request.user)  
 
         if users:
-            notification.users.set(users)  # attach multiple users
+            notification.users.set(users)
         elif group:
             members = group.user_set.all()
             notification.users.set(members)
+
+    @action(detail=False, methods=["get"], url_path="sent")
+    def sent_notifications(self, request):
+        queryset = Notification.objects.filter(
+            created_by=request.user
+        ).order_by("-created_at")
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 class AdminProfileView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
