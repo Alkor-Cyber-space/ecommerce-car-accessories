@@ -1,13 +1,60 @@
 from django.forms import ValidationError
 from rest_framework import viewsets,permissions,status
-from .models import Product, Category,Review
-from .serializers import ProductSerializer, CategorySerializer, ReviewSerializer
+from .models import *
+from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError 
 from vehicles.models import *
 from rest_framework.views import APIView
+from coupon_promotion.models import Promotion
+from vehicles.models import SavedVehicle
+from django.utils import timezone
+from products.models import Product
+
+class UserDashboardView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        user = request.user if request.user.is_authenticated else None
+
+        # Fetch products for each section
+        deals_for_you_qs = Product.objects.filter(is_featured=True, is_available=True)[:10]
+        best_sellers_top_rated_qs = Product.objects.filter(
+            is_available=True
+        ).filter(
+            models.Q(is_best_seller=True) | models.Q(is_top_rated=True)
+        ).distinct()[:10]
+        new_products_qs = Product.objects.filter(is_available=True).order_by('-created_at')[:10]
+
+        now = timezone.now()
+        promotions = Promotion.objects.filter(
+            activate=True, start_date__lte=now, end_date__gte=now
+        )
+        big_savings_qs = Product.objects.filter(promotions__in=promotions, is_available=True).distinct()[:10]
+
+        picks_for_you_qs = []
+        if user:
+            saved_variants = SavedVehicle.objects.filter(user=user).values_list('vehicle_variant', flat=True)
+            picks_for_you_qs = Product.objects.filter(
+                compatible_varient_year__in=saved_variants,
+                is_available=True
+            ).distinct()[:10]
+
+        # Serialize all
+        data = {
+            "deals_for_you": DashboardProductSerializer(deals_for_you_qs, many=True, context={'request': request}).data,
+            "best_sellers_top_rated": DashboardProductSerializer(best_sellers_top_rated_qs, many=True, context={'request': request}).data,
+            "new_products": DashboardProductSerializer(new_products_qs, many=True, context={'request': request}).data,
+            "big_savings": DashboardProductSerializer(big_savings_qs, many=True, context={'request': request}).data,
+        }
+
+        if user:
+            data["picks_for_you"] = DashboardProductSerializer(picks_for_you_qs, many=True, context={'request': request}).data
+
+        return Response(data)
+
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
