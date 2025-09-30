@@ -7,6 +7,7 @@ router.register(r'vendors', VendorListViewSet, basename='vendor')
 router.register(r'users', UserListViewSet, basename='user')
 router.register(r'categories', AdminCategoryViewSet, basename='admin-categories')
 router.register(r'notifications', NotificationViewSet, basename='notifications')
+router.register(r'support-tickets', SupportTicketViewSet, basename='support-tickets')   
 
 
 

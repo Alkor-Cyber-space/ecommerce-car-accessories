@@ -887,6 +887,7 @@ class VendorDocumentCheck(APIView):
             return None
     def get(self, request):
         pk=request.user
+        
 
         profile = self.get_object(pk)    
         if not profile:
