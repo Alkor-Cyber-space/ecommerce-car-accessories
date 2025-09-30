@@ -140,3 +140,15 @@ class ReviewSerializer(serializers.ModelSerializer):
         if value < 1.0 or value > 5.0:
             raise serializers.ValidationError("Rating must be between 1.0 and 5.0.")
         return value
+
+
+class DashboardProductSerializer(serializers.ModelSerializer):
+    images = ProductImageSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            "id", "name", "description", "price", "stock",
+            "category", "is_featured", "is_best_seller",
+            "is_top_rated", "is_new", "compatible_varient_year","images",
+        ]
