@@ -386,6 +386,33 @@ class NotificationViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
+    @action(detail=True, methods=["post"], url_path="mark-as-read")
+    def mark_as_read(self, request, pk=None):
+        """
+        Mark a single notification as read
+        """
+        try:
+            notification = self.get_queryset().get(pk=pk)
+        except Notification.DoesNotExist:
+            return Response({"detail": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        notification.is_read = True
+        notification.save()
+        return Response({"detail": "Notification marked as read."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="mark-all-read")
+    def mark_all_as_read(self, request):
+        """
+        Mark all notifications for the current user as read
+        """
+        qs = self.get_queryset()
+        updated_count = qs.update(is_read=True)
+        return Response(
+            {"detail": f"{updated_count} notifications marked as read."},
+            status=status.HTTP_200_OK
+        )
+
+
 class AdminProfileView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
@@ -403,3 +430,54 @@ class AdminProfileView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SupportTicketViewSet(viewsets.ModelViewSet):
+    queryset = SupportTicket.objects.all().order_by("-created_at")
+    serializer_class = SupportTicketSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin_staff:  # Admins can see all
+            return SupportTicket.objects.all().order_by("-created_at")
+        return SupportTicket.objects.filter(vendor=user).order_by("-created_at")
+
+    def perform_create(self, serializer):
+        serializer.save(vendor=self.request.user)
+
+    # Mark ticket as read
+    @action(detail=True, methods=["post"])
+    def mark_read(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.is_read = True
+        ticket.status = "in_progress"
+        ticket.save()
+        return Response({"message": "Ticket marked as read."})
+
+    # Answer a ticket
+    @action(detail=True, methods=["post"])
+    def answer_ticket(self, request, pk=None):
+        ticket = self.get_object()
+        answer = request.data.get("answer")
+        if not answer:
+            return Response({"error": "Answer is required"}, status=status.HTTP_400_BAD_REQUEST)
+        ticket.answer = answer
+        ticket.status = "answered"
+        ticket.save()
+
+        Notification.objects.create(
+                heading=f"Your ticket '{ticket.subject}' has been answered",
+                message=answer,
+                created_by=request.user,
+            ).users.add(ticket.vendor)
+
+        return Response({"message": "Ticket answered successfully."})
+
+    # Resolve a ticket
+    @action(detail=True, methods=["post"])
+    def mark_resolved(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.status = "resolved"
+        ticket.save()
+        return Response({"message": "Ticket marked as resolved."})

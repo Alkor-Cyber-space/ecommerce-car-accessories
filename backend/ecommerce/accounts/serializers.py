@@ -789,6 +789,10 @@ class VendorAuditLogSerializer(serializers.ModelSerializer):
 class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
     missing_count = serializers.SerializerMethodField()
     missing_fields = serializers.SerializerMethodField()
+    incomplete_fileds = serializers.SerializerMethodField()
+    has_address = serializers.SerializerMethodField()
+
+    print(has_address)
 
     class Meta:
         model = VendorDocuments
@@ -800,6 +804,8 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
             "submitted_at",
             "missing_count",
             "missing_fields",
+            "incomplete_fileds",
+            "has_address",
         ]
 
     def get_missing_fields(self, obj):
@@ -823,6 +829,9 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
         for field in document_fields:
             if not getattr(obj, field):
                 missing.append(field)
+        if not obj.vendor_profile.user.addresses.filter(is_primary=True).exists():
+            missing.append("address")
+
         return missing
 
     def get_missing_count(self, obj):
@@ -853,5 +862,11 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
         ]:
             if not getattr(obj, field):  
                 incomplete.append(field)
+        if not obj.vendor_profile.user.addresses.filter(is_primary=True).exists():
+            incomplete.append("address")
+
         return incomplete
 
+    def get_has_address(self, obj):
+        """Return True/False if primary address exists"""
+        return obj.vendor_profile.user.addresses.filter(is_primary=True).exists()

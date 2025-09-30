@@ -101,3 +101,26 @@ class NotificationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid group ID. This group does not exist.")
         return value
 
+class SupportTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicket
+        fields = [
+            "id",
+            "ticket_id",
+            "vendor",
+            "subject",
+            "category",
+            "priority",
+            "description",
+            "status",
+            "is_read",
+            "answer",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["ticket_id", "vendor", "status", "is_read", "answer"]
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        validated_data["vendor"] = user
+        return super().create(validated_data)
