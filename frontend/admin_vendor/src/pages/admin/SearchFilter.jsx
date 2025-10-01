@@ -14,7 +14,7 @@ const SearchFilter = ({
   };
 
   return (
-    <div className='bg-white rounded-xl px-8 py-5 w-full sm:w-sm md:w-xl lg:w-4xl'>
+    <div className='bg-white rounded-xl px-8 py-5 w-full sm:w-sm md:w-xl lg:w-4xl shadow-sm'>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {showYear && (
           <div>
@@ -60,7 +60,45 @@ const SearchFilter = ({
             </select>
           </div>
         )}
+  <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Order ID</label>
+        <input
+          type="text"
+          className="border rounded px-3 py-2 text-sm w-full"
+          placeholder="Search Order ID"
+          value={filters.orderId || ''}
+          onChange={e => handleChange('orderId', e.target.value)}
+        />
+      </div>
 
+      {/* Buyer Name */}
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Buyer Name</label>
+        <input
+          type="text"
+          className="border rounded px-3 py-2 text-sm w-full"
+          placeholder="Search Buyer Name"
+          value={filters.buyerName || ''}
+          onChange={e => handleChange('buyerName', e.target.value)}
+        />
+      </div>
+
+      {/* Order Status */}
+      <div>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Order Status</label>
+        <select
+          className="border rounded px-3 py-2 text-sm w-full"
+          value={filters.orderStatus || ''}
+          onChange={e => handleChange('orderStatus', e.target.value)}
+        >
+          <option value="">Select Status</option>
+          <option value="pending">Pending</option>
+          <option value="confirmed">Confirmed</option>
+          <option value="shipped">Shipped</option>
+          <option value="delivered">Delivered</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+      </div>
         <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Reg. Date From</label>
@@ -82,6 +120,7 @@ const SearchFilter = ({
           </div>
         </div>
       </div>
+    
 
       <div className="flex gap-3 justify-end mt-5">
         <button

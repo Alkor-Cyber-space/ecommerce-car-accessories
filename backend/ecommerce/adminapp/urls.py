@@ -6,6 +6,9 @@ router = DefaultRouter()
 router.register(r'vendors', VendorListViewSet, basename='vendor')
 router.register(r'users', UserListViewSet, basename='user')
 router.register(r'categories', AdminCategoryViewSet, basename='admin-categories')
+router.register(r'notifications', NotificationViewSet, basename='notifications')
+router.register(r'support-tickets', SupportTicketViewSet, basename='support-tickets')   
+router.register(r'ad-dashboard', AdminDashboardViewSet, basename='admin-dashboard')
 
 
 
@@ -23,5 +26,6 @@ urlpatterns = [
     path('vehicles/<int:pk>/update/', AdminVehicleUpdate.as_view(), name='vehicle-update'),
     path('vehicles/<int:pk>/delete/', AdminVehicleDelete.as_view(), name='vehicle-delete'),
     path("vendor/details/", VendorDetailsList.as_view(), name="vendor-details"),
+    path("profile/", AdminProfileView.as_view(), name="admin-profile"),
 
 ]

@@ -8,5 +8,8 @@ router.register(r'user-orders', UserOrderViewSet, basename='user-orders')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('shiping-options',ShippingOptionsView.as_view(),name='shiping-options')
+
+    path('shiping-options',ShippingOptionsView.as_view(),name='shiping-options'),
+
+    path('vendor/orders/', VendorOrderListView.as_view(), name='vendor-orders'),
 ]

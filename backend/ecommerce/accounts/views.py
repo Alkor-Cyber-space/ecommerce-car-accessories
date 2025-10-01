@@ -30,13 +30,11 @@ from django.core.mail import send_mail
 from .serializers import *
 from rest_framework.generics import GenericAPIView
 from firebase_admin import auth as firebase_auth
-from . import firebase_config 
 from django.db.models import Q
 from .utils import log_action
 from rest_framework import generics, status
 from requests.auth import HTTPBasicAuth
 import json
-
 User = get_user_model()
 
 # Create your views here.
@@ -48,6 +46,8 @@ class UserViewSet(viewsets.ViewSet):
     def register(self, request):
         email = request.data.get('email')
         phone_number = request.data.get('phone_number')
+        print(email)    
+        print(phone_number)
         existing_user = User.objects.filter(email=email).first()
         if existing_user:
             if not existing_user.is_active:
@@ -142,27 +142,42 @@ class UserViewSet(viewsets.ViewSet):
     def login(self, request):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
-        print("Email or Username:", email_or_username)
-        print("Password:", password)
+        fcm_token = request.data.get('fcm_token')
+
         if not email_or_username or not password:
             return Response({"error": "Email and password are required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        
-        user = authenticate(request, username=email_or_username, password=password)
-        print("User found:", user)
+        # Try to fetch user by email OR username
+        try:
+            if "@" in email_or_username:  # assume email
+                user_obj = User.objects.get(email=email_or_username)
+            else:  # assume username
+                user_obj = User.objects.get(username=email_or_username)
+        except User.DoesNotExist:
+            return Response({"error": "User does not exist"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        # Authenticate using the found username
+        user = authenticate(request, username=user_obj.username, password=password)
+
         if user:
             if not user.is_active:
                 return Response({"error": "User account is not active."}, status=status.HTTP_403_FORBIDDEN)
             if user.groups.filter(name='User').exists():
+                # Store multiple tokens
+                if fcm_token:
+                    FCMToken.objects.get_or_create(user=user, token=fcm_token)
+
                 refresh = RefreshToken.for_user(user)
                 return Response({
                     "access": str(refresh.access_token),
-                    "refresh": str(refresh),    
+                    "refresh": str(refresh),
                 }, status=status.HTTP_200_OK)
             else:
                 return Response({"error": "Only user can login here"}, status=status.HTTP_401_UNAUTHORIZED)
         else:
             return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+
+
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def home(self, request):
@@ -931,6 +946,7 @@ class VendorDocumentCheck(APIView):
             return None
     def get(self, request):
         pk=request.user
+        
         profile = self.get_object(pk)    
         if not profile:
             return Response(

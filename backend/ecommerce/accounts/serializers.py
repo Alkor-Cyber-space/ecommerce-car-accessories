@@ -222,6 +222,7 @@ class Step6AgreementsSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     contact_number = serializers.SerializerMethodField()
+    profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
 
     class Meta:
         model = CustomUser
@@ -229,11 +230,14 @@ class UserSerializer(serializers.ModelSerializer):
             'id',
             'email',
             'username',
+            'first_name',
+            'last_name',
             'phone_number',
             'is_admin_staff',
             'is_superuser',
             'date_joined',
-            'contact_number'  # from VendorProfile
+            'contact_number', # from VendorProfile
+            'profile_image', 
         ]
 
     def get_contact_number(self, obj):
@@ -337,10 +341,11 @@ class ChangePasswordSerializer(serializers.Serializer):
 class UserEditSerializer(serializers.ModelSerializer):
     old_password = serializers.CharField(write_only=True, required=False)
     new_password = serializers.CharField(write_only=True, required=False)
+    profile_image = serializers.ImageField(source="profile.profile_image", required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name','username', 'email', 'phone_number', 'old_password', 'new_password']
+        fields = ['first_name', 'last_name','username', 'email', 'phone_number', 'old_password', 'new_password', 'profile_image'    ]
 
     def validate_email(self, value):
         user = self.context['request'].user
@@ -369,6 +374,7 @@ class UserEditSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         old_password = validated_data.pop('old_password', None)
         new_password = validated_data.pop('new_password', None)
+        profile_data = validated_data.pop("profile", {})
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -377,6 +383,12 @@ class UserEditSerializer(serializers.ModelSerializer):
             instance.set_password(new_password)
 
         instance.save()
+
+        profile, created = UserProfile.objects.get_or_create(user=instance)
+        if "profile_image" in profile_data:
+            profile.profile_image = profile_data["profile_image"]
+        profile.save()
+        
         return instance
 
     
@@ -777,7 +789,10 @@ class VendorAuditLogSerializer(serializers.ModelSerializer):
 class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
     missing_count = serializers.SerializerMethodField()
     missing_fields = serializers.SerializerMethodField()
+    incomplete_fileds = serializers.SerializerMethodField()
+    has_address = serializers.SerializerMethodField()
 
+    print(has_address)
 
     class Meta:
         model = VendorDocuments
@@ -789,6 +804,8 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
             "submitted_at",
             "missing_count",
             "missing_fields",
+            "incomplete_fileds",
+            "has_address",
         ]
 
     def get_missing_fields(self, obj):
@@ -812,20 +829,23 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
         for field in document_fields:
             if not getattr(obj, field):
                 missing.append(field)
+        if not obj.vendor_profile.user.addresses.filter(is_primary=True).exists():
+            missing.append("address")
+
         return missing
 
     def get_missing_count(self, obj):
         return len(self.get_missing_fields(obj))
 
     incomplete_fileds=serializers.SerializerMethodField()
+    
     class Meta:
-        model = VendorDocuments
-        fields ="__all__"
+        model=VendorDocuments
+        fields="_all_"
 
-    def get_missing_fields(self, obj):
-        """Return names of missing/null documents"""
-        missing = []
-        document_fields = [
+    def get_incomplete_fileds(self,obj):
+        incomplete=[]
+        for field in [
             "pan_card",
             "aadhar_passport_dl",
             "gst_certificate",
@@ -839,19 +859,18 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
             "authorized_signatory_letter",
             "vendor_registration_form",
             "signed_terms_and_con",
+        ]:
+            if not getattr(obj, field):  
+                incomplete.append(field)
+        if not obj.vendor_profile.user.addresses.filter(is_primary=True).exists():
+            incomplete.append("address")
 
-        ]
-        for field in document_fields:
-            if not getattr(obj, field):
-                missing.append(field)
-        return missing
+        return incomplete
 
-    
-    
+    def get_has_address(self, obj):
+        """Return True/False if primary address exists"""
+        return obj.vendor_profile.user.addresses.filter(is_primary=True).exists()
 class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model=CustomUser
         fields = ["id", "email", "username", "phone_number", "is_admin_staff"]
-
-            
-

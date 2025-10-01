@@ -14,6 +14,8 @@ from datetime import timedelta
 import os
 import environ
 from pathlib import Path
+import firebase_admin
+from firebase_admin import credentials
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -115,6 +117,11 @@ CACHES = {
         }
     }
 }
+
+cred_path = os.path.join('accounts', 'firebase', 'serviceAccountKey.json')  
+cred = credentials.Certificate(cred_path)
+firebase_admin.initialize_app(cred)
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -245,9 +252,11 @@ STRIPE_TEST_PUBLISHABLE_KEY = env('STRIPE_TEST_PUBLISHABLE_KEY')
 
 RAZORPAY_TEST_KEY_ID = env("RAZORPAY_TEST_KEY_ID")
 RAZORPAY_TEST_KEY_SECRET = env("RAZORPAY_TEST_KEY_SECRET")
+
 RAZORPAY_FUND_ACCOUNT = env("RAZORPAY_FUND_ACCOUNT")
 RAZORPAY_ACCOUNT_NUMBER=env("RAZORPAY_ACCOUNT_NUMBER")
 RAZORPAY_FUND=env("RAZORPAY_FUND")
 # settings.py
 SHIPROCKET_API_EMAIL = env("SHIPROCKET_API_EMAIL")
 SHIPROCKET_API_PASSWORD = env("SHIPROCKET_API_PASSWORD")
+

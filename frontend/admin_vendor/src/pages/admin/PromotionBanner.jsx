@@ -20,31 +20,34 @@ const PromotionBanner = () => {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [bannerToDelete, setBannerToDelete] = useState(null);
 
-useEffect(() => {
-  fetchBanners();
-}, []);
+  useEffect(() => {
+    fetchBanners();
+  }, []);
 
-const fetchBanners = async () => {
-  try {
-    const data = await getAllPromotionBannersApi();
+  const fetchBanners = async () => {
+    try {
+      const data = await getAllPromotionBannersApi();
+      console.log("Promotions API response:", data);
 
-    // ✅ sort by id or created_at depending on your API response
-    const sortedData = [...(data || [])].sort((a, b) => {
-      // If API has created_at field
-      return new Date(b.created_at) - new Date(a.created_at);
-      
-      // Or, if you want to sort by ID (assuming higher ID = newer)
-      // return b.id - a.id;
-    });
+      if (!Array.isArray(data)) {
+        console.warn("Invalid data type received. Expected array but got:", typeof data);
+        setBanners([]); // set empty array to avoid errors
+        return;
+      }
 
-    setBanners(sortedData);
-    console.log("Sorted banners:", sortedData);
 
-  } catch (error) {
-    console.error("Failed to fetch banners", error);
-    toast.error("Failed to load banners");
-  }
-};
+      const sortedData = [...data].sort((a, b) => {
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+
+      setBanners(sortedData);
+      console.log("Sorted banners:", sortedData);
+
+    } catch (error) {
+      console.error("Failed to fetch banners", error);
+      toast.error("Failed to load banners");
+    }
+  };
 
   const handleCreateBanner = async (e) => {
     e.preventDefault();
@@ -122,23 +125,23 @@ const fetchBanners = async () => {
             className="flex transition-transform duration-500 ease-in-out"
             style={{ transform: `translateX(-${currentSlide * 100}%)` }}
           >
-           {Array.isArray(banners) && banners.map((promo) => (
-  <div key={promo.id} className="w-full flex-shrink-0 relative">
-    <div className="flex flex-col items-center p-8">
-      <img
-        src={promo.image}
-        className="w-full h-64 object-cover rounded mb-4"
-      />
-    </div>
+            {Array.isArray(banners) && banners.map((promo) => (
+              <div key={promo.id} className="w-full flex-shrink-0 relative">
+                <div className="flex flex-col items-center p-8">
+                  <img
+                    src={promo.image}
+                    className="w-full h-64 object-cover rounded mb-4"
+                  />
+                </div>
 
-    <button
-      onClick={() => confirmDeleteBanner(promo.id)}
-      className="text-red-700 p-2 rounded-lg flex items-center justify-center hover:text-red-700 transition-colors shadow cursor-pointer absolute top-10 right-10 bg-white/70 hover:bg-white"
-    >
-      <RiDeleteBin6Line size={20} />
-    </button>
-  </div>
-))}
+                <button
+                  onClick={() => confirmDeleteBanner(promo.id)}
+                  className="text-red-700 p-2 rounded-lg flex items-center justify-center hover:text-red-700 transition-colors shadow cursor-pointer absolute top-10 right-10 bg-white/70 hover:bg-white"
+                >
+                  <RiDeleteBin6Line size={20} />
+                </button>
+              </div>
+            ))}
 
           </div>
 
@@ -162,9 +165,8 @@ const fetchBanners = async () => {
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`w-3 h-3 rounded-full ${
-                  currentSlide === index ? "bg-purple-600" : "bg-gray-300"
-                }`}
+                className={`w-3 h-3 rounded-full ${currentSlide === index ? "bg-purple-600" : "bg-gray-300"
+                  }`}
               />
             ))}
           </div>
