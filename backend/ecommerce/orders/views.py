@@ -17,6 +17,8 @@ from django.http import JsonResponse
 import json
 from rest_framework.views import APIView
 from .shiprocket_client import calculate_shipping_rate
+from .shiprocket_client import create_shiprocket_order
+from datetime import datetime
 class ShippingOptionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -126,6 +128,123 @@ class ShippingOptionsView(APIView):
 #         }, status=status.HTTP_200_OK)
 
 
+# class CheckoutViewSet(viewsets.ViewSet):
+#     permission_classes = [permissions.IsAuthenticated]
+
+#     def create(self, request):
+#         serializer = OrderSerializer(data=request.data, context={'request': request})
+#         serializer.is_valid(raise_exception=True)
+
+#         validated = serializer.validated_data
+#         user = request.user
+#         items = validated['items']
+#         shipping_address = validated['shipping_address']
+#         payment_method = validated['payment_method']
+
+#         subtotal = Decimal("0.00")
+#         tax_rate = Decimal("0.18")
+#         shipping_fee = Decimal(str(request.data.get("shipping_fee", "0.00")))
+#         courier_company_id = request.data.get("courier_company_id")
+
+#         for item in items:
+#             product = item['product']
+#             quantity = item['quantity']
+#             subtotal += product.price * quantity
+
+#         tax = subtotal * tax_rate
+#         total = subtotal + tax + shipping_fee
+
+#         # Create pending order in DB
+#         order = Order.objects.create(
+#             user=user,
+#             shipping_address=shipping_address,
+#             tax=tax,
+#             shipping_cost=shipping_fee,
+#             total_price=total,
+#             status="pending",
+#             payment_method=payment_method,
+#             courier_company_id = courier_company_id
+#         )
+
+#         try:
+#             order_payload = {
+#                             "order_id": "TEST12345",   # your DB order ID
+#                             "order_date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+#                             "pickup_location": "VENDOR_2",
+#                             "channel_id": "",         # leave blank unless using marketplace
+#                             "comment": "Test order from Django",
+                            
+#                             "billing_customer_name": "Ramesh",
+#                             "billing_last_name": "Sharma",
+#                             "billing_address": "Panangad",
+#                             "billing_address_2": "Kundanoor",
+#                             "billing_city": "Ernakulam",
+#                             "billing_pincode": "682001",
+#                             "billing_state": "Kerala",
+#                             "billing_country": "India",
+#                             "billing_email": "ramesh@example.com",
+#                             "billing_phone": "9876543210",
+#                             "courier_company_id":"127",
+#                             "shipping_is_billing": True,  # same as billing
+
+#                             "order_items": [
+#                                 {
+#                                     "name": "Car Seat Cover",
+#                                     "sku": "CAR-SEAT-001",
+#                                     "units": 1,
+#                                     "selling_price": 999,
+#                                     "discount": 0,
+#                                     "tax": 0,
+#                                 }
+#                             ],
+
+#                             "payment_method": "COD",   # or "Prepaid"
+#                             "sub_total": 999,
+#                             "length": 10,
+#                             "breadth": 10,
+#                             "height": 10,
+#                             "weight": 2.0
+#                         }
+#             sr_response = create_shiprocket_order(order_payload)
+#             print("Shiprocket response:", sr_response)
+#             if not sr_response.get("shipment_id") or sr_response.get("status_code") != 1:
+#                 sr_response["error"] = "Shiprocket order not created. Check payload or credentials."    
+
+#         except Exception as e:  
+#             sr_response = {"error": str(e)}
+
+#         for item in items:
+#             product = item['product']
+#             quantity = item['quantity']
+#             OrderItem.objects.create(
+#                 order=order,
+#                 product=product,
+#                 quantity=quantity,
+#                 price=product.price
+#             )
+
+#         # Metadata to pass to payment provider
+#         metadata = {"order_id": str(order.id)}
+
+#         try:
+#             gateway_handler = get_payment_gateway(payment_method)
+#             gateway_response = gateway_handler(user, float(total), metadata)
+#         except Exception as e:
+#             raise ValidationError(str(e))
+
+#         return Response({
+#             "amount": float(total),
+#             "payment_gateway_response": gateway_response,
+#             "order_id": order.id,
+#             "shiprocket_response": sr_response
+#         }, status=status.HTTP_200_OK)
+
+from datetime import datetime
+from decimal import Decimal
+from rest_framework import status, permissions, viewsets
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
+
 class CheckoutViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -152,7 +271,7 @@ class CheckoutViewSet(viewsets.ViewSet):
         tax = subtotal * tax_rate
         total = subtotal + tax + shipping_fee
 
-        # Create pending order in DB
+        # Create pending order
         order = Order.objects.create(
             user=user,
             shipping_address=shipping_address,
@@ -161,20 +280,80 @@ class CheckoutViewSet(viewsets.ViewSet):
             total_price=total,
             status="pending",
             payment_method=payment_method,
-            courier_company_id = courier_company_id
+            courier_company_id=courier_company_id
         )
 
+        # Save order items
+        order_items = []
         for item in items:
             product = item['product']
             quantity = item['quantity']
-            OrderItem.objects.create(
+            order_item = OrderItem.objects.create(
                 order=order,
                 product=product,
                 quantity=quantity,
                 price=product.price
             )
+            order_items.append(order_item)
 
-        # Metadata to pass to payment provider
+        # ✅ Build dynamic Shiprocket payload
+        try:
+            order_payload = {
+                "order_id": str(order.id),  # DB order ID
+                "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
+                "pickup_location": "VENDOR_2",   # you can map vendor pickup locations if you store them
+                "channel_id": "",  # leave blank unless marketplace
+                "comment": f"Order #{order.id} from {user.email}",
+
+                # Billing/Shipping info (from Address model)
+                "billing_customer_name": user.first_name or user.username,
+                "billing_last_name": user.last_name or "",
+                "billing_address": shipping_address.line1,
+                "billing_address_2": shipping_address.line2 or "",
+                "billing_city": shipping_address.city,
+                "billing_pincode": shipping_address.postal_code,
+                "billing_state": shipping_address.state,
+                "billing_country": shipping_address.country,
+                "billing_email": user.email,
+                "billing_phone": getattr(user, "phone_number", "9999999999"),  # fallback
+
+                "courier_company_id": str(courier_company_id or ""),
+                "shipping_is_billing": True,
+                
+                # Products in the order
+                "order_items": [
+                    {
+                        "name": item.product.name,
+                        "sku": f"SKU-{item.product.id}",
+                        "units": item.quantity,
+                        "selling_price": float(item.price),
+                        "discount": 0,
+                        "tax": float(item.price) * float(tax_rate),
+                    }
+                    for item in order_items
+                ],
+
+                "payment_method": "COD" if payment_method == "cod" else "Prepaid",
+                "sub_total": float(subtotal),
+                
+                # Package dimensions (taking first product as ref or you can calculate max)
+                "length": order_items[0].product.length if order_items else 10,
+                "breadth": order_items[0].product.breadth if order_items else 10,
+                "height": order_items[0].product.height if order_items else 10,
+                "weight": float(order_items[0].product.weight) if order_items else 1.0,
+            }
+            print(f"order_payload:{order_payload}")
+
+            sr_response = create_shiprocket_order(order_payload)
+            print("Shiprocket response:", sr_response)
+
+            if not sr_response.get("shipment_id") or sr_response.get("status_code") != 1:
+                sr_response["error"] = "Shiprocket order not created. Check payload or credentials."
+
+        except Exception as e:
+            sr_response = {"error": str(e)}
+
+        # Metadata for payment provider
         metadata = {"order_id": str(order.id)}
 
         try:
@@ -186,10 +365,9 @@ class CheckoutViewSet(viewsets.ViewSet):
         return Response({
             "amount": float(total),
             "payment_gateway_response": gateway_response,
-            "order_id": order.id
-        }, status=status.HTTP_200_OK)       
-
-
+            "order_id": order.id,
+            "shiprocket_response": sr_response
+        }, status=status.HTTP_200_OK)
 
 class UserOrderViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -245,3 +423,5 @@ def shiprocket_webhook(request):
     # Update your Order/Shipment models accordingly
     # Order.objects.filter(order_id=order_id).update(shipment_status=status, last_payload=payload)
     return JsonResponse({"ok": True})
+
+

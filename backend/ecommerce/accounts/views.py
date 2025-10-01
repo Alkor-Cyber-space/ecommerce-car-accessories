@@ -2,7 +2,9 @@ import random
 from django.shortcuts import render
 from orders.shiprocket_client import create_pickup_location
 import requests
-
+from datetime import date
+from datetime import date
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from . serializers import *
 from rest_framework import viewsets
@@ -32,6 +34,8 @@ from . import firebase_config
 from django.db.models import Q
 from .utils import log_action
 from rest_framework import generics, status
+from requests.auth import HTTPBasicAuth
+import json
 
 User = get_user_model()
 
@@ -213,7 +217,8 @@ class UserViewSet(viewsets.ViewSet):
     
 
 class VendorRegistrationViewSet(viewsets.ViewSet):
-
+    
+    
     @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
     def register_vendor(self, request):
         email = request.data.get('email')
@@ -294,9 +299,11 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated])
     def edit_profile(self, request):
+        print("$$$$$$$$$$$$$$$$")
         user = request.user
         try:
-            vendor_profile = user.vendor_profile
+            vendor_profile = user.VendorProfile
+            print(f"vendor_profile:{vendor_profile}")
         except VendorProfile.DoesNotExist:
             return Response({"error": "Vendor profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -835,11 +842,11 @@ class VendorDocumentsFinalApprovalView(APIView):
                     }, status=status.HTTP_400_BAD_REQUEST)
                 print("above the pickupload")
                 pickup_payload = {
-                    "pickup_location": "VENDOR_2",
-                    "name": "Teqora Solution",
+                    "pickup_location": "VENDOR_3",
+                    "name": "Teqora ",
                     "email": "nadeem@gmail.com",  # fixed typo
-                    "phone": "9876543210",      # added country code
-                    "address": "Mutant Facility, Sector 3",
+                    "phone": "8089143474",      # added country code
+                    "address": "Mutant Facility, Sector 4",
                     "address_2": "kundanoor",
                     "city": "South West Delhi",          # safer than "Kochi"
                     "state": "Maharshtra",
@@ -983,5 +990,221 @@ class AdminRetrieveByIdAPIView(generics.GenericAPIView):
         serializer = self.get_serializer(user)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class GenerateRazorpayContactsView(APIView):
+    """
+    Create Razorpay contact IDs for all vendors who don't have one yet.
+    """
+
+    # permission_classes = [IsAdminUser]  # Uncomment if you want only admin access
+
+    def post(self, request, *args, **kwargs):
+        vendors = CustomUser.objects.filter(vendor_profile__isnull=False)
+        created_contacts = []
+        skipped = []
+
+        for vendor in vendors:
+            vendor_profile = vendor.vendor_profile
+
+            if hasattr(vendor_profile, 'razorpay_contact_id') and vendor_profile.razorpay_contact_id:
+                skipped.append(vendor.email)
+                continue
+
+            try:
+                payload = {
+                "name": vendor_profile.contact_name or vendor_profile.user.username,
+                "email": vendor_profile.contact_email or vendor_profile.user.email,
+                "contact": str(vendor_profile.contact_number or vendor_profile.user.phone_number),
+                "type": "vendor",
+                "reference_id": f"user_{vendor_profile.user.id}"
+                    }
+                response = requests.post(
+                    "https://api.razorpay.com/v1/contacts",
+                    json=payload,
+                    auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                )
+                response.raise_for_status()
+                data = response.json()
+                razorpay_contact_id = data.get("id")
+
+                if razorpay_contact_id:
+                    vendor_profile.razorpay_contact_id = razorpay_contact_id
+                    vendor_profile.save()
+                    created_contacts.append({
+                        "vendor_email": vendor.email,
+                        "razorpay_contact_id": razorpay_contact_id
+                    })
+                else:
+                    skipped.append(vendor.email)
+
+            except requests.exceptions.RequestException as e:
+                skipped.append(vendor.email)
+                print(f"Error creating contact for {vendor.email}: {str(e)}")
+
+        return Response({
+            "created_contacts": created_contacts,
+            "skipped": skipped
+        }, status=200)
+
+# audit/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django.db.models import Sum, F
+import razorpay
+from django.conf import settings
+from .models import Payout, CustomUser, VendorProfile
+from orders.models import OrderItem, Order
+
+# Initialize Razorpay client
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET,settings.RAZORPAY_ACCOUNT_NUMBER))
 
 
+class ProcessPayoutsView(APIView):
+    permission_classes = [IsAdminUser]  # Uncomment to restrict to admins
+
+    def get(self, request, *args, **kwargs):
+        payouts_result = []
+        processed_count = 0
+
+        vendors = CustomUser.objects.filter(vendor_profile__isnull=False)
+        print(f"Processing payouts for vendors: {vendors}")
+
+        for vendor in vendors:
+            vendor_profile = vendor.vendor_profile
+
+            # Skip if missing bank details
+            if not (vendor_profile.bank_account_no and vendor_profile.ifsc_code and vendor_profile.bank_account_holder_name):
+                print(f"Skipping {vendor.email}: Missing bank details")
+                payouts_result.append({
+                    "vendor_email": vendor.email,
+                    "status": "skipped_missing_bank_details"
+                })
+                continue
+
+            # Calculate total sales and commission
+            order_items = OrderItem.objects.filter(product__vendor=vendor)
+            total_sales = Decimal(0)
+            total_commission = Decimal(0)
+
+            for item in order_items:
+                item_total = Decimal(item.price) * item.quantity
+                total_sales += item_total
+                total_commission += item_total * Decimal('0.03')  # 3% commission
+
+            if total_sales <= 0:
+                payouts_result.append({
+                    "vendor_email": vendor.email,
+                    "status": "no_sales"
+                })
+                continue
+
+            payout_amount = total_sales - total_commission
+            print(f"toatal sale{total_sales}")
+
+            # Create or get Razorpay contact
+            if not vendor_profile.razorpay_contact_id:
+                contact_payload = {
+                    "name": vendor.get_full_name(),
+                    "email": vendor.email,
+                    "contact": vendor_profile.phone_number,
+                    "type": "vendor",
+                    "reference_id": f"vendor_{vendor.id}"
+                }
+
+                try:
+                    contact_response = requests.post(
+                        "https://api.razorpay.com/v1/contacts",
+                        json=contact_payload,
+                        auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                    )
+                    contact_response.raise_for_status()
+                    vendor_profile.razorpay_contact_id = contact_response.json()['id']
+                    vendor_profile.save()
+                    
+                except requests.exceptions.RequestException as e:
+                    
+                    payouts_result.append({
+                        "vendor_email": vendor.email,
+                        "status": "failed_contact_creation",
+                        "error": str(e)
+                    })
+                    continue
+
+            # Create Payout record
+            payout = Payout.objects.create(
+                vendor=vendor,
+                amount=payout_amount,
+                commission=total_commission,
+                week_start=date(2025, 9, 22),
+                week_end=date(2025, 10, 2),
+                status='pending'
+            )
+
+            # Create Fund Account
+            try:
+                fund_payload = {
+                    "contact_id": vendor_profile.razorpay_contact_id,
+                    "account_type": "bank_account",
+                    "bank_account": {
+                        "name": vendor_profile.bank_account_holder_name,
+                        "ifsc": vendor_profile.ifsc_code,
+                        "account_number": vendor_profile.bank_account_no
+                    }
+                }
+
+                fund_response = requests.post(
+                    "https://api.razorpay.com/v1/fund_accounts",
+                    json=fund_payload,
+                    auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                )
+                fund_response.raise_for_status()
+                fund_account_id = fund_response.json()['id']
+                print(f"RAZORPAY_FUND_ACCOUNT:{settings.RAZORPAY_ACCOUNT_NUMBER}")
+                print(f"fund_account_id:{fund_account_id}")
+                # Create Payout
+                payout_payload = {
+                    "account_number": settings.RAZORPAY_FUND.replace(" ", ""),  # remove spaces       
+                    "fund_account_id": fund_account_id,
+                    "amount": int(payout_amount * 100),  # paise
+                    "currency": "INR",
+                    "mode": "IMPS",
+                    "purpose": "payout",
+                    "queue_if_low_balance": True,
+                    "reference_id": f"payout_{payout.id}",
+                    "narration": "weekly statement to vendor"
+                }
+                print("************************")
+                print(f"payload check {payout_payload}")
+                print("************************")
+                payout_response = requests.post(
+                    "https://api.razorpay.com/v1/payouts",
+                    json=payout_payload,
+                    auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                )
+                payout_response.raise_for_status()
+                razorpay_payout = payout_response.json()
+
+                payout.razorpay_payout_id = razorpay_payout.get('id')
+                payout.status = 'completed'
+                processed_count += 1
+
+            except requests.exceptions.RequestException as e:
+                payout.status = 'failed'
+                print(f"Razorpay Fund Account / Payout Error for {vendor.email}: {e.response.json() if hasattr(e, 'response') else str(e)}")
+
+            except Exception as e:
+                payout.status = 'failed'
+                print(f"Unexpected error for {vendor.email}: {str(e)}")
+
+            finally:
+                payout.save()
+                payouts_result.append({
+                    "vendor_email": vendor.email,
+                    "amount": payout_amount,
+                    "status": payout.status
+                })
+
+        return Response({
+            "message": f"Processed {processed_count} payouts",
+            "payouts": payouts_result
+        }, status=200)

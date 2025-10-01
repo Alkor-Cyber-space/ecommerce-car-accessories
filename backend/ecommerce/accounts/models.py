@@ -41,6 +41,11 @@ class VendorProfile(models.Model):
      contact_number = models.IntegerField(null=True, blank=True)
      designation = models.CharField(null=True, blank=True,max_length=255)
      pickup_location = models.CharField(max_length=100,null=True,blank=True)
+
+     bank_account_no = models.CharField(max_length=50, null=True, blank=True)
+     ifsc_code = models.CharField(max_length=12, null=True, blank=True)  # IFSC code for Indian banks
+     bank_account_holder_name = models.CharField(max_length=255, null=True, blank=True)
+     razorpay_contact_id = models.CharField(max_length=100, blank=True, null=True) 
      # # Step 4: KYC Documents
      # pan_card = models.FileField(upload_to='kyc/pan/', null=True, blank=True)
      # aadhar_passport_dl = models.FileField(upload_to='kyc/id/', null=True, blank=True)
@@ -265,12 +270,9 @@ class Address(models.Model):
      state = models.CharField(max_length=100)
      postal_code = models.CharField(max_length=20)
      country = models.CharField(max_length=100)
-<<<<<<< HEAD
-     is_primary = models.BooleanField(default=True)
-=======
      is_primary = models.BooleanField(default=False)
      is_pickup = models.BooleanField(default=False)
->>>>>>> 5598964b99836113e6c3554bdbff01af8c11e8d6
+
 
      def __str__(self):
           return f"{self.line1}, {self.city}, {self.country}"
@@ -333,3 +335,28 @@ class VendorAuditLog(models.Model):
 
     def __str__(self):
         return f"{self.vendor.email} - {self.action} - {self.timestamp}"
+    
+# yourapp/models.py (add to existing Payout model)
+class Payout(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='payouts'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Amount after 3% deduction
+    commission = models.DecimalField(max_digits=10, decimal_places=2)  # Total 3% commission
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    razorpay_payout_id = models.CharField(max_length=100, null=True, blank=True)  # Razorpay payout ID
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    week_start = models.DateField()
+    week_end = models.DateField()
+
+    def __str__(self):
+        return f"Payout {self.id} to {self.vendor.email} - ₹{self.amount} ({self.week_start} to {self.week_end})"

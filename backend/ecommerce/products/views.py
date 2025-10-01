@@ -215,5 +215,3 @@ class VendorCategoryApprove(APIView):
         return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
 
         
-
-

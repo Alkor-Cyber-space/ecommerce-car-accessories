@@ -94,3 +94,26 @@ def calculate_shipping_rate(payload):
       - declared_value (for insurance)
     """
     return call_shiprocket_api(RATE_CALCULATOR_URL, method="GET", payload =payload)
+
+def create_shiprocket_order(order_payload):
+    """
+    Create an order in Shiprocket.
+    order_payload should include:
+      - order_id
+      - order_date (YYYY-MM-DD HH:MM)
+      - pickup_location
+      - billing_customer_name
+      - billing_last_name
+      - billing_address
+      - billing_city
+      - billing_state
+      - billing_country
+      - billing_pincode
+      - billing_email
+      - billing_phone
+      - order_items (list of dicts)
+      - payment_method ("Prepaid" or "COD")
+      - sub_total
+      - length, breadth, height, weight
+    """
+    return call_shiprocket_api(CREATE_ORDER_URL, payload=order_payload, method="POST")
