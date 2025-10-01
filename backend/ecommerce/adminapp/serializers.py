@@ -1,18 +1,36 @@
 from rest_framework import serializers
 from accounts.models import *
 from products.models import *
-from products.models import Product  
+from products.models import *  
 from . models import *
+from orders.serializers import *
+from products.serializers import *
 # from accour.models import VendorDocuments
 
 class AdminDashboardSerializer(serializers.Serializer):
-    total_users = serializers.IntegerField()
-    total_vendors = serializers.IntegerField()
     total_products = serializers.IntegerField()
     total_orders = serializers.IntegerField()
-    total_sales = serializers.DecimalField(max_digits=12, decimal_places=2)
-    total_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
-    sales_trend = serializers.ListField(child=serializers.DictField(), default=[])
+    total_sales = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_profit = serializers.DecimalField(max_digits=15, decimal_places=2)
+    
+    new_users = serializers.IntegerField()
+    new_vendors = serializers.IntegerField()
+    total_vendors = serializers.IntegerField()
+    total_users = serializers.IntegerField()
+    total_admins = serializers.IntegerField()
+
+    recent_orders = OrderSerializer(many=True)
+    recent_products = ProductSerializer(many=True)
+    
+    monthly_sales = serializers.SerializerMethodField()
+    monthly_products = serializers.SerializerMethodField()
+
+    def get_monthly_sales(self, obj):
+        return obj.get("monthly_sales", [])
+
+    def get_monthly_products(self, obj):
+        return obj.get("monthly_products", [])
+
 
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:

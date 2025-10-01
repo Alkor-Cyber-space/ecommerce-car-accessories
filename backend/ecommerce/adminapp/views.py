@@ -1,6 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from accounts.models import CustomUser, VendorProfile
+from accounts.models import *
 from accounts.permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import Group
@@ -14,42 +14,115 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from products.serializers import CategorySerializer
+from products.serializers import *
 from vehicles.serializers import VehicleFullEntrySerializer
-from products.models import Category
+from products.models import *
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
 from orders.models import Order
 from .serializers import *
 from . models import *
-from accounts.models import VendorDocuments
 from accounts.mixin import AuditLogMixin
 from accounts.serializers import UserEditSerializer,UserSerializer
+from orders.models import *
+from django.db.models import Sum, F, Count
+from django.db.models.functions import TruncMonth
+from datetime import timedelta
+from django.utils import timezone
 
 User = get_user_model()
 # Create your views here.
 
-class AdminDashboardAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsAdmin]
+class AdminDashboardViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
 
-    def get(self, request):
-        total_users = CustomUser.objects.filter(groups__name='User').count()
-        total_vendors = CustomUser.objects.filter(groups__name='Vendor').count()
-        total_orders = Order.objects.count()
-        total_sales = Order.objects.filter(status='paid').aggregate(total_sales=models.Sum('total_price'))['total_sales'] or 0
-        total_products = Product.objects.count()
-        recent_orders = Order.objects.all().order_by('-created_at')[:10]
-        recent_orders_data = OrderSerializer(recent_orders, many=True).data
+    def list(self, request):
+        # ---------- Users ----------
+        total_users = CustomUser.objects.filter(groups__name="User").count()
+        total_vendors = CustomUser.objects.filter(groups__name="Vendor").count()
+        total_admins = CustomUser.objects.filter(groups__name="Admin").count()
+
+        # New users & vendors in last 30 days
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        new_users = CustomUser.objects.filter(
+            groups__name="User",
+            date_joined__gte=thirty_days_ago
+        ).count()
+
+        new_vendors = CustomUser.objects.filter(
+            groups__name="Vendor",
+            date_joined__gte=thirty_days_ago
+        ).count()
+
+        # ---------- Products ----------
+        products_qs = Product.objects.all()
+        total_products = products_qs.count()
+        recent_products = products_qs.order_by('-created_at')[:10]
+
+        # ---------- Orders ----------
+        order_items = OrderItem.objects.all()
+        orders_qs = Order.objects.all()
+
+        total_sales = order_items.aggregate(total=Sum(F('price') * F('quantity')))['total'] or 0
+        total_profit = total_sales  # modify if profit calculation differs
+
+        recent_orders = orders_qs.order_by('-created_at')[:10]
+        total_orders = orders_qs.count()
+
+        # ---------- Monthly trends ----------
+        monthly_sales_qs = (
+            order_items.annotate(month=TruncMonth('order__created_at'))
+            .values('month')
+            .annotate(
+                total_sales=Sum(F('price') * F('quantity')),
+                total_profit=Sum(F('price') * F('quantity')),
+                total_orders=Count('order', distinct=True),
+            )
+            .order_by('month')
+        )
+
+        monthly_sales = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_sales": float(item["total_sales"] or 0),
+                "total_profit": float(item["total_profit"] or 0),
+                "total_orders": item["total_orders"],
+            }
+            for item in monthly_sales_qs
+        ]
+
+        monthly_products_qs = (
+            products_qs.annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(total_products=Count('id'))
+            .order_by('month')
+        )
+
+        monthly_products = [
+            {"month": item["month"].strftime("%Y-%m"), "total_products": item["total_products"]}
+            for item in monthly_products_qs
+        ]
 
         data = {
-            'total_users': total_users,
-            'total_vendors': total_vendors,
-            'total_orders': total_orders,
-            'total_sales': total_sales,
-            'total_products': total_products,
-            'recent_orders': recent_orders_data,
+            "total_products": total_products,
+            "total_orders": total_orders,
+            "total_sales": total_sales,
+            "total_profit": total_profit,
+            "new_users": new_users,
+            "new_vendors": new_vendors,
+            "total_vendors": total_vendors,
+            "total_users": total_users,
+            "total_admins": total_admins,
+            "recent_orders": recent_orders,
+            "recent_products": recent_products,
+            "monthly_sales": monthly_sales,
+            "monthly_products": monthly_products,
         }
-        return Response(data, status=status.HTTP_200_OK)
+
+        serializer = AdminDashboardSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class AdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -442,6 +515,30 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
         if user.is_admin_staff:  # Admins can see all
             return SupportTicket.objects.all().order_by("-created_at")
         return SupportTicket.objects.filter(vendor=user).order_by("-created_at")
+
+    @action(detail=False, methods=["get"], url_path="ticket-counts")
+    def ticket_counts(self, request):
+        user = request.user
+        qs = self.get_queryset()
+
+        counts = {
+            "total": qs.count(),
+            "pending": qs.filter(status="pending").count(),
+            "in_progress": qs.filter(status="in_progress").count(),
+            "answered": qs.filter(status="answered").count(),
+            "resolved": qs.filter(status="resolved").count(),
+        }
+
+        return Response(counts)
+
+    # --- New API: Mark as in progress ---
+    @action(detail=True, methods=["post"])
+    def mark_in_progress(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.status = "in_progress"
+        ticket.save()
+        return Response({"message": "Ticket marked as in progress."})
+
 
     def perform_create(self, serializer):
         serializer.save(vendor=self.request.user)
