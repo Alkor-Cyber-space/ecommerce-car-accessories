@@ -841,7 +841,7 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
     
     class Meta:
         model=VendorDocuments
-        fields="__all__"
+        fields="_all_"
 
     def get_incomplete_fileds(self,obj):
         incomplete=[]
@@ -870,3 +870,7 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
     def get_has_address(self, obj):
         """Return True/False if primary address exists"""
         return obj.vendor_profile.user.addresses.filter(is_primary=True).exists()
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=CustomUser
+        fields = ["id", "email", "username", "phone_number", "is_admin_staff"]

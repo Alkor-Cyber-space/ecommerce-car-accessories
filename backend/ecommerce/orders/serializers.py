@@ -14,7 +14,7 @@ class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
     shipping_address = serializers.PrimaryKeyRelatedField(queryset=Address.objects.all())
     payment_method = serializers.ChoiceField(choices=Order.PAYMENT_METHOD_CHOICES)
-
+    
     class Meta:
         model = Order
         fields = [
