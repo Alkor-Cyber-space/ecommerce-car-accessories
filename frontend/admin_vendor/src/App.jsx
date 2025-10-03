@@ -17,7 +17,6 @@ import KYCDocumentsUpload from "./pages/vendor/registerforms/KYCDocUpload";
 import BusinessDocumentsUpload from "./pages/vendor/registerforms/BusinessDocumentsUpload";
 import BankTaxDetailsUpload from "./pages/vendor/registerforms/BankTaxDetailsUpload";
 import AgreementsUpload from "./pages/vendor/registerforms/AgreementsUpload";
-import PromotionBanner from "./pages/admin/PromotionBanner";
 
 // admin routes
 import AdminHome from "./pages/admin/AdminHome";
