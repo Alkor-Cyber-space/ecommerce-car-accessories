@@ -43,6 +43,15 @@ const AdminDashboard = () => {
         <div className="flex flex-col w-full lg:col-span-1">
           <div className=" text-black  w-full">
             <TotalProfitCard />
+            {/* <ProfitCard
+  title="Admin Total Profit"
+  profit={50200000}
+  percentage={12.3}
+  bars={[30, 42, 55, 50, 48, 45, 38, 60, 42, 40, 30, 48, 52, 45, 50, 38, 60, 50]}
+  durationLabel="This Quarter"
+  onDownload={() => console.log("Admin report download")}
+/> */}
+
           </div>
           <hr className='border border-[#D8D8D8]' />
 

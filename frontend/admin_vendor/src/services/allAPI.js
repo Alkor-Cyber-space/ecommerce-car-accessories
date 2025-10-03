@@ -1084,6 +1084,16 @@ export const approveOrRejectCategoryApi = async (categoryId, action) => {
     throw error;
   }
 };
+// -------------------------------------vendor dashboard
+export const getVendorDashboardApi = async () => {
+  try {
+    const response = await api.get("/vendor/dashboard/");   
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching vendor dashboard:", error);
+    throw error;
+  }
+};
 
 // -------------------------------------order-management
 export const getOrdersApi = async () => {
