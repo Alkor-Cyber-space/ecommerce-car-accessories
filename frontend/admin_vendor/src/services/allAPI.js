@@ -3,10 +3,10 @@ import { serverurl } from "./serverURL";
 import { commonAPI } from "./commonAPI";
 
 const refreshToken = async () => {
-  const refresh = localStorage.getItem('refresh_token'); // ensure your key name matches here
+  const refresh = localStorage.getItem("refresh_token"); // ensure your key name matches here
 
   if (!refresh) {
-    throw new Error('No refresh token found in localStorage');
+    throw new Error("No refresh token found in localStorage");
   }
 
   try {
@@ -15,11 +15,14 @@ const refreshToken = async () => {
     });
 
     const newAccessToken = response.data.access; // ✅ not access_token, just "access"
-    localStorage.setItem('access_token', newAccessToken);
+    localStorage.setItem("access_token", newAccessToken);
 
     return newAccessToken;
   } catch (error) {
-    console.error('Error refreshing token:', error.response?.data || error.message);
+    console.error(
+      "Error refreshing token:",
+      error.response?.data || error.message
+    );
     throw error;
   }
 };
@@ -53,7 +56,9 @@ api.interceptors.response.use(
         const refresh = localStorage.getItem("refresh_token");
         if (!refresh) throw new Error("No refresh token");
 
-        const res = await axios.post(`${serverurl}/token/refresh/`, { refresh });
+        const res = await axios.post(`${serverurl}/token/refresh/`, {
+          refresh,
+        });
 
         const newAccessToken = res.data.access;
         localStorage.setItem("access_token", newAccessToken);
@@ -89,23 +94,33 @@ export const logout = () => {
 // Admin Login
 export const AdminLoginApi = async (adminData) => {
   return await commonAPI("POST", `${serverurl}/admin/login/`, adminData, {
-    "Content-Type": "application/json"
+    "Content-Type": "application/json",
   });
-}
+};
 // vendor login & register
 export const vendorLoginApi = async (vendorData) => {
-  return await commonAPI("POST", `${serverurl}/auth/vendor/login/`, vendorData, {
-    "Content-Type": "application/json"
-  });
-}
+  return await commonAPI(
+    "POST",
+    `${serverurl}/auth/vendor/login/`,
+    vendorData,
+    {
+      "Content-Type": "application/json",
+    }
+  );
+};
 
 export const vendorRegisterApi = async (vendorData) => {
   console.log("inside register", vendorData);
 
-  return await commonAPI("POST", `${serverurl}/auth/vendor/register/`, vendorData, {
-    "content-Type": "application/json"
-  })
-}
+  return await commonAPI(
+    "POST",
+    `${serverurl}/auth/vendor/register/`,
+    vendorData,
+    {
+      "content-Type": "application/json",
+    }
+  );
+};
 
 export const verifyVendorOtpApi = (data) => {
   return commonAPI("POST", `${serverurl}/auth/otp-verification/`, data);
@@ -140,7 +155,6 @@ export const contactDetailsApi = async (vendorId, vendorData) => {
   );
 };
 
-
 export const uploadKYCDocumentsApi = (vendorId, formData) => {
   return axios.post(`${serverurl}/auth/vendor/step3/${vendorId}/`, formData, {
     headers: {
@@ -148,7 +162,6 @@ export const uploadKYCDocumentsApi = (vendorId, formData) => {
     },
   });
 };
-
 
 export const uploadBussinessDocApi = async (vendorId, formData) => {
   return await axios.post(
@@ -190,11 +203,11 @@ export const uploadAgreementsApi = async (vendorId, formData) => {
 export const addProductApi = async (productData) => {
   const response = await api.post("/vendor/products/", productData, {
     headers: {
-      "Content-Type": "multipart/form-data"
-    }
-  })
-  return response.data
-}
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};
 
 export const getProductsApi = async () => {
   try {
@@ -226,7 +239,6 @@ export const deleteProductApi = async (productId) => {
   }
 };
 
-
 export const updateProductApi = async (productId, productData) => {
   try {
     const response = await api.patch(
@@ -244,7 +256,6 @@ export const updateProductApi = async (productId, productData) => {
     throw error;
   }
 };
-
 
 // categories
 export const getCategoriesApi = async () => {
@@ -279,7 +290,6 @@ export const getMeApi = async () => {
   }
 };
 
-
 // Update user profile
 export const updateAccountApi = async (userData) => {
   try {
@@ -290,8 +300,6 @@ export const updateAccountApi = async (userData) => {
     throw error;
   }
 };
-
-
 
 // Change password
 // export const changePasswordApi = async (passwordData) => {
@@ -324,7 +332,6 @@ export const deactivateAccountApi = async () => {
   }
 };
 
-
 // profile & kyc
 export const getVendorProfileApi = async () => {
   const response = await api.get("/auth/vendor/profile_details/");
@@ -334,10 +341,7 @@ export const getVendorProfileApi = async () => {
 // Update vendor profile
 export const updateVendorProfileApi = async (profileData) => {
   try {
-    const response = await api.patch(
-      "/auth/vendor/edit_profile/",
-      profileData
-    );
+    const response = await api.patch("/auth/vendor/edit_profile/", profileData);
     return response.data;
   } catch (error) {
     console.error("Error updating vendor profile:", error);
@@ -345,8 +349,7 @@ export const updateVendorProfileApi = async (profileData) => {
   }
 };
 
-
-// admin 
+// admin
 // vendor list
 // export const getVendorList = async () => {
 //   try {
@@ -370,22 +373,19 @@ export const getVendorList = async () => {
     console.error("Error fetching vendors:", error);
     throw error;
   }
-}
+};
 
 export const productcategories = async (productData) => {
-
   const token = localStorage.getItem("access_token");
 
   const response = await api.post("/admin/categories/", productData, {
     headers: {
       Authorization: `JWT ${token}`,
       "Content-Type": "multipart/form-data", // ✅ important
-    }
-  })
-  return response.data
-}
-
-
+    },
+  });
+  return response.data;
+};
 
 export const getProductcategorylist = async () => {
   try {
@@ -399,18 +399,22 @@ export const getProductcategorylist = async () => {
 
 export const updateProductCategoryApi = async (categoryid, category) => {
   try {
-    const response = await api.put(`/admin/categories/${categoryid}/`, category, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "multipart/form-data", // ✅ important
-      },
-    });
+    const response = await api.put(
+      `/admin/categories/${categoryid}/`,
+      category,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "multipart/form-data", // ✅ important
+        },
+      }
+    );
     return response;
   } catch (error) {
     console.error("Error updating account:", error);
     throw error;
   }
-}
+};
 
 export const getVendorByIdApi = async (vendorId) => {
   try {
@@ -444,12 +448,11 @@ export const getVendorProfileDocumentsApi = async (vendorId) => {
   }
 };
 
-
 export const ApproveorRejectApi = async (vendorId, documentKey, action) => {
   try {
     const response = await api.put(
       `/auth/vendor_profile_update/${vendorId}/`,
-      { [documentKey]: action }, // dynamic key update (e.g. "pan_card_status": "approved")
+      { [documentKey]: action } // dynamic key update (e.g. "pan_card_status": "approved")
     );
     return response.data;
   } catch (error) {
@@ -458,11 +461,14 @@ export const ApproveorRejectApi = async (vendorId, documentKey, action) => {
   }
 };
 
-export const FinalApproveVendorApi = async (vendorId, finalStatus = 'approved') => {
+export const FinalApproveVendorApi = async (
+  vendorId,
+  finalStatus = "approved"
+) => {
   try {
     const response = await api.post(
       `/auth/vendor-final-approve/${vendorId}/`,
-      { final_status: finalStatus }, // Send status in body
+      { final_status: finalStatus } // Send status in body
     );
 
     return response.data;
@@ -472,8 +478,6 @@ export const FinalApproveVendorApi = async (vendorId, finalStatus = 'approved') 
   }
 };
 
-
-
 export const getUserList = async () => {
   try {
     const response = await api.get(`/admin/users/`);
@@ -481,7 +485,7 @@ export const getUserList = async () => {
   } catch (error) {
     console.error("Error fetching admin users:", error);
   }
-}
+};
 
 // Delete product category
 export const deleteProductCategoryApi = async (categoryId) => {
@@ -494,7 +498,6 @@ export const deleteProductCategoryApi = async (categoryId) => {
   }
 };
 
-
 export const getAdminsList = async () => {
   try {
     const response = await api.get(`/admin/list_admins/`);
@@ -503,23 +506,19 @@ export const getAdminsList = async () => {
     console.error("Error fetching users:", error);
     throw error;
   }
-}
+};
 
 // vehicle category
 // Create vehicle category
 export const vehicleCategoryApi = async (vehicleData) => {
   try {
-    const response = await api.post(
-      `/admin/vehicle-create/`,
-      vehicleData
-    );
+    const response = await api.post(`/admin/vehicle-create/`, vehicleData);
     return response.data;
   } catch (error) {
     console.error("Error creating vehicle category:", error);
     throw error;
   }
 };
-
 
 export const getVehicleCategoriesApi = async () => {
   try {
@@ -530,7 +529,6 @@ export const getVehicleCategoriesApi = async () => {
     throw error;
   }
 };
-
 
 // Update vehicle category
 export const editVehicleCategoryApi = async (categoryId, updatedData) => {
@@ -545,7 +543,6 @@ export const editVehicleCategoryApi = async (categoryId, updatedData) => {
     throw error;
   }
 };
-
 
 // Delete vehicle category
 export const deletevehiclecategory = async (categoryId) => {
@@ -577,13 +574,15 @@ export const forgotPasswordApi = async (email) => {
 
 export const getVendorProductListApi = async (vendorId) => {
   try {
-    const response = await api.post(`/admin/list-vendor-products/`, { pk: vendorId });
+    const response = await api.post(`/admin/list-vendor-products/`, {
+      pk: vendorId,
+    });
     return response.data;
   } catch (error) {
     console.error("Error fetching vendor details:", error);
     throw error;
   }
-}
+};
 
 // Create vendor address
 export const VendorAddressesApi = async (address) => {
@@ -598,20 +597,23 @@ export const VendorAddressesApi = async (address) => {
   }
 };
 
-
-export const resetPasswordApi = async (uidb64, token, currentPassword, newPassword) => {
+export const resetPasswordApi = async (
+  uidb64,
+  token,
+  currentPassword,
+  newPassword
+) => {
   try {
-
     const response = await api.post(
       `/auth/password/reset-password/${uidb64}/${token}/`,
       {
         current_password: currentPassword,
-        new_password: newPassword
+        new_password: newPassword,
       },
       {
         headers: {
-          "Content-Type": "application/json"
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
@@ -619,7 +621,7 @@ export const resetPasswordApi = async (uidb64, token, currentPassword, newPasswo
     console.error("Error resetting password:", error);
     throw error;
   }
-}
+};
 // Get vendor address by ID
 export const getVendorAddressesApi = async () => {
   try {
@@ -647,7 +649,10 @@ export const updateVendorAddressApi = async (id, address) => {
     });
     return res.data;
   } catch (err) {
-    console.error("Error updating vendor address:", err.response?.data || err.message);
+    console.error(
+      "Error updating vendor address:",
+      err.response?.data || err.message
+    );
     throw err;
   }
 };
@@ -665,7 +670,6 @@ export const addSubAdminApi = async (adminData) => {
   }
 };
 
-
 export const deleteAdminApi = async (adminId) => {
   try {
     const response = await api.delete(`/admin/delete_admins/${adminId}/`, {
@@ -673,19 +677,17 @@ export const deleteAdminApi = async (adminId) => {
         Authorization: `JWT ${token}`,
         "Content-Type": "application/json",
       },
-      data: { id: adminId } // Sending adminId in the request body
+      data: { id: adminId }, // Sending adminId in the request body
     });
     return response.data;
   } catch (error) {
     console.error("Error deleting admin:", error);
     throw error;
   }
-}
-
+};
 
 export const getUserOrderListApi = async (vendorId) => {
   try {
-
     const response = await api.get(`/auth/addresses/`);
     return response.data;
   } catch (error) {
@@ -704,30 +706,33 @@ export const getAuditLogsApi = async () => {
   }
 };
 
-
 export const createPromotionApi = async (promoData) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.post(`${serverurl}/coupon_promo/promotion/`, promoData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.post(
+      `${serverurl}/coupon_promo/promotion/`,
+      promoData,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error creating promotion:", error);
   }
-}
+};
 export const VendorDocumentCheckApi = async () => {
   try {
     const response = await api.get(`/auth/vendor-document-check/`);
-    return response.data
+    return response.data;
   } catch (error) {
     console.log("error fetching vendordocumentcheck", error);
-    throw error
+    throw error;
   }
-}
+};
 
 export const getVendorKycDocuments = async (vendorId) => {
   try {
@@ -750,8 +755,7 @@ export const getCategoriesByAll = async () => {
     });
 
     return response.data;
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error fetching categories:", error);
     throw error;
   }
@@ -760,11 +764,14 @@ export const getCategoriesByAll = async () => {
 export const getProductsByCategory = async (categoryId) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/products/categories/${categoryId}/products/`, {
-      headers: {
-        Authorization: `JWT ${token}`
-      },
-    });
+    const response = await axios.get(
+      `${serverurl}/products/categories/${categoryId}/products/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching products:", error);
@@ -775,12 +782,15 @@ export const getProductsByCategory = async (categoryId) => {
 export const getAllPromotionsApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/coupon_promo/promotion/all/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.get(
+      `${serverurl}/coupon_promo/promotion/all/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error fetching promotions:", error);
@@ -791,12 +801,15 @@ export const getAllPromotionsApi = async () => {
 export const promotionByIdApi = async (promotionId) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/coupon_promo/promotion/${promotionId}/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.get(
+      `${serverurl}/coupon_promo/promotion/${promotionId}/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data; // ✅ return data directly
   } catch (error) {
     console.error("Error fetching promotion by ID:", error);
@@ -814,10 +827,10 @@ export const editPromotionApi = async (promotionId, updatedData) => {
         headers: {
           Authorization: `JWT ${token}`,
           "Content-Type": "application/json",
-        }
-      })
-  }
-  catch (error) {
+        },
+      }
+    );
+  } catch (error) {
     console.error("Error updating promotion:", error);
     throw error;
   }
@@ -836,24 +849,29 @@ export const updateKycDocuments = async (vendorId, formData) => {
     );
     return response.data;
   } catch (error) {
-    console.error("Error updating KYC documents:", error.response?.data || error);
+    console.error(
+      "Error updating KYC documents:",
+      error.response?.data || error
+    );
     throw error;
   }
 };
 
-
 export const createCouponApi = async (couponData) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.post(`${serverurl}/coupon_promo/coupon/`, couponData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.post(
+      `${serverurl}/coupon_promo/coupon/`,
+      couponData,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error creating coupon:", error);
     throw error;
   }
@@ -869,8 +887,7 @@ export const getAllCouponsApi = async () => {
       },
     });
     return response.data;
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error fetching coupons:", error);
     throw error;
   }
@@ -878,12 +895,15 @@ export const getAllCouponsApi = async () => {
 export const deleteCouponsApi = async (id) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.delete(`${serverurl}/coupon_promo/coupon/${id}/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.delete(
+      `${serverurl}/coupon_promo/coupon/${id}/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error deleting coupon:", error);
@@ -894,15 +914,17 @@ export const deleteCouponsApi = async (id) => {
 export const deletePromotionApi = async (id) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.delete(`${serverurl}/coupon_promo/promotion/${id}/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.delete(
+      `${serverurl}/coupon_promo/promotion/${id}/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
-  }
-  catch (error) {
+  } catch (error) {
     console.error("Error deleting promotion:", error);
     throw error;
   }
@@ -910,27 +932,34 @@ export const deletePromotionApi = async (id) => {
 export const deleteProductImageAPi = async (id) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.delete(`${serverurl}/vendor/products/${id}/delete-image/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.delete(
+      `${serverurl}/vendor/products/${id}/delete-image/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error deleting product image:", error);
     throw error;
   }
-}
+};
 export const createPromotionBannerApi = async (bannerData) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.post(`${serverurl}/coupon_promo/banner-create/`, bannerData, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await axios.post(
+      `${serverurl}/coupon_promo/banner-create/`,
+      bannerData,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error creating promotion banner:", error);
@@ -940,11 +969,14 @@ export const createPromotionBannerApi = async (bannerData) => {
 export const getAllPromotionBannersApi = async () => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.get(`${serverurl}/coupon_promo/banner-create/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-      },
-    });
+    const response = await axios.get(
+      `${serverurl}/coupon_promo/banner-create/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+        },
+      }
+    );
     return response.data.message || [];
   } catch (error) {
     console.error("Error fetching promotion banners:", error);
@@ -954,12 +986,15 @@ export const getAllPromotionBannersApi = async () => {
 export const deletePromotionBannerApi = async (id) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.delete(`${serverurl}/coupon_promo/banner-update-delete/${id}/`, {
-      headers: {
-        Authorization: `JWT ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await axios.delete(
+      `${serverurl}/coupon_promo/banner-update-delete/${id}/`,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
     console.error("Error deleting promotion banner:", error);
@@ -973,9 +1008,8 @@ export const getAdminAccountSettingsApi = async (id) => {
   } catch (error) {
     console.error("Error fetching admin details:", error);
     throw error;
-  } 
+  }
 };
-
 
 export const updateStockApi = async (productId, stock) => {
   try {
@@ -983,7 +1017,7 @@ export const updateStockApi = async (productId, stock) => {
       `/vendor/inventory/${productId}/update-stock/`,
       {
         id: productId,
-        stock: stock,   // must be an integer
+        stock: stock, // must be an integer
       },
       {
         headers: {
@@ -1011,7 +1045,9 @@ export const updateAdminAccountSettingsApi = async (id, data) => {
 export const requestCategoryApi = async (categoryData) => {
   try {
     const token = localStorage.getItem("access_token");
-    const response = await axios.post(`${serverurl}/products/new-category-request`,categoryData,
+    const response = await axios.post(
+      `${serverurl}/products/new-category-request`,
+      categoryData,
       {
         headers: {
           Authorization: `JWT ${token}`,
@@ -1050,22 +1086,61 @@ export const approveOrRejectCategoryApi = async (categoryId, action) => {
 };
 
 // -------------------------------------order-management
-export const getOrdersApi = async ()=>{
-    try {
+export const getOrdersApi = async () => {
+  try {
     const response = await api.get("/orders/vendor/orders/");
     return response.data;
   } catch (error) {
     console.error("Error fetching orders by vendor:", error);
     throw error;
   }
-}
+};
 // -------------------------------------ratings & reviews
-export const getProductReviewsApi = async () =>{
-      try {
+export const getProductReviewsApi = async () => {
+  try {
     const response = await api.get("/vendor/product-reviews/");
     return response.data;
   } catch (error) {
     console.error("Error fetching reviews by product:", error);
     throw error;
   }
-}
+};
+
+export const notificationApi = async (notificationData) => {
+  try {
+    const response = await api.post("/admin/notifications/", notificationData, {
+      headers: { "Content-Type": "application/json" },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating notification:", error);
+    throw error;
+  }
+};
+
+export const getNotificationsApi = async () => {
+  try {
+    const response = await api.get("/admin/notifications/sent/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    throw error;
+  }
+};
+
+export const markNotificationAsReadApi = async (notificationId) => {
+  try {
+    const response = await axios.post(`${serverurl}/admin/notifications/${notificationId}/mark-as-read/`,{},
+      {
+        headers: {
+          Authorization: `JWT ${localStorage.getItem("access_token")}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error marking notification as read:", error);
+    throw error;
+  }
+};
