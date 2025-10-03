@@ -290,7 +290,7 @@ const VendorProfile = () => {
         </div>
 
         {/* Location Details */}
-        <div className="bg-white rounded-lg px-5 py-6 shadow">
+        {/* <div className="bg-white rounded-lg px-5 py-6 shadow">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="font-semibold text-lg">Location Details</h2>
             <FiEdit3
@@ -298,8 +298,8 @@ const VendorProfile = () => {
               onClick={() => handleEditClick("location")}
               className="cursor-pointer"
             />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 mt-4 gap-y-2">
+          </div> */}
+          {/* <div className="grid grid-cols-1 sm:grid-cols-2 mt-4 gap-y-2">
             <p className="font-semibold">Pick Up Location</p>
             <div className="space-y-2">
               <p>ABC Technologies Edathala, Kakkanad - Kochi</p>
@@ -307,9 +307,9 @@ const VendorProfile = () => {
               <button className="text-[#5737B4] mt-2 text-md">
                 Use My Current Location
               </button>
-            </div>
-          </div>
-        </div>
+            </div> */}
+          {/* </div> */}
+        {/* </div> */}
       </div>
 
       {/* Contact & Address Details */}

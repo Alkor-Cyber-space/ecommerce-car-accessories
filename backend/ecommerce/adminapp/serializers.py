@@ -1,30 +1,36 @@
 from rest_framework import serializers
 from accounts.models import *
 from products.models import *
-from products.models import Product  
+from products.models import *  
 from . models import *
+from orders.serializers import *
+from products.serializers import *
 # from accour.models import VendorDocuments
 
-class UserSerializer(serializers.ModelSerializer):
-    contact_number = serializers.SerializerMethodField()
+class AdminDashboardSerializer(serializers.Serializer):
+    total_products = serializers.IntegerField()
+    total_orders = serializers.IntegerField()
+    total_sales = serializers.DecimalField(max_digits=15, decimal_places=2)
+    total_profit = serializers.DecimalField(max_digits=15, decimal_places=2)
+    
+    new_users = serializers.IntegerField()
+    new_vendors = serializers.IntegerField()
+    total_vendors = serializers.IntegerField()
+    total_users = serializers.IntegerField()
+    total_admins = serializers.IntegerField()
 
-    class Meta:
-        model = CustomUser
-        fields = [
-            'id',
-            'email',
-            'username',
-            'phone_number',
-            'is_admin_staff',
-            'is_superuser',
-            'date_joined',
-            'contact_number'  # from VendorProfile
-        ]
+    recent_orders = OrderSerializer(many=True)
+    recent_products = ProductSerializer(many=True)
+    
+    monthly_sales = serializers.SerializerMethodField()
+    monthly_products = serializers.SerializerMethodField()
 
-    def get_contact_number(self, obj):
-        if hasattr(obj, 'vendor_profile') and obj.vendor_profile:
-            return obj.vendor_profile.contact_number
-        return None
+    def get_monthly_sales(self, obj):
+        return obj.get("monthly_sales", [])
+
+    def get_monthly_products(self, obj):
+        return obj.get("monthly_products", [])
+
 
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -99,6 +105,7 @@ class VendorDocumentsSerializer(serializers.ModelSerializer):
 
 
 class NotificationSerializer(serializers.ModelSerializer):
+    created_by = serializers.StringRelatedField()
     class Meta:
         model = Notification
         fields = '__all__'
@@ -112,3 +119,26 @@ class NotificationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Invalid group ID. This group does not exist.")
         return value
 
+class SupportTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicket
+        fields = [
+            "id",
+            "ticket_id",
+            "vendor",
+            "subject",
+            "category",
+            "priority",
+            "description",
+            "status",
+            "is_read",
+            "answer",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["ticket_id", "vendor", "status", "is_read", "answer"]
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        validated_data["vendor"] = user
+        return super().create(validated_data)

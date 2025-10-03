@@ -25,7 +25,7 @@ import ProfitCard from '../../components/admin/adminDashboard/TotalProfitChart';
 // ];
 
 
-const AdminDashboard = () => {
+const VendorDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [docStatus, setDocStatus] = useState();
   // const [totalProducts, setTotalProducts] = useState(0);
@@ -34,6 +34,7 @@ const AdminDashboard = () => {
   const [totalSales, setTotatlSales] = useState()
   const [totalProducts, setTotalProducts] = useState();
   const [breakdown, setBreakdown] = useState([]);
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -269,7 +270,7 @@ const AdminDashboard = () => {
   )
 }
 
-export default AdminDashboard;
+export default VendorDashboard;
 
 // import React, { useEffect, useState } from "react";
 // import { AiOutlineShoppingCart, AiOutlineUser, AiOutlineDollar } from "react-icons/ai";

@@ -184,10 +184,8 @@ function App() {
             <Route path='promotion_banner' element={<PromotionBanner />} />
           </Route>
           <Route path='auditlogs' element={<AuditLogs />} />
-
           <Route path='notification-admin' element={<NotificationAdmin />} />
-          <Route path='account-settings-admin' element={<AdminAccountSettings />} />
-
+          <Route path='admin-accounts-admin' element={<AdminAccountSettings />} />
           <Route path='user-details/:id' element={<UserDetails />} />
           <Route path='support-admin' element={<SupportHelpAdmin />} />
           <Route path='support-response' element={<SupportResponse />} />

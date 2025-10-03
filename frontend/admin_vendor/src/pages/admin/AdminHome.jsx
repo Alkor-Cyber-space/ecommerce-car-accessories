@@ -224,10 +224,9 @@ const AdminHome = () => {
           <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
 
           <SidebarItem to="/admin/notification-admin" label="Notifications" icon={<GrNotification />} activePath={activePath} />
-          <SidebarItem to="/admin/account-settings-admin" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
-
 
           <SidebarItem to="/admin/support-admin" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
+          <SidebarItem to="/admin/admin-accounts-admin" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
           <li
@@ -237,9 +236,6 @@ const AdminHome = () => {
                       <FaSignOutAlt /> Logout
                     </li>
         </ul>
-
-    
-
       </div>
 
       {/* Main Content */}

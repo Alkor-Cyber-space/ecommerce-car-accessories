@@ -3,11 +3,13 @@ from .models import *
 from products.models import *
 from decimal import Decimal
 from django.core.exceptions import ValidationError
+
+
 class PromrotionSerializers(serializers.ModelSerializer):
     value = serializers.DecimalField(
         max_digits=10,
         decimal_places=2,
-        required=False,  # 👈 not required
+        required=False,  
         allow_null=True
     )
     class Meta:

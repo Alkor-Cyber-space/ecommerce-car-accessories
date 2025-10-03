@@ -32,61 +32,89 @@ class VendorDashboardViewSet(viewsets.ViewSet):
         try:
             profile = user.vendor_profile
             registration_complete = profile.vendordocuments.is_registration_complete()
-        except (VendorProfile.DoesNotExist):
+        except VendorProfile.DoesNotExist:
             registration_complete = False
 
-        
-        total_products = Product.objects.filter(vendor=user).count()
-        recent_products = Product.objects.filter(vendor=user).order_by('-created_at')[:10]
+        # ---------- Products ----------
+        products_qs = Product.objects.filter(vendor=user)
+        total_products = products_qs.count()
+        recent_products = products_qs.order_by('-created_at')[:10]
 
-        
+        # Stock summary
+        stock_summary = {
+            "out_of_stock": products_qs.filter(stock=0).count(),
+            "low_stock": products_qs.filter(stock__gt=0, stock__lt=10).count(),
+            "in_stock": products_qs.filter(stock__gte=10).count(),
+        }
+
+        # ---------- Orders --------------
         order_items = OrderItem.objects.filter(product__vendor=user)
+        orders_qs = Order.objects.filter(items__product__vendor=user).distinct()
 
         total_sales = order_items.aggregate(
             total=Sum(F('price') * F('quantity'))
         )['total'] or 0
 
-        total_orders = Order.objects.filter(items__product__vendor=user).distinct().count()
-        total_profit = total_sales  
+        total_orders = orders_qs.count()
+        total_profit = total_sales
 
+        # Recent orders
+        recent_orders = orders_qs.order_by('-created_at')[:10]
+
+        # ---------- Monthly Trends ----------
         monthly_sales_qs = (
             order_items.annotate(month=TruncMonth('order__created_at'))
             .values('month')
-            .annotate(total_sales=Sum(F('price') * F('quantity')))
+            .annotate(
+                total_sales=Sum(F('price') * F('quantity')),
+                total_profit=Sum(F('price') * F('quantity')),  # same as sales for now
+                total_orders=Count('order', distinct=True),
+            )
             .order_by('month')
         )
 
+        # Convert to structured list
         sales_trends = [
             {
                 "month": item["month"].strftime("%Y-%m"),
-                "total_sales": float(item["total_sales"] or 0)
+                "total_sales": float(item["total_sales"] or 0),
+                "total_profit": float(item["total_profit"] or 0),
+                "total_orders": item["total_orders"] or 0,
             }
             for item in monthly_sales_qs
         ]
 
-        print(sales_trends)
-        total_users = Group.objects.get(name="User").user_set.count()
-        total_vendors = Group.objects.get(name="Vendor").user_set.count()
+        # Separate monthly orders
+        monthly_orders = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_orders": item["total_orders"] or 0,
+            }
+            for item in monthly_sales_qs
+        ]
 
         data = {
-            'total_products': total_products,
-            'recent_products': recent_products,
-            'registration_complete': registration_complete,
-            'total_sales': total_sales,
-            'total_orders': total_orders,
-            'total_profit': total_profit,
-            'total_users': total_users,
-            'total_vendors': total_vendors,
-            'sales_trends': sales_trends,
+            "total_products": total_products,
+            "recent_products": recent_products,
+            "registration_complete": registration_complete,
+            "total_sales": total_sales,
+            "total_orders": total_orders,
+            "total_profit": total_profit,
+            "stock_summary": stock_summary,
+            "recent_orders": recent_orders,
+            "sales_trends": sales_trends,
+            "monthly_orders": monthly_orders,
         }
 
         serializer = VendorDashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    # permission_classes = [permissions.IsAuthenticated, IsVendor]
     print("reached function")
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)

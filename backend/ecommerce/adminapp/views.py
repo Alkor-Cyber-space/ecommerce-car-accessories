@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from rest_framework import viewsets
-from .serializers import UserSerializer, VendorSerializer
-from accounts.models import CustomUser, VendorProfile
+from accounts.models import *
 from accounts.permissions import IsAdmin
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import Group
@@ -15,19 +14,115 @@ from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import make_password
-from products.serializers import CategorySerializer
+from products.serializers import *
 from vehicles.serializers import VehicleFullEntrySerializer
-from products.models import Category
+from products.models import *
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
+from orders.models import Order
 from .serializers import *
 from . models import *
-from accounts.models import VendorDocuments
 from accounts.mixin import AuditLogMixin
-from accounts.serializers import UserEditSerializer
+from accounts.serializers import UserEditSerializer,UserSerializer
+from orders.models import *
+from django.db.models import Sum, F, Count
+from django.db.models.functions import TruncMonth
+from datetime import timedelta
+from django.utils import timezone
 
 User = get_user_model()
 # Create your views here.
+
+class AdminDashboardViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    def list(self, request):
+        # ---------- Users ----------
+        total_users = CustomUser.objects.filter(groups__name="User").count()
+        total_vendors = CustomUser.objects.filter(groups__name="Vendor").count()
+        total_admins = CustomUser.objects.filter(groups__name="Admin").count()
+
+        # New users & vendors in last 30 days
+        thirty_days_ago = timezone.now() - timedelta(days=30)
+
+        new_users = CustomUser.objects.filter(
+            groups__name="User",
+            date_joined__gte=thirty_days_ago
+        ).count()
+
+        new_vendors = CustomUser.objects.filter(
+            groups__name="Vendor",
+            date_joined__gte=thirty_days_ago
+        ).count()
+
+        # ---------- Products ----------
+        products_qs = Product.objects.all()
+        total_products = products_qs.count()
+        recent_products = products_qs.order_by('-created_at')[:10]
+
+        # ---------- Orders ----------
+        order_items = OrderItem.objects.all()
+        orders_qs = Order.objects.all()
+
+        total_sales = order_items.aggregate(total=Sum(F('price') * F('quantity')))['total'] or 0
+        total_profit = total_sales  # modify if profit calculation differs
+
+        recent_orders = orders_qs.order_by('-created_at')[:10]
+        total_orders = orders_qs.count()
+
+        # ---------- Monthly trends ----------
+        monthly_sales_qs = (
+            order_items.annotate(month=TruncMonth('order__created_at'))
+            .values('month')
+            .annotate(
+                total_sales=Sum(F('price') * F('quantity')),
+                total_profit=Sum(F('price') * F('quantity')),
+                total_orders=Count('order', distinct=True),
+            )
+            .order_by('month')
+        )
+
+        monthly_sales = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_sales": float(item["total_sales"] or 0),
+                "total_profit": float(item["total_profit"] or 0),
+                "total_orders": item["total_orders"],
+            }
+            for item in monthly_sales_qs
+        ]
+
+        monthly_products_qs = (
+            products_qs.annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(total_products=Count('id'))
+            .order_by('month')
+        )
+
+        monthly_products = [
+            {"month": item["month"].strftime("%Y-%m"), "total_products": item["total_products"]}
+            for item in monthly_products_qs
+        ]
+
+        data = {
+            "total_products": total_products,
+            "total_orders": total_orders,
+            "total_sales": total_sales,
+            "total_profit": total_profit,
+            "new_users": new_users,
+            "new_vendors": new_vendors,
+            "total_vendors": total_vendors,
+            "total_users": total_users,
+            "total_admins": total_admins,
+            "recent_orders": recent_orders,
+            "recent_products": recent_products,
+            "monthly_sales": monthly_sales,
+            "monthly_products": monthly_products,
+        }
+
+        serializer = AdminDashboardSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class AdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -332,17 +427,64 @@ class NotificationViewSet(viewsets.ModelViewSet):
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]  # or add IsAdmin
 
+    def get_queryset(self):
+        user = self.request.user
+
+        # notifications assigned directly to user
+        qs = Notification.objects.filter(users=user)
+
+        
+        group_ids = user.groups.values_list("id", flat=True)
+        qs |= Notification.objects.filter(group_id__in=group_ids)
+
+        return qs.distinct().order_by("-created_at")
+
     def perform_create(self, serializer):
         users = self.request.data.get("users", None)
         group = serializer.validated_data.get("group", None)
 
-        notification = serializer.save()  # create base notification
+        notification = serializer.save(created_by=self.request.user)  
 
         if users:
-            notification.users.set(users)  # attach multiple users
+            notification.users.set(users)
         elif group:
             members = group.user_set.all()
             notification.users.set(members)
+
+    @action(detail=False, methods=["get"], url_path="sent")
+    def sent_notifications(self, request):
+        queryset = Notification.objects.filter(
+            created_by=request.user
+        ).order_by("-created_at")
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=["post"], url_path="mark-as-read")
+    def mark_as_read(self, request, pk=None):
+        """
+        Mark a single notification as read
+        """
+        try:
+            notification = self.get_queryset().get(pk=pk)
+        except Notification.DoesNotExist:
+            return Response({"detail": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        notification.is_read = True
+        notification.save()
+        return Response({"detail": "Notification marked as read."}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="mark-all-read")
+    def mark_all_as_read(self, request):
+        """
+        Mark all notifications for the current user as read
+        """
+        qs = self.get_queryset()
+        updated_count = qs.update(is_read=True)
+        return Response(
+            {"detail": f"{updated_count} notifications marked as read."},
+            status=status.HTTP_200_OK
+        )
+
 
 class AdminProfileView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
@@ -361,3 +503,78 @@ class AdminProfileView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SupportTicketViewSet(viewsets.ModelViewSet):
+    queryset = SupportTicket.objects.all().order_by("-created_at")
+    serializer_class = SupportTicketSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_admin_staff:  # Admins can see all
+            return SupportTicket.objects.all().order_by("-created_at")
+        return SupportTicket.objects.filter(vendor=user).order_by("-created_at")
+
+    @action(detail=False, methods=["get"], url_path="ticket-counts")
+    def ticket_counts(self, request):
+        user = request.user
+        qs = self.get_queryset()
+
+        counts = {
+            "total": qs.count(),
+            "pending": qs.filter(status="pending").count(),
+            "in_progress": qs.filter(status="in_progress").count(),
+            "answered": qs.filter(status="answered").count(),
+            "resolved": qs.filter(status="resolved").count(),
+        }
+
+        return Response(counts)
+
+    # --- New API: Mark as in progress ---
+    @action(detail=True, methods=["post"])
+    def mark_in_progress(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.status = "in_progress"
+        ticket.save()
+        return Response({"message": "Ticket marked as in progress."})
+
+
+    def perform_create(self, serializer):
+        serializer.save(vendor=self.request.user)
+
+    # Mark ticket as read
+    @action(detail=True, methods=["post"])
+    def mark_read(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.is_read = True
+        ticket.status = "in_progress"
+        ticket.save()
+        return Response({"message": "Ticket marked as read."})
+
+    # Answer a ticket
+    @action(detail=True, methods=["post"])
+    def answer_ticket(self, request, pk=None):
+        ticket = self.get_object()
+        answer = request.data.get("answer")
+        if not answer:
+            return Response({"error": "Answer is required"}, status=status.HTTP_400_BAD_REQUEST)
+        ticket.answer = answer
+        ticket.status = "answered"
+        ticket.save()
+
+        Notification.objects.create(
+                heading=f"Your ticket '{ticket.subject}' has been answered",
+                message=answer,
+                created_by=request.user,
+            ).users.add(ticket.vendor)
+
+        return Response({"message": "Ticket answered successfully."})
+
+    # Resolve a ticket
+    @action(detail=True, methods=["post"])
+    def mark_resolved(self, request, pk=None):
+        ticket = self.get_object()
+        ticket.status = "resolved"
+        ticket.save()
+        return Response({"message": "Ticket marked as resolved."})
