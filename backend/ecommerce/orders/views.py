@@ -21,6 +21,8 @@ from .shiprocket_client import create_shiprocket_order
 from datetime import datetime
 from rest_framework import generics, permissions
 from django.db.models import Q
+
+
 class ShippingOptionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -298,7 +300,7 @@ class CheckoutViewSet(viewsets.ViewSet):
             )
             order_items.append(order_item)
 
-        # ✅ Build dynamic Shiprocket payload
+        # Build dynamic Shiprocket payload
         try:
             order_payload = {
                 "order_id": str(order.id),  # DB order ID
@@ -339,15 +341,17 @@ class CheckoutViewSet(viewsets.ViewSet):
                 "sub_total": float(subtotal),
                 
                 # Package dimensions (taking first product as ref or you can calculate max)
-                "length": order_items[0].product.length if order_items else 10,
-                "breadth": order_items[0].product.breadth if order_items else 10,
-                "height": order_items[0].product.height if order_items else 10,
+                "length": float(order_items[0].product.length) if order_items else 10,
+                "breadth": float(order_items[0].product.breadth) if order_items else 10,
+                "height": float(order_items[0].product.height) if order_items else 10,
                 "weight": float(order_items[0].product.weight) if order_items else 1.0,
             }
             print(f"order_payload:{order_payload}")
 
+            print("before sr_response")
             sr_response = create_shiprocket_order(order_payload)
             print("Shiprocket response:", sr_response)
+            print("after sr_response")
 
             if not sr_response.get("shipment_id") or sr_response.get("status_code") != 1:
                 sr_response["error"] = "Shiprocket order not created. Check payload or credentials."
@@ -439,3 +443,23 @@ class VendorOrderListView(generics.ListAPIView):
             return Order.objects.none()
 
         return Order.objects.filter(items__product__vendor=user).distinct()
+
+
+class VendorOrderStatusUpdateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self,request, order_id):
+        user = request.user
+
+        if not user.groups.filter(name="Vendor").exists():
+            return Response({"error":"Only vendors can update orders"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            order = Order.objects.get(id=order_id, items__product__vendor=user)
+        except Order.DoesNotExist:
+            return Response({"error":"Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+        
+        order.status = "confirmed"
+        order.save()
+
+        return Response({"message": f"Order #{order.id} has been confirmed"}, status=status.HTTP_200_OK)

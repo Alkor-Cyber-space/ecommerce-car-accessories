@@ -29,6 +29,6 @@ urlpatterns = [
     path('admin-profile-edit/<int:pk>/',AdminProfileEdit.as_view(),name="admin-profile-edit"),
     path('admin-is_staff-fetch',AdminRetrieveByIdAPIView.as_view(),name='admin-is_staff-fetch'),
     path('process-payouts/', ProcessPayoutsView.as_view(), name='process_payouts'),
-    path('api/auth/generate-razorpay-contacts/', GenerateRazorpayContactsView.as_view(), name='generate-razorpay-contacts'),
+    path('generate-razorpay-contacts/', GenerateRazorpayContactsView.as_view(), name='generate-razorpay-contacts'),
 
 ]
