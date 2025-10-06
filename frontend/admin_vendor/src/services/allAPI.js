@@ -1154,3 +1154,12 @@ export const markNotificationAsReadApi = async (notificationId) => {
     throw error;
   }
 };
+export const getAdminDashboardApi = async () => {
+  try {
+    const response = await api.get("/admin/ad-dashboard/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin dashboard:", error);
+    throw error;
+  }
+};
