@@ -54,7 +54,6 @@ import SearchFilter from "./pages/admin/SearchFilter";
 import AuditLogs from "./pages/admin/AuditLogs";
 import UserDetails from "./components/admin/userAndVendor/UserDetails";
 import SupportHelpAdmin from "./pages/admin/SupportHelpAdmin";
-import SupportResponse from "./pages/admin/SupportResponse";
 import SalesReport from "./components/admin/reports/SalesReport";
 import ReturnsReport from "./components/admin/reports/ReturnsReport";
 import TransactionReport from "./components/admin/reports/TransactionReports";
@@ -80,6 +79,7 @@ import NewCategoryRequest from "./components/vendor/NewCategoryRequest";
 import CategoryRequestApproving from "./components/admin/CategoryRequestApproving";
 import PromotionBanner from "./pages/admin/PromotionBanner";
 import ReturnsRefundsTable from "./pages/vendor/ReturnsRefundsTable";
+import SupportResponse from "./pages/admin/SupportResponse";
 
 
 function App() {

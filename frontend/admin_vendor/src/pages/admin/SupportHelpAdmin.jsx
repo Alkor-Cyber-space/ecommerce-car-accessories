@@ -4,6 +4,7 @@ import { BsSearch, BsFilter, BsClock, BsCheck2Circle, BsExclamationCircle } from
 import { HiOutlineDotsVertical } from 'react-icons/hi';
 import { GoArrowUpRight, GoArrowDownRight } from 'react-icons/go';
 import { AiOutlineEye, AiOutlineMessage } from 'react-icons/ai';
+import { getSupportTicketsApi } from '../../services/allAPI';
 
 const SupportHelpAdmin = () => {
   const [activeTab, setActiveTab] = useState('all');
@@ -11,74 +12,75 @@ const SupportHelpAdmin = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [priorityFilter, setPriorityFilter] = useState('');
   const [activeDropdown, setActiveDropdown] = useState(null);
-
+const [tickets, setTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
   // Mock data for vendor support tickets
-  const [tickets, setTickets] = useState([
-    {
-      id: "TKT-001",
-      vendorId: "VND-001",
-      vendorName: "Vendor 1",
-      subject: "Product Upload Issue",
-      description: "Unable to upload product images. Getting error 'File size too large' even with small images.",
-      status: "Pending",
-      priority: "High",
-      category: "Technical",
-      submittedAt: "2024-01-15 10:30 AM",
-      lastUpdated: "2024-01-15 10:30 AM",
-      responses: []
-    },
-    {
-      id: "TKT-002",
-      vendorId: "VND-002", 
-      vendorName: "Vendor 2",
-      subject: "Payment Settlement Delay",
-      description: "My last week's payment settlement is delayed. Usually get payments on Monday but it's Wednesday now.",
-      status: "In Progress",
-      priority: "Medium",
-      category: "Payment",
-      submittedAt: "2024-01-14 02:15 PM",
-      lastUpdated: "2024-01-15 09:45 AM",
-      responses: [
-        {
-          from: "admin",
-          message: "We're looking into this issue. Please provide your bank details.",
-          timestamp: "2024-01-15 09:45 AM"
-        }
-      ]
-    },
-    {
-      id: "TKT-003",
-      vendorId: "VND-001",
-      vendorName: "Vendor 1", 
-      subject: "Account Verification",
-      description: "My account verification is pending for 5 days. Need help to complete the process.",
-      status: "Resolved",
-      priority: "Low",
-      category: "Account",
-      submittedAt: "2024-01-10 11:20 AM",
-      lastUpdated: "2024-01-12 03:30 PM",
-      responses: [
-        {
-          from: "admin",
-          message: "Your documents have been verified successfully. Account is now active.",
-          timestamp: "2024-01-12 03:30 PM"
-        }
-      ]
-    },
-    {
-      id: "TKT-004",
-      vendorId: "VND-003",
-      vendorName: "Vendor 3",
-      subject: "Order Management Help",
-      description: "How do I cancel an order that customer requested? Cannot find the cancel option.",
-      status: "Pending",
-      priority: "Medium",
-      category: "General",
-      submittedAt: "2024-01-15 04:20 PM",
-      lastUpdated: "2024-01-15 04:20 PM",
-      responses: []
-    }
-  ]);
+  // const [tickets, setTickets] = useState([
+  //   {
+  //     id: "TKT-001",
+  //     vendorId: "VND-001",
+  //     vendorName: "Vendor 1",
+  //     subject: "Product Upload Issue",
+  //     description: "Unable to upload product images. Getting error 'File size too large' even with small images.",
+  //     status: "Pending",
+  //     priority: "High",
+  //     category: "Technical",
+  //     submittedAt: "2024-01-15 10:30 AM",
+  //     lastUpdated: "2024-01-15 10:30 AM",
+  //     responses: []
+  //   },
+  //   {
+  //     id: "TKT-002",
+  //     vendorId: "VND-002", 
+  //     vendorName: "Vendor 2",
+  //     subject: "Payment Settlement Delay",
+  //     description: "My last week's payment settlement is delayed. Usually get payments on Monday but it's Wednesday now.",
+  //     status: "In Progress",
+  //     priority: "Medium",
+  //     category: "Payment",
+  //     submittedAt: "2024-01-14 02:15 PM",
+  //     lastUpdated: "2024-01-15 09:45 AM",
+  //     responses: [
+  //       {
+  //         from: "admin",
+  //         message: "We're looking into this issue. Please provide your bank details.",
+  //         timestamp: "2024-01-15 09:45 AM"
+  //       }
+  //     ]
+  //   },
+  //   {
+  //     id: "TKT-003",
+  //     vendorId: "VND-001",
+  //     vendorName: "Vendor 1", 
+  //     subject: "Account Verification",
+  //     description: "My account verification is pending for 5 days. Need help to complete the process.",
+  //     status: "Resolved",
+  //     priority: "Low",
+  //     category: "Account",
+  //     submittedAt: "2024-01-10 11:20 AM",
+  //     lastUpdated: "2024-01-12 03:30 PM",
+  //     responses: [
+  //       {
+  //         from: "admin",
+  //         message: "Your documents have been verified successfully. Account is now active.",
+  //         timestamp: "2024-01-12 03:30 PM"
+  //       }
+  //     ]
+  //   },
+  //   {
+  //     id: "TKT-004",
+  //     vendorId: "VND-003",
+  //     vendorName: "Vendor 3",
+  //     subject: "Order Management Help",
+  //     description: "How do I cancel an order that customer requested? Cannot find the cancel option.",
+  //     status: "Pending",
+  //     priority: "Medium",
+  //     category: "General",
+  //     submittedAt: "2024-01-15 04:20 PM",
+  //     lastUpdated: "2024-01-15 04:20 PM",
+  //     responses: []
+  //   }
+  // ]);
 
   const filteredTickets = tickets.filter(ticket => {
     const matchesSearch = searchTerm === '' ||
@@ -137,7 +139,41 @@ const SupportHelpAdmin = () => {
     setTickets(updatedTickets);
     setActiveDropdown(null);
   };
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setLoading(true);
+        const data = await getSupportTicketsApi();
+        console.log("Support Tickets:", data);
 
+        // map API response → match UI structure
+        const formattedTickets = data.map(ticket => ({
+          id: ticket.id,         // API gives "ticket_id"
+          vendorId: ticket.vendor || "VND-000",
+          vendorName: `Vendor ${ticket.vendor || "-"}`, // adjust if backend sends vendor details
+          subject: ticket.subject,
+          description: ticket.description,
+          status: ticket.status === "pending" ? "Pending" 
+                 : ticket.status === "in_progress" ? "In Progress" 
+                 : ticket.status === "resolved" ? "Resolved"
+                 : ticket.status, 
+          priority: ticket.priority ? ticket.priority.charAt(0).toUpperCase() + ticket.priority.slice(1) : "Low",
+          category: ticket.category,
+          submittedAt: new Date(ticket.created_at).toLocaleString(),
+          lastUpdated: new Date(ticket.updated_at).toLocaleString(),
+          responses: ticket.answer ? [{ from: "admin", message: ticket.answer, timestamp: ticket.updated_at }] : []
+        }));
+
+        setTickets(formattedTickets);
+      } catch (error) {
+        console.error("Failed to load support tickets:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, []);
   // Calculate stats
   const totalTickets = tickets.length;
   const pendingTickets = tickets.filter(t => t.status === 'Pending').length;

@@ -1069,3 +1069,87 @@ export const getProductReviewsApi = async () =>{
     throw error;
   }
 }
+export const supportTicketApi = async (ticketData) => {
+  try {
+    const response = await api.post("/admin/support-tickets/", ticketData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating support ticket:", error);
+    throw error;
+  }
+};
+
+export const getSupportTicketsApi = async () => {
+  try {
+    const response = await api.get("/admin/support-tickets/");  // Replace with the actual API endpoint
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching support tickets:", error);
+    throw error;
+  }
+};
+
+export const updateSupportTicketApi = async (Id, updatedData) => {
+  try {
+    const response = await api.post(
+      `/admin/support-tickets/${Id}/answer_ticket/`, // ✅ FIXED URL
+      updatedData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `JWT ${localStorage.getItem("access_token")}`, // ✅ include token if required
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating support ticket:", error);
+    throw error;
+  }
+};
+
+// /api/admin/support-tickets/{id}/mark_resolved/
+
+export const markTicketResolvedApi = async (ticketId) => {
+  try {
+    const response = await api.post(
+      `/admin/support-tickets/${ticketId}/mark_resolved/`,
+      {}, // empty body
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `JWT ${localStorage.getItem("access_token")}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error marking ticket as resolved:", error);
+    throw error;
+  }
+};
+
+// /api/admin/support-tickets/{id}/mark_in_progress/
+
+export const markTicketInProgressApi = async (ticketId) => {
+  try {
+    const response = await api.post(
+      `/admin/support-tickets/${ticketId}/mark_in_progress/`,
+      {}, // empty body
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `JWT ${localStorage.getItem("access_token")}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error marking ticket as in progress:", error);
+    throw error;
+  }
+};
