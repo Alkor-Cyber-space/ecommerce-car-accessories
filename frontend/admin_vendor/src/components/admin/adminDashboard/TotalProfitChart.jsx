@@ -118,8 +118,8 @@ const ProfitCard = ({
           <h3 className="text-md text-gray-500 mb-1">{title}</h3>
         </div>
         <div className="flex gap-2">
-          <h1 className="text-3xl font-bold">₹{profit.toLocaleString()}</h1>
-          <div
+          <h1 className="text-3xl font-bold">{profit.toLocaleString()}</h1>
+          {/* <div
             className={`flex items-center gap-1 px-1 py-1 rounded-lg text-sm ${
               percentage >= 0
                 ? "text-green-600 bg-green-100"
@@ -132,7 +132,7 @@ const ProfitCard = ({
             ) : (
               <FiArrowDownRight className="w-4 h-4" />
             )}
-          </div>
+          </div> */}
         </div>
       </div>
 
