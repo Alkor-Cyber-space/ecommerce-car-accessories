@@ -1,151 +1,136 @@
-import React, { useState } from "react";
-import audi from "../../assets/Audi.jpg";
+import React, { useState, useEffect } from "react";
+import { getNotificationsApi, markNotificationAsReadApi } from "../../services/allAPI"; 
 import { FiAlertTriangle } from "react-icons/fi";
 
-const notifications = [
-  {
-    title: "Order #12456 has been shipped",
-    date: "20 May 2025",
-    time: "3.30 PM",
-    message: 'Your product "Bosch Brake Pads - Swift" is on its way to the customer.',
-  },
-  {
-    title: "Order #12460 has been delivered",
-    date: "20 May 2025",
-    time: "3.30 PM",
-    message: 'Your product "Bosch Brake Pads - Swift" is on its way to the customer.',
-  },
-  {
-    title: "Return Request for Order #12430",
-    date: "20 May 2025",
-    time: "3.30 PM",
-    message:
-      'Customer requested a return for "Car Floor Mats – Honda City - Reason - Product doesn’t fit properly".',
-  },
-  {
-    title: "₹5,280 has been credited to your account",
-    date: "20 May 2025",
-    time: "3.30 PM",
-    message: "Payout for orders delivered between July 1–15.",
-  },
-  {
-    title: 'New review on "NGK Spark Plug – Alto"',
-    date: "20 May 2025",
-    time: "3.30 PM",
-    message: "Quick delivery, working great so far. Worth the price!",
-  },
-  {
-    isAlert: true,
-    title: "Scheduled Maintenance Alert",
-    date: "20 May 2025",
-    time: "3.30 PM",
-    message: "The dashboard will be unavailable on July 20 from 1:00 AM to 3:00 AM IST.",
-  },
-];
-
 const Notification = () => {
-  const [selectedType, setSelectedType] = useState("All");
+  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [notifications, setNotifications] = useState([]);
+  const [readStatus, setReadStatus] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const getButtonLabel = (title = "", isAlert = false) => {
-    const lower = title.toLowerCase();
-    if (isAlert || lower.includes("maintenance") || lower.includes("update"))
-      return "Remind me later";
-    if (lower.includes("shipped") || lower.includes("delivered"))
-      return "Track Order";
-    if (lower.includes("request")) return "View Request";
-    if (lower.includes("credited") || lower.includes("debited") || lower.includes("payment"))
-      return "View Payment Summary";
-    if (lower.includes("review")) return "View Review";
-    return null;
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        const data = await getNotificationsApi();
+        setNotifications(data);
+        // If API already has read/unread field, use it instead of false
+        setReadStatus(data.map(() => false));
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
+  // API call for mark as read
+  const handleMarkAsRead = async (idx, id) => {
+    try {
+      await markNotificationAsReadApi(id); // call backend
+      setReadStatus((prev) =>
+        prev.map((status, i) => (i === idx ? true : status))
+      );
+    } catch (error) {
+      console.error("Error marking as read:", error);
+    }
   };
 
-  const getCategoryFromTitle = (title = "", isAlert = false) => {
-    const lower = title.toLowerCase();
-    if (isAlert || lower.includes("maintenance") || lower.includes("update"))
-      return "System Alerts";
-    if (lower.includes("shipped") || lower.includes("delivered"))
-      return "Order Updates";
-    if (lower.includes("request")) return "Return Approvals";
-    if (lower.includes("credited") || lower.includes("debited") || lower.includes("payment"))
-      return "Payment Released";
-    if (lower.includes("review")) return "New Review Received";
-    return "Others";
-  };
-
-  const dropdownOptions = [
-    "All",
-    "Order Updates",
-    "Return Approvals",
-    "Payment Released",
-    "New Review Received",
-    "System Alerts",
-  ];
-
-  const filteredNotifications =
-    selectedType === "All"
-      ? notifications
-      : notifications.filter((item) => getCategoryFromTitle(item.title, item.isAlert) === selectedType);
+  const filteredNotifications = notifications.filter((_, idx) => {
+    if (selectedFilter === "Unread") return !readStatus[idx];
+    if (selectedFilter === "Read") return readStatus[idx];
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 md:p-10 rounded-2xl">
       <div className="max-w-6xl">
-        <div className="flex justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">Notifications</h2>
-          <select
-            className="bg-white border border-gray-300 rounded px-4 py-2"
-            onChange={(e) => setSelectedType(e.target.value)}
-            value={selectedType}
-          >
-            {dropdownOptions.map((type, idx) => (
-              <option key={idx} value={type}>
-                {type}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <h2 className="text-2xl font-semibold text-gray-800">
+            Notifications
+          </h2>
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedFilter}
+              onChange={(e) => setSelectedFilter(e.target.value)}
+              className="border border-gray-300 rounded px-3 py-2 bg-white"
+            >
+              <option>All</option>
+              <option>Unread</option>
+              <option>Read</option>
+            </select>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {filteredNotifications.map((item, idx) => {
-            const buttonLabel = getButtonLabel(item.title, item.isAlert);
-
-            return (
+        {loading ? (
+          <p className="text-gray-600">Loading notifications...</p>
+        ) : filteredNotifications.length === 0 ? (
+          <p className="text-gray-500">No notifications found.</p>
+        ) : (
+          <div className="space-y-4">
+            {filteredNotifications.map((item, idx) => (
               <div
-                key={idx}
-                className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between"
+                key={item.id || idx}
+                className={`bg-white p-4 rounded-lg shadow-sm flex items-center justify-between ${
+                  readStatus[idx] ? "opacity-70" : ""
+                }`}
               >
-                {/* Left: Icon/Image and Text */}
                 <div className="flex items-start gap-4">
-                  <div className="w-10 h-10 flex items-center justify-center">
-                    {item.isAlert ? (
-                      <FiAlertTriangle className="w-5 h-5 text-black" />
-                    ) : (
-                      <img
-                        src={audi}
-                        alt="icon"
-                        className="w-10 h-10 object-cover rounded"
-                      />
-                    )}
-                  </div>
-
                   <div>
                     <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <h4 className="font-semibold text-gray-800">{item.title}</h4>
-                    <span className="text-gray-500"> Date: {item.date}, Time: {item.time}</span>
-                  </div>
-                   <p className="text-sm text-gray-600 mt-1">{item.message}</p>
+                      <h4 className="font-semibold text-gray-800">
+                        {item.heading || "No Title"}
+                      </h4>
+                      <span className="text-gray-500">
+                        Date:{" "}
+                        {new Date(item.created_at).toLocaleDateString("en-IN", {
+                          dateStyle: "medium",
+                        })}
+                      </span>
+                      <span className="text-gray-500 ml-2">
+                        Time:{" "}
+                        {new Date(item.created_at).toLocaleTimeString("en-IN", {
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {item.message ? (
+                        <div className="whitespace-pre-wrap">
+                          {item.message.split("\n").map((line, i) => (
+                            <React.Fragment key={i}>
+                              {line}
+                              {i !== item.message.split("\n").length - 1 ? (
+                                <br />
+                              ) : null}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="italic text-gray-500">No message</span>
+                      )}
+                    </p>
                   </div>
                 </div>
 
-                {/* Right: Action Button */}
-                {buttonLabel && (
-                  <button className="bg-[#5737B4] text-white text-[12px] px-4 py-[6px] rounded hover:bg-[#4228a4] transition whitespace-nowrap">
-                    {buttonLabel}
-                  </button>
-                )}
+                {/* Replace the existing button with this new one */}
+                <button
+                  onClick={() => handleMarkAsRead(idx, item.id)}
+                  className={`px-4 py-[6px] rounded text-[12px] transition whitespace-nowrap ${
+                    readStatus[idx]
+                      ? "bg-[#5737B4] text-white hover:bg-[#4228a4]"
+                      : "bg-[#5737B4] text-white hover:bg-[#4228a4]"
+                  }`}
+                  disabled={readStatus[idx]}
+                >
+                  {readStatus[idx] ? "DONE" : "Mark as Read"}
+                </button>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

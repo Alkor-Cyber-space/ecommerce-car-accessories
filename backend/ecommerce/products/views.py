@@ -279,15 +279,7 @@ class VendorCategoryApprove(APIView):
        
         elif request_status == "rejected":
             queryset.delete()
-            return Response({
-                "status": "success",
-                "code": status.HTTP_200_OK,
-                "message": "Category rejected and deleted successfully"
-            })
 
-        else:
-            return Response({
-                "status": "failed",
-                "code": status.HTTP_400_BAD_REQUEST,
-                "message": "Invalid status. Use 'approved' or 'rejected'."
-            })
+            return Response({"status": "rejected SuccessFully","code" : status.HTTP_200_OK,"message" : "rejected"})
+        return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
+

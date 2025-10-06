@@ -512,7 +512,7 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin_staff:  # Admins can see all
+        if user.is_admin_staff or IsAdmin:  # Admins can see all
             return SupportTicket.objects.all().order_by("-created_at")
         return SupportTicket.objects.filter(vendor=user).order_by("-created_at")
 

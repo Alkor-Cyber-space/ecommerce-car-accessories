@@ -69,8 +69,8 @@ class ProductSerializer(serializers.ModelSerializer):
         if attrs.get('price') <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
 
-        if attrs.get('weight') is not None and attrs.get('weight') <= 0:
-            raise serializers.ValidationError("Weight must be greater than zero.")
+        # if attrs.get('weight') is not None and attrs.get('weight') <= 0:
+        #     raise serializers.ValidationError("Weight must be greater than zero.")
         if attrs.get('length') is not None and attrs.get('length') <= 0:
             raise serializers.ValidationError("Length must be greater than zero.")
         if attrs.get('breadth') is not None and attrs.get('breadth') <= 0:
