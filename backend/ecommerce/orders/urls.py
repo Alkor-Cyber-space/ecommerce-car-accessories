@@ -12,4 +12,5 @@ urlpatterns = [
     path('shiping-options',ShippingOptionsView.as_view(),name='shiping-options'),
 
     path('vendor/orders/', VendorOrderListView.as_view(), name='vendor-orders'),
+    path("vendor/orders/<int:order_id>/confirm/", VendorOrderStatusUpdateView.as_view(), name="vendor-order-confirm"),  
 ]
