@@ -236,10 +236,11 @@ function App() {
           <Route path="account-settings" element={<AccountSettings />}></Route>
 
           <Route path="orders" element={<OrdersLayout />}>
-            <Route index element={<OrderManagement />} />
-            <Route path="order-detail" element={<OrderDetailView />} />
-            <Route path="edit-order" element={<OrderDetailEdit />} />
-          </Route>
+  <Route index element={<OrderManagement />} />
+  <Route path=":id" element={<OrderDetailView />} />  {/* <- here */}
+  <Route path="edit-order" element={<OrderDetailEdit />} />
+</Route>
+
 
           <Route path="notification" element={<Notification />} />
           <Route path="support-help" element={<SupportHelp />} />

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import SalesTrends from '../../components/admin/adminDashboard/SalesTrends';
 import RegisteredUsersChart from '../../components/admin/adminDashboard/RegisteredUsersChart';
 import TopProductsTable from '../../components/admin/adminDashboard/TopProducts';
@@ -16,6 +16,7 @@ import axios from 'axios';
 import { getProductsApi, getVendorDashboardApi, VendorDocumentCheckApi } from '../../services/allAPI';
 import OverviewChart from '../../components/OverviewChart';
 import ProfitCard from '../../components/admin/adminDashboard/TotalProfitChart';
+import TopProductsChart from '../../components/vendor/TopProductsChart';
 
 // const stats = [
 //   { icon: <IoPricetagOutline />, title: "Total Sales", value: "50.8K" },
@@ -32,8 +33,22 @@ const VendorDashboard = () => {
   const [Orders, setOrders] = useState([]);
   const [totalSales, setTotalSales] = useState();
   const [totalProducts, setTotalProducts] = useState(0);
+  const [topProducts, setTopProducts] = useState({});
   const [breakdown, setBreakdown] = useState([]);
   const [salesTrend, setSalesTrend] = useState([]); // For SalesTrends chart
+const [monthFilter, setMonthFilter] = useState("Last 12 months"); // default
+const filterOptions = ["Last 3 months", "Last 6 months", "Last 12 months"];
+const { filteredBars, filteredLabels } = useMemo (() => {
+  let count = 12; // default 12 months
+  if (monthFilter === "Last 6 months") count = 6;
+  if (monthFilter === "Last 3 months") count = 3;
+
+  const recentOrders = Orders.slice(-count); // last N months
+  return {
+    filteredBars: recentOrders.map((item) => item.total_orders),
+    filteredLabels: recentOrders.map((item) => item.month),
+  };
+}, [Orders, monthFilter]);
 
   // useEffect(() => {
   //   const fetchData = async () => {
@@ -130,6 +145,7 @@ const VendorDashboard = () => {
         setOrders(data.monthly_orders || []);
         console.log(data.monthly_orders);
         setTotalProducts(data.total_products || 0);
+        setTopProducts(data.monthly_top_products || {});
         const stock = data.stock_summary || {
           in_stock: 0,
           low_stock: 0,
@@ -178,7 +194,10 @@ const VendorDashboard = () => {
     return <p className="text-center text-gray-500">Loading...</p>;
   }
 
-  const shouldShowBanner = docStatus && docStatus.missing_count > 0;
+const shouldShowBanner =
+  docStatus &&
+  docStatus.missing_count > 0 &&
+  !(docStatus.incomplete_fields?.length === 1 && docStatus.incomplete_fields[0] === "financial_statement");
   const addresscheck = docStatus && docStatus.has_address === false;
 
   return (
@@ -265,26 +284,34 @@ const VendorDashboard = () => {
 
         </div>
         {/* Profit & Refund */}
-        <div className="flex flex-col w-full lg:col-span-1">
-          <div className="text-black w-full">
-            {/* <TotalProfitCard /> */}
-            <ProfitCard
-              title="Monthly Orders"
-              profit={totalOrders} // use total orders instead of profit
-              percentage={28.5} // keep or calculate change %
-              bars={Orders.map(item => item.total_orders)} // monthly bars
-              xLabels={Orders.map(item => item.month)} // month labels
-              durationLabel="Last 12 months"
-            />
+       <div className="flex flex-col w-full lg:col-span-1">
+  <div className="flex justify-between items-center mb-2">
+    <h2 className="text-lg font-semibold text-black">Monthly Orders</h2>
+    <select
+      className="border border-gray-300 rounded px-2 py-1 text-sm"
+      value={monthFilter}
+      onChange={(e) => setMonthFilter(e.target.value)}
+    >
+      {filterOptions.map((option) => (
+        <option key={option} value={option}>{option}</option>
+      ))}
+    </select>
+  </div>
 
+  <ProfitCard
+    title="Monthly Orders"
+    profit={totalOrders} // total orders
+    percentage={28.5}   // optional: compute change %
+    bars={filteredBars}  // filtered bars
+    xLabels={filteredLabels} // filtered month labels
+    durationLabel={monthFilter}
+  />
 
+  <hr className='border border-[#D8D8D8] mt-4 mb-4' />
 
-          </div>
-          <hr className='border border-[#D8D8D8]' />
-          <div className="w-full">
-            <RefundReturnStats />
-          </div>
-        </div>
+  <TopProductsChart monthly_top_products={topProducts} />
+</div>
+
       </div>
 
       {/* Users Overview */}

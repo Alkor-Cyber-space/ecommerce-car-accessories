@@ -108,9 +108,8 @@ export default function VendorStockTable() {
             <div className="flex justify-between items-center">
                 <h1 className="text-[#232832] text-xl font-bold">Stock Overview</h1>
                 <div className="flex items-center gap-4">
-                    <FaBell className="text-xl text-gray-600 cursor-pointer" />
                     <FaSyncAlt
-                        className="text-xl text-gray-600 cursor-pointer"
+                        className="text-xl text-[#5737B4] cursor-pointer"
                         onClick={() => window.location.reload()} // manual refresh
                     />
                 </div>

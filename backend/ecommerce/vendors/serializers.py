@@ -19,12 +19,15 @@ class VendorDashboardSerializer(serializers.Serializer):
     
     sales_trend = serializers.SerializerMethodField()
     monthly_orders = serializers.SerializerMethodField()
-
+    monthly_top_products = serializers.SerializerMethodField()
     def get_sales_trend(self, obj):                           
         return obj.get("sales_trends", [])
     
     def get_monthly_orders(self, obj):
         return obj.get("monthly_orders", [])
+
+    def get_monthly_top_products(self, obj):
+        return obj.get("monthly_top_products", [])
 
 
 class ProductStockUpdateSerializer(serializers.ModelSerializer):

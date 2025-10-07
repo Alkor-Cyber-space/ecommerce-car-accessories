@@ -21,6 +21,7 @@ from orders.models import Order, OrderItem
 from django.db.models import Sum, F, Count,Avg
 from django.db.models.functions import TruncMonth
 from django.contrib.auth.models import Group
+from django.utils import timezone
 
 
 class VendorDashboardViewSet(viewsets.ViewSet):
@@ -94,7 +95,8 @@ class VendorDashboardViewSet(viewsets.ViewSet):
         ]
 
         # ---------- Monthly Top selling products ----------
-        current_date = now()
+        current_date = timezone.now()
+
         year_start = current_date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
         # Fetch all order items for this vendor from Jan 1st to today
