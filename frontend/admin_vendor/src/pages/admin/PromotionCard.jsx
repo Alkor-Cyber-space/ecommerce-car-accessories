@@ -5,7 +5,12 @@ import { AiOutlinePlus } from 'react-icons/ai';
 import { FaRegTrashAlt } from 'react-icons/fa';
 
 // Helper functions — define or import these appropriately
-const formatDiscount = (promotion) => `${promotion.value} OFF`;
+const formatDiscount = (promotion) => {
+    if (promotion.promotion_type === 'BOGO') {
+        return 'Buy One Get One Free';
+    }
+    return `${promotion.value} OFF`;
+};
 const getProductCount = (promotion) =>
     promotion.applicable_product ? promotion.applicable_product.length : 0;
 

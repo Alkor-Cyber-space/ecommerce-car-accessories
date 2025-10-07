@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from "react-toastify";
 import { confirmAlert } from "react-confirm-alert";
 import user from "../../assets/user.jpg";
@@ -11,6 +11,7 @@ const AccountSettings = () => {
     new_password: ''
   });
   const [formData, setFormData] = useState({
+    profile_image: null,
     username: "",
     first_name: "",
     last_name: "",
@@ -20,30 +21,45 @@ const AccountSettings = () => {
     new_password: "",
     company: ""
   });
-
-  const [loading, setLoading] = useState(false);
-
-useEffect(() => {
-  const fetchProfile = async () => {
-    try {
-      const res = await getMeApi(); // your API call
-      setFormData({
-        username: res.username || "",
-        first_name: res.first_name || "",
-        last_name: res.last_name || "",
-        email: res.email || "",
-        contact_number: res.contact_number || "",
-        old_password: "",
-        new_password: "",
-        company: res.company || ""
-      });
-    } catch (error) {
-      console.error("Failed to fetch profile:", error);
+  const fileInputRef = useRef(null);
+  const handleReplaceImageClick = () => {
+    fileInputRef.current.click();
+  };
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setFormData((prev) => ({
+        ...prev,
+        profile_image: file,
+      }));
     }
   };
 
-  fetchProfile();
-}, []);
+  const [loading, setLoading] = useState(false);
+
+  const serverUrl = "http://127.0.0.1:8000/"
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await getMeApi();
+        setFormData({
+          profile_image: res.profile_image || null,
+          username: res.username || "",
+          first_name: res.first_name || "",
+          last_name: res.last_name || "",
+          email: res.email || "",
+          contact_number: res.contact_number || "",
+          old_password: "",
+          new_password: "",
+          company: res.company || ""
+        });
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
 
   // Handle form input changes for profile data
@@ -59,19 +75,21 @@ useEffect(() => {
   // Handle profile update submission
   const handleEditProfile = async () => {
     setLoading(true);
-    const form = new FormData();
-    form.append('first_name', formData.first_name || 'ajayesshh');
-    form.append('last_name', formData.last_name || 'ajayesshh');
-    form.append('username', formData.username || '');
-    form.append('email', formData.email || '');
-    form.append('contact_number', formData.contact_number || '');
-    form.append('old_password', formData.old_password || '');
-    form.append('new_password', formData.new_password || '');
     try {
-      const response = await updateAccountApi(formData);
+      const formDataToSend = new FormData();
+      for (const key in formData) {
+        if (formData[key] !== null && formData[key] !== undefined && formData[key] !== "") {
+          formDataToSend.append(key, formData[key]);
+        }
+      }
+      const response = await updateAccountApi(formDataToSend);
       console.log("Profile update response:", response);
       if (response.status === 200) {
         toast.success("Profile updated successfully!");
+        setFormData(prev => ({
+          ...prev,
+          profile_image: response.profile_image,
+        }));
       }
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -142,18 +160,41 @@ useEffect(() => {
           <div className="flex flex-col lg:flex-row justify-between gap-3 items-start lg:items-center">
             {/* Profile Info */}
             <div className="flex items-center gap-3">
-              <img src={user} alt="profile" className="w-16 h-16 rounded-full object-cover" />
+              <img
+                src={
+                  formData.profile_image
+                    ? typeof formData.profile_image === "string"
+                      ? `${serverUrl}${formData.profile_image}`
+                      : URL.createObjectURL(formData.profile_image)
+                    : user
+                }
+                alt="profile"
+                className="w-16 h-16 rounded-full object-cover"
+              />
               <div>
                 <h2 className="text-lg font-semibold text-gray-900">{formData?.username || ''}</h2>
                 <p className="text-sm text-gray-500">{formData?.company || ''}</p>
               </div>
             </div>
-
             {/* Action Buttons */}
             <div className="flex gap-2 flex-wrap">
-              <button className="px-3 py-1 border border-[#5737B3] text-[#5737B3] rounded-md text-sm hover:bg-[#f3f0ff]">
-                Replace Profile Picture
-              </button>
+              <div>
+                <button
+                  onClick={handleReplaceImageClick}
+                  type="button"
+                  className="px-3 py-1 border border-[#5737B3] text-[#5737B3] rounded-md text-sm hover:bg-[#f3f0ff]"
+                >
+                  Replace Profile Picture
+                </button>
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  name="profile_image"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+              </div>
               <button
                 onClick={handleDeactivateConfirm}
                 className="px-3 py-1 border border-red-300 text-red-500 rounded-md text-sm bg-red-200 hover:bg-red-50"
