@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getMeApi } from "../../services/allAPI";
 import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import {
    FaListAlt, FaTruckLoading, FaChartBar,
@@ -18,11 +19,36 @@ import user from "../../assets/user.jpg";
 import { RiUserSettingsLine } from "react-icons/ri";
 import { PiBuildings, PiChartLine } from "react-icons/pi";
 
+const serverUrl = "http://127.0.0.1:8000/"
 
 const VendorHome = () => {
   const [showSidebar, setShowSidebar] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
+
+  const [profileData, setProfileData] = useState({
+    profile_image: null,
+    username: '',
+    email: '',
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await getMeApi();
+        if (res) {
+          setProfileData({
+            profile_image: res.profile_image || null,
+            username: res.username || 'Vendor',
+            email: res.email || 'vendor@example.com',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const activePath = location.pathname;
 
@@ -104,11 +130,18 @@ const VendorHome = () => {
               className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
             />
           </div>
-          <div className="flex w-60 items-center gap-3">
-            <img src={user} alt="profile" className="w-17 h-17 rounded-full object-cover" />
+          <div 
+            className="flex w-60 items-center gap-3 z-50 cursor-pointer relative"
+            onClick={() => navigate('/vendor/account-settings')}
+          >
+            <img 
+              src={profileData.profile_image ? `${serverUrl}${profileData.profile_image}` : user}
+              alt="profile" 
+              className="w-17 h-17 rounded-full object-cover" 
+            />
             <div className='flex flex-col font-semibold'>
-              <div className="text-lg text-gray-700 font-medium">Rohit Ravikumar</div>
-              <span>rohitgmail.com</span>
+              <div className="text-lg text-gray-700 font-medium">{profileData.username}</div>
+              <span>{profileData.email}</span>
             </div>
           </div>
         </div>
