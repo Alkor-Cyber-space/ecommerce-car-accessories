@@ -1,9 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import (
-    # ProductBulkUploadViewSet,
-      VendorDashboardViewSet, VendorProductViewSet,InventoryUpdateViewSet, VendorReviewViewSet
-)
+from .views import *
 
 router = DefaultRouter()
 router.register(r'dashboard', VendorDashboardViewSet, basename='vendor-dashboard')
@@ -15,4 +12,5 @@ router.register(r'product-reviews', VendorReviewViewSet, basename='vendor-review
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('payments/', VendorTransactionListView.as_view(), name='vendor-transactions'),
 ]

@@ -35,6 +35,13 @@ from .utils import log_action
 from rest_framework import generics, status
 from requests.auth import HTTPBasicAuth
 import json
+from django.http import HttpResponse
+import openpyxl
+from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Table
+from reportlab.lib.pagesizes import A4
+
+
 User = get_user_model()
 
 # Create your views here.
@@ -1224,3 +1231,56 @@ class ProcessPayoutsView(APIView):
             "message": f"Processed {processed_count} payouts",
             "payouts": payouts_result
         }, status=200)
+
+
+class ExportReportView(APIView):
+    def post(self, request):
+        report_type = request.data.get("report_type")  # e.g. 'sales'
+        format_type = request.data.get("format")  # 'excel' or 'pdf'
+        data = request.data.get("data", [])  # frontend sends table rows
+
+        if not data:
+            return Response({"error": "No data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if format_type == "excel":
+            return self.generate_excel(data, report_type)
+        elif format_type == "pdf":
+            return self.generate_pdf(data, report_type)
+        else:
+            return Response({"error": "Invalid format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def generate_excel(self, data, report_type):
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = report_type.capitalize()
+
+        # Write headers
+        headers = data[0].keys()
+        sheet.append(list(headers))
+
+        # Write rows
+        for row in data:
+            sheet.append(list(row.values()))
+
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{report_type}.xlsx"'
+        return response
+
+    def generate_pdf(self, data, report_type):
+        output = BytesIO()
+        doc = SimpleDocTemplate(output, pagesize=A4)
+        table_data = [list(data[0].keys())] + [list(row.values()) for row in data]
+        table = Table(table_data)
+        doc.build([table])
+
+        output.seek(0)
+        response = HttpResponse(output, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{report_type}.pdf"'
+        return response

@@ -57,3 +57,15 @@ class VendorReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'product', 'user_name', 'user_email', 'rating', 'comment', 'created_at']
+
+class VendorTransactionSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    transaction_id = serializers.CharField()
+    type = serializers.CharField()
+    product = serializers.CharField()
+    status = serializers.CharField()
+    order_id = serializers.CharField()
+    amount = serializers.FloatField()
+    admin_commission = serializers.FloatField()
+    vendor_amount = serializers.FloatField()
+    description = serializers.CharField()
