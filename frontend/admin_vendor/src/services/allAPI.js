@@ -998,12 +998,21 @@ export const updateStockApi = async (productId, stock) => {
   }
 };
 
-export const updateAdminAccountSettingsApi = async (id, data) => {
+export const updateAdminAccountSettingsApi = async (id, formData) => {
   try {
-    const response = await api.put(`${serverurl}/admin/profile/`, data);
+    const token = localStorage.getItem("access_token");
+    const response = await axios.put(
+      `${serverurl}/admin/profile/`,
+      formData,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
-    console.error("Error updating admin details:", error);
     throw error;
   }
 };
