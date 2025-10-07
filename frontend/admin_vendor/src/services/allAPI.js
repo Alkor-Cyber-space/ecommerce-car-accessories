@@ -402,12 +402,6 @@ export const updateProductCategoryApi = async (categoryid, category) => {
     const response = await api.put(
       `/admin/categories/${categoryid}/`,
       category,
-      {
-        headers: {
-          Authorization: `JWT ${token}`,
-          "Content-Type": "multipart/form-data", // ✅ important
-        },
-      }
     );
     return response;
   } catch (error) {
@@ -695,6 +689,17 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
+// update order status
+export const updateOrderStatusApi = async (orderId) => {
+  try {
+    const response = await api.post(`/orders/vendor/orders/${orderId}/confirm/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    throw error;
+  }
+};
+
 
 export const getAuditLogsApi = async () => {
   try {
@@ -1032,12 +1037,21 @@ export const updateStockApi = async (productId, stock) => {
   }
 };
 
-export const updateAdminAccountSettingsApi = async (id, data) => {
+export const updateAdminAccountSettingsApi = async (id, formData) => {
   try {
-    const response = await api.put(`${serverurl}/admin/profile/`, data);
+    const token = localStorage.getItem("access_token");
+    const response = await axios.put(
+      `${serverurl}/admin/profile/`,
+      formData,
+      {
+        headers: {
+          Authorization: `JWT ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
     return response.data;
   } catch (error) {
-    console.error("Error updating admin details:", error);
     throw error;
   }
 };
@@ -1114,7 +1128,21 @@ export const getProductReviewsApi = async () => {
     console.error("Error fetching reviews by product:", error);
     throw error;
   }
+}
+export const supportTicketApi = async (ticketData) => {
+  try {
+    const response = await api.post("/admin/support-tickets/", ticketData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error creating support ticket:", error);
+    throw error;
+  }
 };
+
 
 export const notificationApi = async (notificationData) => {
   try {
@@ -1128,6 +1156,15 @@ export const notificationApi = async (notificationData) => {
   }
 };
 
+export const getSupportTicketsApi = async () => {
+  try {
+    const response = await api.get("/admin/support-tickets/");  // Replace with the actual API endpoint
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching support tickets:", error);
+    throw error;
+  }
+};
 export const getNotificationsApi = async () => {
   try {
     const response = await api.get("/admin/notifications/sent/");
@@ -1138,6 +1175,45 @@ export const getNotificationsApi = async () => {
   }
 };
 
+export const updateSupportTicketApi = async (Id, updatedData) => {
+  try {
+    const response = await api.post(
+      `/admin/support-tickets/${Id}/answer_ticket/`, // ✅ FIXED URL
+      updatedData,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `JWT ${localStorage.getItem("access_token")}`, // ✅ include token if required
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating support ticket:", error);
+    throw error;
+  }
+};
+
+// /api/admin/support-tickets/{id}/mark_resolved/
+
+export const markTicketResolvedApi = async (ticketId) => {
+  try {
+    const response = await api.post(
+      `/admin/support-tickets/${ticketId}/mark_resolved/`,
+      {}, // empty body
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `JWT ${localStorage.getItem("access_token")}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error marking ticket as resolved:", error);
+    throw error;
+  }
+};
 export const markNotificationAsReadApi = async (notificationId) => {
   try {
     const response = await axios.post(`${serverurl}/admin/notifications/${notificationId}/mark-as-read/`,{},
@@ -1151,6 +1227,36 @@ export const markNotificationAsReadApi = async (notificationId) => {
     return response.data;
   } catch (error) {
     console.error("Error marking notification as read:", error);
+    throw error;
+  }
+};
+export const getAdminDashboardApi = async () => {
+  try {
+    const response = await api.get("/admin/ad-dashboard/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching admin dashboard:", error);
+    throw error;
+  }
+};
+
+// /api/admin/support-tickets/{id}/mark_in_progress/
+
+export const markTicketInProgressApi = async (ticketId) => {
+  try {
+    const response = await api.post(
+      `/admin/support-tickets/${ticketId}/mark_in_progress/`,
+      {}, // empty body
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `JWT ${localStorage.getItem("access_token")}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error marking ticket as in progress:", error);
     throw error;
   }
 };

@@ -9,7 +9,7 @@ export default function VendorDataTable() {
   const [statusFilter, setStatusFilter] = useState('');
   const [locationFilter, setLocationFilter] = useState('');
   const [search, setSearch] = useState('');
-    const hasPendingVendors = vendors?.some((vendor) => vendor.status === "pending");
+  const hasPendingVendors = vendors?.some((vendor) => vendor.status === "pending");
 
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [filteredVendors, setFilteredVendors] = useState([]);
@@ -162,7 +162,7 @@ export default function VendorDataTable() {
           </Link>
         </div>
       </div>
-{/* {hasPendingVendors && (
+      {/* {hasPendingVendors && (
         <div className="border-2 border-green-600 bg-green-50 hover:bg-green-100 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300 ease-in-out mb-4 w-full max-w-md">
           <h2 className="font-semibold text-gray-800 text-lg sm:text-xl">New vendor request</h2>
           <p className="text-sm mt-2 text-gray-600 rounded-lg bg-green-100/50">
@@ -187,6 +187,9 @@ export default function VendorDataTable() {
         showYear={true}
         showLocation={true}
         showStatus={true}
+        showOrderStatus={false}
+        showBuyerName={false}
+        showOrderId={false}
       />
 
       {/* Unified Responsive Table */}

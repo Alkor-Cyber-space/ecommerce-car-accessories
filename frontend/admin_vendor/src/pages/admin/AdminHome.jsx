@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FaTachometerAlt,
   FaBoxes,
@@ -55,6 +55,7 @@ import SalesAnalytics from './SalesAnalytics';
 import RevenueTrends from './RevenueTrends';
 import { BsGraphUpArrow } from 'react-icons/bs';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { getAdminAccountSettingsApi } from '../../services/allAPI';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -65,6 +66,34 @@ const AdminHome = () => {
   const handleClick = (component) => {
     setActiveTab(component);
   };
+  const [profileImage, setProfileImage] = useState(null);
+
+
+  const [profileData, setProfileData] = useState({
+    profile_image: null,
+    username: '',
+    email: '',
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await getAdminAccountSettingsApi();
+        if (res) {
+          setProfileData({
+            profile_image: res.profile_image || null,
+            username: res.username || 'Admin',
+            email: res.email || 'admin@example.com',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const serverUrl = "http://127.0.0.1:8000/"
 
   const toggleDropdown = (menuName) => {
     setOpenDropdown(openDropdown === menuName ? '' : menuName);
@@ -127,10 +156,10 @@ const AdminHome = () => {
     }
   };
   const handleLogout = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  navigate("/signin", { replace: true });
-};
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    navigate("/signin", { replace: true });
+  };
 
   return (
     <div className='flex-1 px-1 bg-white transition-all duration-500 '>
@@ -160,8 +189,8 @@ const AdminHome = () => {
           <SidebarItem to="/admin/dashboard" label="Dashboard" icon={<AiOutlineAppstore />} activePath={activePath} />
           <SidebarItem to="/admin/sales-analytics" label="Sales Analytics" icon={<BsGraphUpArrow />} activePath={activePath} />
           <SidebarItem to="/admin/revenue-trends" label="Revenue Trends" icon={<HiArrowTrendingUp />} activePath={activePath} />
-          
-          <li>
+
+          {/* <li>
             <div
               className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
               onClick={() => toggleDropdown("Inventory Control")}
@@ -173,12 +202,12 @@ const AdminHome = () => {
             </div>
             {openDropdown === "Inventory Control" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
+                
                 <SidebarItem to="/admin/inventory-stock" label="Stock Management" activePath={activePath} />
               </ul>
             )}
-          </li>
-
+          </li> */}
+        <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
           <li>
             <div
               className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
@@ -198,7 +227,7 @@ const AdminHome = () => {
             )}
           </li>
 
-          <SidebarItem to="/admin/settlements" label="Financial Dashboard" icon={<PiCurrencyDollarSimpleBold />} activePath={activePath} />
+          {/* <SidebarItem to="/admin/settlements" label="Financial Dashboard" icon={<PiCurrencyDollarSimpleBold />} activePath={activePath} /> */}
 
           <li>
             <div
@@ -230,11 +259,11 @@ const AdminHome = () => {
 
           <hr className="my-4 border-gray-300" />
           <li
-                      className="cursor-pointer hover:bg-red-600 hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2"
-                      onClick={handleLogout}
-                    >
-                      <FaSignOutAlt /> Logout
-                    </li>
+            className="cursor-pointer hover:bg-red-600 hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2"
+            onClick={handleLogout}
+          >
+            <FaSignOutAlt /> Logout
+          </li>
         </ul>
       </div>
 
@@ -256,17 +285,20 @@ const AdminHome = () => {
           </div>
 
           {/* Profile Info */}
-          <div className="flex w-60 items-center gap-3"
-          onClick={() => navigate('/admin/account-settings')}
+          <div
+            className="flex w-60 items-center gap-3 z-50 cursor-pointer relative"
+            onClick={() => navigate('/admin/admin-accounts-admin')}
           >
             <img
-              src={user}
+              src={`${serverUrl}${profileData.profile_image}`}
               alt="profile"
               className="w-17 h-17 rounded-full object-cover"
             />
-            <div className='flex flex-col font-semibold'>
-              <div className="text-lg text-gray-700 font-medium">Rohit Ravikumar</div>
-              <span>rohitgmail.com</span>
+            <div className="flex flex-col font-semibold">
+              <div className="text-lg text-gray-700 font-medium">
+                {profileData.username}
+              </div>
+              <span>{profileData.email}</span>
             </div>
           </div>
         </div>

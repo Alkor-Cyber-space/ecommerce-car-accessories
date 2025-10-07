@@ -1,7 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { BsArrowLeft, BsClock, BsCheck2Circle, BsExclamationCircle } from 'react-icons/bs';
+import { BsArrowLeft, BsCheck2Circle } from 'react-icons/bs';
 import { AiOutlineMessage, AiOutlineEye } from 'react-icons/ai';
+import { 
+  markTicketResolvedApi, 
+  markTicketInProgressApi, 
+  updateSupportTicketApi 
+} from '../../services/allAPI';
+import { toast } from 'react-toastify';
 
 const SupportResponse = () => {
   const location = useLocation();
@@ -11,8 +17,9 @@ const SupportResponse = () => {
   const [answerText, setAnswerText] = useState('');
   const [ticket, setTicket] = useState(null);
   const [isAnswerMode, setIsAnswerMode] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Get ticket data from location state or fetch from your data source
+  // Load ticket from state or fallback
   useEffect(() => {
     const ticketFromState = location.state?.ticket;
     const action = searchParams.get('action');
@@ -22,8 +29,6 @@ const SupportResponse = () => {
       setTicket(ticketFromState);
       setIsAnswerMode(action === 'answer');
     } else if (ticketId) {
-      // If no state, you would fetch the ticket data here
-      // For now, using mock data structure
       setTicket({
         id: ticketId,
         vendorName: "Unknown Vendor",
@@ -39,6 +44,39 @@ const SupportResponse = () => {
     }
   }, [location.state, searchParams]);
 
+  // Handle submitting answer
+  const handleSubmitAnswer = async () => {
+    if (!answerText.trim()) return;
+
+    try {
+      setLoading(true);
+      const payload = { answer: answerText };
+      await updateSupportTicketApi(ticket.id, payload);
+
+      toast.success("Response submitted successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+
+      setTimeout(() => {
+        toast.info("Please click 'Mark as Resolved' to complete the process.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+      }, 2200);
+
+    } catch (error) {
+      console.error("Failed to submit answer:", error);
+      toast.error("Error submitting response", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Status color helper
   const getStatusColor = (status) => {
     switch (status) {
       case 'Pending':
@@ -52,6 +90,7 @@ const SupportResponse = () => {
     }
   };
 
+  // Priority color helper
   const getPriorityColor = (priority) => {
     switch (priority) {
       case 'High':
@@ -65,21 +104,45 @@ const SupportResponse = () => {
     }
   };
 
-  const handleSubmitAnswer = () => {
-    if (answerText.trim()) {
-      // Here you would typically update the ticket in your backend/state management
-      console.log('Submitting answer:', answerText);
-      // Show success message or redirect
-      alert('Response submitted successfully!');
-      navigate('/support-admin');
-    }
-  };
+  // Handle status update
+  const handleStatusUpdate = async (newStatus) => {
+    try {
+      setLoading(true);
 
-  const handleStatusUpdate = (newStatus) => {
-    // Here you would update the ticket status in your backend/state management
-    console.log('Updating status to:', newStatus);
-    alert(`Ticket status updated to ${newStatus}`);
-    navigate('/support-admin');
+      if (newStatus === 'Resolved') {
+        await markTicketResolvedApi(ticket.id);
+        toast.success("Ticket marked as resolved successfully!", {
+          position: "top-right",
+          autoClose: 2500,
+        });
+      } else if (newStatus === 'In Progress') {
+        await markTicketInProgressApi(ticket.id);
+        toast.info("Ticket marked as In Progress!", {
+          position: "top-right",
+          autoClose: 2500,
+        });
+      } else {
+        const payload = { status: newStatus };
+        await updateSupportTicketApi(ticket.id, payload);
+        toast.info(`Ticket status updated to ${newStatus}`, {
+          position: "top-right",
+          autoClose: 2500,
+        });
+      }
+
+      setTimeout(() => {
+        navigate('/admin/support-admin');
+      }, 2600);
+
+    } catch (error) {
+      console.error("Failed to update status:", error);
+      toast.error("Error updating ticket status", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!ticket) {
@@ -129,23 +192,20 @@ const SupportResponse = () => {
           </div>
           
           <div className="flex gap-3">
-            {!isAnswerMode && (
-              <button
-                onClick={() => setIsAnswerMode(true)}
-                className="bg-[#5737B4] text-white px-4 py-2 rounded-lg flex items-center gap-2"
-              >
-                <AiOutlineMessage />
-                Answer Ticket
-              </button>
-            )}
-            <button
-              onClick={() => handleStatusUpdate('Resolved')}
-              className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-            >
-              <BsCheck2Circle />
-              Mark Resolved
-            </button>
-          </div>
+  <button
+    onClick={() => handleStatusUpdate('Resolved')}
+    disabled={ticket.status === "Resolved" || loading}
+    className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-colors ${
+      ticket.status === "Resolved" || loading
+        ? "bg-gray-300 cursor-not-allowed text-white"
+        : "bg-green-600 hover:bg-green-700 text-white"
+    }`}
+  >
+    <BsCheck2Circle />
+    Mark Resolved
+  </button>
+</div>
+
         </div>
 
         {/* Ticket Details */}
@@ -239,7 +299,7 @@ const SupportResponse = () => {
               <div className="flex gap-3">
                 <button
                   onClick={handleSubmitAnswer}
-                  disabled={!answerText.trim()}
+                  disabled={!answerText.trim() || loading}
                   className="bg-[#5737B4] text-white px-6 py-3 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#4A2B9F] transition-colors flex items-center gap-2"
                 >
                   <AiOutlineMessage />
@@ -260,21 +320,37 @@ const SupportResponse = () => {
         {!isAnswerMode && (
           <div className="flex gap-3 pt-6 border-t">
             <button
-              onClick={() => setIsAnswerMode(true)}
-              className="bg-[#5737B4] text-white px-6 py-3 rounded-lg hover:bg-[#4A2B9F] transition-colors flex items-center gap-2"
-            >
-              <AiOutlineMessage />
-              Answer This Ticket
-            </button>
+  onClick={() => setIsAnswerMode(true)}
+  disabled={isAnswerMode || (ticket.responses && ticket.responses.length > 0) || loading}
+  className={`bg-[#5737B4] text-white px-6 py-3 rounded-lg flex items-center gap-2 transition-colors ${
+    isAnswerMode || (ticket.responses && ticket.responses.length > 0) || loading
+      ? "bg-gray-300 cursor-not-allowed"
+      : "hover:bg-[#4A2B9F]"
+  }`}
+>
+  <AiOutlineMessage />
+  Answer This Ticket
+</button>
+
             <button
               onClick={() => handleStatusUpdate('In Progress')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={ticket.status === "In Progress" || loading}
+              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors ${
+                ticket.status === "In Progress" ||"Answered" || "Resolved" || loading
+                  ? "bg-gray-300 cursor-not-allowed text-white"
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
             >
               Mark In Progress
             </button>
             <button
               onClick={() => handleStatusUpdate('Resolved')}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+              disabled={ticket.status === "Resolved" || loading}
+              className={`px-6 py-3 rounded-lg flex items-center gap-2 transition-colors ${
+                ticket.status === "Resolved" || loading
+                  ? "bg-gray-300 cursor-not-allowed text-white"
+                  : "bg-green-600 hover:bg-green-700 text-white"
+              }`}
             >
               Mark Resolved
             </button>

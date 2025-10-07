@@ -4,7 +4,14 @@ export default function OverviewChart({ title, total, breakdown }) {
   const radius = 90;
   const cx = 100;
   const cy = 100;
-  const totalValue = breakdown.reduce((acc, item) => acc + item.value, 0);
+
+  // Ensure all item values are numbers
+  const safeBreakdown = breakdown.map(item => ({
+    ...item,
+    value: Number(item.value) || 0,
+  }));
+
+  const totalValue = safeBreakdown.reduce((acc, item) => acc + item.value, 0);
 
   const getArcPath = (startAngle, endAngle, r) => {
     const start = {
@@ -25,11 +32,16 @@ export default function OverviewChart({ title, total, breakdown }) {
       {/* Chart */}
       <div className="flex flex-col items-center">
         <svg viewBox="0 0 200 110" className="w-full max-w-xs">
-          {breakdown.map((item, index) => {
-            const valuePercent = item.value / totalValue;
+          {safeBreakdown.map((item, index) => {
+            // Avoid division by zero
+            const valuePercent = totalValue ? item.value / totalValue : 0;
             const angle = Math.PI * valuePercent;
+
+            if (angle === 0) return null; // skip zero-value slices
+
             const path = getArcPath(currentAngle, currentAngle + angle, radius);
             currentAngle += angle;
+
             return (
               <path
                 key={index}
@@ -45,14 +57,14 @@ export default function OverviewChart({ title, total, breakdown }) {
         {/* Total */}
         <div className="text-center mt-[-45px]">
           <div className="text-3xl font-bold text-gray-900">
-            {total.toLocaleString()}
+            {(Number(total) || 0).toLocaleString()}
           </div>
           <div className="text-sm text-gray-500">{title}</div>
         </div>
 
         {/* Breakdown List */}
         <div className="mt-6 w-full px-4 space-y-4 text-sm text-gray-700">
-          {breakdown.map((item, index) => (
+          {safeBreakdown.map((item, index) => (
             <div className="flex justify-between items-center" key={index}>
               <div className="flex items-center gap-2">
                 <span

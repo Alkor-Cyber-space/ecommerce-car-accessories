@@ -216,6 +216,9 @@ export default function AdminOverview() {
         onReset={handleReset}
         showYear={false}
         showLocation={false}
+        showOrderStatus={false}
+        showBuyerName={false}
+        showOrderId={false}
       />
       <div className="overflow-x-auto scrollbar-none">
         <table className="min-w-full bg-white rounded-md text-sm shadow">

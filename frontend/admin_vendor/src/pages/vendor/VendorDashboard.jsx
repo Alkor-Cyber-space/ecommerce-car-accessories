@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import SalesTrends from '../../components/admin/adminDashboard/SalesTrends';
 import RegisteredUsersChart from '../../components/admin/adminDashboard/RegisteredUsersChart';
 import TopProductsTable from '../../components/admin/adminDashboard/TopProducts';
@@ -16,6 +16,7 @@ import axios from 'axios';
 import { getProductsApi, getVendorDashboardApi, VendorDocumentCheckApi } from '../../services/allAPI';
 import OverviewChart from '../../components/OverviewChart';
 import ProfitCard from '../../components/admin/adminDashboard/TotalProfitChart';
+import TopProductsChart from '../../components/vendor/TopProductsChart';
 
 // const stats = [
 //   { icon: <IoPricetagOutline />, title: "Total Sales", value: "50.8K" },
@@ -28,50 +29,63 @@ import ProfitCard from '../../components/admin/adminDashboard/TotalProfitChart';
 const VendorDashboard = () => {
   const [dashboardData, setDashboardData] = useState(null);
   const [docStatus, setDocStatus] = useState();
-  // const [totalProducts, setTotalProducts] = useState(0);
-  //   const [breakdown, setBreakdown] = useState([]);
   const [profit, setProfit] = useState();
-  const [totalSales, setTotatlSales] = useState()
-  const [totalProducts, setTotalProducts] = useState();
+  const [Orders, setOrders] = useState([]);
+  const [totalSales, setTotalSales] = useState();
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [topProducts, setTopProducts] = useState({});
   const [breakdown, setBreakdown] = useState([]);
+  const [salesTrend, setSalesTrend] = useState([]); // For SalesTrends chart
+const [monthFilter, setMonthFilter] = useState("Last 12 months"); // default
+const filterOptions = ["Last 3 months", "Last 6 months", "Last 12 months"];
+const { filteredBars, filteredLabels } = useMemo (() => {
+  let count = 12; // default 12 months
+  if (monthFilter === "Last 6 months") count = 6;
+  if (monthFilter === "Last 3 months") count = 3;
 
+  const recentOrders = Orders.slice(-count); // last N months
+  return {
+    filteredBars: recentOrders.map((item) => item.total_orders),
+    filteredLabels: recentOrders.map((item) => item.month),
+  };
+}, [Orders, monthFilter]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const products = await getProductsApi();
-      const mapped = products.map((p) => ({
-        stock: p.stock,
-        status:
-          p.stock === 0
-            ? "Out of Stock"
-            : p.stock < 15
-              ? "Low Stock"
-              : "In Stock",
-      }));
+  // useEffect(() => {
+  //   const fetchData = async () => {
+  //     const products = await getProductsApi();
+  //     const mapped = products.map((p) => ({
+  //       stock: p.stock,
+  //       status:
+  //         p.stock === 0
+  //           ? "Out of Stock"
+  //           : p.stock < 15
+  //             ? "Low Stock"
+  //             : "In Stock",
+  //     }));
 
-      setTotalProducts(mapped.length);
+  //     setTotalProducts(mapped.length);
 
-      setBreakdown([
-        {
-          label: "In Stock",
-          value: mapped.filter((p) => p.status === "In Stock").length,
-          color: "#C32AFF",
-        },
-        {
-          label: "Low Stock",
-          value: mapped.filter((p) => p.status === "Low Stock").length,
-          color: "#8E70FF",
-        },
-        {
-          label: "Out of Stock",
-          value: mapped.filter((p) => p.status === "Out of Stock").length,
-          color: "#21D0FF",
-        },
-      ]);
-    };
+  //     setBreakdown([
+  //       {
+  //         label: "In Stock",
+  //         value: mapped.filter((p) => p.status === "In Stock").length,
+  //         color: "#C32AFF",
+  //       },
+  //       {
+  //         label: "Low Stock",
+  //         value: mapped.filter((p) => p.status === "Low Stock").length,
+  //         color: "#8E70FF",
+  //       },
+  //       {
+  //         label: "Out of Stock",
+  //         value: mapped.filter((p) => p.status === "Out of Stock").length,
+  //         color: "#21D0FF",
+  //       },
+  //     ]);
+  //   };
 
-    fetchData();
-  }, []);
+  //   fetchData();
+  // }, []);
 
   useEffect(() => {
     const fetchDocStatus = async () => {
@@ -90,7 +104,7 @@ const VendorDashboard = () => {
 
   const formatNumber = (num) => {
     if (num === null || num === undefined || isNaN(num)) return "0"; // fallback
-  
+
     if (num >= 1_000_000) {
       return (num / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
     }
@@ -99,7 +113,7 @@ const VendorDashboard = () => {
     }
     return num.toString();
   };
-  
+
   const stats = [
     {
       title: "Total Sales",
@@ -117,7 +131,7 @@ const VendorDashboard = () => {
       icon: <CiBadgeDollar />,
     },
   ];
-    
+
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
@@ -125,22 +139,66 @@ const VendorDashboard = () => {
         console.log(data);
 
         setDashboardData(data);
-        setTotatlSales(data.total_sales);
+        setTotalSales(data.total_sales);
         setTotalProducts(data.total_products);
         setProfit(data.total_profit);
+        setOrders(data.monthly_orders || []);
+        console.log(data.monthly_orders);
+        setTotalProducts(data.total_products || 0);
+        setTopProducts(data.monthly_top_products || {});
+        const stock = data.stock_summary || {
+          in_stock: 0,
+          low_stock: 0,
+          out_of_stock: 0,
+        };
+        setBreakdown([
+          {
+            label: "In Stock",
+            value: stock.in_stock,
+            color: "#C32AFF",
+          },
+          {
+            label: "Low Stock",
+            value: stock.low_stock,
+            color: "#8E70FF",
+          },
+          {
+            label: "Out of Stock",
+            value: stock.out_of_stock,
+            color: "#21D0FF",
+          },
+        ]);
+        const salesData = (data.sales_trend || []).map((item) => {
+          // Convert "2025-10" → "Oct"
+          const date = new Date(item.month + "-01");
+          const monthName = date.toLocaleString("default", { month: "short" });
+
+          return {
+            month: monthName,
+            revenue: item.total_sales,   // map to chart's revenue
+            expenses: item.total_profit, // map to chart's expenses
+          };
+        });
+
+        setSalesTrend(salesData);
+
       } catch (error) {
         console.error("Error fetching dashboard:", error);
       }
     };
     fetchDashboard();
   }, []);
+  const totalOrders = Orders?.reduce((sum, item) => sum + item.total_orders, 0) || 0;
 
   if (!dashboardData) {
     return <p className="text-center text-gray-500">Loading...</p>;
   }
 
-  const shouldShowBanner = docStatus && docStatus.missing_count > 0;
-
+const shouldShowBanner =
+  docStatus &&
+  docStatus.missing_count > 0 &&
+  !(docStatus.incomplete_fields?.length === 1 && docStatus.incomplete_fields[0] === "financial_statement");
+  const addresscheck = docStatus && docStatus.has_address === false;
 
   return (
     <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl'>
@@ -164,7 +222,7 @@ const VendorDashboard = () => {
               <Link to="/vendor/profile">Finish Setup</Link>
             </button>
           </div>
-          <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
+          {addresscheck && (<div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <AiOutlineInfoCircle className="text-3xl md:text-4xl text-[#5737B4]" />
               <div>
@@ -180,7 +238,7 @@ const VendorDashboard = () => {
             <button className="border border-[#5737B4] text-[#5737B4] px-4 py-1.5 lg:w-40 md:w-50 sm:w-40 rounded-md text-sm hover:bg-[#5737B4] hover:text-white transition">
               <Link to="/vendor/profile">Finish Setup</Link>
             </button>
-          </div>
+          </div>)}
         </div>
       )}
 
@@ -202,10 +260,10 @@ const VendorDashboard = () => {
             </div>
             <div className='flex text-center items-center'>
               <p className="text-3xl font-bold mt-2 text-center pr-2">{stat.value}</p>
-              <div className="flex items-center gap-1 text-green-600 text-sm sm:text-base mt-1 bg-[#e6fff0] px-2 py-1 rounded">
+              {/* <div className="flex items-center gap-1 text-green-600 text-sm sm:text-base mt-1 bg-[#e6fff0] px-2 py-1 rounded">
                 24.6%
                 <FiArrowUpRight className="w-4 h-4" />
-              </div>
+              </div> */}
             </div>
           </div>
         ))}
@@ -215,28 +273,45 @@ const VendorDashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 bg-white my-6 w-full p-1 border border-[#D8D8D8] rounded-2xl shadow-lg">
         {/* Sales Trends */}
         <div className="lg:col-span-2 text-white w-full">
-          <SalesTrends />
+          <SalesTrends
+            title="Sales Trends"
+            totalValue={dashboardData?.total_sales || 0}
+            growth={24.6} // you can compute this dynamically later
+            data={salesTrend}
+            revenueLabel="Sales"
+            expensesLabel="Profit"
+          />
+
         </div>
         {/* Profit & Refund */}
-        <div className="flex flex-col w-full lg:col-span-1">
-          <div className="text-black w-full">
-            {/* <TotalProfitCard /> */}
-            <ProfitCard
-              title="Monthly Profit"
-              profit={profit}
-              percentage={28.5}
-              bars={[35, 45, 50, 40, 48, 38, 55, 44, 42, 40, 35, 45]}
-              xLabels={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]}
-              durationLabel="Last 12 months"
-            />
+       <div className="flex flex-col w-full lg:col-span-1">
+  <div className="flex justify-between items-center mb-2">
+    <h2 className="text-lg font-semibold text-black">Monthly Orders</h2>
+    <select
+      className="border border-gray-300 rounded px-2 py-1 text-sm"
+      value={monthFilter}
+      onChange={(e) => setMonthFilter(e.target.value)}
+    >
+      {filterOptions.map((option) => (
+        <option key={option} value={option}>{option}</option>
+      ))}
+    </select>
+  </div>
 
+  <ProfitCard
+    title="Monthly Orders"
+    profit={totalOrders} // total orders
+    percentage={28.5}   // optional: compute change %
+    bars={filteredBars}  // filtered bars
+    xLabels={filteredLabels} // filtered month labels
+    durationLabel={monthFilter}
+  />
 
-          </div>
-          <hr className='border border-[#D8D8D8]' />
-          <div className="w-full">
-            <RefundReturnStats />
-          </div>
-        </div>
+  <hr className='border border-[#D8D8D8] mt-4 mb-4' />
+
+  <TopProductsChart monthly_top_products={topProducts} />
+</div>
+
       </div>
 
       {/* Users Overview */}

@@ -3,14 +3,22 @@ import bmw from '../../../assets/bmw.jpg'
 import { PiCreditCardBold } from "react-icons/pi";
 import { BsChevronDown, BsChevronUp } from "react-icons/bs";
 import { useEffect } from "react";
-import { getOrdersApi } from "../../../services/allAPI";
+import { getOrdersApi, updateOrderStatusApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 import SearchFilter from "../../admin/SearchFilter";
+import OrderDetailView from "./OrderDetailView";
+import { useNavigate } from "react-router-dom";
 
-const OrderManagement = () => {
+const OrderManagement = ({ order }) => {
+  const [loading, setLoading] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [userOrders, setUserOrders] = useState([])
   const serverurl = "http://127.0.0.1:8000/"
+  const navigate = useNavigate();
+
+  const handleViewDetails = (order) => {
+    navigate(`/vendor/orders/${order.id}`, { state: { order } });
+  };
 
   // dummydata
   const orders = [
@@ -161,6 +169,24 @@ const OrderManagement = () => {
   useEffect(() => {
     fetchOrders();
   }, []);
+  const handleUpdateStatus = async (order) => {
+    setLoading(true);
+    try {
+      // ✅ Correct — passing the order.id as an argument
+      const response = await updateOrderStatusApi(order.id);
+      console.log(response);
+
+      toast.success("Order status updated successfully");
+
+      // ✅ Optional — refresh order list if available
+      if (fetchOrders) fetchOrders();
+    } catch (error) {
+      toast.error("Failed to update order status");
+      console.error("Error updating order status", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Reset handler
   const handleReset = () => {
@@ -238,8 +264,8 @@ const OrderManagement = () => {
                           ? "bg-red-100 text-red-800"
                           : order.status.includes("returned")
                             ? "bg-green-100 text-green-800"
-                            : order.status.includes("approved")
-                              ? "bg-blue-100 text-blue-800"
+                            : order.status.includes("confirmed")
+                              ? "bg-green-200 text-green-900"
                               : order.status.includes("expired")
                                 ? "bg-orange-100 text-orange-800"
                                 : "bg-gray-100 text-black"
@@ -250,8 +276,21 @@ const OrderManagement = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center mt-2 md:mt-0">
-                  <div className="mr-4 text-right text-[#5737B4] font-semibold">Update Status</div>
+                <div className="flex items-center mt-2 md:mt-0 gap-3">
+                  <div
+                    onClick={() => handleViewDetails(order)}
+                    className="hover:text-[#3c10c1] hover:underline cursor-pointer"
+                  >
+                    View Details
+                  </div>
+
+                  <div
+                    className={`mr-4 text-right text-[#5737B4] font-semibold cursor-pointer ${loading ? "opacity-50 pointer-events-none" : ""
+                      }`}
+                    onClick={() => handleUpdateStatus(order)}
+                  >
+                    {loading ? "Updating..." : "Update Status"}
+                  </div>
                   {expandedOrder === order.id ? <BsChevronUp className="text-gray-500" /> : <BsChevronDown className="text-gray-500" />}
                 </div>
               </div>
@@ -335,8 +374,6 @@ const OrderManagement = () => {
           )))}
       </div>
       <hr className="h-4" />
-
-      <hr className="h-2 my-2" />
 
       {/* dummy */}
       <div className="space-y-4 py-2">

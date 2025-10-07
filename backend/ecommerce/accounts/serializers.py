@@ -786,13 +786,14 @@ class VendorAuditLogSerializer(serializers.ModelSerializer):
         fields='__all__'
 
 
+from rest_framework import serializers
+from .models import VendorDocuments
+
 class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
     missing_count = serializers.SerializerMethodField()
     missing_fields = serializers.SerializerMethodField()
-    incomplete_fileds = serializers.SerializerMethodField()
+    incomplete_fields = serializers.SerializerMethodField()
     has_address = serializers.SerializerMethodField()
-
-    print(has_address)
 
     class Meta:
         model = VendorDocuments
@@ -804,7 +805,7 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
             "submitted_at",
             "missing_count",
             "missing_fields",
-            "incomplete_fileds",
+            "incomplete_fields",
             "has_address",
         ]
 
@@ -837,14 +838,9 @@ class VendorDocumentsFetchIncompleteSerializer(serializers.ModelSerializer):
     def get_missing_count(self, obj):
         return len(self.get_missing_fields(obj))
 
-    incomplete_fileds=serializers.SerializerMethodField()
-    
-    class Meta:
-        model=VendorDocuments
-        fields="_all_"
-
-    def get_incomplete_fileds(self,obj):
-        incomplete=[]
+    def get_incomplete_fields(self, obj):
+        """Return names of incomplete documents"""
+        incomplete = []
         for field in [
             "pan_card",
             "aadhar_passport_dl",
