@@ -83,10 +83,10 @@ const pageSizeOptions =
             </div>
             <div className="flex items-center justify-between">
               <p className="text-3xl font-bold mt-2">{stat.value}</p>
-              <div className="flex items-center gap-1 text-green-600 text-sm bg-[#e6fff0] px-2 py-1 rounded mt-2">
+              {/* <div className="flex items-center gap-1 text-green-600 text-sm bg-[#e6fff0] px-2 py-1 rounded mt-2">
                 24.6%
                 <FiArrowUpRight className="w-4 h-4" />
-              </div>
+              </div> */}
             </div>
           </div>
         ))}

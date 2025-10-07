@@ -402,12 +402,6 @@ export const updateProductCategoryApi = async (categoryid, category) => {
     const response = await api.put(
       `/admin/categories/${categoryid}/`,
       category,
-      {
-        headers: {
-          Authorization: `JWT ${token}`,
-          "Content-Type": "multipart/form-data", // ✅ important
-        },
-      }
     );
     return response;
   } catch (error) {
@@ -695,6 +689,17 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
+// update order status
+export const updateOrderStatusApi = async (orderId) => {
+  try {
+    const response = await api.post(`/orders/vendor/orders/${orderId}/confirm/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    throw error;
+  }
+};
+
 
 export const getAuditLogsApi = async () => {
   try {

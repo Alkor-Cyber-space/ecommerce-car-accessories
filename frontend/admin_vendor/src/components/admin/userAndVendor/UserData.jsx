@@ -159,6 +159,9 @@ export default function UserDataTable() {
         showYear={true}
         showLocation={true}
         showStatus={true}
+        showOrderStatus={false}
+        showBuyerName={false}
+        showOrderId={false}
       />
 
 
