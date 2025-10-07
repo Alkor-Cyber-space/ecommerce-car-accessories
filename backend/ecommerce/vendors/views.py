@@ -18,7 +18,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from accounts.models import VendorProfile
 from orders.models import Order, OrderItem
-from django.db.models import Sum, F, Count
+from django.db.models import Sum, F, Count,Avg
 from django.db.models.functions import TruncMonth
 from django.contrib.auth.models import Group
 
@@ -93,6 +93,36 @@ class VendorDashboardViewSet(viewsets.ViewSet):
             for item in monthly_sales_qs
         ]
 
+        # ---------- Monthly Top selling products ----------
+        current_date = now()
+        year_start = current_date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Fetch all order items for this vendor from Jan 1st to today
+        order_items = (
+            OrderItem.objects.filter(
+                product__vendor=user,
+                order__created_at__gte=year_start,
+                order__created_at__lte=current_date
+            )
+            .annotate(month=TruncMonth('order__created_at'))
+            .values('month', 'product__id', 'product__name')
+            .annotate(total_sold=Sum('quantity'))
+            .order_by('month', '-total_sold')
+        )
+
+        # Organize into dictionary {month: [products]}
+        monthly_top_products = {}
+        for item in order_items:
+            month_key = item['month'].strftime("%Y-%m")
+            if month_key not in monthly_top_products:
+                monthly_top_products[month_key] = []
+            if len(monthly_top_products[month_key]) < 10:
+                monthly_top_products[month_key].append({
+                    "product_id": item["product__id"],
+                    "product_name": item["product__name"],
+                    "total_sold": item["total_sold"]
+                })
+
         data = {
             "total_products": total_products,
             "recent_products": recent_products,
@@ -104,6 +134,7 @@ class VendorDashboardViewSet(viewsets.ViewSet):
             "recent_orders": recent_orders,
             "sales_trends": sales_trends,
             "monthly_orders": monthly_orders,
+            "monthly_top_products": monthly_top_products
         }
 
         serializer = VendorDashboardSerializer(data)
@@ -114,7 +145,7 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    # permission_classes = [permissions.IsAuthenticated, IsVendor]
     print("reached function")
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
@@ -349,8 +380,28 @@ class VendorReviewViewSet(viewsets.ViewSet):
             for item in monthly_reviews_qs
         ]
 
+        products_qs = (
+            Product.objects.filter(vendor=vendor)
+            .annotate(
+                average_rating=Avg('reviews__rating'),  
+                total_reviews=Count('reviews')          
+            )
+            .order_by('name')
+        )
+
+        products_data = [
+            {
+                "id": product.id,
+                "name": product.name,
+                "average_rating": round(product.average_rating or 0, 1),
+                "total_reviews": product.total_reviews
+            }
+            for product in products_qs
+        ]
+
         return Response({
             "total_reviews": total_reviews,
             "monthly_reviews": monthly_reviews,
+            "products": products_data,
             "reviews": serializer.data
         })

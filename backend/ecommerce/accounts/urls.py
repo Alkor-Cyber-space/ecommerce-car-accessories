@@ -27,4 +27,8 @@ urlpatterns = [
     path('vendor-audit-log-all/',VendorAuditLogAll.as_view(),name="vendor-audit-log"),
     path('vendor-document-check/',VendorDocumentCheck.as_view(),name="vendor-document-check"),
     path('admin-profile-edit/<int:pk>/',AdminProfileEdit.as_view(),name="admin-profile-edit"),
+    path('admin-is_staff-fetch',AdminRetrieveByIdAPIView.as_view(),name='admin-is_staff-fetch'),
+    path('process-payouts/', ProcessPayoutsView.as_view(), name='process_payouts'),
+    path('generate-razorpay-contacts/', GenerateRazorpayContactsView.as_view(), name='generate-razorpay-contacts'),
+
 ]

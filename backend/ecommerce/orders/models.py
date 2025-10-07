@@ -7,6 +7,8 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('paid', 'Paid'),
+        ('processing', 'Processing'),
+        ('confirmed', 'Confirmed'),
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
@@ -27,6 +29,7 @@ class Order(models.Model):
     shipping_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cod')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    courier_company_id= models.IntegerField()
     courier_name = models.CharField(max_length=255, blank=True, null=True)
     awb_code = models.CharField(max_length=255, blank=True, null=True)   # Tracking number
     tracking_url = models.URLField(blank=True, null=True)                # Shiprocket tracking URL
