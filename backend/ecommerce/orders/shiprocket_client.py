@@ -8,6 +8,8 @@ CREATE_PICKUP_URL = "https://apiv2.shiprocket.in/v1/external/settings/company/ad
 CREATE_ORDER_URL = "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc"
 RATE_CALCULATOR_URL = "https://apiv2.shiprocket.in/v1/external/courier/serviceability"
 
+
+
 # ---------------- AUTH ---------------- #
 def get_shiprocket_token(force_refresh=False):
     """Get cached Shiprocket token or fetch new one."""
@@ -117,3 +119,13 @@ def create_shiprocket_order(order_payload):
       - length, breadth, height, weight
     """
     return call_shiprocket_api(CREATE_ORDER_URL, payload=order_payload, method="POST")
+
+
+def track_shiprocket_order(awb_code):
+    """
+    Track order shipment status by AWB code.
+    Example AWB: 788830567028
+    """
+    TRACK_URL = f"https://apiv2.shiprocket.in/v1/external/courier/track/awb/{awb_code}"
+    response = call_shiprocket_api(TRACK_URL, method="GET")
+    return response

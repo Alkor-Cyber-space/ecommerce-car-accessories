@@ -30,6 +30,8 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cod')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     courier_company_id= models.IntegerField()
+    shiprocket_order_id = models.CharField(max_length=255, blank=True, null=True)
+    shipment_id = models.CharField(max_length=255, blank=True, null=True)
     courier_name = models.CharField(max_length=255, blank=True, null=True)
     awb_code = models.CharField(max_length=255, blank=True, null=True)   # Tracking number
     tracking_url = models.URLField(blank=True, null=True)                # Shiprocket tracking URL

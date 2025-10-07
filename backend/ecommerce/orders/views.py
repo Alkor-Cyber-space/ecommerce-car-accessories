@@ -16,8 +16,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 import json
 from rest_framework.views import APIView
-from .shiprocket_client import calculate_shipping_rate
-from .shiprocket_client import create_shiprocket_order
+from .shiprocket_client import *
 from datetime import datetime
 from rest_framework import generics, permissions
 from django.db.models import Q
@@ -353,6 +352,16 @@ class CheckoutViewSet(viewsets.ViewSet):
             print("Shiprocket response:", sr_response)
             print("after sr_response")
 
+            if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
+                order.shiprocket_order_id = str(sr_response.get("order_id", ""))
+                order.awb_code = sr_response.get("awb_code", "")  # may be empty initially
+                shipment_id = sr_response.get("shipment_id")
+                order.courier_name = sr_response.get("courier_name", "")
+                order.status = "pending"  # or map status if Shiprocket returns
+                order.save()
+            else:
+                sr_response["error"] = "Shiprocket order not created. Check payload or credentials."
+
             if not sr_response.get("shipment_id") or sr_response.get("status_code") != 1:
                 sr_response["error"] = "Shiprocket order not created. Check payload or credentials."
 
@@ -463,3 +472,49 @@ class VendorOrderStatusUpdateView(APIView):
         order.save()
 
         return Response({"message": f"Order #{order.id} has been confirmed"}, status=status.HTTP_200_OK)
+
+
+class VendorOrderCancelView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, order_id):
+        user = request.user
+
+        # Ensure only vendors can cancel orders
+        if not user.groups.filter(name="Vendor").exists():
+            return Response({"error": "Only vendors can cancel orders"}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            order = Order.objects.get(id=order_id, items__product__vendor=user)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update order status to cancelled
+        order.status = "cancelled"
+        order.save()
+
+        return Response({"message": f"Order #{order.id} has been cancelled"}, status=status.HTTP_200_OK)
+
+
+
+class OrderTrackingAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, order_id):
+        """
+        Get Shiprocket tracking status for a specific order.
+        URL: /api/orders/<order_id>/track/
+        """
+        try:
+            order = Order.objects.get(id=order_id, user=request.user)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if not order.awb_code:
+            return Response({"error": "No AWB code available for this order."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            tracking_data = track_shiprocket_order(order.awb_code)
+            return Response(tracking_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
