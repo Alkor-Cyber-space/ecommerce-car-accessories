@@ -223,22 +223,7 @@ const PaymentsEarnings = () => {
                 </div>
             </div>
 
-            {/* Charts Section - Always uses original data */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 bg-white my-6 w-full p-1 border border-[#D8D8D8] rounded-2xl shadow-lg">
-                <div className="lg:col-span-2 w-full">
-                    <SalesTrends />
-                </div>
-                <div className="flex flex-col w-full lg:col-span-1">
-                    <div className="text-black w-full">
-                        <TotalProfitCard />
-                    </div>
-                    <hr className='border border-[#D8D8D8]' />
-                    <div className="w-full">
-                        <RefundReturnStats />
-                    </div>
-                </div>
-            </div>
-
+    
             {/* Transaction History Table */}
             <div className='min-w-full bg-white rounded-lg shadow text-sm'>
                 <div className='flex justify-between items-center p-4  border-gray-100'>
