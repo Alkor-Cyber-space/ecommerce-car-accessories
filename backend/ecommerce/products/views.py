@@ -12,6 +12,7 @@ from coupon_promotion.models import Promotion
 from vehicles.models import SavedVehicle
 from django.utils import timezone
 from products.models import Product
+from django.db.models import Prefetch
 
 class UserDashboardView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -88,8 +89,9 @@ class ProductListAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        print("hgamshgasdhgasdjh")
-        products = Product.objects.all()
+        products = Product.objects.select_related('vendor').prefetch_related(
+            Prefetch('vendor__addresses', queryset=Address.objects.filter(is_pickup=True))
+        )
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 

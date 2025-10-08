@@ -30,5 +30,6 @@ urlpatterns = [
     path('admin-is_staff-fetch',AdminRetrieveByIdAPIView.as_view(),name='admin-is_staff-fetch'),
     path('process-payouts/', ProcessPayoutsView.as_view(), name='process_payouts'),
     path('generate-razorpay-contacts/', GenerateRazorpayContactsView.as_view(), name='generate-razorpay-contacts'),
+    path('export-report/', ExportReportView.as_view(), name='export-report'),
 
 ]
