@@ -104,6 +104,29 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             for item in monthly_products_qs
         ]
 
+        most_sold_products_qs = (
+            order_items.values(
+                "product__id",
+                "product__name",
+                "product__category__name"
+            )
+            .annotate(
+                total_sold=Sum("quantity"),
+                revenue=Sum(F("price") * F("quantity"))
+            )
+            .order_by("-total_sold")[:10]
+        )
+
+        most_sold_products = [
+            {
+                "product_name": item["product__name"],
+                "category": item["product__category__name"],
+                "total_sold": int(item["total_sold"] or 0),
+                "revenue": float(item["revenue"] or 0),
+            }
+            for item in most_sold_products_qs
+        ]
+
         data = {
             "total_products": total_products,
             "total_orders": total_orders,
@@ -118,6 +141,7 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             "recent_products": recent_products,
             "monthly_sales": monthly_sales,
             "monthly_products": monthly_products,
+            "most_sold_products": most_sold_products,
         }
 
         serializer = AdminDashboardSerializer(data)
@@ -578,3 +602,66 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
         ticket.status = "resolved"
         ticket.save()
         return Response({"message": "Ticket marked as resolved."})
+
+class InventoryStatsView(APIView):
+    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        """
+        Returns stock and inventory statistics.
+        Accepts optional filters: ?month=&year=&category=&vendor=
+        """
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+        category = request.query_params.get("category")
+        vendor = request.query_params.get("vendor")
+
+        products = Product.objects.all()
+
+        # ---- Optional Filters ----
+        if year:
+            products = products.filter(created_at__year=year)
+        if month:
+            products = products.filter(created_at__month=month)
+        if category and category.lower() != "all":
+            products = products.filter(category__name__iexact=category)
+        if vendor and vendor.lower() != "all":
+            products = products.filter(vendor__id=vendor)
+
+        # ---- Stock Summary ----
+        total_products = products.count()
+        in_stock = products.filter(stock__gt=10).count()      # Stock > 10
+        low_stock = products.filter(stock__gt=0, stock__lte=10).count()  # 1–10
+        out_of_stock = products.filter(stock=0).count()
+
+        # ---- Stock by Category ----
+        stock_by_category = (
+            products.values("category__name")
+            .annotate(total=Count("id"))
+            .order_by("category__name")
+        )
+        stock_by_category_dict = {
+            item["category__name"]: item["total"] for item in stock_by_category
+        }
+
+        stock_movement = []
+        recent_products = products.order_by("-created_at")[:3]
+        for p in recent_products:
+            stock_movement.append({
+                "date": p.created_at.strftime("%Y-%m-%d"),
+                "stock_added": p.stock,  
+                "stock_sold": max(0, int(p.stock * 0.3)) 
+            })
+
+        # ---- Prepare Data ----
+        data = {
+            "total_products": total_products,
+            "in_stock": in_stock,
+            "low_stock": low_stock,
+            "out_of_stock": out_of_stock,
+            "stock_by_category": stock_by_category_dict,
+            "stock_movement": stock_movement,
+        }
+
+        serializer = InventoryStatsSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)

@@ -24,6 +24,7 @@ class AdminDashboardSerializer(serializers.Serializer):
     
     monthly_sales = serializers.SerializerMethodField()
     monthly_products = serializers.SerializerMethodField()
+    most_sold_products = serializers.ListField(child=serializers.DictField(), required=False)
 
     def get_monthly_sales(self, obj):
         return obj.get("monthly_sales", [])
@@ -142,3 +143,14 @@ class SupportTicketSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         validated_data["vendor"] = user
         return super().create(validated_data)
+
+
+class InventoryStatsSerializer(serializers.Serializer):
+    total_products = serializers.IntegerField()
+    in_stock = serializers.IntegerField()
+    low_stock = serializers.IntegerField()
+    out_of_stock = serializers.IntegerField()
+    stock_by_category = serializers.DictField(child=serializers.IntegerField())
+    stock_movement = serializers.ListField(
+        child=serializers.DictField()
+    )
