@@ -36,19 +36,19 @@ const VendorDashboard = () => {
   const [topProducts, setTopProducts] = useState({});
   const [breakdown, setBreakdown] = useState([]);
   const [salesTrend, setSalesTrend] = useState([]); // For SalesTrends chart
-const [monthFilter, setMonthFilter] = useState("Last 12 months"); // default
-const filterOptions = ["Last 3 months", "Last 6 months", "Last 12 months"];
-const { filteredBars, filteredLabels } = useMemo (() => {
-  let count = 12; // default 12 months
-  if (monthFilter === "Last 6 months") count = 6;
-  if (monthFilter === "Last 3 months") count = 3;
+  const [monthFilter, setMonthFilter] = useState("Last 12 months"); // default
+  const filterOptions = ["Last 3 months", "Last 6 months", "Last 12 months"];
+  const { filteredBars, filteredLabels } = useMemo(() => {
+    let count = 12; // default 12 months
+    if (monthFilter === "Last 6 months") count = 6;
+    if (monthFilter === "Last 3 months") count = 3;
 
-  const recentOrders = Orders.slice(-count); // last N months
-  return {
-    filteredBars: recentOrders.map((item) => item.total_orders),
-    filteredLabels: recentOrders.map((item) => item.month),
-  };
-}, [Orders, monthFilter]);
+    const recentOrders = Orders.slice(-count); // last N months
+    return {
+      filteredBars: recentOrders.map((item) => item.total_orders),
+      filteredLabels: recentOrders.map((item) => item.month),
+    };
+  }, [Orders, monthFilter]);
 
   // useEffect(() => {
   //   const fetchData = async () => {
@@ -194,10 +194,10 @@ const { filteredBars, filteredLabels } = useMemo (() => {
     return <p className="text-center text-gray-500">Loading...</p>;
   }
 
-const shouldShowBanner =
-  docStatus &&
-  docStatus.missing_count > 0 &&
-  !(docStatus.incomplete_fields?.length === 1 && docStatus.incomplete_fields[0] === "financial_statement");
+  const shouldShowBanner =
+    docStatus &&
+    docStatus.missing_count > 0 &&
+    !(docStatus.incomplete_fields?.length === 1 && docStatus.incomplete_fields[0] === "financial_statement");
   const addresscheck = docStatus && docStatus.has_address === false;
 
   return (
@@ -284,33 +284,21 @@ const shouldShowBanner =
 
         </div>
         {/* Profit & Refund */}
-       <div className="flex flex-col w-full lg:col-span-1">
-  <div className="flex justify-between items-center mb-2">
-    <h2 className="text-lg font-semibold text-black">Monthly Orders</h2>
-    <select
-      className="border border-gray-300 rounded px-2 py-1 text-sm"
-      value={monthFilter}
-      onChange={(e) => setMonthFilter(e.target.value)}
-    >
-      {filterOptions.map((option) => (
-        <option key={option} value={option}>{option}</option>
-      ))}
-    </select>
-  </div>
+        <div className="flex flex-col w-full lg:col-span-1">
+         
+          <ProfitCard
+            title="Monthly Orders"
+            profit={totalOrders} // total orders
+            percentage={28.5}   // optional: compute change %
+            bars={filteredBars}  // filtered bars
+            xLabels={filteredLabels} 
+            
+          />
 
-  <ProfitCard
-    title="Monthly Orders"
-    profit={totalOrders} // total orders
-    percentage={28.5}   // optional: compute change %
-    bars={filteredBars}  // filtered bars
-    xLabels={filteredLabels} // filtered month labels
-    durationLabel={monthFilter}
-  />
+          <hr className='border border-[#D8D8D8] mt-4 mb-4' />
 
-  <hr className='border border-[#D8D8D8] mt-4 mb-4' />
-
-  <TopProductsChart monthly_top_products={topProducts} />
-</div>
+          <TopProductsChart monthly_top_products={topProducts} />
+        </div>
 
       </div>
 
