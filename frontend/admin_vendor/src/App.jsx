@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import "./App.css";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -83,35 +83,41 @@ import SupportResponse from "./pages/admin/SupportResponse";
 
 
 function App() {
-  useEffect(() => {
-    generateToken();
-    // (async () => {
-    //   try {
-    //     const VAPID_KEY = ""; // from Firebase console
-    //     const token = await generateToken(VAPID_KEY);
+  const navigate = useNavigate();
 
-    //     if (token) {
-    //       // Send to backend (authenticated request if needed)
-    //       await axios.post("/api/save-fcm-token/", { token });
-    //       console.log("Saved FCM token to backend:", token);
-    //     } else {
-    //       console.log("No token obtained (permission denied?).");
-    //     }
-    //   } catch (err) {
-    //     console.error("Error getting FCM token:", err);
-    //   }
-    // })();
+useEffect(() => {
+  generateToken();
 
-    // Foreground message listener
-    onMessageListener(messaging, (payload) => {
-      console.log("Foreground message:", payload);
-      toast(
-        (payload.notification?.title || "") +
+  // ✅ Token expiry check
+  const accessToken = localStorage.getItem("accessToken");
+  if (accessToken) {
+    try {
+      const decoded = jwtDecode(accessToken);
+      if (decoded.exp * 1000 < Date.now()) {
+        // Token expired — clear and redirect
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+        navigate("/login"); // or "/signin"
+      }
+    } catch (error) {
+      // Invalid token — redirect to login
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
+      navigate("/login");
+    }
+  }
+
+  // ✅ Foreground message listener (Firebase)
+  onMessageListener(messaging, (payload) => {
+    console.log("Foreground message:", payload);
+    toast(
+      (payload.notification?.title || "") +
         "\n" +
         (payload.notification?.body || "")
-      );
-    });
-  }, []);
+    );
+  });
+}, []);
+
   const PublicRoute = ({ children, redirectTo }) => {
     const token = localStorage.getItem("access_token");
     return token ? <Navigate to={redirectTo} replace /> : children;
