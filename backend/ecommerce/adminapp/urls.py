@@ -10,6 +10,9 @@ router.register(r'notifications', NotificationViewSet, basename='notifications')
 router.register(r'support-tickets', SupportTicketViewSet, basename='support-tickets')   
 router.register(r'ad-dashboard', AdminDashboardViewSet, basename='admin-dashboard')
 router.register(r'revenue', AdminRevenueViewSet, basename='admin-revenue')
+router.register(r'sales-report', AdminSalesReportViewSet, basename='admin-payouts')
+router.register(r'Transaction-report', AdminTransactionTableViewSet, basename='admin-sales-table')
+router.register(r'tax-report', AdminTaxTableViewSet, basename='admin-invoice-table')
 
 
 
