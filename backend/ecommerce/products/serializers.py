@@ -172,3 +172,11 @@ class DashboardProductSerializer(serializers.ModelSerializer):
             "category", "is_featured", "is_best_seller",
             "is_top_rated", "is_new", "compatible_varient_year","images",
         ]
+
+class ReviewReplySerializer(serializers.ModelSerializer):
+    replier = serializers.StringRelatedField(read_only=True)
+    review = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = ReviewReply
+        fields = ['id', 'review', 'replier', 'message', 'created_at', 'updated_at']
