@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
-import { getAuditLogsApi } from "../../services/allAPI";
+import React, { useState, useEffect, useRef } from "react";
+import { getAuditLogsApi, exportReportApi } from "../../services/allAPI";
+import { toast } from "react-toastify";
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
@@ -7,6 +8,9 @@ export default function AuditLogs() {
   const [sortOrder, setSortOrder] = useState("asc");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+
+  const dropdownRef = useRef(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,32 +63,102 @@ export default function AuditLogs() {
   const totalPages = Math.ceil(totalItems / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
-
   const currentItems = filteredLogs.slice(startIndex, endIndex);
 
-  const handlePrev = () => {
-    if (currentPage > 1) setCurrentPage((prev) => prev - 1);
-  };
+  const handlePrev = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+  const handleNext = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
 
-  const handleNext = () => {
-    if (currentPage < totalPages) setCurrentPage((prev) => prev + 1);
-  };
-
-  // Sorting function
   const handleSort = (key) => {
     const isSameKey = sortBy === key;
     setSortOrder(isSameKey && sortOrder === "asc" ? "desc" : "asc");
     setSortBy(key);
   };
 
+  // ✅ Handle outside click to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDownloadOptions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ✅ Download report (PDF / Excel)
+  const handleDownloadReport = async (format) => {
+    try {
+      const tableData = filteredLogs.map((log, index) => ({
+        id: index + 1,
+        timestamp: new Date(log.timestamp).toLocaleString(),
+        vendor: log.vendor || "N/A",
+        description: log.description || "N/A",
+        action: log.action || "N/A",
+      }));
+
+      const response = await exportReportApi("audit_logs", format, tableData);
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `audit_logs.${format === "pdf" ? "pdf" : "xlsx"}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setShowDownloadOptions(false);
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download report.");
+    }
+  };
+
+  const toggleDownloadOptions = () =>
+    setShowDownloadOptions(!showDownloadOptions);
+
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-      <h1 className="text-2xl font-bold">Audit Logs</h1>
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Audit Logs</h1>
+
+        {/* ✅ Download dropdown */}
+        <div className="relative download-dropdown" ref={dropdownRef}>
+          <button
+            onClick={toggleDownloadOptions}
+            className="flex items-center gap-2 bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base"
+          >
+            Download Report
+          </button>
+
+          {showDownloadOptions && (
+            <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-md border border-gray-200 z-50 w-40">
+              <button
+                onClick={() => handleDownloadReport("pdf")}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Download as PDF
+              </button>
+              <button
+                onClick={() => handleDownloadReport("excel")}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Download as Excel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Search input */}
       <div className="flex gap-4 text-left px-2 items-center">
         <input
-          className=" bg-white px-4 py-2 rounded w-1/2"
+          className="bg-white px-4 py-2 rounded w-1/2"
           placeholder="Search by user, action, or IP..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -107,21 +181,20 @@ export default function AuditLogs() {
               <tr>
                 <th>SI.No</th>
                 <th
-                  className="py-4 text-left px-2  cursor-pointer"
+                  className="py-4 text-left px-2 cursor-pointer"
                   onClick={() => handleSort("date")}
                 >
-                  Date{" "}
-                  {sortBy === "date" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                  Date {sortBy === "date" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
                 </th>
-                <th className="py-4 text-left px-2 ">User</th>
+                <th className="py-4 text-left px-2">User</th>
                 <th
-                  className="py-4 text-left px-2  cursor-pointer"
+                  className="py-4 text-left px-2 cursor-pointer"
                   onClick={() => handleSort("action")}
                 >
                   Description{" "}
                   {sortBy === "action" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
                 </th>
-                <th className="py-4 text-left px-2 "> Action</th>
+                <th className="py-4 text-left px-2">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -151,7 +224,7 @@ export default function AuditLogs() {
 
       {/* Pagination */}
       <div className="flex justify-between items-center mt-4 text-sm">
-        <span className="text-[#505050] font-medium ">
+        <span className="text-[#505050] font-medium">
           Showing {endIndex} of {totalItems}
         </span>
         <div className="flex gap-2">

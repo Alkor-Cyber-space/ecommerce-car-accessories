@@ -1183,7 +1183,6 @@ export const updateSupportTicketApi = async (Id, updatedData) => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `JWT ${localStorage.getItem("access_token")}`, // ✅ include token if required
         },
       }
     );
@@ -1257,6 +1256,28 @@ export const markTicketInProgressApi = async (ticketId) => {
     return response.data;
   } catch (error) {
     console.error("Error marking ticket as in progress:", error);
+    throw error;
+  }
+};
+
+
+
+export const exportReportApi = async (reportType, format, data) => {
+  try {
+    const response = await api.post(
+      "/auth/export-report/",
+      {
+        report_type: reportType,
+        format: format,
+        data: data,
+      },
+      {
+        responseType: "blob", // important for downloading files
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error exporting report:", error);
     throw error;
   }
 };
