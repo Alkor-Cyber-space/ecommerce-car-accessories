@@ -12,6 +12,8 @@ from coupon_promotion.models import Promotion
 from vehicles.models import SavedVehicle
 from django.utils import timezone
 from products.models import Product
+from django.db.models import Prefetch
+from accounts.permissions import IsVendor
 
 class UserDashboardView(APIView):
     permission_classes = [permissions.AllowAny]
@@ -88,8 +90,9 @@ class ProductListAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        print("hgamshgasdhgasdjh")
-        products = Product.objects.all()
+        products = Product.objects.select_related('vendor').prefetch_related(
+            Prefetch('vendor__addresses', queryset=Address.objects.filter(is_pickup=True))
+        )
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -283,3 +286,34 @@ class VendorCategoryApprove(APIView):
             return Response({"status": "rejected SuccessFully","code" : status.HTTP_200_OK,"message" : "rejected"})
         return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
 
+
+class ReviewReplyView(APIView):
+    permission_classes = [permissions.IsAuthenticated,IsVendor]  # Only logged-in users
+
+    def post(self, request, review_id):
+        try:
+            review = Review.objects.get(id=review_id)
+        except Review.DoesNotExist:
+            return Response({"error": "Review not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if hasattr(review, 'reply'):
+            return Response({"error": "Review already has a reply"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ReviewReplySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(review=review, replier=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, review_id):
+        """Get reply for a specific review"""
+        try:
+            review = Review.objects.get(id=review_id)
+        except Review.DoesNotExist:
+            return Response({"error": "Review not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not hasattr(review, 'reply'):
+            return Response({"message": "No reply yet"}, status=status.HTTP_200_OK)
+
+        serializer = ReviewReplySerializer(review.reply)
+        return Response(serializer.data)

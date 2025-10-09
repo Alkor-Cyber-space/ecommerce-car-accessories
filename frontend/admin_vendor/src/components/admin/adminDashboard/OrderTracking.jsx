@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { getVendorDashboardApi } from '../../../services/allAPI';
 
 const statusStyles = {
-  'Order Placed': 'bg-green-100 text-green-700',
-  'Order Processing': 'bg-green-200 text-green-800',
-  'Product Shipped': 'bg-emerald-200 text-emerald-800',
-  'Returned': 'bg-yellow-200 text-yellow-800',
-  'Delivered': 'bg-red-200 text-red-700',
-  'Canceled': 'bg-gray-300 text-gray-700',
+  'pending': 'bg-yellow-100 text-yellow-800',
+  'confirmed': 'bg-green-100 text-green-700',
+  'order Processing': 'bg-green-200 text-green-800',
+  'product Shipped': 'bg-emerald-200 text-emerald-800',
+  'returned': 'bg-yellow-200 text-yellow-800',
+  'delivered': 'bg-red-200 text-red-700',
+  'canceled': 'bg-gray-300 text-gray-700',
 };
 
 const ITEMS_PER_PAGE = 7;
@@ -17,14 +18,17 @@ const RecentOrdersTable = () => {
   const [allOrders, setAllOrders] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState(""); // store selected month
 
-  const fetchOrders = async () => {
-    try {
-      const data = await getVendorDashboardApi();
-      setAllOrders(data.recent_orders || []);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    }
-  };
+const fetchOrders = async () => {
+  try {
+    const data = await getVendorDashboardApi();
+    const allOrders = data.recent_orders || [];
+    const last15Orders = allOrders.slice(-15).reverse(); // get the last 15, newest first
+    setAllOrders(last15Orders);
+  } catch (error) {
+    console.error("Error fetching orders:", error);
+  }
+};
+
 
   useEffect(() => {
     fetchOrders(); // initial load
@@ -115,7 +119,7 @@ const RecentOrdersTable = () => {
                 </td>
                 <td className="py-2 px-2">
                   <span
-                    className={`text-xs font-medium px-2 py-1 rounded-full ${statusStyles[order.status]}`}
+                    className={`text-xs font-medium px-3 py-2 rounded-full ${statusStyles[order.status]}`}
                   >
                     {order.status}
                   </span>

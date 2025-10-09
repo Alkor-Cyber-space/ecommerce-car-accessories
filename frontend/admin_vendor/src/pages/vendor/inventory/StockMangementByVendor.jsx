@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Modal from "react-modal";
 import { FaBell, FaSyncAlt } from "react-icons/fa";
+import { FiDownload } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 import { getProductsApi, updateStockApi } from "../../../services/allAPI";
 
 Modal.setAppElement("#root");
@@ -13,6 +17,8 @@ export default function VendorStockTable() {
     const [status, setStatus] = useState("All");
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+    const dropdownRef = useRef(null);
 
     const statusColor = {
         "In Stock": "bg-green-100 text-green-700",
@@ -102,15 +108,90 @@ export default function VendorStockTable() {
             toast.error("Failed to update product!");
         }
     };
+    const handleDownloadExcel = () => {
+        try {
+            const worksheet = XLSX.utils.json_to_sheet(filteredData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
+            XLSX.writeFile(workbook, "StockOverviewReport.xlsx");
+            setShowDownloadOptions(false);
+            toast.success("Excel report downloaded successfully!");
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to download Excel report!");
+        }
+    };
+    const handleDownloadPDF = () => {
+        try {
+            const doc = new jsPDF();
+            doc.text("Stock Overview Report", 14, 15);
+
+            doc.autoTable({
+                head: [["Product", "Category", "Stock", "Status", "Unit Price", "Total Price"]],
+                body: filteredData.map(item => [
+                    item.name,
+                    item.category,
+                    item.stock,
+                    item.status,
+                    item.unitPrice,
+                    item.stock * item.unitPrice
+                ]),
+                startY: 20,
+            });
+
+            doc.save("StockOverviewReport.pdf");
+            setShowDownloadOptions(false);
+            toast.success("PDF report downloaded successfully!");
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to download PDF report!");
+        }
+    };
+
+    // Add useEffect for handling clicks outside dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowDownloadOptions(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     return (
         <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-[#232832] text-xl font-bold">Stock Overview</h1>
                 <div className="flex items-center gap-4">
-                    <FaBell className="text-xl text-gray-600 cursor-pointer" />
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+                            className="bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm flex items-center gap-2"
+                        >
+                            {/* <FiDownload className="text-lg" /> */}
+                            Download Report
+                        </button>
+
+                        {showDownloadOptions && (
+                            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                <button
+                                    onClick={handleDownloadPDF}
+                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                >
+                                    Download as PDF
+                                </button>
+                                <button
+                                    onClick={handleDownloadExcel}
+                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                >
+                                    Download as Excel
+                                </button>
+                            </div>
+                        )}
+                    </div>
                     <FaSyncAlt
-                        className="text-xl text-gray-600 cursor-pointer"
+                        className="text-xl text-[#5737B4] cursor-pointer"
                         onClick={() => window.location.reload()} // manual refresh
                     />
                 </div>

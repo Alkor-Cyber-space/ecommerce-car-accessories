@@ -6,7 +6,7 @@ from vehicles.models import *
 from products.serializers import ProductSerializer, CategorySerializer
 from vehicles.serializers import *
 from accounts.permissions import IsVendor,IsVendorProfileComplete
-from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer,VendorReviewSerializer
+from .serializers import *
 from products.models import Review
 import csv
 import io
@@ -21,6 +21,13 @@ from orders.models import Order, OrderItem
 from django.db.models import Sum, F, Count,Avg
 from django.db.models.functions import TruncMonth
 from django.contrib.auth.models import Group
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from decimal import Decimal
+from accounts.models import CustomUser,Payout
+from django.utils import timezone
+
 
 
 class VendorDashboardViewSet(viewsets.ViewSet):
@@ -94,7 +101,8 @@ class VendorDashboardViewSet(viewsets.ViewSet):
         ]
 
         # ---------- Monthly Top selling products ----------
-        current_date = now()
+        current_date = timezone.now()
+
         year_start = current_date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
 
         # Fetch all order items for this vendor from Jan 1st to today
@@ -404,4 +412,71 @@ class VendorReviewViewSet(viewsets.ViewSet):
             "monthly_reviews": monthly_reviews,
             "products": products_data,
             "reviews": serializer.data
+        })
+
+
+
+class VendorTransactionListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_vendor_sales(self, vendor):
+        sales = []
+        order_items = OrderItem.objects.filter(product__vendor=vendor).select_related('order', 'product')
+
+        for item in order_items:
+            total_amount = item.price * item.quantity
+            admin_commission = total_amount * Decimal('0.03')
+            vendor_amount = total_amount - admin_commission
+            txn_id = f"TXN{item.order.id}{item.id}"
+
+            sales.append({
+                "date": item.order.created_at.date(),
+                "transaction_id": txn_id,
+                "type": "Sale",
+                "product": item.product.name,
+                "status": item.order.status.capitalize(),
+                "order_id": str(item.order.id),
+                "amount": float(total_amount),
+                "admin_commission": float(admin_commission),
+                "vendor_amount": float(vendor_amount),
+                "description": "Payment received"
+            })
+
+        sales.sort(key=lambda x: x['date'], reverse=True)
+        return sales
+
+    def get_vendor_payouts(self, vendor):
+        payouts_list = []
+        payouts = Payout.objects.filter(vendor=vendor)
+
+        for payout in payouts:
+            txn_id = f"PAYOUT{payout.id}"
+            payouts_list.append({
+                "date": payout.created_at.date(),
+                "transaction_id": txn_id,
+                "type": "Payout",
+                "product": "-",
+                "status": payout.status.capitalize(),
+                "order_id": "-",
+                "amount": float(payout.amount + payout.commission),
+                "admin_commission": float(payout.commission),
+                "vendor_amount": float(payout.amount),
+                "description": "Vendor payout"
+            })
+
+        payouts_list.sort(key=lambda x: x['date'], reverse=True)
+        return payouts_list
+
+    def get(self, request, *args, **kwargs):
+        vendor = request.user
+        if not hasattr(vendor, 'vendor_profile'):
+            return Response({"error": "User is not a vendor"}, status=400)
+
+        sales = self.get_vendor_sales(vendor)
+        payouts = self.get_vendor_payouts(vendor)
+
+        # Combine two lists in the response
+        return Response({
+            "sales": sales,
+            "payouts": payouts
         })

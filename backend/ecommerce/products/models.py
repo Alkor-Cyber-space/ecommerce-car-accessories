@@ -87,3 +87,17 @@ class Review(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.product.name} - {self.rating} stars"
+
+class ReviewReply(models.Model):
+    review = models.OneToOneField(
+        'Review', on_delete=models.CASCADE, related_name='reply'
+    )
+    replier = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE
+    )  # who replied (admin/vendor)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Reply by {self.replier.username} to Review {self.review.id}"

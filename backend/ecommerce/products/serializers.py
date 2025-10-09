@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import *
+from accounts.models import *
 from vehicles.serializers import VehicleVariantReadSerializer
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -18,6 +19,24 @@ class CategorySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Name is required.")
         return attrs
     
+
+class VendorPickupAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['id', 'line1', 'line2', 'city', 'state', 'postal_code', 'country']
+
+class VendorSerializer(serializers.ModelSerializer):
+    pickup_locations = VendorPickupAddressSerializer(
+        many=True,
+        source='addresses',  # addresses related_name from Address model
+        read_only=True
+    )
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'username', 'email', 'pickup_locations']
+
+
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
@@ -29,6 +48,7 @@ class ProductSerializer(serializers.ModelSerializer):
     image_list = ProductImageSerializer(many=True, read_only=True, source='images')
     category = CategorySerializer(read_only=True)
     tag = serializers.CharField(required=False, allow_blank=True)
+    vendor = VendorSerializer(read_only=True)
 
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
@@ -51,7 +71,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at', 'weight', 'length', 'breadth', 'height',
             "manufacturing_date", "tag", "size", 'category', 'category_id',
             "image_list","compatible_varient_year_ids" , 'compatible_varient_year',
-            "length","breadth","height","weight"
+            "length","breadth","height","weight","vendor","is_available"
         ]
         extra_kwargs = {
             'size': {'required': False, 'allow_null': True, 'allow_blank': True},
@@ -152,3 +172,11 @@ class DashboardProductSerializer(serializers.ModelSerializer):
             "category", "is_featured", "is_best_seller",
             "is_top_rated", "is_new", "compatible_varient_year","images",
         ]
+
+class ReviewReplySerializer(serializers.ModelSerializer):
+    replier = serializers.StringRelatedField(read_only=True)
+    review = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = ReviewReply
+        fields = ['id', 'review', 'replier', 'message', 'created_at', 'updated_at']

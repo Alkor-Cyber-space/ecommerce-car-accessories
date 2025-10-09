@@ -417,10 +417,10 @@ export const updateProductCategoryApi = async (categoryid, category) => {
       category,
       {
         headers: {
-          Authorization: `JWT ${token}`,
           "Content-Type": "multipart/form-data",
         },
       }
+
     );
     return response;
   } catch (error) {
@@ -709,6 +709,17 @@ export const getUserOrderListApi = async (vendorId) => {
     throw error;
   }
 };
+// update order status
+export const updateOrderStatusApi = async (orderId) => {
+  try {
+    const response = await api.post(`/orders/vendor/orders/${orderId}/confirm/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    throw error;
+  }
+};
+
 
 export const getAuditLogsApi = async () => {
   try {
@@ -1192,7 +1203,6 @@ export const updateSupportTicketApi = async (Id, updatedData) => {
       {
         headers: {
           "Content-Type": "application/json",
-          Authorization: `JWT ${localStorage.getItem("access_token")}`, // ✅ include token if required
         },
       }
     );
@@ -1266,6 +1276,46 @@ export const markTicketInProgressApi = async (ticketId) => {
     return response.data;
   } catch (error) {
     console.error("Error marking ticket as in progress:", error);
+    throw error;
+  }
+};
+
+export const exportReportApi = async (reportType, format, data) => {
+  try {
+    const response = await api.post(
+      "/auth/export-report/",
+      {
+        report_type: reportType,
+        format: format,
+        data: data,
+      },
+      {
+        responseType: "blob", // important for downloading files
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error("Error exporting report:", error);
+    throw error;
+  }
+};
+
+    export const InventorystatsAPi = async () => {
+  try {
+    const response = await api.get("/admin/inventory/stats/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching inventory stats:", error);
+    throw error;
+  }
+};
+
+export const PaymentsPayoutApi = async () => {
+  try {
+    const response = await api.get("/vendor/payments/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching transaction history:", error);
     throw error;
   }
 };

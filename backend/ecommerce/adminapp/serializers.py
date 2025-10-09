@@ -24,6 +24,7 @@ class AdminDashboardSerializer(serializers.Serializer):
     
     monthly_sales = serializers.SerializerMethodField()
     monthly_products = serializers.SerializerMethodField()
+    most_sold_products = serializers.ListField(child=serializers.DictField(), required=False)
 
     def get_monthly_sales(self, obj):
         return obj.get("monthly_sales", [])
@@ -142,3 +143,90 @@ class SupportTicketSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         validated_data["vendor"] = user
         return super().create(validated_data)
+
+
+class InventoryStatsSerializer(serializers.Serializer):
+    total_products = serializers.IntegerField()
+    in_stock = serializers.IntegerField()
+    low_stock = serializers.IntegerField()
+    out_of_stock = serializers.IntegerField()
+    stock_by_category = serializers.DictField(child=serializers.IntegerField())
+    stock_movement = serializers.ListField(
+        child=serializers.DictField()
+    )
+
+
+class GrowthTrendSerializer(serializers.Serializer):
+    month = serializers.CharField()
+    total_sales = serializers.FloatField()
+    total_orders = serializers.IntegerField()
+
+
+class VendorRevenueSerializer(serializers.Serializer):
+    vendor_id = serializers.IntegerField()
+    vendor_email = serializers.EmailField()
+    total_revenue = serializers.FloatField()
+    total_items = serializers.IntegerField()
+
+
+class TopCustomerSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    email = serializers.EmailField()
+    total_spent = serializers.FloatField()
+    total_orders = serializers.IntegerField()
+
+
+class AdminAnalyticsSerializer(serializers.Serializer):
+    growth_trends = GrowthTrendSerializer(many=True)
+    vendor_vs_revenue = VendorRevenueSerializer(many=True)
+    top_customers = TopCustomerSerializer(many=True)
+
+
+class AdminSalesAnalyticsSerializer(serializers.Serializer):
+    orders_today = serializers.IntegerField()
+    products_sold_today = serializers.IntegerField()
+    new_users = serializers.IntegerField()
+    refunds_today = serializers.IntegerField()
+    
+    sales_trends = serializers.ListField(child=serializers.DictField())
+    total_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
+    returns_and_refunds = serializers.DecimalField(max_digits=12, decimal_places=2)
+    
+    top_vendors = serializers.ListField(child=serializers.DictField())
+    top_products = serializers.ListField(child=serializers.DictField())
+
+
+class AdminSalesReportSerializer(serializers.Serializer):
+    date = serializers.DateTimeField()
+    order_id = serializers.IntegerField()
+    product = serializers.CharField()
+    vendor = serializers.CharField()
+    buyer = serializers.CharField()
+    quantity = serializers.IntegerField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2)
+    commission = serializers.DecimalField(max_digits=10, decimal_places=2)
+    earnings = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class AdminTransactionTableSerializer(serializers.Serializer):
+    date = serializers.DateTimeField()
+    order_id = serializers.IntegerField()
+    buyer = serializers.CharField()
+    payment_method = serializers.CharField()
+    status = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    refund = serializers.DecimalField(max_digits=12, decimal_places=2)
+    gateway_fee = serializers.DecimalField(max_digits=12, decimal_places=2)
+    net_received = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+class AdminTaxTableSerializer(serializers.Serializer):
+    date = serializers.DateTimeField()
+    invoice = serializers.CharField()
+    product = serializers.CharField()
+    tax_type = serializers.CharField()
+    base_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    tax = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    state = serializers.CharField()
+    buyer_type = serializers.CharField()

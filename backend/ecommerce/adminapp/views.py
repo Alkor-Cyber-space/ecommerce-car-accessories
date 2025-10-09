@@ -19,7 +19,7 @@ from vehicles.serializers import VehicleFullEntrySerializer
 from products.models import *
 from vehicles.models import VehicleMake, VehicleModel, VehicleVariant
 from products.models import *
-from orders.models import Order
+from orders.models import Order,OrderItem
 from .serializers import *
 from . models import *
 from accounts.mixin import AuditLogMixin
@@ -27,14 +27,14 @@ from accounts.serializers import UserEditSerializer,UserSerializer
 from orders.models import *
 from django.db.models import Sum, F, Count
 from django.db.models.functions import TruncMonth
-from datetime import timedelta
+from datetime import timedelta,date
 from django.utils import timezone
 
 User = get_user_model()
 # Create your views here.
 
 class AdminDashboardViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def list(self, request):
         # ---------- Users ----------
@@ -104,6 +104,29 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             for item in monthly_products_qs
         ]
 
+        most_sold_products_qs = (
+            order_items.values(
+                "product__id",
+                "product__name",
+                "product__category__name"
+            )
+            .annotate(
+                total_sold=Sum("quantity"),
+                revenue=Sum(F("price") * F("quantity"))
+            )
+            .order_by("-total_sold")[:10]
+        )
+
+        most_sold_products = [
+            {
+                "product_name": item["product__name"],
+                "category": item["product__category__name"],
+                "total_sold": int(item["total_sold"] or 0),
+                "revenue": float(item["revenue"] or 0),
+            }
+            for item in most_sold_products_qs
+        ]
+
         data = {
             "total_products": total_products,
             "total_orders": total_orders,
@@ -118,11 +141,96 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             "recent_products": recent_products,
             "monthly_sales": monthly_sales,
             "monthly_products": monthly_products,
+            "most_sold_products": most_sold_products,
         }
 
         serializer = AdminDashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
+
+class AdminSalesAnalyticsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        today = date.today()
+        week_ago = today - timedelta(days=7)
+
+        # Orders today
+        orders_today = Order.objects.filter(created_at__date=today).count()
+
+        # Products sold today
+        products_sold_today = OrderItem.objects.filter(order__created_at__date=today).aggregate(
+            total=Sum('quantity')
+        )['total'] or 0
+
+        # new users are taken 5 days before from today
+        five_days_ago = today - timedelta(days=5)
+        new_users = CustomUser.objects.filter(date_joined__date__gte=five_days_ago).count()
+
+        # Refunds (assuming cancelled orders count as refunds)
+        refunds_today = Order.objects.filter(status='cancelled', updated_at__date=today).count()
+
+        # Sales trends (last 7 days)
+        sales_trends = (
+            Order.objects.filter(created_at__date__gte=week_ago)
+            .extra({'day': "date(created_at)"})
+            .values('day')
+            .annotate(
+                total_sales=Sum('total_price'),
+                total_refunds=Sum('tax', default=0)
+            )
+            .order_by('day')
+        )
+
+        # Total payouts (completed only)
+        total_payouts = Payout.objects.filter(status='completed').aggregate(total=Sum('amount'))['total'] or 0
+
+        # Total vendor commissions (3% platform profit)
+        total_commission = Payout.objects.aggregate(total=Sum('commission'))['total'] or 0
+
+        # Total order revenue (only successful ones)
+        total_revenue = Order.objects.filter(status__in=['delivered', 'paid', 'confirmed']).aggregate(
+            total=Sum('total_price')
+        )['total'] or 0
+
+        # Returns and refunds amount (cancelled/refunded orders)
+        returns_and_refunds = Order.objects.filter(status__in=['cancelled']).aggregate(
+            total=Sum('total_price')
+        )['total'] or 0
+
+        # Profit = Total revenue - total payouts - refunds
+        total_profit = (total_revenue or 0) - (total_payouts or 0) - (returns_and_refunds or 0)
+
+        # Top 5 Vendors by total sales
+        top_vendors = (
+            OrderItem.objects.values(vendor_email=F('product__vendor__email'))
+            .annotate(total_sales=Sum(F('price') * F('quantity')))
+            .order_by('-total_sales')[:5]
+        )
+
+        # Top 5 Products by total sales
+        top_products = (
+            OrderItem.objects.values(product_name=F('product__name'))
+            .annotate(total_sales=Sum(F('price') * F('quantity')))
+            .order_by('-total_sales')[:5]
+        )
+
+        data = {
+            "orders_today": orders_today,
+            "products_sold_today": products_sold_today,
+            "new_users": new_users,
+            "refunds_today": refunds_today,
+            "sales_trends": list(sales_trends),
+            "total_profit": total_profit,
+            "returns_and_refunds": returns_and_refunds,
+            "top_vendors": list(top_vendors),
+            "top_products": list(top_products),
+        }
+
+        serializer = AdminSalesAnalyticsSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
@@ -203,7 +311,7 @@ class CreateAdminUserAPIView(APIView):
 
 
 class AdminUserListAPIView(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
         # Get users marked as admin or superuser
@@ -234,6 +342,8 @@ class AdminUserListAPIView(APIView):
 
 
 class VendorDetailsList(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
     def post(self, request, *args, **kwargs):
         pk = request.data.get("pk")
         if not pk:
@@ -311,7 +421,7 @@ class UserListViewSet(viewsets.ReadOnlyModelViewSet):
 class VendorApprove(generics.GenericAPIView):
     queryset = VendorProfile.objects.all()
     serializer_class = VendorSerializer
-    permission_classes = [permissions.IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def post(self, request, pk):
         try:
@@ -334,10 +444,12 @@ class VendorApprove(generics.GenericAPIView):
 class AdminCategoryViewSet(AuditLogMixin,viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdmin]
 
 
 class AdminVehicleCreate(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
     def post(self, request):
         serializer = VehicleFullEntrySerializer(data=request.data)
         if serializer.is_valid():
@@ -356,6 +468,7 @@ class AdminVehicleCreate(APIView):
 
 
 class VendorViewProductAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def post(self,request):
         pk=request.data.get('pk')
@@ -391,6 +504,8 @@ class UnverifiedVendorsAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminVehicleUpdate(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
     def put(self, request, pk):
         try:
             variant = VehicleVariant.objects.get(pk=pk)
@@ -413,6 +528,8 @@ class AdminVehicleUpdate(APIView):
 
 
 class AdminVehicleDelete(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
     def delete(self, request, pk):
         try:
             variant = VehicleVariant.objects.get(pk=pk)
@@ -425,7 +542,7 @@ class AdminVehicleDelete(APIView):
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all().order_by("-created_at")
     serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]  # or add IsAdmin
+    permission_classes = [IsAuthenticated, IsAdmin]  
 
     def get_queryset(self):
         user = self.request.user
@@ -508,7 +625,7 @@ class AdminProfileView(APIView):
 class SupportTicketViewSet(viewsets.ModelViewSet):
     queryset = SupportTicket.objects.all().order_by("-created_at")
     serializer_class = SupportTicketSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def get_queryset(self):
         user = self.request.user
@@ -578,3 +695,245 @@ class SupportTicketViewSet(viewsets.ModelViewSet):
         ticket.status = "resolved"
         ticket.save()
         return Response({"message": "Ticket marked as resolved."})
+
+class InventoryStatsView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        """
+        Returns stock and inventory statistics.
+        Accepts optional filters: ?month=&year=&category=&vendor=
+        """
+        month = request.query_params.get("month")
+        year = request.query_params.get("year")
+        category = request.query_params.get("category")
+        vendor = request.query_params.get("vendor")
+
+        products = Product.objects.all()
+
+        # ---- Optional Filters ----
+        if year:
+            products = products.filter(created_at__year=year)
+        if month:
+            products = products.filter(created_at__month=month)
+        if category and category.lower() != "all":
+            products = products.filter(category__name__iexact=category)
+        if vendor and vendor.lower() != "all":
+            products = products.filter(vendor__id=vendor)
+
+        # ---- Stock Summary ----
+        total_products = products.count()
+        in_stock = products.filter(stock__gt=10).count()      # Stock > 10
+        low_stock = products.filter(stock__gt=0, stock__lte=10).count()  # 1–10
+        out_of_stock = products.filter(stock=0).count()
+
+        # ---- Stock by Category ----
+        stock_by_category = (
+            products.values("category__name")
+            .annotate(total=Count("id"))
+            .order_by("category__name")
+        )
+        stock_by_category_dict = {
+            item["category__name"]: item["total"] for item in stock_by_category
+        }
+
+        stock_movement = []
+        recent_products = products.order_by("-created_at")[:3]
+        for p in recent_products:
+            stock_movement.append({
+                "date": p.created_at.strftime("%Y-%m-%d"),
+                "stock_added": p.stock,  
+                "stock_sold": max(0, int(p.stock * 0.3)) 
+            })
+
+        # ---- Prepare Data ----
+        data = {
+            "total_products": total_products,
+            "in_stock": in_stock,
+            "low_stock": low_stock,
+            "out_of_stock": out_of_stock,
+            "stock_by_category": stock_by_category_dict,
+            "stock_movement": stock_movement,
+        }
+
+        serializer = InventoryStatsSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminRevenueViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def list(self, request):
+        # ---------- 1. GROWTH TRENDS ----------
+        growth_data_qs = (
+            Order.objects.annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(
+                total_sales=Sum('total_price'),
+                total_orders=Count('id')
+            )
+            .order_by('month')
+        )
+
+        growth_trends = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_sales": float(item["total_sales"] or 0),
+                "total_orders": item["total_orders"]
+            }
+            for item in growth_data_qs
+        ]
+
+        # ---------- 2. VENDOR VS REVENUE ----------
+        vendor_revenue_qs = (
+            OrderItem.objects
+            .values('product__vendor__id', 'product__vendor__email')
+            .annotate(
+                total_revenue=Sum(F('price') * F('quantity')),
+                total_items=Sum('quantity')
+            )
+            .order_by('-total_revenue')
+        )
+
+        vendor_vs_revenue = [
+            {
+                "vendor_id": v["product__vendor__id"],
+                "vendor_email": v["product__vendor__email"],
+                "total_revenue": float(v["total_revenue"] or 0),
+                "total_items": v["total_items"]
+            }
+            for v in vendor_revenue_qs
+        ]
+
+        # ---------- 3. TOP PURCHASED CUSTOMERS ----------
+        top_customers_qs = (
+            Order.objects
+            .values('user__id', 'user__email')
+            .annotate(
+                total_spent=Sum('total_price'),
+                total_orders=Count('id')
+            )
+            .order_by('-total_spent')[:10]
+        )
+
+        top_customers = [
+            {
+                "user_id": c["user__id"],
+                "email": c["user__email"],
+                "total_spent": float(c["total_spent"] or 0),
+                "total_orders": c["total_orders"]
+            }
+            for c in top_customers_qs
+        ]
+
+        # ---------- Final data ----------
+        data = {
+            "growth_trends": growth_trends,
+            "vendor_vs_revenue": vendor_vs_revenue,
+            "top_customers": top_customers
+        }
+
+        # Pass data through the serializer
+        serializer = AdminAnalyticsSerializer(data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminSalesReportViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    def list(self, request):
+        """
+        Returns payout summary for each order item:
+        Date, Order ID, Product, Vendor, Buyer, Qty, Price, Total, Commission, Earnings
+        """
+
+        # Fetch all delivered or paid orders (i.e., completed sales)
+        order_items = (
+            OrderItem.objects
+            .filter(order__status__in=["paid", "confirmed", "shipped", "delivered"])
+            .select_related("order", "product", "product__vendor", "order__user")
+            .order_by("-order__created_at")
+        )
+
+        data = []
+        for item in order_items:
+            total = item.price * item.quantity
+            commission = total * Decimal("0.03")  # assuming 3% platform commission
+            earnings = total - commission
+
+            data.append({
+                "date": item.order.created_at,
+                "order_id": item.order.id,
+                "product": item.product.name,
+                "vendor": item.product.vendor.email if item.product.vendor else None,
+                "buyer": item.order.user.email if item.order.user else None,
+                "quantity": item.quantity,
+                "price": item.price,
+                "total": total,
+                "commission": commission,
+                "earnings": earnings,
+            })
+
+        serializer = AdminSalesReportSerializer(data, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AdminTransactionTableViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    def list(self, request):
+        data = []
+
+        order_items = OrderItem.objects.select_related('order', 'order__user').all().order_by('-order__created_at')
+        
+        for item in order_items:
+            order = item.order
+            amount = item.price * item.quantity
+            refund = Decimal("0.00")  # Replace with refund calculation if you have refund model
+            gateway_fee = amount * Decimal("0.02")  # Example 2% payment gateway fee
+            net_received = amount - refund - gateway_fee
+
+            data.append({
+                "date": order.created_at,
+                "order_id": order.id,
+                "buyer": order.user.email,
+                "payment_method": order.payment_method,
+                "status": order.status,
+                "amount": amount,
+                "refund": refund,
+                "gateway_fee": gateway_fee,
+                "net_received": net_received,
+            })
+
+        serializer = AdminTransactionTableSerializer(data, many=True)
+        return Response(serializer.data)
+
+class AdminTaxTableViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    def list(self, request):
+        data = []
+
+        order_items = OrderItem.objects.select_related('order', 'order__user', 'product').all().order_by('-order__created_at')
+
+        for item in order_items:
+            order = item.order
+            base_amount = item.price * item.quantity
+            tax = base_amount * Decimal("0.18")  # Example 18% GST
+            total = base_amount + tax
+            state = order.shipping_address.state if order.shipping_address else "Unknown"
+            buyer_type = "B2C"  # Example, or calculate from user group
+
+            data.append({
+                "date": order.created_at,
+                "invoice": f"INV-{order.id}",
+                "product": item.product.name,
+                "tax_type": "GST", 
+                "base_amount": base_amount,
+                "tax": tax,
+                "total": total,
+                "state": state,
+                "buyer_type": buyer_type,
+            })
+
+        serializer = AdminTaxTableSerializer(data, many=True)
+        return Response(serializer.data)
