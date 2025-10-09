@@ -154,3 +154,43 @@ class InventoryStatsSerializer(serializers.Serializer):
     stock_movement = serializers.ListField(
         child=serializers.DictField()
     )
+
+
+class GrowthTrendSerializer(serializers.Serializer):
+    month = serializers.CharField()
+    total_sales = serializers.FloatField()
+    total_orders = serializers.IntegerField()
+
+
+class VendorRevenueSerializer(serializers.Serializer):
+    vendor_id = serializers.IntegerField()
+    vendor_email = serializers.EmailField()
+    total_revenue = serializers.FloatField()
+    total_items = serializers.IntegerField()
+
+
+class TopCustomerSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    email = serializers.EmailField()
+    total_spent = serializers.FloatField()
+    total_orders = serializers.IntegerField()
+
+
+class AdminAnalyticsSerializer(serializers.Serializer):
+    growth_trends = GrowthTrendSerializer(many=True)
+    vendor_vs_revenue = VendorRevenueSerializer(many=True)
+    top_customers = TopCustomerSerializer(many=True)
+
+
+class AdminSalesAnalyticsSerializer(serializers.Serializer):
+    orders_today = serializers.IntegerField()
+    products_sold_today = serializers.IntegerField()
+    new_users = serializers.IntegerField()
+    refunds_today = serializers.IntegerField()
+    
+    sales_trends = serializers.ListField(child=serializers.DictField())
+    total_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
+    returns_and_refunds = serializers.DecimalField(max_digits=12, decimal_places=2)
+    
+    top_vendors = serializers.ListField(child=serializers.DictField())
+    top_products = serializers.ListField(child=serializers.DictField())
