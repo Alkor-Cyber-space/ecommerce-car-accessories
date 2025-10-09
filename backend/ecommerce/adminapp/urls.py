@@ -9,6 +9,7 @@ router.register(r'categories', AdminCategoryViewSet, basename='admin-categories'
 router.register(r'notifications', NotificationViewSet, basename='notifications')
 router.register(r'support-tickets', SupportTicketViewSet, basename='support-tickets')   
 router.register(r'ad-dashboard', AdminDashboardViewSet, basename='admin-dashboard')
+router.register(r'revenue', AdminRevenueViewSet, basename='admin-revenue')
 
 
 
@@ -28,5 +29,6 @@ urlpatterns = [
     path("vendor/details/", VendorDetailsList.as_view(), name="vendor-details"),
     path("profile/", AdminProfileView.as_view(), name="admin-profile"),
     path("inventory/stats/", InventoryStatsView.as_view(), name="inventory-stats"),
+    path("sales-analytics/", AdminSalesAnalyticsView.as_view(), name="sales-analytics"),
 
 ]
