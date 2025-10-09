@@ -71,7 +71,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at', 'weight', 'length', 'breadth', 'height',
             "manufacturing_date", "tag", "size", 'category', 'category_id',
             "image_list","compatible_varient_year_ids" , 'compatible_varient_year',
-            "length","breadth","height","weight","vendor"
+            "length","breadth","height","weight","vendor","is_available"
         ]
         extra_kwargs = {
             'size': {'required': False, 'allow_null': True, 'allow_blank': True},
@@ -172,3 +172,11 @@ class DashboardProductSerializer(serializers.ModelSerializer):
             "category", "is_featured", "is_best_seller",
             "is_top_rated", "is_new", "compatible_varient_year","images",
         ]
+
+class ReviewReplySerializer(serializers.ModelSerializer):
+    replier = serializers.StringRelatedField(read_only=True)
+    review = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = ReviewReply
+        fields = ['id', 'review', 'replier', 'message', 'created_at', 'updated_at']
