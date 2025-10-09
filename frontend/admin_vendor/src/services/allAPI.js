@@ -1260,3 +1260,23 @@ export const markTicketInProgressApi = async (ticketId) => {
     throw error;
   }
 };
+
+export const InventorystatsAPi = async () => {
+  try {
+    const response = await api.get("/admin/inventory/stats/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching inventory stats:", error);
+    throw error;
+  }
+};
+
+export const PaymentsPayoutApi = async () => {
+  try {
+    const response = await api.get("/vendor/payments/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching transaction history:", error);
+    throw error;
+  }
+};
