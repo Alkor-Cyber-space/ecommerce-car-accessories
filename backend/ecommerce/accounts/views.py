@@ -196,6 +196,9 @@ class UserViewSet(viewsets.ViewSet):
         serializer = LogoutSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            fcm_token = request.data.get('fcm_token')
+            if fcm_token:
+                FCMToken.objects.filter(user=request.user, token=fcm_token).delete()
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

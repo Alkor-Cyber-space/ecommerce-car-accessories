@@ -836,3 +836,104 @@ class AdminRevenueViewSet(viewsets.ViewSet):
         # Pass data through the serializer
         serializer = AdminAnalyticsSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AdminSalesReportViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    def list(self, request):
+        """
+        Returns payout summary for each order item:
+        Date, Order ID, Product, Vendor, Buyer, Qty, Price, Total, Commission, Earnings
+        """
+
+        # Fetch all delivered or paid orders (i.e., completed sales)
+        order_items = (
+            OrderItem.objects
+            .filter(order__status__in=["paid", "confirmed", "shipped", "delivered"])
+            .select_related("order", "product", "product__vendor", "order__user")
+            .order_by("-order__created_at")
+        )
+
+        data = []
+        for item in order_items:
+            total = item.price * item.quantity
+            commission = total * Decimal("0.03")  # assuming 3% platform commission
+            earnings = total - commission
+
+            data.append({
+                "date": item.order.created_at,
+                "order_id": item.order.id,
+                "product": item.product.name,
+                "vendor": item.product.vendor.email if item.product.vendor else None,
+                "buyer": item.order.user.email if item.order.user else None,
+                "quantity": item.quantity,
+                "price": item.price,
+                "total": total,
+                "commission": commission,
+                "earnings": earnings,
+            })
+
+        serializer = AdminSalesReportSerializer(data, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class AdminTransactionTableViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    def list(self, request):
+        data = []
+
+        order_items = OrderItem.objects.select_related('order', 'order__user').all().order_by('-order__created_at')
+        
+        for item in order_items:
+            order = item.order
+            amount = item.price * item.quantity
+            refund = Decimal("0.00")  # Replace with refund calculation if you have refund model
+            gateway_fee = amount * Decimal("0.02")  # Example 2% payment gateway fee
+            net_received = amount - refund - gateway_fee
+
+            data.append({
+                "date": order.created_at,
+                "order_id": order.id,
+                "buyer": order.user.email,
+                "payment_method": order.payment_method,
+                "status": order.status,
+                "amount": amount,
+                "refund": refund,
+                "gateway_fee": gateway_fee,
+                "net_received": net_received,
+            })
+
+        serializer = AdminTransactionTableSerializer(data, many=True)
+        return Response(serializer.data)
+
+class AdminTaxTableViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAdminUser]
+
+    def list(self, request):
+        data = []
+
+        order_items = OrderItem.objects.select_related('order', 'order__user', 'product').all().order_by('-order__created_at')
+
+        for item in order_items:
+            order = item.order
+            base_amount = item.price * item.quantity
+            tax = base_amount * Decimal("0.18")  # Example 18% GST
+            total = base_amount + tax
+            state = order.shipping_address.state if order.shipping_address else "Unknown"
+            buyer_type = "B2C"  # Example, or calculate from user group
+
+            data.append({
+                "date": order.created_at,
+                "invoice": f"INV-{order.id}",
+                "product": item.product.name,
+                "tax_type": "GST", 
+                "base_amount": base_amount,
+                "tax": tax,
+                "total": total,
+                "state": state,
+                "buyer_type": buyer_type,
+            })
+
+        serializer = AdminTaxTableSerializer(data, many=True)
+        return Response(serializer.data)

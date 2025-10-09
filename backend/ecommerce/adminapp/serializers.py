@@ -194,3 +194,39 @@ class AdminSalesAnalyticsSerializer(serializers.Serializer):
     
     top_vendors = serializers.ListField(child=serializers.DictField())
     top_products = serializers.ListField(child=serializers.DictField())
+
+
+class AdminSalesReportSerializer(serializers.Serializer):
+    date = serializers.DateTimeField()
+    order_id = serializers.IntegerField()
+    product = serializers.CharField()
+    vendor = serializers.CharField()
+    buyer = serializers.CharField()
+    quantity = serializers.IntegerField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    total = serializers.DecimalField(max_digits=10, decimal_places=2)
+    commission = serializers.DecimalField(max_digits=10, decimal_places=2)
+    earnings = serializers.DecimalField(max_digits=10, decimal_places=2)
+
+
+class AdminTransactionTableSerializer(serializers.Serializer):
+    date = serializers.DateTimeField()
+    order_id = serializers.IntegerField()
+    buyer = serializers.CharField()
+    payment_method = serializers.CharField()
+    status = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    refund = serializers.DecimalField(max_digits=12, decimal_places=2)
+    gateway_fee = serializers.DecimalField(max_digits=12, decimal_places=2)
+    net_received = serializers.DecimalField(max_digits=12, decimal_places=2)
+
+class AdminTaxTableSerializer(serializers.Serializer):
+    date = serializers.DateTimeField()
+    invoice = serializers.CharField()
+    product = serializers.CharField()
+    tax_type = serializers.CharField()
+    base_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    tax = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total = serializers.DecimalField(max_digits=12, decimal_places=2)
+    state = serializers.CharField()
+    buyer_type = serializers.CharField()
