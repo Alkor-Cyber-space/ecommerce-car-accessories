@@ -7,6 +7,7 @@ import {
   updateAdminAccountSettingsApi,
 } from "../../services/allAPI";
 const AdminAccountSettings = () => {
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
     profile_image: null,
     username: "",
@@ -59,10 +60,22 @@ const AdminAccountSettings = () => {
     if (file) {
       setFormData((prev) => ({
         ...prev,
-        profile_image: file, //
+        profile_image: file,
       }));
+      // Create preview URL
+      const previewUrl = URL.createObjectURL(file);
+      setImagePreview(previewUrl);
     }
   };
+
+  // Cleanup preview URL when component unmounts
+  useEffect(() => {
+    return () => {
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+    };
+  }, [imagePreview]);
   // Handle form input changes
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -73,28 +86,56 @@ const AdminAccountSettings = () => {
   };
   // Handle profile update submission
   const handleEditProfile = async () => {
-    setLoading(true);
-    try {
-      const formDataToSend = new FormData();
-      for (const key in formData) {
-        if (formData[key] !== null && formData[key] !== undefined && formData[key] !== "") {
-          formDataToSend.append(key, formData[key]);
-        }
+  setLoading(true);
+  try {
+    const formDataToSend = new FormData();
+    for (const key in formData) {
+      const value = formData[key];
+      if (value !== null && value !== "" && value !== undefined) {
+        formDataToSend.append(key, value);
       }
-      const response = await updateAdminAccountSettingsApi(formData.id, formDataToSend);
-      console.log("Profile update response:", response);
-      toast.success("Profile updated successfully!");
-      setFormData(prev => ({
-        ...prev,
-        profile_image: response.profile_image,
-      }));
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    const response = await updateAdminAccountSettingsApi(formData.id, formDataToSend);
+    console.log("Update Response:", response);
+
+    let updatedImage = response.profile_image;
+    if (updatedImage && !updatedImage.startsWith("http")) {
+      updatedImage = `${serverUrl}${updatedImage}`;
+    }
+
+    // ✅ Update state in this component
+    setFormData((prev) => ({
+      ...prev,
+      ...response,
+      profile_image: updatedImage,
+      old_password: "",
+      new_password: "",
+    }));
+    if (updatedImage) setImagePreview(updatedImage);
+
+    // ✅ Dispatch event globally so AdminHome can listen
+    window.dispatchEvent(
+      new CustomEvent("adminProfileUpdated", {
+        detail: {
+          profile_image: updatedImage,
+          username: response.username,
+          email: response.email,
+        },
+      })
+    );
+
+    toast.success("Profile updated successfully!");
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    toast.error("Failed to update profile");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   const handleDeactivateConfirm = () => {
     confirmAlert({
       title: "Confirm Account Deactivation",
@@ -151,14 +192,14 @@ const AdminAccountSettings = () => {
             {/* Profile Info */}
             <div className="flex items-center gap-3">
               <img
-                // src={
-                //   formData.profile_image
-                //     ? typeof formData.profile_image === "string"
-                //       ? formData.profile_image // If it's a URL string
-                //       : URL.createObjectURL(formData.profile_image) // If it's a File object
-                //     : user
-                // }
-                src={`${serverUrl}${formData?.profile_image}`}
+                src={
+                  imagePreview ||
+                  (formData?.profile_image
+                    ? formData.profile_image.startsWith("http")
+                      ? formData.profile_image
+                      : `${serverUrl}${formData.profile_image}`
+                    : user)
+                }
                 alt="profile"
                 className="w-16 h-16 rounded-full object-cover"
               />

@@ -2,30 +2,30 @@ import axios from "axios";
 import { serverurl } from "./serverURL";
 import { commonAPI } from "./commonAPI";
 
-const refreshToken = async () => {
-  const refresh = localStorage.getItem("refresh_token"); // ensure your key name matches here
+// const refreshToken = async () => {
+//   const refresh = localStorage.getItem("refresh_token"); // ensure your key name matches here
 
-  if (!refresh) {
-    throw new Error("No refresh token found in localStorage");
-  }
+//   if (!refresh) {
+//     throw new Error("No refresh token found in localStorage");
+//   }
 
-  try {
-    const response = await axios.post(`${serverurl}/api/token/refresh/`, {
-      refresh, // ✅ correct key
-    });
+//   try {
+//     const response = await axios.post(`${serverurl}/api/token/refresh/`, {
+//       refresh, // ✅ correct key
+//     });
 
-    const newAccessToken = response.data.access; // ✅ not access_token, just "access"
-    localStorage.setItem("access_token", newAccessToken);
+//     const newAccessToken = response.data.access; // ✅ not access_token, just "access"
+//     localStorage.setItem("access_token", newAccessToken);
 
-    return newAccessToken;
-  } catch (error) {
-    console.error(
-      "Error refreshing token:",
-      error.response?.data || error.message
-    );
-    throw error;
-  }
-};
+//     return newAccessToken;
+//   } catch (error) {
+//     console.error(
+//       "Error refreshing token:",
+//       error.response?.data || error.message
+//     );
+//     throw error;
+//   }
+// };
 
 const api = axios.create({
   baseURL: serverurl,
@@ -43,33 +43,46 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response interceptor: refresh on 401
+// ⚡ Response interceptor — handle token refresh or logout
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    // Handle token expiration (401)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
       try {
         const refresh = localStorage.getItem("refresh_token");
-        if (!refresh) throw new Error("No refresh token");
+        if (!refresh) throw new Error("No refresh token found");
 
-        const res = await axios.post(`${serverurl}/token/refresh/`, {
-          refresh,
-        });
-
+        // Attempt to refresh the access token
+        const res = await axios.post(`${serverurl}/token/refresh/`, { refresh });
         const newAccessToken = res.data.access;
         localStorage.setItem("access_token", newAccessToken);
 
-        // Update request with new token
+        // Retry the original request with new token
         originalRequest.headers["Authorization"] = `JWT ${newAccessToken}`;
-        return api(originalRequest); // retry
-      } catch (err) {
-        console.error("Refresh token failed:", err);
-        // Optional: redirect to login
+        return api(originalRequest);
+      } catch (refreshError) {
+        console.error("Refresh token failed:", refreshError);
+
+        // ❌ Refresh token also expired → logout and redirect
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
+
+        window.location.href = "/login";
       }
+    }
+
+    // Handle other 401 or 403 errors
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem("user");
+      window.location.href = "/login";
     }
 
     return Promise.reject(error);
@@ -77,7 +90,6 @@ api.interceptors.response.use(
 );
 
 export default api;
-
 // auth.js
 export const logout = () => {
   // Clear tokens
@@ -399,22 +411,24 @@ export const getProductcategorylist = async () => {
 
 export const updateProductCategoryApi = async (categoryid, category) => {
   try {
+    const token = localStorage.getItem("token");
     const response = await api.put(
       `/admin/categories/${categoryid}/`,
       category,
       {
         headers: {
           Authorization: `JWT ${token}`,
-          "Content-Type": "multipart/form-data", // ✅ important
+          "Content-Type": "multipart/form-data",
         },
       }
     );
     return response;
   } catch (error) {
-    console.error("Error updating account:", error);
+    console.error("Error updating category:", error.response?.data || error);
     throw error;
   }
 };
+
 
 export const getVendorByIdApi = async (vendorId) => {
   try {
@@ -1096,7 +1110,7 @@ export const approveOrRejectCategoryApi = async (categoryId, action) => {
 // -------------------------------------vendor dashboard
 export const getVendorDashboardApi = async () => {
   try {
-    const response = await api.get("/vendor/dashboard/");   
+    const response = await api.get("/vendor/dashboard/");
     return response.data;
   } catch (error) {
     console.error("Error fetching vendor dashboard:", error);
@@ -1211,7 +1225,7 @@ export const markTicketResolvedApi = async (ticketId) => {
 };
 export const markNotificationAsReadApi = async (notificationId) => {
   try {
-    const response = await axios.post(`${serverurl}/admin/notifications/${notificationId}/mark-as-read/`,{},
+    const response = await axios.post(`${serverurl}/admin/notifications/${notificationId}/mark-as-read/`, {},
       {
         headers: {
           Authorization: `JWT ${localStorage.getItem("access_token")}`,

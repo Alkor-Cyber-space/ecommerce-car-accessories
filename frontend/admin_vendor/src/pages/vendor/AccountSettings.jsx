@@ -1,15 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { toast } from "react-toastify";
+import { useOutletContext } from "react-router-dom";
 import { confirmAlert } from "react-confirm-alert";
 import user from "../../assets/user.jpg";
 import { getMeApi, updateAccountApi, deactivateAccountApi } from "../../services/allAPI";
 
 const AccountSettings = () => {
-  const [userProfile, setUserProfile] = useState({});
-  const [passwordData, setPasswordData] = useState({
-    old_password: '',
-    new_password: ''
-  });
   const [formData, setFormData] = useState({
     profile_image: null,
     username: "",
@@ -21,24 +17,15 @@ const AccountSettings = () => {
     new_password: "",
     company: ""
   });
+  const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const handleReplaceImageClick = () => {
-    fileInputRef.current.click();
-  };
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData((prev) => ({
-        ...prev,
-        profile_image: file,
-      }));
-    }
-  };
-
   const [loading, setLoading] = useState(false);
+  const serverUrl = "http://127.0.0.1:8000/";
 
-  const serverUrl = "http://127.0.0.1:8000/"
+  // Optional callback from Outlet (if provided)
+  const { handleProfileUpdate } = (typeof useOutletContext === 'function' ? useOutletContext() : {}) || {};
 
+  // Fetch current profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -56,41 +43,93 @@ const AccountSettings = () => {
         });
       } catch (error) {
         console.error("Failed to fetch profile:", error);
+        toast.error("Failed to fetch profile");
       }
     };
     fetchProfile();
   }, []);
 
+  // Clean preview on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
-  // Handle form input changes for profile data
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Handle image select
+  const handleReplaceImageClick = () => fileInputRef.current.click();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Revoke old preview URL
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+    setFormData(prev => ({ ...prev, profile_image: file }));
   };
 
+  // Handle input changes
+  const handleFormChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-  // Handle profile update submission
-  const handleEditProfile = async () => {
+  // Submit updated profile
+  const handleEditProfile = async (e) => {
+    e?.preventDefault?.();
     setLoading(true);
     try {
       const formDataToSend = new FormData();
       for (const key in formData) {
-        if (formData[key] !== null && formData[key] !== undefined && formData[key] !== "") {
-          formDataToSend.append(key, formData[key]);
+        const value = formData[key];
+        if (value !== null && value !== "" && value !== undefined) {
+          formDataToSend.append(key, value);
         }
       }
+
       const response = await updateAccountApi(formDataToSend);
       console.log("Profile update response:", response);
-      if (response.status === 200) {
-        toast.success("Profile updated successfully!");
-        setFormData(prev => ({
-          ...prev,
-          profile_image: response.profile_image,
-        }));
+
+      let updatedImage = response?.profile_image ?? null;
+      if (updatedImage && typeof updatedImage === 'string' && !updatedImage.startsWith("http")) {
+        updatedImage = `${serverUrl}${updatedImage}`;
       }
+
+      // Update state instantly with new image
+      setFormData(prev => ({
+        ...prev,
+        ...response,
+        profile_image: updatedImage || prev.profile_image,
+        old_password: "",
+        new_password: "",
+      }));
+
+      if (updatedImage) setImagePreview(updatedImage);
+
+      // Optional callback
+      if (typeof handleProfileUpdate === 'function') {
+        handleProfileUpdate({
+          profile_image: updatedImage,
+          username: response?.username ?? formData.username,
+          email: response?.email ?? formData.email,
+        });
+      }
+
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent("vendorProfileUpdated", {
+        detail: {
+          profile_image: updatedImage,
+          username: response?.username ?? formData.username,
+          email: response?.email ?? formData.email,
+        },
+      }));
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+      toast.success("Profile updated successfully!");
+
     } catch (error) {
       console.error("Error updating profile:", error);
       toast.error("Failed to update profile");
@@ -99,45 +138,32 @@ const AccountSettings = () => {
     }
   };
 
-  // Handle account deactivation with confirmation
+  // Deactivate confirmation
   const handleDeactivateConfirm = () => {
     confirmAlert({
       title: "Confirm Account Deactivation",
       message: "Are you sure you want to deactivate your account? This action cannot be undone.",
       buttons: [
-        {
-          label: "Yes, Deactivate",
-          onClick: () => handleDeactivateAccount()
-        },
-        {
-          label: "Cancel"
-        }
+        { label: "Yes, Deactivate", onClick: handleDeactivateAccount },
+        { label: "Cancel" }
       ],
       closeOnEscape: true,
       closeOnClickOutside: true
     });
   };
 
-  // Handle account deactivation
+  // Deactivate account
   const handleDeactivateAccount = async () => {
     setLoading(true);
     try {
       const response = await deactivateAccountApi();
-      console.log("Deactivation response:", response);
       if (response.status === 200) {
         toast.success("Account deactivated successfully!");
-
-        // Clear localStorage and redirect to login
         localStorage.removeItem('access_token');
         localStorage.removeItem('refresh_token');
-
-        // Redirect to login page after a delay
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
+        setTimeout(() => window.location.href = '/login', 2000);
       } else {
-        toast.error(response.data.message);
-        console.error("Deactivation failed:", response);
+        toast.error(response.data.message || "Deactivation failed");
       }
     } catch (error) {
       console.error("Error deactivating account:", error);
@@ -158,25 +184,28 @@ const AccountSettings = () => {
         {/* Profile Card */}
         <div className="bg-white p-6 pb-16 rounded-xl shadow-md">
           <div className="flex flex-col lg:flex-row justify-between gap-3 items-start lg:items-center">
-            {/* Profile Info */}
             <div className="flex items-center gap-3">
               <img
                 src={
-                  formData.profile_image
-                    ? typeof formData.profile_image === "string"
-                      ? `${serverUrl}${formData.profile_image}`
-                      : URL.createObjectURL(formData.profile_image)
-                    : user
+                  imagePreview
+                    ? imagePreview
+                    : formData.profile_image
+                      ? (typeof formData.profile_image === "string"
+                        ? `${serverUrl}${formData.profile_image}`
+                        : URL.createObjectURL(formData.profile_image))
+                      : user
                 }
                 alt="profile"
                 className="w-16 h-16 rounded-full object-cover"
               />
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">{formData?.username || ''}</h2>
-                <p className="text-sm text-gray-500">{formData?.company || ''}</p>
+                <h2 className="text-lg font-semibold text-gray-900">
+                  {formData.username || ""}
+                </h2>
+                <p className="text-sm text-gray-500">{formData.company || ""}</p>
               </div>
             </div>
-            {/* Action Buttons */}
+
             <div className="flex gap-2 flex-wrap">
               <div>
                 <button
@@ -207,11 +236,11 @@ const AccountSettings = () => {
           {/* Profile Form */}
           <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <input
                 type="text"
                 name="username"
-                value={formData?.username || ''}
+                value={formData.username || ""}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -221,7 +250,7 @@ const AccountSettings = () => {
               <input
                 type="text"
                 name="last_name"
-                value={formData?.last_name || ''}
+                value={formData.last_name || ""}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -231,7 +260,7 @@ const AccountSettings = () => {
               <input
                 type="email"
                 name="email"
-                value={formData?.email || ''}
+                value={formData.email || ""}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
@@ -241,13 +270,12 @@ const AccountSettings = () => {
               <input
                 type="tel"
                 name="contact_number"
-                value={formData?.contact_number || ''}
+                value={formData.contact_number || ""}
                 onChange={handleFormChange}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
             </div>
           </div>
-
         </div>
 
         {/* Password Section */}
@@ -259,7 +287,7 @@ const AccountSettings = () => {
               <input
                 type="password"
                 name="old_password"
-                value={formData?.old_password}
+                value={formData.old_password}
                 onChange={handleFormChange}
                 placeholder="Enter current password"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
@@ -270,30 +298,20 @@ const AccountSettings = () => {
               <input
                 type="password"
                 name="new_password"
-                value={formData?.new_password}
+                value={formData.new_password}
                 onChange={handleFormChange}
                 placeholder="Enter new password"
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#5737B3]"
               />
             </div>
           </div>
-
-          {/* Password Change Button */}
-          {/* <div className="mt-4 flex justify-end">
-            <button 
-              onClick={handlePasswordSubmit}
-              disabled={loading || !passwordData.current_password || !passwordData.new_password}
-              className="px-6 py-2 bg-[#5737B3] text-white rounded-md text-sm hover:bg-[#5737B3]/80 disabled:opacity-50"
-            >
-              {loading ? 'Changing...' : 'Change Password'}
-            </button>
-          </div> */}
         </div>
       </div>
 
       {/* Footer Buttons */}
       <div className="flex gap-2 flex-wrap items-center justify-end mt-6">
         <button
+          type="button"
           onClick={handleDeactivateConfirm}
           disabled={loading}
           className="px-8 py-1 border border-red-500 text-red-500 rounded-md text-sm bg-red-200 hover:bg-red-300 disabled:opacity-50"
@@ -301,6 +319,7 @@ const AccountSettings = () => {
           Deactivate Account
         </button>
         <button
+          type="button"
           onClick={handleEditProfile}
           disabled={loading}
           className="px-9 py-1 border border-gray-200 text-white rounded-md text-sm bg-[#5737B3] hover:bg-[#5737B3]/80 disabled:opacity-50"

@@ -90,7 +90,30 @@ const AdminHome = () => {
         console.error('Failed to fetch profile:', error);
       }
     };
+    
+    // Initial fetch
     fetchProfile();
+
+    // Listen for profile updates
+    const handleProfileUpdate = (event) => {
+      const updatedProfile = event.detail;
+      setProfileData({
+        profile_image: updatedProfile.profile_image ? (
+          updatedProfile.profile_image.startsWith('http') ? 
+          updatedProfile.profile_image : 
+          updatedProfile.profile_image
+        ) : null,
+        username: updatedProfile.username || 'Admin',
+        email: updatedProfile.email || 'admin@example.com',
+      });
+    };
+
+    window.addEventListener('adminProfileUpdated', handleProfileUpdate);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('adminProfileUpdated', handleProfileUpdate);
+    };
   }, []);
 
   const serverUrl = "http://127.0.0.1:8000/"
@@ -227,7 +250,7 @@ const AdminHome = () => {
             )}
           </li>
 
-          {/* <SidebarItem to="/admin/settlements" label="Financial Dashboard" icon={<PiCurrencyDollarSimpleBold />} activePath={activePath} /> */}
+          {/* <SidebarItem to="/admin/settlements" label=" ancial Dashboard" icon={<PiCurrencyDollarSimpleBold />} activePath={activePath} /> */}
 
           <li>
             <div
@@ -290,7 +313,11 @@ const AdminHome = () => {
             onClick={() => navigate('/admin/admin-accounts-admin')}
           >
             <img
-              src={`${serverUrl}${profileData.profile_image}`}
+              src={profileData.profile_image ? (
+                profileData.profile_image.startsWith('http') ? 
+                profileData.profile_image : 
+                `${serverUrl}${profileData.profile_image}`
+              ) : user}
               alt="profile"
               className="w-17 h-17 rounded-full object-cover"
             />

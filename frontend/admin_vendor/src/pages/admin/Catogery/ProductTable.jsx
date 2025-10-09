@@ -64,35 +64,42 @@ const ProductTable = () => {
 
   const handleEditSave = async (e) => {
     e.preventDefault();
+
     if (!editedName.trim()) {
       toast.error("Category name cannot be empty.");
       return;
     }
 
     try {
-      const updatedCategory = {
-        name: editedName,
-        image: selectedCategory.image, // include new image if chosen
-      };
+      const formData = new FormData();
+      formData.append("name", editedName);
 
-      const response = await updateProductCategoryApi(selectedCategory.id, updatedCategory);
+      // Only append the image if it's a new File
+      if (selectedCategory.image instanceof File) {
+        formData.append("image", selectedCategory.image);
+      }
+
+      const response = await updateProductCategoryApi(selectedCategory.id, formData);
 
       if (response.status === 200 || response.status === 201) {
-        setProductcategorylist(prev =>
-          prev.map(cat =>
+        toast.success("Category updated successfully!");
+
+        setProductcategorylist((prev) =>
+          prev.map((cat) =>
             cat.id === selectedCategory.id ? response.data : cat
           )
         );
-        toast.success("Category updated successfully!");
+
+        setShowEditModal(false);
       } else {
         toast.error("Failed to update category.");
       }
-      setShowEditModal(false);
     } catch (error) {
+      console.error("Update error:", error.response?.data || error.message);
       toast.error("An error occurred while updating the category.");
-      console.error("Update error:", error);
     }
   };
+
 
   const handleConfirmDelete = async () => {
     setDeleteLoading(true);
