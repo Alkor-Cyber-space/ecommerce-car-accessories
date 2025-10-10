@@ -8,6 +8,16 @@ const ProductDetailView = () => {
     const { id } = useParams();
     const [product, setProduct] = useState(null);
 
+    const handleToggle = () => {
+        setProduct((prev) => ({
+            ...prev,
+            // flip both flags so UI stays consistent with Add/Edit behaviour
+            isActive: !prev.isActive,
+            is_available: !(prev.is_available ?? prev.isActive),
+        }));
+    };
+
+
     const fetchProduct = async () => {
         try {
             const response = await getProductByIdApi(id);
@@ -25,6 +35,8 @@ const ProductDetailView = () => {
     }, [id]);
 
     const navigate = useNavigate();
+    // allow editing only when availability is explicitly present (true/false)
+    const canEdit = (typeof product?.is_available === 'boolean') || (typeof product?.isActive === 'boolean');
     if (!product) return <p>Loading product...</p>;
 
     return (
@@ -40,18 +52,23 @@ const ProductDetailView = () => {
                 <div className="flex md:flex-row lg:flex-row sm:flex-col gap-2 my-3 items-center">
                     <div className="sm:flex gap-2">
                         <span className="text-sm font-medium text-[#5737B4]">Product Active</span>
+                        {
+                            // prefer explicit is_available when present, otherwise fall back to isActive
+                        }
                         <div
-                            onClick={() => dispatch(toggleActive())}
-                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${product.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                            onClick={!canEdit ? handleToggle : undefined}
+                            className={`w-14 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${(product.is_available ?? product.isActive) ? "bg-[#5737B4]" : "bg-gray-300"
+                                } ${!canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
                         >
                             <div
-                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${product.isActive ? "translate-x-8" : "translate-x-0"}`}
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${(product.is_available ?? product.isActive) ? "translate-x-8" : "translate-x-0"
+                                    }`}
                             />
                         </div>
                     </div>
                     <button
-                        onClick={() => navigate("edit")}
-                        className="flex items-center justify-between gap-2 border border-[#5737B4] text-[#5737B4] rounded-md px-3 py-1">
+                        onClick={canEdit ? () => navigate("edit") : undefined}
+                        className={`flex text-md font-medium items-center justify-between gap-2 rounded-md px-3 py-1 ${canEdit ? 'border border-[#5737B4] text-[#5737B4]' : 'border border-gray-300 text-gray-400 cursor-not-allowed opacity-60'}`}>
                         Edit Product <FiEdit3 />
                     </button>
                 </div>

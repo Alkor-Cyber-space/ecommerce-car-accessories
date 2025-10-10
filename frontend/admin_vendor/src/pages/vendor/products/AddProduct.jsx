@@ -68,6 +68,7 @@ const AddProduct = () => {
         price: '',
         stock: '',
         manufactureDate: '',
+        is_available: true,
         tags: [],
         category: '',
         sizes: '',
@@ -80,6 +81,16 @@ const AddProduct = () => {
     });
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
     const [dragActiveIndex, setDragActiveIndex] = useState(null);
+    const [isActive, setIsActive] = useState(true);
+    const handleToggle = () => {
+        setIsActive(prev => {
+            const next = !prev;
+            // sync into formData so payload includes availability
+            setFormData(f => ({ ...f, is_available: next }));
+            return next;
+        });
+    };
+
     const inputRefs = useRef([]);
 
     const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
@@ -87,20 +98,20 @@ const AddProduct = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-    const fetchCategories = async () => {
-        try {
-            const data = await getCategoriesApi();
+        const fetchCategories = async () => {
+            try {
+                const data = await getCategoriesApi();
 
-            const availableCategories = data.filter(cat => cat.available === true);
+                const availableCategories = data.filter(cat => cat.available === true);
 
-            setCategories(availableCategories);
-        } catch (error) {
-            toast.error('Error fetching categories');
-        }
-    };
+                setCategories(availableCategories);
+            } catch (error) {
+                toast.error('Error fetching categories');
+            }
+        };
 
-    fetchCategories();
-}, []);
+        fetchCategories();
+    }, []);
 
 
     useEffect(() => {
@@ -148,6 +159,10 @@ const AddProduct = () => {
         formDataToSend.append("weight", formData.weight);
         formDataToSend.append("height", formData.height);
         formDataToSend.append("breadth", formData.breadth);
+    // include availability flag
+    formDataToSend.append("is_available", formData.is_available ? "true" : "false");
+        // also include isActive for compatibility with edit flow
+        formDataToSend.append("isActive", formData.is_available ? "true" : "false");
         if (formData.compatible_varient_year) {
             const yearIds = Array.isArray(formData.compatible_varient_year)
                 ? formData.compatible_varient_year
@@ -190,7 +205,8 @@ const AddProduct = () => {
                 description: '',
                 price: '',
                 stock: '',
-                manufactureDate: '',
+                    manufactureDate: '',
+                    is_available: true,
                 tags: [],
                 category: '',
                 sizes: '',
@@ -202,6 +218,7 @@ const AddProduct = () => {
                 breadth: ''
             });
             setImagePreviews(Array(6).fill(null));
+                setIsActive(true);
             navigate("/vendor/products");
         } catch (error) {
             console.error("Error adding product:", error.response?.data || error.message);
@@ -256,11 +273,15 @@ const AddProduct = () => {
                     <div className="sm:flex gap-2">
                         <span className="text-sm font-medium text-[#5737B4]">Product Active</span>
                         <div
-                            onClick={() => dispatch(toggleActive())}
-                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                            onClick={handleToggle}
+                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${isActive ? "bg-[#5737B4]" : "bg-gray-300"
+                                }`}
                         >
                             <div
-                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "lg:translate-x-8 sm:translate-x-5 translate-x-8" : "translate-x-0"}`}
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${isActive
+                                        ? "lg:translate-x-8 sm:translate-x-5 translate-x-8"
+                                        : "translate-x-0"
+                                    }`}
                             />
                         </div>
                     </div>

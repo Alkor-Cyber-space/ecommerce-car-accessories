@@ -30,6 +30,7 @@ export default function EditProduct() {
     manufacturing_date: '',
     tag: [],
     isActive: false,
+    is_available: false,
     length: '',
     breadth: '',
     height: '',
@@ -60,6 +61,8 @@ export default function EditProduct() {
         manufacturing_date: productDetails.manufacturing_date || '',
         tag: Array.isArray(productDetails.tag) ? productDetails.tag : [],
         isActive: Boolean(productDetails.isActive),
+  // prefer explicit is_available if backend provides it, otherwise mirror isActive
+  is_available: productDetails.hasOwnProperty('is_available') ? Boolean(productDetails.is_available) : Boolean(productDetails.isActive),
         length: productDetails.length || '',
         breadth: productDetails.breadth || '',
         height: productDetails.height || '',
@@ -209,6 +212,8 @@ export default function EditProduct() {
     form.append("manufacturing_date", formData.manufacturing_date || "");
     form.append("tag", formData.tag || "");
     form.append("isActive", formData.isActive ? "true" : "false");
+  // include availability flag (mirror AddProduct behaviour)
+  form.append("is_available", formData.is_available ? "true" : "false");
     form.append("length", formData.length || "");
     form.append("breadth", formData.breadth || "");
     form.append("height", formData.height || "");
@@ -364,15 +369,17 @@ export default function EditProduct() {
             onClick={() =>
               setFormData((prev) => ({
                 ...prev,
+                // flip isActive and is_available; if is_available is undefined use isActive as source
                 isActive: !prev.isActive,
+                is_available: !(prev.is_available ?? prev.isActive),
               }))
             }
-            className={`w-14 h-7 flex items-center bg-[#5737B4] rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"
-              }`}
+            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${(formData.is_available ?? formData.isActive) ? "bg-[#5737B4]" : "bg-gray-300"}`}
           >
+
+            {/* reflect combined availability for visual position */}
             <div
-              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-7" : "translate-x-0"
-                }`}
+              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${(formData.is_available ?? formData.isActive) ? "translate-x-7" : "translate-x-0"}`}
             />
           </div>
         </div>

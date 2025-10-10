@@ -1,18 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { HiOutlineDotsVertical } from "react-icons/hi";
+import { FiDownload } from "react-icons/fi";
 import SearchFilter from '../../../pages/admin/SearchFilter';
 import { Link } from 'react-router-dom';
-import { getVendorList } from '../../../services/allAPI';
+import { exportReportApi, getVendorList } from '../../../services/allAPI';
 
 export default function VendorDataTable() {
   const [vendors, setVendors] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [locationFilter, setLocationFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const hasPendingVendors = vendors?.some((vendor) => vendor.status === "pending");
-
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const [filteredVendors, setFilteredVendors] = useState([]);
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const [selectedFormat, setSelectedFormat] = useState("pdf");
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const dropdownRef = useRef(null);
 
   const [filters, setFilters] = useState({
     year: '',
@@ -21,6 +20,39 @@ export default function VendorDataTable() {
     regDateFrom: '',
     regDateTo: '',
   });
+
+  const handleDownloadReport = async (format) => {
+    try {
+      const tableData = filteredVendors.map((vendor) => ({
+        id: vendor.id,
+        username: vendor.username,
+        email: vendor.email,
+        contact_number: vendor.contact_number || "N/A",
+        location: vendor.location || "N/A",
+        status: vendor.status || "Pending",
+        date_joined: formatDate(vendor.date_joined),
+        totalProducts: vendor.totalProducts || 0,
+        totalOrders: vendor.totalOrders || 0,
+      }));
+
+      const response = await exportReportApi(
+        "vendors_overview",
+        format,
+        tableData
+      );
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `vendors_overview.${format === "pdf" ? "pdf" : "xlsx"}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
 
   const handleReset = () => {
     setFilters({
@@ -32,6 +64,7 @@ export default function VendorDataTable() {
     });
     setFilteredVendors(vendors);
   };
+
   const handleSearch = () => {
     const filtered = vendors.filter(vendor => {
       const matchesYear = filters.year
@@ -65,7 +98,6 @@ export default function VendorDataTable() {
       try {
         const data = await getVendorList();
         setVendors(data);
-        console.log("Fetched vendor list:", data);
         setFilteredVendors(data);
       } catch (error) {
         console.error("Error fetching vendor list:", error);
@@ -73,27 +105,6 @@ export default function VendorDataTable() {
     };
     fetchVendorList();
   }, []);
-
-
-  const handleStatusChange = (id, newStatus) => {
-    const updated = vendors.map(vendor =>
-      vendor.id === id ? { ...vendor, status: newStatus } : vendor
-    );
-    setVendors(updated);
-  };
-
-  // const filteredVendors = vendors.filter(vendor => {
-  //   const matchesSearch = search === '' ||
-  //     vendor.name?.toLowerCase().includes(search.toLowerCase()) ||
-  //     vendor.email?.toLowerCase().includes(search.toLowerCase()) ||
-  //     vendor.id?.toString().includes(search);
-
-  //   return (
-  //     matchesSearch &&
-  //     (statusFilter ? vendor.status === statusFilter : true) &&
-  //     (locationFilter ? vendor.location === locationFilter : true)
-  //   );
-  // });
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -121,28 +132,56 @@ export default function VendorDataTable() {
     setActiveDropdown(null);
   };
 
+  // Close dropdowns on outside click
   useEffect(() => {
-    const handleClickOutside = () => setActiveDropdown(null);
-    if (activeDropdown) {
-      document.addEventListener('click', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDownloadOptions(false);
+      }
+      setActiveDropdown(null);
     };
-  }, [activeDropdown]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <div className="bg-[#ECECF0] px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-10 rounded-2xl w-full space-y-4 sm:space-y-6">
+      
       {/* Header */}
-      <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4'>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-[#232832] text-lg sm:text-xl font-bold">Vendors Overview</h1>
-        <button className='bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base w-full sm:w-auto'>
-          Download Report
-        </button>
+
+        {/* Download Report Button with Dropdown */}
+        <div className="relative" ref={dropdownRef}>
+          <button
+            onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+            className="bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base flex items-center gap-2"
+          >
+            Download Report
+            {/* <FiDownload className="text-white text-lg" /> */}
+          </button>
+
+          {showDownloadOptions && (
+            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+              <button
+                onClick={() => handleDownloadReport("pdf")}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Download as PDF
+              </button>
+              <button
+                onClick={() => handleDownloadReport("excel")}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Download as Excel
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Total Users Card */}
-      <div className="bg-white rounded-xl w-full sm:w-sm md:w-lg  lg:w-[20%] flex flex-col sm:flex-row items-center justify-between px-4 py-4">
+      <div className="bg-white rounded-xl w-full sm:w-sm md:w-lg lg:w-[20%] flex flex-col sm:flex-row items-center justify-between px-4 py-4">
         <p className="text-sm sm:text-base lg:text-lg text-gray-700 mb-2 sm:mb-0">Total User :</p>
         <h1 className="text-2xl sm:text-3xl font-semibold text-black">{vendors.length}</h1>
       </div>
@@ -162,22 +201,7 @@ export default function VendorDataTable() {
           </Link>
         </div>
       </div>
-      {/* {hasPendingVendors && (
-        <div className="border-2 border-green-600 bg-green-50 hover:bg-green-100 rounded-xl p-3 shadow-md hover:shadow-lg transition-all duration-300 ease-in-out mb-4 w-full max-w-md">
-          <h2 className="font-semibold text-gray-800 text-lg sm:text-xl">New vendor request</h2>
-          <p className="text-sm mt-2 text-gray-600 rounded-lg bg-green-100/50">
-            New vendor request received. Click here to review and approve.
-          </p>
-          <div className="mt-2 flex justify-end">
-            <Link
-              to="/admin/new-vendor-request"
-              className="px-4 py-1 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors duration-200"
-            >
-              View
-            </Link>
-          </div>
-        </div>
-      )} */}
+
       {/* Filters */}
       <SearchFilter
         filters={filters}
@@ -192,10 +216,10 @@ export default function VendorDataTable() {
         showOrderId={false}
       />
 
-      {/* Unified Responsive Table */}
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm  scrollbar-none p-3">
+      {/* Vendors Table */}
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm scrollbar-none p-3">
         <table className="min-w-[800px] w-full text-sm">
-          <thead className=" text-gray-600">
+          <thead className="text-gray-600">
             <tr>
               <th className="py-3 px-4 text-left">User ID</th>
               <th className="py-3 px-4 text-left">Vendor Name</th>
@@ -211,7 +235,7 @@ export default function VendorDataTable() {
           </thead>
           <tbody>
             {filteredVendors.map((vendor, index) => (
-              <tr key={`${vendor.id}-${index}`} className=" hover:bg-gray-50 text-gray-800">
+              <tr key={`${vendor.id}-${index}`} className="hover:bg-gray-50 text-gray-800">
                 <td className="py-3 px-4">{vendor.id}</td>
                 <td className="py-3 px-4 font-semibold text-[#5737B4]">
                   <Link
@@ -273,7 +297,6 @@ export default function VendorDataTable() {
         </table>
       </div>
 
-      {/* No Results */}
       {filteredVendors.length === 0 && (
         <div className="bg-white rounded-lg p-8 text-center">
           <p className="text-gray-500">No vendors found matching your criteria.</p>
@@ -282,3 +305,4 @@ export default function VendorDataTable() {
     </div>
   );
 }
+

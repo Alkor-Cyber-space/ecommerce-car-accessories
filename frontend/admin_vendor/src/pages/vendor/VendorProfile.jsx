@@ -63,6 +63,57 @@ const VendorProfile = () => {
   });
   const [editAddressId, setEditAddressId] = useState(null);
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false);
+  const [addressErrors, setAddressErrors] = useState({
+    postal_code: "",
+    country: ""
+  });
+
+  // Validation functions
+  const validateAddressForm = (form) => {
+    let newErrors = {};
+    let isValid = true;
+
+    if (!form.postal_code || !/^\d{6}$/.test(form.postal_code)) {
+      newErrors.postal_code = "Pincode must be exactly 6 digits.";
+      isValid = false;
+    }
+
+    if (!form.country) {
+      newErrors.country = "Please select a country.";
+      isValid = false;
+    }
+
+    setAddressErrors(newErrors);
+    return isValid;
+  };
+
+  const handleAddressFormChange = (e) => {
+    const { name, value } = e.target;
+    setAddressForm(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (addressErrors[name]) {
+      setAddressErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const selectAddressCountry = (val) => {
+    setAddressForm(prev => ({
+      ...prev,
+      country: val,
+      state: ""
+    }));
+    if (addressErrors.country) {
+      setAddressErrors(prev => ({ ...prev, country: "" }));
+    }
+  };
+
+  const selectAddressRegion = (val) => {
+    setAddressForm(prev => ({
+      ...prev,
+      state: val
+    }));
+  };
 
   const handleAddClick = () => {
     setAddressForm({
@@ -82,16 +133,27 @@ const VendorProfile = () => {
 
 
   const handleSaveAddress = async () => {
+    if (!validateAddressForm(addressForm)) {
+      toast.error("Please fix the errors in the form.");
+      return;
+    }
+
     try {
       const res = await VendorAddressesApi({
         ...addressForm,
         vendor: profileData.id
       });
-      console.log(res);
+      
+      // Update the addresses state immediately
+      setAddresses(res);
+      toast.success("Address saved successfully!");
       setIsAddAddressModalOpen(false);
+      
+      // Optionally fetch updated data from server
       await fetchVendorAddress();
     } catch (error) {
       console.error("Error saving address:", error);
+      toast.error(error.response?.data?.message || "Error saving address");
     }
   };
 
@@ -152,10 +214,9 @@ const VendorProfile = () => {
       });
     }
     else if (section === "address") {
-      // ✅ Store the address ID
+  
       setEditAddressId(addresses.id);
 
-      // ✅ Set the form fields
       setEditForm({
         line1: addresses.line1 || "",
         line2: addresses.line2 || "",
@@ -1387,56 +1448,71 @@ const VendorProfile = () => {
             {/* Line 1 */}
             <input
               type="text"
+              name="line1"
               placeholder="Line 1"
               value={addressForm.line1}
-              onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
+              required
             />
 
             {/* Line 2 */}
             <input
               type="text"
+              name="line2"
               placeholder="Line 2"
               value={addressForm.line2}
-              onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
             />
 
-            {/* city */}
+            {/* Country */}
+            <CountryDropdown
+              value={addressForm.country}
+              onChange={selectAddressCountry}
+              className="border p-2 w-full rounded mb-2"
+              defaultOptionLabel="Select Country"
+            />
+            {addressErrors.country && (
+              <p className="text-red-500 text-sm mb-2">{addressErrors.country}</p>
+            )}
+
+            {/* State/Region */}
+            <RegionDropdown
+              country={addressForm.country}
+              value={addressForm.state}
+              onChange={selectAddressRegion}
+              className="border p-2 w-full rounded mb-2"
+              blankOptionLabel="Select State/Region"
+              disabled={!addressForm.country}
+            />
+
+            {/* City */}
             <input
               type="text"
-              placeholder="city"
+              name="city"
+              placeholder="City"
               value={addressForm.city}
-              onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
+              required
             />
 
             {/* Pincode */}
             <input
               type="text"
+              name="postal_code"
               placeholder="Pincode"
               value={addressForm.postal_code}
-              onChange={(e) => setAddressForm({ ...addressForm, postal_code: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
+              required
+              maxLength={6}
+              pattern="\d{6}"
             />
-
-            {/* State */}
-            <input
-              type="text"
-              placeholder="State"
-              value={addressForm.state}
-              onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-              className="border p-2 w-full rounded mb-2"
-            />
-
-            {/* Country */}
-            <input
-              type="text"
-              placeholder="Country"
-              value={addressForm.country}
-              onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-              className="border p-2 w-full rounded mb-4"
-            />
+            {addressErrors.postal_code && (
+              <p className="text-red-500 text-sm mb-2">{addressErrors.postal_code}</p>
+            )}
 
             {/* Buttons */}
             <div className="flex justify-end gap-2">
