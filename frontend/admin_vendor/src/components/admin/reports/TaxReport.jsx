@@ -1,113 +1,211 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { taxReportApi } from "../../../services/allAPI"; 
 
-const TaxReport = () => {
+
+export default function TaxReport() {
+  const [taxData, setTaxData] = useState([]);
+  const [filteredData, setFilteredData] = useState([]);
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const taxData = [
-    {
-      date: "2025-06-20",
-      invoice: "INV-5423",
-      product: "Vacuum Cleaner",
-      taxType: "GST 18%",
-      baseAmount: 1000,
-      tax: 180,
-      total: 1180,
-      state: "Maharashtra",
-      buyerType: "Individual",
-    },
-    {
-      date: "2025-06-21",
-      invoice: "INV-5424",
-      product: "Car Cover",
-      taxType: "GST 12%",
-      baseAmount: 1200,
-      tax: 144,
-      total: 1344,
-      state: "Delhi",
-      buyerType: "Business",
-    },
-  ];
+  useEffect(() => {
+    const fetchTaxReport = async () => {
+      try {
+        const data = await taxReportApi();
+        setTaxData(data);
+        setFilteredData(data);
+        console.log("Tax Report Data:", data);
+      } catch (error) {
+        console.error("Tax report fetch error:", error);
+      }
+    };
+
+    fetchTaxReport();
+  }, []);
+
+  const filterDataByDate = () => {
+    const filtered = taxData.filter((item) => {
+      const itemDate = new Date(item.date);
+      const from = startDate ? new Date(startDate) : null;
+      const to = endDate ? new Date(endDate) : null;
+      return (!from || itemDate >= from) && (!to || itemDate <= to);
+    });
+    setFilteredData(filtered);
+    setCurrentPage(1);
+  };
+
+  const formatINR = (value) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      minimumFractionDigits: 2,
+    }).format(value || 0);
+
+  const getTotalTax = () =>
+    filteredData.reduce((acc, item) => acc + Number(item.tax || 0), 0);
+  const getTotalBase = () =>
+    filteredData.reduce((acc, item) => acc + Number(item.base_amount || 0), 0);
+  const getTotalAmount = () =>
+    filteredData.reduce((acc, item) => acc + Number(item.total || 0), 0);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-      <h1 className="text-xl font-semibold mb-4">Tax Report</h1>
+    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-4">
 
-      {/* Filter */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div>
-          <label className="block text-gray-600 mb-1">Start Date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            className="w-full px-2 py-1 rounded"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-600 mb-1">End Date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            className="w-full px-2 py-1 rounded"
-          />
-        </div>
-        <div className="flex items-end">
-          <button className="bg-gray-800 text-white px-4 py-2 rounded whitespace-nowrap">
+      <div className="flex justify-between items-start flex-wrap gap-4">
+        <h1 className="text-3xl font-bold text-gray-800">Tax Report</h1>
+
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              className="px-3 py-2 border border-gray-300 rounded-md text-gray-800 bg-gray-50 
+                         focus:ring-2 focus:ring-[#406EDC] focus:border-[#406EDC] 
+                         transition-all duration-200 outline-none"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+
+          <div className="flex flex-col">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              className="px-3 py-2 border border-gray-300 rounded-md text-gray-800 bg-gray-50 
+                         focus:ring-2 focus:ring-[#406EDC] focus:border-[#406EDC] 
+                         transition-all duration-200 outline-none"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+            />
+          </div>
+
+          <button
+            onClick={filterDataByDate}
+            className="bg-[#5737B4] hover:bg-[#2f093d] text-white font-medium 
+                       px-6 py-2.5 rounded-md shadow-md hover:shadow-lg 
+                       transition-all duration-200 whitespace-nowrap"
+          >
             Apply Filter
+          </button>
+
+          <button
+            className="bg-[#5737B4] hover:bg-[#2f093d] text-white font-medium 
+                       px-6 py-2.5 rounded-md shadow-md hover:shadow-lg transition-all"
+          >
+            Download Report
           </button>
         </div>
       </div>
 
-      {/* Table */}
-      <div className="overflow-auto">
+      <div className="overflow-x-auto mt-10">
         <table className="min-w-full bg-white rounded-md text-sm shadow">
           <thead className="text-gray-600">
             <tr>
-              <th className="p-3 text-left">Date</th>
-              <th className="p-3 text-left">Invoice</th>
-              <th className="p-3 text-left">Product</th>
-              <th className="p-3 text-left">Tax Type</th>
-              <th className="p-3 text-left">Base Amount</th>
-              <th className="p-3 text-left">Tax</th>
-              <th className="p-3 text-left">Total</th>
-              <th className="p-3 text-left">State</th>
-              <th className="p-3 text-left">Buyer Type</th>
+              <th className="py-4 px-6 text-left">Date</th>
+              <th className="py-4 px-6 text-left">Invoice</th>
+              <th className="py-4 px-6 text-left">Product</th>
+              <th className="py-4 px-6 text-left">Tax Type</th>
+              <th className="py-4 px-6 text-left">Base Amount</th>
+              <th className="py-4 px-6 text-left">Tax</th>
+              <th className="py-4 px-6 text-left">Total</th>
+              <th className="py-4 px-6 text-left">State</th>
+              <th className="py-4 px-6 text-left">Buyer Type</th>
             </tr>
           </thead>
           <tbody>
-            {taxData.map((item, index) => (
-              <tr key={index} className=" border-gray-200">
-                <td className="p-3">{item.date}</td>
-                <td className="p-3">{item.invoice}</td>
-                <td className="p-3">{item.product}</td>
-                <td className="p-3">{item.taxType}</td>
-                <td className="p-3">₹{item.baseAmount.toLocaleString()}</td>
-                <td className="p-3">₹{item.tax.toLocaleString()}</td>
-                <td className="p-3">₹{item.total.toLocaleString()}</td>
-                <td className="p-3">{item.state}</td>
-                <td className="p-3">{item.buyerType}</td>
+            {paginatedData.length > 0 ? (
+              paginatedData.map((item, index) => (
+                <tr key={index} className="text-left border-t border-gray-100">
+                  <td className="py-3 px-6 min-w-[120px]">
+                    {new Date(item.date).toLocaleDateString("en-GB")}
+                  </td>
+                  <td className="py-3 px-6">{item.invoice}</td>
+                  <td className="py-3 px-6">{item.product}</td>
+                  <td className="py-3 px-6">{item.tax_type}</td>
+                  <td className="py-3 px-6">{formatINR(item.base_amount)}</td>
+                  <td className="py-3 px-6">{formatINR(item.tax)}</td>
+                  <td className="py-3 px-6">{formatINR(item.total)}</td>
+                  <td className="py-3 px-6">{item.state}</td>
+                  <td className="py-3 px-6">{item.buyer_type}</td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={9}
+                  className="text-center py-6 text-gray-500 font-medium"
+                >
+                  No tax data found for the selected date range.
+                </td>
               </tr>
-            ))}
+            )}
           </tbody>
+          {filteredData.length > 0 && (
+            <tfoot>
+              <tr className="font-semibold border-t border-gray-200">
+                <td className="py-3 px-6 text-left">Total</td>
+                <td colSpan={3}></td>
+                <td className="py-3 px-6">{formatINR(getTotalBase())}</td>
+                <td className="py-3 px-6">{formatINR(getTotalTax())}</td>
+                <td className="py-3 px-6">{formatINR(getTotalAmount())}</td>
+                <td colSpan={2}></td>
+              </tr>
+            </tfoot>
+          )}
         </table>
       </div>
 
-      {/* Footer */}
-      <div className="flex justify-between items-center mt-4 text-gray-600">
-        <div>Showing 1 - {taxData.length} of {taxData.length}</div>
-        <div className="space-x-2">
-          <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
+      {totalPages > 1 && (
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
+          >
             Prev
           </button>
-          <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100">
+
+          {Array.from({ length: totalPages }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => goToPage(i + 1)}
+              className={`px-3 py-1 border border-gray-300 rounded ${
+                currentPage === i + 1
+                  ? "bg-[#5737B4] text-white"
+                  : "bg-gray-200"
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
+          >
             Next
           </button>
         </div>
-      </div>
+      )}
     </div>
   );
-};
-
-export default TaxReport;
+}
