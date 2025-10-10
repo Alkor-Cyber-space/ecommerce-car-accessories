@@ -353,7 +353,7 @@ class VendorDetailsList(APIView):
         print("above the try")
         try:
             print("inside the try")
-            print(f"filter :{Group.objects.get(name="Vendor")}")
+            print(f"filter :{Group.objects.get(name='Vendor')}")
             vendor_group = Group.objects.get(name="Vendor")
             print(f"vendor_group: {vendor_group}")
 

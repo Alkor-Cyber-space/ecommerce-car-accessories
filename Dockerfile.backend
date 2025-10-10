@@ -1,0 +1,24 @@
+# Backend Dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install dependencies for building Python packages
+RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
+
+# Copy only requirements first for caching
+COPY backend/ecommerce/requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy backend source code
+COPY backend/ecommerce/ .
+
+# Clean old pyc files
+RUN find . -name "*.pyc" -delete && find . -name "__pycache__" -type d -exec rm -rf {} +
+
+ENV PYTHONUNBUFFERED=1
+
+# Run migrations and start server
+CMD ["bash", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
