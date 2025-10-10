@@ -267,7 +267,6 @@ const handleSaveChanges = async () => {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-2">Promotions & Offers</h1>
         <p className="text-gray-600">Manage and track your promotional campaigns for vehicle spare parts</p>
@@ -381,11 +380,10 @@ const handleSaveChanges = async () => {
 
       </div> */}
       <PromotionsList/>
-
       <CouponList/>
 
       {/* Customer Testimonials */}
-      <div className="mb-8">
+      {/* <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800 mb-4 flex items-center">
           <Users className="mr-2 text-green-600" />
           Customer Testimonials
@@ -409,7 +407,7 @@ const handleSaveChanges = async () => {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* Quick Actions */}
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -419,20 +417,12 @@ const handleSaveChanges = async () => {
             className="bg-[#5737B4] hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
             Create New Promotion
           </button>
-          <button className="bg-[#5737B4] hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            View Analytics
-          </button>
-          {/* <button className="bg-[#5737B4] hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            Export Report
-          </button> */}
-          <button className="border border-gray-300 hover:bg-gray-50 text-gray-700 px-6 py-3 rounded-lg font-medium transition-colors">
-            Manage Categories
-          </button>
+         
         </div>
       </div>
 
       {selectedPromotion && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0  bg-opacity-60 flex justify-center items-center z-50 p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] overflow-hidden">
             {/* Header Section */}
             <div className="bg-[#5737B4] p-6 text-white relative overflow-hidden">
@@ -463,7 +453,6 @@ const handleSaveChanges = async () => {
 
             {/* Content Section */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-              {/* Description Card */}
               <div className="bg-gray-50 rounded-xl p-4 mb-6 border-l-4 border-blue-500">
                 <h4 className="font-semibold text-gray-800 mb-2 flex items-center">
                   <svg className="w-4 h-4 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -476,9 +465,7 @@ const handleSaveChanges = async () => {
                 </p>
               </div>
 
-              {/* Key Details Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {/* Discount Card */}
                 <div className="bg-green-50 rounded-xl p-4 border border-green-200">
                   <div className="flex items-center mb-2">
                     <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">

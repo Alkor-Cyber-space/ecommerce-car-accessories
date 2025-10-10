@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { salesAnalyticsApi } from "../../services/allAPI";
+
 
 const vendorData = [
   { name: "AutoSpire", value: 55000 },
@@ -18,6 +20,28 @@ const productData = [
 ];
 
 export default function TopSalesOverview() {
+  const [topVendors, setTopVendors] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+
+  useEffect(() => {
+    const fetchTopList = async () => {
+      try {
+        const data = await salesAnalyticsApi(); // Assuming this API call works
+        setTopVendors(data?.top_vendors || []); // Safeguard for empty data
+        setTopProducts(data?.top_products || []); // Safeguard for empty data
+        console.log("toplist", data);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+
+    fetchTopList();
+  }, []);
+  const shortenName = (name) => {
+    const maxLength = 8;  // You can adjust this length
+    return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
+  };
+
   return (
     <div className="flex flex-col lg:flex-row gap-6 w-full">
       {/* Vendors Card */}
@@ -31,20 +55,26 @@ export default function TopSalesOverview() {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={vendorData}
+              data={topVendors}
               layout="vertical"
               margin={{ top: 0, right: 30, left: 0, bottom: 0 }}
             >
               <XAxis type="number" tickFormatter={(v) => `₹ ${v / 1000}K`} />
-              <YAxis type="category" dataKey="name" width={100} />
+              <YAxis
+                type="category"
+                dataKey="vendor_email"
+                width={100}
+                tickFormatter={(value) => shortenName(value)}  // Corrected here
+              />
               <Tooltip formatter={(val) => [`₹ ${val.toLocaleString()}`, "Sales"]} />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} fill="#D65CFF">
-                {vendorData.map((entry, index) => (
+              <Bar dataKey="total_sales" radius={[0, 6, 6, 0]} fill="#D65CFF">
+                {topVendors.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill="#D65CFF" />
                 ))}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+
         </div>
       </div>
 
@@ -59,15 +89,15 @@ export default function TopSalesOverview() {
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
-              data={productData}
+              data={topProducts}
               layout="vertical"
               margin={{ top: 0, right: 30, left: 0, bottom: 0 }}
             >
               <XAxis type="number" tickFormatter={(v) => `₹ ${v / 1000}K`} />
-              <YAxis type="category" dataKey="name" width={100} />
+              <YAxis type="category" dataKey="product_name" width={100} tickFormatter={(value) => shortenName(value)} />
               <Tooltip formatter={(val) => [`₹ ${val.toLocaleString()}`, "Sales"]} />
-              <Bar dataKey="value" radius={[0, 6, 6, 0]} fill="#3BB8FF">
-                {productData.map((entry, index) => (
+              <Bar dataKey="total_sales" radius={[0, 6, 6, 0]} fill="#3BB8FF">
+                {topProducts.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill="#3BB8FF" />
                 ))}
               </Bar>

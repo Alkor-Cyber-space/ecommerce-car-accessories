@@ -1319,3 +1319,57 @@ export const PaymentsPayoutApi = async () => {
     throw error;
   }
 };
+
+//------------------------------------------ reports
+
+export const salesReportApi = async () => {
+  try {
+    const response = await api.get("/admin/sales-report/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching sales reports:", error);
+    throw error;
+  }
+};
+
+
+export const transactionReportApi = async () => {
+  try {
+    const response = await api.get("/admin/Transaction-report/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching transaction reports:", error);
+    throw error;
+  }
+};
+
+export const taxReportApi = async () => {
+  try {
+    const response = await api.get("/admin/tax-report/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching transaction reports:", error);
+    throw error;
+  }
+};
+
+// --sales anaylitics
+export const salesAnalyticsApi = async () => {
+  try {
+    const response = await api.get("/admin/sales-analytics/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching analytics report:", error);
+    throw error;
+  }
+};
+
+export const revenueTrendsApi = async () => {
+  try {
+    const response = await api.get("/admin/revenue/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching revenue trends:", error);
+    throw error;
+  }
+};

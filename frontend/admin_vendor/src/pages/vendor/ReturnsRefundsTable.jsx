@@ -126,7 +126,7 @@ const ReturnsRefundsTable = () => {
             </tr>
           </thead>
           <tbody>
-            {currentItems.map((product, idx) => (
+            {/* {currentItems.map((product, idx) => (
               <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
                 <td className="p-3">
                   <input type="checkbox" />
@@ -162,15 +162,18 @@ const ReturnsRefundsTable = () => {
                   </Link>
                 </td>
               </tr>
-            ))}
+            ))} */}
+
           </tbody>
         </table>
+        <p className="text-center text-gray-500 py-4">No data found</p>
       </div>
 
       {/* Pagination */}
       <div className="flex justify-between items-center mt-4 text-sm">
         <span className="text-[#505050] font-medium ">
-          Showing {endIndex} of {totalItems}
+          {/* Showing {endIndex} of {totalItems} */}
+          showing {0} of {0}
         </span>
         <div className="flex gap-2">
           <button

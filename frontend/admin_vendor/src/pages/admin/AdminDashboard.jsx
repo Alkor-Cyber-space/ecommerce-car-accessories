@@ -47,7 +47,7 @@ const AdminDashboard = () => {
   const totalProducts =
     monthlyProducts?.reduce((sum, item) => sum + item.total_products, 0) || 0;
 
-  // ✅ Create bar data for ProfitCard
+  //  Create bar data for ProfitCard
   const filteredBars = monthlyProducts?.map((item) => item.total_products) || [];
   const filteredLabels =
     monthlyProducts?.map((item) => {

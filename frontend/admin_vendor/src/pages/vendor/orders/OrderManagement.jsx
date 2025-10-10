@@ -9,10 +9,8 @@ import {
 } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 import SearchFilter from "../../admin/SearchFilter";
-import OrderDetailView from "./OrderDetailView";
 import { data, useNavigate } from "react-router-dom";
 
-// dummydata (kept as-is from your original file)
 const orders = [
   {
     id: "12345769087",
@@ -115,7 +113,8 @@ const OrderManagement = ({ order }) => {
   const serverurl = "http://127.0.0.1:8000/";
   const navigate = useNavigate();
 
-  const [filteredOrders, setFilteredOrders] = useState([]); // new state for filtered data
+  const [filteredOrders, setFilteredOrders] = useState([]); 
+
   const [filters, setFilters] = useState({
     regDateFrom: "",
     regDateTo: "",
@@ -126,9 +125,8 @@ const OrderManagement = ({ order }) => {
 
   // Download dropdown state + ref
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const dropdownRef = useRef(null); // <-- FIX: declare dropdownRef
+  const dropdownRef = useRef(null); 
 
-  // Search handler
   const handleSearch = () => {
     const filtered = userOrders.filter((order) => {
       const matchesStatus = filters.orderStatus
@@ -488,13 +486,11 @@ const OrderManagement = ({ order }) => {
           ))
         )}
       </div>
-      <hr className="h-4" />
 
       {/* dummy */}
-      <div className="space-y-4 py-2">
+      {/* <div className="space-y-4 py-2">
         {orders.map((order) => (
           <div key={order.id} className="border-b border-gray-200 ">
-            {/* Order Summary */}
             <div
               className="flex justify-between items-center bg-white p-4 hover:bg-gray-50 cursor-pointer"
               onClick={() => toggleOrder(order.id)}
@@ -539,7 +535,6 @@ const OrderManagement = ({ order }) => {
                 )}
               </div>
             </div>
-            {/* Expanded Details */}
             {expandedOrder === order.id && (
               <div className="p-4 bg-gray-50">
                 <div className="flex  font-semibold justify-between ">
@@ -631,7 +626,7 @@ const OrderManagement = ({ order }) => {
             )}
           </div>
         ))}
-      </div>
+      </div> */}
 
       <div className="mt-6">
         <button className="border border-[#5737B4] text-[#5737B4] px-4 py-2 rounded hover:bg-[#5737B4] hover:text-white">
