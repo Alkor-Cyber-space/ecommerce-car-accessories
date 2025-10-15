@@ -1,5 +1,5 @@
 // src/components/admin/adminDashboard/CombinedChartPanel.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
   BarChart, Bar,
@@ -7,6 +7,8 @@ import {
   Area
 } from 'recharts';
 import VendorsVsRevenue from '../../components/admin/revenuetrends/VendorsRvenueChart';
+import { revenueTrendsApi } from '../../services/allAPI';
+import SalesTrends from '../../components/admin/adminDashboard/SalesTrends';
 
 const growthData = [
   { month: 'Jan', revenue: 0 },
@@ -38,38 +40,126 @@ const customerData = [
 ];
 
 const CombinedChartPanel = () => {
+  const [growthTrends, setGrowthTrends] = useState([]);
+  const [vendorVSRevenue, setVendorVSRevenue] = useState([]);
+  const [topCustomers, setTopCustomers] = useState([]);
+  const [totalSales, setTotalSales] = useState(0); 
+  const [totalOrders, setTotalOrders] = useState(0); 
+
+  useEffect(() => {
+    const fetchSalesAnalytics = async () => {
+      try {
+        const data = await revenueTrendsApi();
+
+        setGrowthTrends(data.growth_trends || []);
+        setVendorVSRevenue(data.vendor_vs_revenue || []);
+        const customers = data.top_customers || [];
+
+        const transformedData = customers.map((customer) => ({
+          name: customer.email,
+          value: customer.total_spent,
+        }));
+
+        setTopCustomers(transformedData);
+        const totalSales = data.growth_trends.reduce(
+          (acc, trend) => acc + (trend.total_sales || 0),
+          0
+        );
+        const totalOrders = data.growth_trends.reduce(
+          (acc, trend) => acc + (trend.total_orders || 0),
+          0
+        );
+
+        setTotalSales(totalSales);
+        setTotalOrders(totalOrders);
+
+        console.log(data);
+      } catch (error) {
+        console.error("Error fetching admin dashboard data:", error);
+      }
+    };
+
+    fetchSalesAnalytics();
+  }, []);
+
+  const shortenName = (name, maxLength = 5) => {
+    return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
+  };
+
   return (
     <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl h-full'>
-            <div className='flex justify-between items-center'>
+      <div className='flex justify-between items-center'>
         <h1 className='text-2xl font-semibold'>Revenue Trends</h1>
         <button className='bg-[#5737B4] text-white px-4 py-2 rounded-md'>Download report</button>
       </div>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-3 bg-white my-6  p-1 border  border-[#D8D8D8] rounded-2xl shadow-lg ">
-  
-        {/* Growth Trends Chart */}
-        <div className="lg:col-span-2 bg-white  p-7">
-          <div className="flex justify-between items-center mb-4">
-            <div className='flex flex-col gap-2'>
-              <h2 className="text-lg font-semibold text-gray-700">Growth Trends</h2>
-              <div className="text-xl font-semibold">₹1,22,5000</div>
-  
-            </div>
-            <div className="text-green-600 bg-green-100 px-2 py-1 rounded text-sm">24.6% ↑</div>
+        <div className="lg:col-span-2 bg-white p-1  ">
+          <SalesTrends
+            data={growthTrends.map((item) => ({
+              month: item.month, 
+              revenue: item.total_sales,
+              expenses: item.total_orders,
+            }))}
+            title="Growth Trends"
+            totalValue={totalSales}
+            growth={24.6}
+            revenueLabel="Sales"
+            expensesLabel="Orders"
+            xKey="month"
+            yFormatter={(v) => (v ? `${(v / 1000).toFixed(1)}K` : "0")}
+            revenueColor="#5737B4"
+            expensesColor="#00C2FF"
+          />
+        </div>
+
+        {/* Side Charts */}
+        <div className="flex flex-col ">
+          {/* Vendors vs Revenue */}
+          <div className=' '>
+            <VendorsVsRevenue vendorData={vendorVSRevenue} />
           </div>
-          <ResponsiveContainer width="100%" height={450}>
-            <AreaChart data={growthData}>
+          <hr className='border border-[#D8D8D8]' />
+          {/* Top Value Customers */}
+          <div className='bg-white border-l border-l-[#D8D8D8] px-6 py-3 h-full'>
+            <div className="">
+              <h3 className="text-sm font-semibold mb-3">Top Value Customers</h3>
+              <ResponsiveContainer width="100%" height={230}>
+                <BarChart layout="vertical" data={topCustomers}>
+                  <XAxis type="number" tickFormatter={(v) => `₹${v / 1000}K`} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    tickFormatter={(name) => shortenName(name)}
+                  />
+                  <Tooltip formatter={(val) => `₹${val.toLocaleString()}`} />
+                  <Bar dataKey="value" fill="#5737B4" barSize={16} radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CombinedChartPanel;
+
+
+{/* <ResponsiveContainer width="100%" height={450}>
+            <AreaChart data={growthTrends}>
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#AE7AFF" stopOpacity={0.4} />
                   <stop offset="95%" stopColor="#AE7AFF" stopOpacity={0} />
                 </linearGradient>
               </defs>
-  
+
               <CartesianGrid stroke="#f5f5f5" />
               <XAxis dataKey="month" stroke="#8884d8" />
               <YAxis tickFormatter={(value) => `${value / 1000}K`} />
-  
+
               <Tooltip
                 formatter={(value) => [`₹${value}`, 'Revenue']}
                 contentStyle={{
@@ -81,7 +171,7 @@ const CombinedChartPanel = () => {
                 labelStyle={{ color: '#fff' }}
                 itemStyle={{ color: '#fff' }}
               />
-  
+
               <Area
                 type="monotone"
                 dataKey="revenue"
@@ -91,49 +181,15 @@ const CombinedChartPanel = () => {
                 dot={{
                   stroke: '#5737B4',
                   strokeWidth: 2,
-                  r: false,
                   fill: '#fff',
+                  r: 9,  // Set the size of the dot
                 }}
                 activeDot={{
                   stroke: '#5737B4',
                   strokeWidth: 3,
-                  r: 7,
-                  fill: '#5737B4',
+                  r: 7,  // Size of active dot
+                  fill: '#5737B4', // Color of the active dot
                 }}
               />
             </AreaChart>
-          </ResponsiveContainer>
-  
-  
-        </div>
-  
-        {/* Side Charts */}
-        <div className="flex flex-col ">
-  
-          {/* Vendors vs Revenue */}
-          <div className=' '>
-            <VendorsVsRevenue />
-          </div>
-          <hr className='border border-[#D8D8D8]' />
-          {/* Top Value Customers */}
-          <div className='bg-white border-l border-l-[#D8D8D8] p-5 h-full'>
-            <div className="">
-              <h3 className="text-sm font-semibold mb-3">Top Value Customers</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart layout="vertical" data={customerData}>
-                  <XAxis type="number" tickFormatter={(v) => `₹${v / 1000}K`} />
-                  <YAxis type="category" dataKey="name" />
-                  <Tooltip formatter={(val) => `₹${val}`} />
-                  <Bar dataKey="value" fill="#5737B4" barSize={16} radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-  
-        </div>
-      </div>
-  </div>
-  );
-};
-
-export default CombinedChartPanel;
+          </ResponsiveContainer> */}
