@@ -200,6 +200,30 @@ class AdminSalesAnalyticsView(APIView):
             total=Sum('total_price')
         )['total'] or 0
 
+        monthly_refunds = (
+            Order.objects.filter(status='cancelled')
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(total_refunds=Sum('total_price'))
+            .order_by('month')
+        )
+
+        refunds_dict = {
+            entry['month'].strftime('%b %Y'): float(entry['total_refunds'] or 0)
+            for entry in monthly_refunds
+        }
+
+        # ---  Monthly Profit ---
+        monthly_profit = (
+            Order.objects.annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(
+                total_revenue=Sum('total_price', filter=Q(status__in=['delivered', 'paid', 'confirmed'])),
+                refunds=Sum('total_price', filter=Q(status='cancelled')),
+            )
+            .order_by('month')
+        )
+
         # Profit = Total revenue - total payouts - refunds
         total_profit = (total_revenue or 0) - (total_payouts or 0) - (returns_and_refunds or 0)
 
@@ -210,7 +234,7 @@ class AdminSalesAnalyticsView(APIView):
             .order_by('-total_sales')[:5]
         )
 
-        # Top 5 Products by total sales
+        # Top 5 Pnoroducts by total sales
         top_products = (
             OrderItem.objects.values(product_name=F('product__name'))
             .annotate(total_sales=Sum(F('price') * F('quantity')))
@@ -222,6 +246,8 @@ class AdminSalesAnalyticsView(APIView):
             "products_sold_today": products_sold_today,
             "new_users": new_users,
             "refunds_today": refunds_today,
+            "monthly_profit": list(monthly_profit),
+            "refunds_dict": refunds_dict,
             "sales_trends": list(sales_trends),
             "total_profit": total_profit,
             "returns_and_refunds": returns_and_refunds,
@@ -374,12 +400,15 @@ class VendorDetailsList(APIView):
         )
       
 class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = UserSerializer
+    serializer_class = VendorSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
 
     def get_queryset(self):
         vendor_group = Group.objects.get(name='Vendor')
-        return CustomUser.objects.filter(groups=vendor_group)
+        return (
+            CustomUser.objects.filter(groups=vendor_group)
+            .prefetch_related('addresses', 'products')  
+        )
 
     # @action(detail=True, methods=['post'], url_path='approve')
     # def approve_vendor(self, request, pk=None):
@@ -399,9 +428,13 @@ class UserListViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
 
+    
     def get_queryset(self):
         user_group = Group.objects.get(name='User')
-        return CustomUser.objects.filter(groups=user_group)
+        return (
+            CustomUser.objects.filter(groups=user_group)
+            .prefetch_related('order_set')
+        )
 
     #@action(detail=True,methods=['post'], url_path='approve')
     #def approve_user(self, request, pk=None):
@@ -542,7 +575,7 @@ class AdminVehicleDelete(APIView):
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all().order_by("-created_at")
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]  
+    permission_classes = [IsAuthenticated]  
 
     def get_queryset(self):
         user = self.request.user

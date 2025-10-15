@@ -327,7 +327,7 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
         print("$$$$$$$$$$$$$$$$")
         user = request.user
         try:
-            vendor_profile = user.VendorProfile
+            vendor_profile = user.vendor_profile
             print(f"vendor_profile:{vendor_profile}")
         except VendorProfile.DoesNotExist:
             return Response({"error": "Vendor profile not found."}, status=status.HTTP_404_NOT_FOUND)

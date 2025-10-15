@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.contrib.auth.password_validation import validate_password
 import os
+from orders.models import Order
 
 User = get_user_model()
 
@@ -220,9 +221,17 @@ class Step6AgreementsSerializer(serializers.ModelSerializer):
 #     def create(self, validated_data):
 #         return CustomUser.objects.create_user(**validated_data)
 
+
+class SimpleOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['id', 'order_number', 'total_amount', 'status', 'created_at']
+
+
 class UserSerializer(serializers.ModelSerializer):
     contact_number = serializers.SerializerMethodField()
     profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
+    orders = serializers.SerializerMethodField() 
 
     class Meta:
         model = CustomUser
@@ -237,13 +246,51 @@ class UserSerializer(serializers.ModelSerializer):
             'is_superuser',
             'date_joined',
             'contact_number', # from VendorProfile
-            'profile_image', 
+            'profile_image',
+            'is_active',
+            'orders',
         ]
 
     def get_contact_number(self, obj):
         if hasattr(obj, 'vendor_profile') and obj.vendor_profile:
             return obj.vendor_profile.contact_number
         return None
+
+    def get_orders(self, obj):
+        from orders.models import Order  # lazy import to avoid circular import issues
+        user_orders = Order.objects.filter(user=obj)
+        return SimpleOrderSerializer(user_orders, many=True).data
+
+class VendorAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['line1', 'line2', 'city', 'state', 'postal_code', 'country', 'is_primary', 'is_pickup']
+
+
+class VendorSerializer(serializers.ModelSerializer):
+    addresses = VendorAddressSerializer(many=True, read_only=True)
+    total_products = serializers.SerializerMethodField()
+    profile_image = serializers.ImageField(source="profile.profile_image", read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = [
+            'id',
+            'email',
+            'username',
+            'first_name',
+            'last_name',
+            'phone_number',
+            'is_active',
+            'date_joined',
+            'addresses',        # vendor addresses
+            'total_products',   # number of products
+            'profile_image'
+        ]
+
+    def get_total_products(self, obj):
+        return obj.products.count()  # uses related_name='products'
+
 
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
