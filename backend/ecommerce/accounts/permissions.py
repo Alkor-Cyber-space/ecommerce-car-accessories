@@ -10,12 +10,16 @@ class IsAdmin(BasePermission):
           return request.user.is_authenticated and (request.user.is_superuser or request.user.groups.filter(name='Admin').exists())
 
 class IsVendorProfileComplete(BasePermission):
+     message = "Vendor profile is incomplete. Please complete your registration."
+
+
      def has_permission(self, request, view):
           user = request.user
           if not user.is_authenticated:
                return False
           try:
-               profile = user.vendor_profile  
-               return profile.is_registration_complete()
-          except VendorProfile.DoesNotExist:
+               vendor_profile = user.vendor_profile  
+               documents = vendor_profile.vendordocuments 
+               return documents.is_registration_complete()
+          except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
                return False
