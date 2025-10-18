@@ -658,7 +658,7 @@ class AdminProfileView(APIView):
 class SupportTicketViewSet(viewsets.ModelViewSet):
     queryset = SupportTicket.objects.all().order_by("-created_at")
     serializer_class = SupportTicketSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user

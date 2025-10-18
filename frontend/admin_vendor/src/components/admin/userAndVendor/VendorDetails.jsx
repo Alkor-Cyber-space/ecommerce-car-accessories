@@ -1,40 +1,23 @@
-import React, { use, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { GoArrowDownRight, GoArrowUpRight } from 'react-icons/go';
 import { HiOutlineDotsVertical } from 'react-icons/hi';
 import { Link, useParams } from 'react-router-dom';
-import { getVendorByIdApi, getVendorProductListApi } from '../../../services/allAPI'; // 🔁 Adjust path if needed
+import { getVendorByIdApi } from '../../../services/allAPI';
 import axios from 'axios';
 
 const VendorDetails = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
-
   const [vendorData, setVendorData] = useState({});
   const [vendorProducts, setVendorProducts] = useState([]);
 
-  const statusArray = [
-    'Live', 'Live', 'Draft', 'Out of Stock', 'Out of Stock', 'Live',
-    'Out of Stock', 'Out of Stock', 'Out of Stock', 'Out of Stock',
-    'Out of Stock', 'Out of Stock', 'Draft', 'Draft', 'Draft',
-    'Live', 'Draft', 'Live'
-  ];
-
-  const products = statusArray.map((status, index) => ({
-    id: index + 1,
-    name: 'Alloy Wheel XZR16',
-    sku: 'BRK-BCS-CBP-STD-0001',
-    stock: status === 'Live' ? 34 : 0,
-    status,
-    price: '₹4,499',
-  }));
   const { id } = useParams();
 
   useEffect(() => {
     const fetchVendorProducts = async () => {
       try {
         const token = localStorage.getItem("access_token");
-        const payload = { pk: Number(id) };  // or { vendor_id: Number(id) } depending on API
+        const payload = { pk: Number(id) };
         console.log("Vendor ID (pk) sent to API:", id);
-
 
         const response = await axios.post(
           "http://127.0.0.1:8000/api/admin/list-vendor-products/",
@@ -48,7 +31,6 @@ const VendorDetails = () => {
         );
         setVendorProducts(response.data.data);
         console.log(response);
-
       } catch (error) {
         console.error("Error fetching vendor products:", error.response || error.message);
       }
@@ -56,7 +38,6 @@ const VendorDetails = () => {
 
     fetchVendorProducts();
   }, [id]);
-
 
   const handleDropdownToggle = (productId) => {
     setActiveDropdown(activeDropdown === productId ? null : productId);
@@ -158,6 +139,7 @@ const VendorDetails = () => {
           </div>
         </div>
 
+        {/* Address */}
         <div className="bg-white rounded-xl p-4">
           <h3 className="font-bold mb-3">Address</h3>
           <div className="space-y-2 text-sm">
@@ -172,10 +154,6 @@ const VendorDetails = () => {
                     <span className="font-medium w-28">Line 2</span>
                     <span className="ml-4">{addr.line2 || 'N/A'}</span>
                   </div>
-                  {/* <div className="flex">
-        <span className="font-medium w-28">Landmark</span>
-        <span className="ml-4">{addr.landmark || 'N/A'}</span>
-      </div> */}
                   <div className="flex">
                     <span className="font-medium w-28">City</span>
                     <span className="ml-4">{addr.city || 'N/A'}</span>
@@ -197,10 +175,10 @@ const VendorDetails = () => {
             ) : (
               <p>No addresses available</p>
             )}
-
           </div>
         </div>
 
+        {/* Company Details */}
         <div className="bg-white rounded-xl p-4">
           <h3 className="font-bold mb-3">Company Details</h3>
           {vendorData?.vendor_profile ? (
@@ -221,8 +199,6 @@ const VendorDetails = () => {
           ) : (
             <p>No vendor data available</p>
           )}
-
-
         </div>
         <div className="bg-white rounded-xl p-4">
           <h3 className="font-bold mb-3">Customer Details</h3>
@@ -249,7 +225,6 @@ const VendorDetails = () => {
             </div>
           </div>
         </div>
-
       </div>
 
       {/* Product List Header */}
@@ -269,7 +244,7 @@ const VendorDetails = () => {
               <th className="px-3 py-2 font-medium ">Product Name</th>
               <th className="px-3 py-2 font-medium"></th>
               <th className="px-3 py-2 font-medium">Stock</th>
-              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">Availability</th>
               <th className="px-3 py-2 font-medium">Price</th>
               <th className="px-3 py-2 font-medium">Actions</th>
             </tr>
@@ -285,16 +260,14 @@ const VendorDetails = () => {
                 <td className="px-3 py-2">{product.sku}</td>
                 <td className="px-3 py-2">{product.stock}</td>
                 <td className="px-3 py-2">
-                  <span
-                    className={`px-2 py-1 text-xs rounded-full font-medium ${product.status === 'Live'
-                      ? 'bg-green-100 text-green-700'
-                      : product.status === 'Draft'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-red-100 text-red-700'
+                  <div className="flex justify-center items-center">
+                    <span
+                      className={`inline-block w-3 h-3 rounded-full ${
+                        product.is_available ? "bg-green-500" : "bg-red-500"
                       }`}
-                  >
-                    {product.status}
-                  </span>
+                      title={product.is_available ? "Available" : "Unavailable"}
+                    ></span>
+                  </div>
                 </td>
                 <td className="px-3 py-2">{product.price}</td>
                 <td className="px-3 py-2 relative">
@@ -333,9 +306,6 @@ const VendorDetails = () => {
           </tbody>
         </table>
       </div>
-
-      {/* Pagination */}
-
     </div>
   );
 };

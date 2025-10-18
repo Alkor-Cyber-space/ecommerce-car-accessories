@@ -1259,7 +1259,7 @@ export const getAdminDashboardApi = async () => {
   }
 };
 
-// /api/admin/support-tickets/{id}/mark_in_progress/
+
 
 export const markTicketInProgressApi = async (ticketId) => {
   try {
@@ -1373,3 +1373,38 @@ export const revenueTrendsApi = async () => {
     throw error;
   }
 };
+
+
+
+export const inventoryStatsApi = async () => {
+  try {
+    const response = await api.post("/api/admin/inventory/stats/");   
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching inventory stats:", error);
+    throw error;    
+  }
+};
+
+export const replyToReviewApi = async (reviewId) => {
+  try {
+    const response = await api.get(`/products/reviews/${reviewId}/reply/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reply message:", error);
+    throw error;
+  }
+};
+
+
+export const updatereplyToReviewApi = async (reviewId, replyData) => {
+  try {
+    const response = await api.post(`/products/reviews/${reviewId}/reply/`, replyData);
+    return response.data;
+  } catch (error) {
+    console.error("Error replying to review:", error);
+    throw error;
+  } 
+};
+
+
