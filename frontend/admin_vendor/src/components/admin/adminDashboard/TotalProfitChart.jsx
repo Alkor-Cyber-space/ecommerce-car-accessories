@@ -1,6 +1,9 @@
-import { BsGraphUpArrow } from 'react-icons/bs';
-import { FiArrowUpRight, FiArrowDownRight } from 'react-icons/fi';
-import { useEffect, useState } from 'react';
+import { BsGraphUpArrow } from "react-icons/bs";
+import { FiArrowUpRight, FiArrowDownRight } from "react-icons/fi";
+import { useEffect, useState } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 
 const ProfitCard = ({
   title = "Total Profit",

@@ -82,13 +82,6 @@ export default function VendorRegister() {
       const result = await vendorRegisterApi(vendorData);
       console.log("Step 1 success:", result);
 
-      // if (result?.data?.email && Array.isArray(result.data.email)) {
-      //   const emailError = result.data.email[0];
-      //   toast.error(` ${emailError}`);
-      //   setError(emailError);
-      //   setLoading(false);
-      //   return;
-      // }
       if (result.status === 201) {
         toast.success(" Registration successful! Proceeding to OTP verification.");
         dispatch(setCredentials({ username, email, password }));
@@ -112,9 +105,7 @@ export default function VendorRegister() {
       } else {
         console.log("error :", result.data);
         toast.error(result.data?.error)
-
       }
-
 
     } catch (err) {
       console.error(err);
@@ -180,7 +171,8 @@ export default function VendorRegister() {
                 role="button"
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                {showPassword ? <FaRegEyeSlash size={20} />   : <FaRegEye size={20} />}
+                {/*  Open eye when visible |  Slash when hidden */}
+                {showPassword ? <FaRegEye size={20} /> : <FaRegEyeSlash size={20} />}
               </span>
               {fieldErrors.password && (
                 <p className="text-sm text-red-600 mt-1">{fieldErrors.password}</p>
@@ -202,7 +194,8 @@ export default function VendorRegister() {
                 role="button"
                 aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
               >
-                {showConfirmPassword ? <FaRegEyeSlash size={20} />   : <FaRegEye size={20} />}
+                {/*  Open eye when visible |  Slash when hidden */}
+                {showConfirmPassword ? <FaRegEye size={20} /> : <FaRegEyeSlash size={20} />}
               </span>
               {fieldErrors.confirmPassword && (
                 <p className="text-sm text-red-600 mt-1">{fieldErrors.confirmPassword}</p>

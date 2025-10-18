@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { CountryDropdown, RegionDropdown } from 'react-country-region-selector';
+import { CountryDropdown, RegionDropdown } from "react-country-region-selector";
 import { FaEye } from "react-icons/fa";
 import { FiEdit3 } from "react-icons/fi";
 import { RiDeleteBinLine } from "react-icons/ri";
@@ -39,14 +39,17 @@ const documentGroups = {
     { key: "vendor_registration_form", label: "Vendor Registration Form" },
     { key: "signed_terms_and_con", label: "Signed Agreement" },
     { key: "dealership_letter", label: "Dealership Certificate" },
-    { key: "authorized_signatory_letter", label: "Authorized Signatory Letter" },
+    {
+      key: "authorized_signatory_letter",
+      label: "Authorized Signatory Letter",
+    },
   ],
 };
 
 const VendorProfile = () => {
   const [profileData, setProfileData] = useState({});
   const [addresses, setAddresses] = useState({});
-  const [kycDocuments, setKycDocuments] = useState({})
+  const [kycDocuments, setKycDocuments] = useState({});
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editSection, setEditSection] = useState(null);
   const [replaceField, setReplaceField] = useState(null);
@@ -59,13 +62,13 @@ const VendorProfile = () => {
     city: "",
     postal_code: "",
     state: "",
-    country: ""
+    country: "",
   });
   const [editAddressId, setEditAddressId] = useState(null);
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false);
   const [addressErrors, setAddressErrors] = useState({
     postal_code: "",
-    country: ""
+    country: "",
   });
 
   // Validation functions
@@ -89,29 +92,29 @@ const VendorProfile = () => {
 
   const handleAddressFormChange = (e) => {
     const { name, value } = e.target;
-    setAddressForm(prev => ({ ...prev, [name]: value }));
-    
+    setAddressForm((prev) => ({ ...prev, [name]: value }));
+
     // Clear error when user starts typing
     if (addressErrors[name]) {
-      setAddressErrors(prev => ({ ...prev, [name]: "" }));
+      setAddressErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const selectAddressCountry = (val) => {
-    setAddressForm(prev => ({
+    setAddressForm((prev) => ({
       ...prev,
       country: val,
-      state: ""
+      state: "",
     }));
     if (addressErrors.country) {
-      setAddressErrors(prev => ({ ...prev, country: "" }));
+      setAddressErrors((prev) => ({ ...prev, country: "" }));
     }
   };
 
   const selectAddressRegion = (val) => {
-    setAddressForm(prev => ({
+    setAddressForm((prev) => ({
       ...prev,
-      state: val
+      state: val,
     }));
   };
 
@@ -122,7 +125,7 @@ const VendorProfile = () => {
       landmark: "",
       postal_code: "",
       state: "",
-      country: ""
+      country: "",
     });
     setIsAddAddressModalOpen(true);
   };
@@ -130,7 +133,6 @@ const VendorProfile = () => {
     postal_code: "",
     country: "",
   });
-
 
   const handleSaveAddress = async () => {
     if (!validateAddressForm(addressForm)) {
@@ -141,14 +143,14 @@ const VendorProfile = () => {
     try {
       const res = await VendorAddressesApi({
         ...addressForm,
-        vendor: profileData.id
+        vendor: profileData.id,
       });
-      
+
       // Update the addresses state immediately
       setAddresses(res);
       toast.success("Address saved successfully!");
       setIsAddAddressModalOpen(false);
-      
+
       // Optionally fetch updated data from server
       await fetchVendorAddress();
     } catch (error) {
@@ -168,7 +170,7 @@ const VendorProfile = () => {
         const addressesList = await getVendorAddressesApi();
         setAddresses(addressesList.length > 0 ? addressesList[0] : {});
 
-        //  Fetch KYC documents 
+        //  Fetch KYC documents
         if (profile?.user) {
           const kycDocs = await getVendorKycDocuments(profile.user);
           setKycDocuments(kycDocs);
@@ -188,7 +190,6 @@ const VendorProfile = () => {
   }, []);
 
   const [editForm, setEditForm] = useState({});
-
 
   const handleEditClick = (section) => {
     setEditSection(section);
@@ -212,9 +213,7 @@ const VendorProfile = () => {
         contact_number: profileData.contact_number || "",
         designation: profileData.designation || "",
       });
-    }
-    else if (section === "address") {
-  
+    } else if (section === "address") {
       setEditAddressId(addresses.id);
 
       setEditForm({
@@ -223,11 +222,9 @@ const VendorProfile = () => {
         city: addresses.city || "",
         postal_code: addresses.postal_code || "",
         state: addresses.state || "",
-        country: addresses.country || ""
+        country: addresses.country || "",
       });
     }
-
-
   };
 
   // Validation functions
@@ -242,18 +239,18 @@ const VendorProfile = () => {
   };
 
   const selectCountry = (val) => {
-    setEditForm(current => ({
+    setEditForm((current) => ({
       ...current,
       country: val,
-      state: '',
-      city: ''
+      state: "",
+      city: "",
     }));
   };
 
   const selectRegion = (val) => {
-    setEditForm(current => ({
+    setEditForm((current) => ({
       ...current,
-      state: val
+      state: val,
     }));
   };
 
@@ -261,31 +258,57 @@ const VendorProfile = () => {
     return country && country.length > 0;
   };
 
-  const isFormValid = (form) => {
-    if (editSection === "address") {
-      const isPincodeValid = validatePincode(form.postal_code);
-      const isCountryValid = validateCountry(form.country);
-      return isPincodeValid && isCountryValid;
-    }
-    // Check if form has the required fields based on section
-    if (editSection === 'business') {
-      if (form.company_number && !validatePhoneNumber(form.company_number)) {
-        return false;
-      }
-    } else if (editSection === 'contact') {
-      if (form.contact_number && !validatePhoneNumber(form.contact_number)) {
-        return false;
-      }
-    } else if (editSection === 'address') {
-      if (form.postal_code && !validatePincode(form.postal_code)) {
-        return false;
-      }
-      if (form.country && !validateCountry(form.country)) {
-        return false;
-      }
-    }
-    return true;
-  };
+  // ✅ Validate input fields
+const isFormValid = (form) => {
+  switch (editSection) {
+    case "business":
+      return (
+        form.company_name?.trim() &&
+        validateEmail(form.company_email) &&
+        validatePhone(form.company_number)
+      );
+
+    case "contact":
+      return (
+        form.contact_name?.trim() &&
+        validateEmail(form.contact_email) &&
+        validatePhone(form.contact_number) &&
+        form.designation?.trim()
+      );
+
+    case "location":
+      return form.pickup_location?.trim() && form.city?.trim();
+
+    case "address":
+      return (
+        form.line1?.trim() &&
+        form.country?.trim() &&
+        form.state?.trim() &&
+        form.city?.trim() &&
+        form.postal_code?.trim()
+      );
+
+    default:
+      return false;
+  }
+};
+
+// ✅ Helper for email validation (must end with @gmail.com)
+// ✅ Helper for email validation (must end with @gmail.com)
+const validateEmail = (email) => {
+  if (typeof email !== "string") return false;
+  const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
+  return gmailRegex.test(email.trim());
+};
+
+// ✅ Helper for phone number validation (must be exactly 10 digits)
+const validatePhone = (phone) => {
+  if (typeof phone !== "string" && typeof phone !== "number") return false;
+  const phoneStr = String(phone).trim();
+  const phoneRegex = /^[0-9]{10}$/;
+  return phoneRegex.test(phoneStr);
+};
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -316,23 +339,30 @@ const VendorProfile = () => {
     setErrors(newErrors);
   };
 
-
   const handleSubmitEdit = async () => {
     try {
       if (!isFormValid(editForm)) {
         // Show appropriate error messages
-        if (editSection === 'business' && editForm.company_number && !validatePhoneNumber(editForm.company_number)) {
-          toast.error('Company phone number must be exactly 10 digits');
+        if (
+          editSection === "business" &&
+          editForm.company_number &&
+          !validatePhoneNumber(editForm.company_number)
+        ) {
+          toast.error("Company phone number must be exactly 10 digits");
         }
-        if (editSection === 'contact' && editForm.contact_number && !validatePhoneNumber(editForm.contact_number)) {
-          toast.error('Contact phone number must be exactly 10 digits');
+        if (
+          editSection === "contact" &&
+          editForm.contact_number &&
+          !validatePhoneNumber(editForm.contact_number)
+        ) {
+          toast.error("Contact phone number must be exactly 10 digits");
         }
-        if (editSection === 'address') {
+        if (editSection === "address") {
           if (editForm.postal_code && !validatePincode(editForm.postal_code)) {
-            toast.error('Pincode must be exactly 6 digits');
+            toast.error("Pincode must be exactly 6 digits");
           }
           if (editForm.country && !validateCountry(editForm.country)) {
-            toast.error('Please enter a valid country name');
+            toast.error("Please enter a valid country name");
           }
         }
         return;
@@ -349,7 +379,10 @@ const VendorProfile = () => {
 
       setIsEditModalOpen(false);
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || "An error occurred while updating profile";
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "An error occurred while updating profile";
       toast.error(errorMessage);
     }
   };
@@ -362,14 +395,14 @@ const VendorProfile = () => {
       if (!validateCountry(editForm.country)) {
         toast.error("Please enter a valid country name.");
       }
-      return; // ❌ stop the function if invalid
+      return; //  stop the function if invalid
     }
 
     try {
       const res = await updateVendorAddressApi(editAddressId, editForm);
       toast.success("Address updated successfully!");
       setIsEditModalOpen(false);
-      setAddresses(prev => ({ ...prev, ...editForm }));
+      setAddresses((prev) => ({ ...prev, ...editForm }));
     } catch (error) {
       console.error(error);
       toast.error("Failed to update address");
@@ -414,7 +447,7 @@ const VendorProfile = () => {
       try {
         const response = await updateKycDocuments(vendorId, formData);
         console.log(" Document uploaded successfully:", response);
-        toast.success("Updated!!")
+        toast.success("Updated!!");
         const updatedKycDocs = await getVendorKycDocuments(vendorId);
         setKycDocuments(updatedKycDocs);
       } catch (error) {
@@ -435,6 +468,7 @@ const VendorProfile = () => {
       <p className="my-1">Manage your business details and documents.</p>
 
       {/* Business & Location Details */}
+      {/* Contact & Address Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
         {/* Business Details */}
         <div className="bg-white rounded-lg px-5 py-6 shadow">
@@ -453,59 +487,10 @@ const VendorProfile = () => {
             <p>{profileData.company_email || ""}</p>
             <p className="font-semibold">Phone</p>
             <p>{profileData.company_number || ""}</p>
-
           </div>
         </div>
 
-        {/* Location Details */}
-        {/* <div className="bg-white rounded-lg px-5 py-6 shadow">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="font-semibold text-lg">Location Details</h2>
-            <FiEdit3
-              size={20}
-              onClick={() => handleEditClick("location")}
-              className="cursor-pointer"
-            />
-          </div> */}
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 mt-4 gap-y-2">
-            <p className="font-semibold">Pick Up Location</p>
-            <div className="space-y-2">
-              <p>ABC Technologies Edathala, Kakkanad - Kochi</p>
-              <p>Near Pulliparambu Kaavu Temple</p>
-              <button className="text-[#5737B4] mt-2 text-md">
-                Use My Current Location
-              </button>
-            </div> */}
-        {/* </div> */}
-        {/* </div> */}
-      </div>
-
-      {/* Contact & Address Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
-
-        {/* Contact Details */}
-        <div className="bg-white rounded-lg px-5 py-6 shadow">
-          <div className="flex justify-between items-center flex-wrap gap-2">
-            <h2 className="font-semibold text-lg">Contact Details</h2>
-            <FiEdit3
-              size={20}
-              onClick={() => handleEditClick("contact")}
-              className="cursor-pointer"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 mt-4">
-            <p className="font-semibold">Contact Name</p>
-            <p>{profileData.contact_name || ""}</p>
-            <p className="font-semibold">Contact Email</p>
-            <p>{profileData.contact_email || ""}</p>
-            <p className="font-semibold">Contact Number</p>
-            <p>{profileData.contact_number || ""}</p>
-            <p className="font-semibold">Designation</p>
-            <p>{profileData.designation || ""}</p>
-          </div>
-        </div>
-
-        {/* Address Details */}
+        {/* Address Details - moved top-right */}
         <div className="bg-white rounded-lg px-5 py-6 shadow">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="font-semibold text-lg">Address Details</h2>
@@ -545,6 +530,31 @@ const VendorProfile = () => {
           </div>
         </div>
       </div>
+
+      {/* Contact Details - stays in the second row */}
+      <div className="grid grid-cols-1 gap-4 mt-6">
+        <div className="bg-white rounded-lg px-5 py-6 shadow w-80 sm:w-[550px]">
+          <div className="flex justify-between items-center flex-wrap gap-2">
+            <h2 className="font-semibold text-lg">Contact Details</h2>
+            <FiEdit3
+              size={20}
+              onClick={() => handleEditClick("contact")}
+              className="cursor-pointer"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 mt-4">
+            <p className="font-semibold">Contact Name</p>
+            <p>{profileData.contact_name || ""}</p>
+            <p className="font-semibold">Contact Email</p>
+            <p>{profileData.contact_email || ""}</p>
+            <p className="font-semibold">Contact Number</p>
+            <p>{profileData.contact_number || ""}</p>
+            <p className="font-semibold">Designation</p>
+            <p>{profileData.designation || ""}</p>
+          </div>
+        </div>
+      </div>
+
       <div className="mt-6">
         {Object.entries(documentGroups).map(([groupKey, docs]) => (
           <div key={groupKey} className="mb-6">
@@ -568,661 +578,6 @@ const VendorProfile = () => {
         ))}
       </div>
 
-      <hr />
-      {/* KYC Uploads */}
-      {/* <div className="mt-6">
-        <h2 className="font-semibold text-lg mb-3">KYC Uploads</h2>
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-white p-5 rounded shadow gap-4">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <p className="font-medium">PAN Card</p>
-            <a
-              href={`${server_url}${profileData.pan_card}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              PANCard.pdf
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("pan_card");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(`${server_url}${profileData.pan_card}`, "_blank")
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-
-
-          <div className="flex justify-between items-center bg-white p-5 rounded shadow sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className=" font-medium">
-              Passport <br /> / Aadhaar / License
-            </span>
-            <a
-              href={`${server_url}${profileData.aadhar_passport_dl}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Aadhar/Passport/DL
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("aadhar_passport_dl");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.aadhar_passport_dl}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className=" mt-6">
-        <h2 className="font-semibold text-lg mb-3">Business Documents</h2>
-        <div className="space-y-4">
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-yellow-600 font-medium">⏳Pending</p>
-            <span className="font-medium">GSTIN Certificate</span>
-            <a
-              href={`${server_url}${profileData.gst_certificate}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              gstcertificate
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("gst_certificate");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.gst_certificate}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className="w-30 font-medium">Business Registration</span>
-            <a
-              href={`${server_url}${profileData.business_registration_cert}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Business Reg Certificate
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("business_registration_cert");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.business_registration_cert}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className="font-medium">
-              Shop &Establishment <br /> License
-            </span>
-            <a
-              href={`${server_url}${profileData.shop_license}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Shop License
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("shop_license");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.shop_license}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className=" mt-6">
-        <h2 className="font-semibold text-lg mb-3">Bank & Tax Details</h2>
-        <div className="space-y-4">
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-yellow-600 font-medium">⏳Pending</p>
-            <span className=" font-medium">Cancelled Cheque</span>
-            <a
-              href={`${server_url}${profileData.cancelled_cheque}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              CancelledCheque
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("cancelled_cheque");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.cancelled_cheque}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className="font-medium">
-              Bank Passbook <br /> / Statement
-            </span>
-            <a
-              href={`${server_url}${profileData.bank_statement}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Bank Statement
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("bank_statement");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.bank_statement}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className=" mt-6">
-        <h2 className="font-semibold text-lg mb-3">Tax Financial Records</h2>
-        <div className="space-y-4">
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className="font-medium">IT Return</span>
-            <a
-              href={`${server_url}${profileData.it_return}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              IT Return
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("it_return");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(`${server_url}${profileData.it_return}`, "_blank")
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className=" font-medium">
-              P&L Statement/
-              <br />
-              Balance Sheet
-            </span>
-            <a
-              href={`${server_url}${profileData.financial_statement}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Financial Statement
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("financial_statement");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.financial_statement}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className=" mt-6">
-        <h2 className="font-semibold text-lg mb-3">
-          Agreements & Supporting Documents{" "}
-        </h2>
-        <div className="space-y-4">
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-yellow-600 font-medium">⏳Pending</p>
-            <span className=" font-medium ">
-              Filled Vendor <br />
-              Registration Form
-            </span>
-            <a
-              href={`${server_url}${profileData.vendor_registration_form}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Registration Form
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("vendor_registration_form");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.vendor_registration_form}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className="md:w-60 sm:w-30 font-medium">
-              Signed NPA/Supply Agreement/Terms and Condition
-            </span>
-            <a
-              href={`${server_url}${profileData.signed_terms_and_con}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Signed Agreement
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("signed_terms_and_con");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.signed_terms_and_con}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className="w-60 font-medium">
-              Authorization Letter/ Dealership Certificate/{" "}
-            </span>
-            <a
-              href={`${server_url}${profileData.dealership_letter}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Dealership Certificate
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("dealership_letter");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.dealership_letter}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-5 shadow rounded flex justify-between items-center sm:gap-5">
-            <p className="text-green-600 font-medium">✓ Verified</p>
-            <span className="w-60 font-medium">
-              Authorized Signatory Letter{" "}
-            </span>
-            <a
-              href={`${server_url}${profileData.authorized_signatory_letter}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 text-sm underline cursor-pointer"
-            >
-              Signatory Letter
-            </a>
-            {profileData?.submitted_at && (
-              <div className="text-sm text-gray-700">
-                <span className="font-medium text-gray-900">Uploaded At :</span>{" "}
-                {format(
-                  new Date(profileData.submitted_at),
-                  "dd MMMM yyyy, 'Time:' h:mm a"
-                )}
-              </div>
-            )}
-            <div
-              onClick={() => {
-                setReplaceField("authorized_signatory_letter");
-                fileInputRef.current.click();
-              }}
-              className="text-[#5737B4] cursor-pointer text-md"
-            >
-              Replace Document
-            </div>
-
-            <div className="flex gap-5">
-              <div
-                onClick={() =>
-                  window.open(
-                    `${server_url}${profileData.authorized_signatory_letter}`,
-                    "_blank"
-                  )
-                }
-                className="cursor-pointer"
-              >
-                <FaEye size={22} />
-              </div>
-              <div>
-                <RiDeleteBinLine size={22} />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> */}
       <div className="flex justify-end gap-4 mt-10">
         <button className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">
           Cancel
@@ -1257,10 +612,10 @@ const VendorProfile = () => {
               {editSection === "business"
                 ? "Business Details"
                 : editSection === "location"
-                  ? "Location Details"
-                  : editSection === "Contact Details"
-                    ? "Contact Details"
-                    : "Address Details"}
+                ? "Location Details"
+                : editSection === "Contact Details"
+                ? "Contact Details"
+                : "Address Details"}
             </h2>
 
             <div className="flex flex-col gap-4">
@@ -1282,6 +637,13 @@ const VendorProfile = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border rounded-md"
                   />
+                  {!validateEmail(editForm.company_email) &&
+                    editForm.company_email && (
+                      <p className="text-red-500 text-sm">
+                        Enter a valid Gmail address.
+                      </p>
+                    )}
+
                   <input
                     type="tel"
                     name="company_number"
@@ -1290,7 +652,12 @@ const VendorProfile = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border rounded-md"
                   />
-
+                  {!validatePhone(editForm.company_number) &&
+                    editForm.company_number && (
+                      <p className="text-red-500 text-sm">
+                        Enter a valid 10-digit number.
+                      </p>
+                    )}
                 </>
               )}
 
@@ -1373,25 +740,28 @@ const VendorProfile = () => {
 
                   <CountryDropdown
                     name="country"
-                    value={editForm.country || ''}
+                    value={editForm.country || ""}
                     onChange={(val) => selectCountry(val)}
                     className="w-full px-4 py-3 border rounded-md"
                     defaultOptionLabel="Select Country"
                   />
                   {errors.country && (
-                    <p className="text-red-500 text-sm mt-1">{errors.country}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.country}
+                    </p>
                   )}
 
                   <RegionDropdown
                     name="state"
                     country={editForm.country}
-                    value={editForm.state || ''}
+                    value={editForm.state || ""}
                     onChange={(val) => selectRegion(val)}
                     className="w-full px-4 py-3 border rounded-md"
                     blankOptionLabel="Select State/Region"
                     disabled={!editForm.country}
                   />
-                  <input type="text"
+                  <input
+                    type="text"
                     name="city"
                     placeholder="City"
                     value={editForm.city}
@@ -1408,12 +778,12 @@ const VendorProfile = () => {
                     className="w-full px-4 py-3 border rounded-md"
                   />
                   {errors.postal_code && (
-                    <p className="text-red-500 text-sm mt-1">{errors.postal_code}</p>
+                    <p className="text-red-500 text-sm mt-1">
+                      {errors.postal_code}
+                    </p>
                   )}
-
                 </>
               )}
-
             </div>
 
             <div className="mt-6 text-right">
@@ -1424,12 +794,14 @@ const VendorProfile = () => {
                     : handleSubmitEdit
                 }
                 disabled={!isFormValid(editForm)}
-                className={`px-6 py-2 ${isFormValid(editForm) ? 'bg-[#5737B4] hover:bg-[#402b91]' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-md text-sm font-semibold`}
+                className={`px-6 py-2 ${
+                  isFormValid(editForm)
+                    ? "bg-[#5737B4] hover:bg-[#402b91]"
+                    : "bg-gray-400 cursor-not-allowed"
+                } text-white rounded-md text-sm font-semibold transition`}
               >
                 Save Changes
               </button>
-
-
             </div>
           </div>
         </div>
@@ -1443,7 +815,7 @@ const VendorProfile = () => {
             className="bg-white p-6 rounded-lg w-full max-w-md shadow-lg"
             onClick={(e) => e.stopPropagation()} // prevent close on inside click
           >
-            <h2 className="text-xl font-semibold mb-4">Add Address</h2>
+            <h2 className="text-xl font-semibold mb-4">Add Address </h2>
 
             {/* Line 1 */}
             <input
@@ -1474,7 +846,9 @@ const VendorProfile = () => {
               defaultOptionLabel="Select Country"
             />
             {addressErrors.country && (
-              <p className="text-red-500 text-sm mb-2">{addressErrors.country}</p>
+              <p className="text-red-500 text-sm mb-2">
+                {addressErrors.country}
+              </p>
             )}
 
             {/* State/Region */}
@@ -1511,7 +885,9 @@ const VendorProfile = () => {
               pattern="\d{6}"
             />
             {addressErrors.postal_code && (
-              <p className="text-red-500 text-sm mb-2">{addressErrors.postal_code}</p>
+              <p className="text-red-500 text-sm mb-2">
+                {addressErrors.postal_code}
+              </p>
             )}
 
             {/* Buttons */}
@@ -1531,69 +907,10 @@ const VendorProfile = () => {
             </div>
           </div>
         </div>
-
       )}
-
     </div>
   );
 };
 
-
 export default VendorProfile;
 
-// {/* maaped */}
-
-// {documents.map((doc, index) => (
-//   <div key={index} className="flex justify-between items-center bg-white p-5 rounded shadow sm:gap-5">
-
-//     {/* Status */}
-//     <p className={`font-medium ${doc.status === "verified" ? "text-green-600" :
-//         doc.status === "pending" ? "text-yellow-500" :
-//           "text-red-500"
-//       }`}>
-//       {doc.status === "verified" ? "✓ Verified" :
-//         doc.status === "pending" ? "⌛ Pending" :
-//           "✗ Rejected"}
-//     </p>
-
-//     {/* Title */}
-//     <p className="font-medium">{doc.title}</p>
-
-//     {/* File Name */}
-//     <span className="underline text-sm text-blue-600 cursor-pointer">{doc.fileName}</span>
-
-//     {/* Uploaded Time */}
-//     <p className="text-sm text-gray-700">
-//       <span className='font-medium text-gray-900'>Uploaded At :</span> {doc.uploadedAt}
-//     </p>
-
-//     {/* Replace Document */}
-//     <div
-//       onClick={() => {
-//         setReplaceIndex(index);
-//         fileInputRef.current.click();
-//       }}
-//       className="text-[#5737B4] cursor-pointer text-md"
-//     >
-//       Replace Document
-//     </div>
-
-//     {/* Actions */}
-//     <div className='flex gap-4'>
-//       {/* View */}
-//       <div onClick={() => handleViewDoc(doc.fileUrl)} className="cursor-pointer">
-//         <FaEye size={22} />
-//       </div>
-
-//       {/* Reject */}
-//       <div onClick={() => handleRejectDoc(index)} className="cursor-pointer text-red-600">
-//         <RxCross2 size={22} />
-//       </div>
-
-//       {/* Delete */}
-//       <div onClick={() => handleDeleteDoc(index)} className="cursor-pointer text-gray-600">
-//         <RiDeleteBinLine size={22} />
-//       </div>
-//     </div>
-//   </div>
-// ))}
