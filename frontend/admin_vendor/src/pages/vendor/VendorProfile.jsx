@@ -913,4 +913,3 @@ const validatePhone = (phone) => {
 };
 
 export default VendorProfile;
-
