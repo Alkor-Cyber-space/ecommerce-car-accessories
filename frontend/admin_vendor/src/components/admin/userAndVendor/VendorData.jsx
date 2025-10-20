@@ -31,8 +31,8 @@ export default function VendorDataTable() {
         location: vendor.location || "N/A",
         status: vendor.status || "Pending",
         date_joined: formatDate(vendor.date_joined),
-        totalProducts: vendor.totalProducts || 0,
-        totalOrders: vendor.totalOrders || 0,
+        totalProducts: vendor.products || 0,
+        totalOrders: vendor.orders || 0,
       }));
 
       const response = await exportReportApi(
@@ -242,7 +242,7 @@ export default function VendorDataTable() {
                     to={`/admin/vendor-details/${vendor.id}`}
                     onClick={() => localStorage.setItem("selected_vendor", JSON.stringify(vendor))}
                   >
-                    {vendor.username}
+                    {vendor.username} 
                   </Link>
                 </td>
                 <td className="py-3 px-4">{vendor.email}</td>
@@ -254,8 +254,8 @@ export default function VendorDataTable() {
                   </span>
                 </td>
                 <td className="py-3 px-4">{formatDate(vendor.date_joined)}</td>
-                <td className="py-3 px-4 font-medium">{vendor.totalProducts || 0}</td>
-                <td className="py-3 px-4 font-medium">{vendor.totalOrders || 0}</td>
+                <td className="py-3 px-4 font-medium">{vendor.products || 0}</td>
+                <td className="py-3 px-4 font-medium">{vendor.orders || 0}</td>
                 <td className="py-3 px-4 relative">
                   <button
                     onClick={(e) => {

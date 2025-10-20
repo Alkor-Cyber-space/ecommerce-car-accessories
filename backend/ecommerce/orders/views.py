@@ -331,6 +331,7 @@ class CheckoutViewSet(viewsets.ViewSet):
                         "units": item.quantity,
                         "selling_price": float(item.price),
                         "discount": 0,
+                        "hsn": "8708",
                         "tax": float(item.price) * float(tax_rate),
                     }
                     for item in order_items

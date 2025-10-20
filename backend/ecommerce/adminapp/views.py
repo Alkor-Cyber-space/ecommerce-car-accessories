@@ -29,6 +29,7 @@ from django.db.models import Sum, F, Count
 from django.db.models.functions import TruncMonth
 from datetime import timedelta,date
 from django.utils import timezone
+from accounts.utils import is_vendor_registration_complete
 
 User = get_user_model()
 # Create your views here.
@@ -372,14 +373,13 @@ class VendorDetailsList(APIView):
 
     def post(self, request, *args, **kwargs):
         pk = request.data.get("pk")
+        print(pk)
         if not pk:
             return Response(
                 {"message": "pk is required", "status": status.HTTP_400_BAD_REQUEST}
             )
-        print("above the try")
+
         try:
-            print("inside the try")
-            print(f"filter :{Group.objects.get(name="Vendor")}")
             vendor_group = Group.objects.get(name="Vendor")
             print(f"vendor_group: {vendor_group}")
 
@@ -387,6 +387,7 @@ class VendorDetailsList(APIView):
             message = str(e)
             return Response({"status":"failed","response_code":status.HTTP_500_INTERNAL_SERVER_ERROR,"message":message})
         user = (CustomUser.objects.filter(id=pk, groups=vendor_group).select_related("vendor_profile").first())
+        print(f"Fetched user: {user}")
 
         if not user:
             return Response(
@@ -394,22 +395,21 @@ class VendorDetailsList(APIView):
             )
 
         serializer = VendorDetailsSerializer(user)
+        print(f"serializer.data:{serializer.data}")
         return Response(
             {"message": "Successfully fetched vendor data", "data": serializer.data},
             status=status.HTTP_200_OK,
         )
+
       
 class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = VendorSerializer
+    serializer_class = UserSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
 
     def get_queryset(self):
         vendor_group = Group.objects.get(name='Vendor')
-        return (
-            CustomUser.objects.filter(groups=vendor_group)
-            .prefetch_related('addresses', 'products')  
-        )
-
+        return CustomUser.objects.filter(groups=vendor_group)
+        
     # @action(detail=True, methods=['post'], url_path='approve')
     # def approve_vendor(self, request, pk=None):
     #     vendor = self.get_object()
@@ -433,7 +433,7 @@ class UserListViewSet(viewsets.ReadOnlyModelViewSet):
         user_group = Group.objects.get(name='User')
         return (
             CustomUser.objects.filter(groups=user_group)
-            .prefetch_related('order_set')
+            .prefetch_related('orders')
         )
 
     #@action(detail=True,methods=['post'], url_path='approve')
@@ -505,6 +505,7 @@ class VendorViewProductAPIView(APIView):
 
     def post(self,request):
         pk=request.data.get('pk')
+        # print(pk)
         if not pk:
             return Response({
                 "status" : "failed",
@@ -528,13 +529,30 @@ class VendorViewProductAPIView(APIView):
         },status=status.HTTP_200_OK)
 
 
+# class UnverifiedVendorsAPIView(APIView):
+#     permission_classes = [IsAuthenticated, IsAdmin]
+
+#     def get(self, request):
+#         unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
+#         serializer = VendorUnverifiedDocumentsSerializer(unverified_vendors, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
 class UnverifiedVendorsAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin, IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get(self, request):
-        unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
-        serializer = VendorDocumentsSerializer(unverified_vendors, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        vendor_group = Group.objects.get(name='Vendor')
+        all_vendors = CustomUser.objects.filter(groups=vendor_group)
+
+        # Filter vendors whose registration is incomplete
+        incomplete_vendors = [
+            vendor for vendor in all_vendors if not is_vendor_registration_complete(vendor)
+        ]
+
+        serializer = self.serializer_class(incomplete_vendors, many=True)
+        return Response(serializer.data)
+
 
 class AdminVehicleUpdate(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]

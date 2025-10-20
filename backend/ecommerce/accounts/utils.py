@@ -6,6 +6,8 @@ from orders.models import *
 import razorpay
 from django.conf import settings
 from .models import *
+
+
 def log_action(user, action, description):
     
     VendorAuditLog.objects.create(
@@ -13,6 +15,17 @@ def log_action(user, action, description):
         action=action,
         description=description
     )
+
+def is_vendor_registration_complete(user):
+    """
+    Returns True if the vendor profile and KYC documents are complete.
+    """
+    try:
+        profile = user.vendor_profile
+        registration_complete = profile.vendordocuments.is_registration_complete()
+        return registration_complete
+    except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
+        return False
 
 # yourapp/utils.py
 # Initialize Razorpay client

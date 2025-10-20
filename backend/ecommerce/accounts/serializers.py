@@ -225,7 +225,7 @@ class Step6AgreementsSerializer(serializers.ModelSerializer):
 class SimpleOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id', 'order_number', 'total_amount', 'status', 'created_at']
+        fields = ['id','total_price', 'status', 'created_at']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -257,9 +257,8 @@ class UserSerializer(serializers.ModelSerializer):
         return None
 
     def get_orders(self, obj):
-        from orders.models import Order  # lazy import to avoid circular import issues
-        user_orders = Order.objects.filter(user=obj)
-        return SimpleOrderSerializer(user_orders, many=True).data
+        from orders.models import Order
+        return Order.objects.filter(user=obj).count()
 
 class VendorAddressSerializer(serializers.ModelSerializer):
     class Meta:

@@ -3,7 +3,7 @@ import Modal from "react-modal";
 import { FaBell, FaSyncAlt } from "react-icons/fa";
 import { FiDownload } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
-import * as XLSX from "xlsx";
+// import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { getProductsApi, updateStockApi } from "../../../services/allAPI";
@@ -110,10 +110,10 @@ export default function VendorStockTable() {
     };
     const handleDownloadExcel = () => {
         try {
-            const worksheet = XLSX.utils.json_to_sheet(filteredData);
-            const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
-            XLSX.writeFile(workbook, "StockOverviewReport.xlsx");
+            // const worksheet = XLSX.utils.json_to_sheet(filteredData);
+            // const workbook = XLSX.utils.book_new();
+            // XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
+            // XLSX.writeFile(workbook, "StockOverviewReport.xls x");
             setShowDownloadOptions(false);
             toast.success("Excel report downloaded successfully!");
         } catch (error) {
