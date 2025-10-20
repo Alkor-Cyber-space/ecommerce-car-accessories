@@ -21,20 +21,20 @@ export default function EditProduct() {
 
   const { productDetails } = useSelector((state) => state.products);
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    price: '',
-    stock: '',
+    name: "",
+    description: "",
+    price: "",
+    stock: "",
     category: null,
-    size: '',
-    manufacturing_date: '',
+    size: "",
+    manufacturing_date: "",
     tag: [],
     isActive: false,
     is_available: false,
-    length: '',
-    breadth: '',
-    height: '',
-    weight: '',
+    length: "",
+    breadth: "",
+    height: "",
+    weight: "",
     compatible_varient_year_ids: [],
   });
   const [productImages, setProductImages] = useState({});
@@ -43,6 +43,7 @@ export default function EditProduct() {
 
   const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
   const inputRefs = useRef([]);
+  const [inputValue, setInputValue] = useState("");
 
   useEffect(() => {
     dispatch(fetchProductById(id));
@@ -52,22 +53,25 @@ export default function EditProduct() {
   useEffect(() => {
     if (productDetails && productDetails.id) {
       setFormData({
-        name: productDetails.name || '',
-        description: productDetails.description || '',
-        price: productDetails.price || '',
-        stock: productDetails.stock || '',
+        name: productDetails.name || "",
+        description: productDetails.description || "",
+        price: productDetails.price || "",
+        stock: productDetails.stock || "",
         category: productDetails.category || null,
-        size: productDetails.size || '',
-        manufacturing_date: productDetails.manufacturing_date || '',
+        size: productDetails.size || "",
+        manufacturing_date: productDetails.manufacturing_date || "",
         tag: Array.isArray(productDetails.tag) ? productDetails.tag : [],
         isActive: Boolean(productDetails.isActive),
-  // prefer explicit is_available if backend provides it, otherwise mirror isActive
-  is_available: productDetails.hasOwnProperty('is_available') ? Boolean(productDetails.is_available) : Boolean(productDetails.isActive),
-        length: productDetails.length || '',
-        breadth: productDetails.breadth || '',
-        height: productDetails.height || '',
-        weight: productDetails.weight || '',
-        compatible_varient_year_ids: productDetails.compatible_varient_year?.map(v => v.id) || [],
+        // prefer explicit is_available if backend provides it, otherwise mirror isActive
+        is_available: productDetails.hasOwnProperty("is_available")
+          ? Boolean(productDetails.is_available)
+          : Boolean(productDetails.isActive),
+        length: productDetails.length || "",
+        breadth: productDetails.breadth || "",
+        height: productDetails.height || "",
+        weight: productDetails.weight || "",
+        compatible_varient_year_ids:
+          productDetails.compatible_varient_year?.map((v) => v.id) || [],
       });
 
       if (productDetails.image_list?.length) {
@@ -81,7 +85,6 @@ export default function EditProduct() {
       }
     }
   }, [productDetails]);
-
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -107,12 +110,38 @@ export default function EditProduct() {
     };
     fetchVariantYears();
   }, []);
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && inputValue.trim() !== "") {
+      e.preventDefault();
+      setFormData((prev) => {
+        // Prevent duplicate tags
+        if (!prev.tag.includes(inputValue.trim())) {
+          return { ...prev, tag: [...prev.tag, inputValue.trim()] };
+        }
+        return prev;
+      });
+      setInputValue("");
+    }
+  };
 
+  // Remove tag
+  const removeTag = (indexToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      tag: prev.tag.filter((_, index) => index !== indexToRemove),
+    }));
+  };
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'tag' ? value.split(',').map(tag => tag.trim()).filter(Boolean) : value
+      [name]:
+        name === "tag"
+          ? value
+              .split(",")
+              .map((tag) => tag.trim())
+              .filter(Boolean)
+          : value,
     }));
   };
 
@@ -137,13 +166,13 @@ export default function EditProduct() {
     const imageUrl = URL.createObjectURL(file);
 
     // Update imagePreviews while preserving other images
-    setImagePreviews(prevPreviews => {
+    setImagePreviews((prevPreviews) => {
       const newPreviews = [...prevPreviews];
       newPreviews[index] = {
         id: null,
         image: imageUrl,
         url: imageUrl, // Add url property for consistency
-        file // Store file reference
+        file, // Store file reference
       };
       return newPreviews;
     });
@@ -151,13 +180,13 @@ export default function EditProduct() {
     // Update productImages while preserving other images
     const keys = ["main", "close", "other1", "other2", "other3", "other4"];
     const key = keys[index];
-    setProductImages(prevImages => ({
+    setProductImages((prevImages) => ({
       ...prevImages,
-      [index]: file // use index as the key
+      [index]: file, // use index as the key
     }));
 
     // Clear the file input for future use
-    e.target.value = '';
+    e.target.value = "";
   };
 
   const [loading, setLoading] = useState(false);
@@ -180,19 +209,17 @@ export default function EditProduct() {
 
       // Clear the file input
       if (inputRefs.current[index]) {
-        inputRefs.current[index].value = '';
+        inputRefs.current[index].value = "";
       }
 
       // Clear from productImages state
       const keys = ["main", "close", "other1", "other2", "other3", "other4"];
       const key = keys[index];
-      setProductImages(prev => {
+      setProductImages((prev) => {
         const updated = { ...prev };
         delete updated[index];
         return updated;
       });
-
-
     } catch (error) {
       console.error("Error deleting product image:", error);
       toast.error("Failed to delete image.");
@@ -212,8 +239,8 @@ export default function EditProduct() {
     form.append("manufacturing_date", formData.manufacturing_date || "");
     form.append("tag", formData.tag || "");
     form.append("isActive", formData.isActive ? "true" : "false");
-  // include availability flag (mirror AddProduct behaviour)
-  form.append("is_available", formData.is_available ? "true" : "false");
+    // include availability flag (mirror AddProduct behaviour)
+    form.append("is_available", formData.is_available ? "true" : "false");
     form.append("length", formData.length || "");
     form.append("breadth", formData.breadth || "");
     form.append("height", formData.height || "");
@@ -231,7 +258,7 @@ export default function EditProduct() {
 
     //     }
     if (Array.isArray(formData.compatible_varient_year_ids)) {
-      formData.compatible_varient_year_ids.forEach(id => {
+      formData.compatible_varient_year_ids.forEach((id) => {
         form.append("compatible_varient_year_ids", id); // append each separately
       });
     }
@@ -242,14 +269,17 @@ export default function EditProduct() {
       }
     });
 
-
     try {
       await updateProductApi(id, form);
       toast.success("Product updated successfully!");
       navigate("/vendor/products");
     } catch (err) {
       console.error("Update error:", err);
-      toast.error(err.response?.data?.compatible_varient_year_ids?.[0] || err.response?.data?.detail || "Failed to update product.");
+      toast.error(
+        err.response?.data?.compatible_varient_year_ids?.[0] ||
+          err.response?.data?.detail ||
+          "Failed to update product."
+      );
     }
   };
 
@@ -273,25 +303,20 @@ export default function EditProduct() {
     try {
       const response = await deleteProductApi(id);
 
-
       toast.success(" Product deleted successfully!", response);
-
 
       setTimeout(() => {
         navigate("/vendor/products", { replace: true });
       }, 1000);
-
     } catch (error) {
       console.error("Error deleting product:", error);
       toast.error(" Failed to delete product.");
     }
   };
 
-
   const handleCancel = () => {
     navigate(`/vendor/products/`);
   };
-
 
   const ProductImagesSection = () => (
     <div className="bg-white rounded-xl p-6 shadow">
@@ -358,13 +383,18 @@ export default function EditProduct() {
     <div className="bg-[#ECECF0] min-h-screen">
       <div className="flex justify-between mb-3">
         <h1 className="text-2xl font-semibold mb-6">
-          <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
+          <Link
+            to="/vendor/products"
+            className="text-[#5737B4] hover:underline pr-3"
+          >
             Product Management
           </Link>
-          / Edit  {formData.name}
+          / Edit {formData.name}
         </h1>
         <div className="sm:flex items-center gap-3">
-          <span className="text-md font-medium text-[#5737B4]">Product Active</span>
+          <span className="text-md font-medium text-[#5737B4]">
+            Product Active
+          </span>
           <div
             onClick={() =>
               setFormData((prev) => ({
@@ -374,16 +404,22 @@ export default function EditProduct() {
                 is_available: !(prev.is_available ?? prev.isActive),
               }))
             }
-            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${(formData.is_available ?? formData.isActive) ? "bg-[#5737B4]" : "bg-gray-300"}`}
+            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
+              formData.is_available ?? formData.isActive
+                ? "bg-[#5737B4]"
+                : "bg-gray-300"
+            }`}
           >
-
             {/* reflect combined availability for visual position */}
             <div
-              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${(formData.is_available ?? formData.isActive) ? "translate-x-7" : "translate-x-0"}`}
+              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
+                formData.is_available ?? formData.isActive
+                  ? "translate-x-7"
+                  : "translate-x-0"
+              }`}
             />
           </div>
         </div>
-
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
@@ -396,7 +432,10 @@ export default function EditProduct() {
               <label className="font-medium">Product Name</label>
               <input
                 name="name"
-                value={formData.name || "LumoBeam X9 LED Car Headlight -  6000K Cool White (H4, 60W) "}
+                value={
+                  formData.name ||
+                  "LumoBeam X9 LED Car Headlight -  6000K Cool White (H4, 60W) "
+                }
                 onChange={handleChange}
                 type="text"
                 className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -454,7 +493,7 @@ export default function EditProduct() {
                     onChange={handleChange}
                     className="border rounded px-4 py-2 mt-1"
                   >
-                    <option value="" >(Optional)</option>
+                    <option value="">(Optional)</option>
                     <option value="Small">Small</option>
                     <option value="Medium">Medium</option>
                     <option value="Large">Large</option>
@@ -464,11 +503,13 @@ export default function EditProduct() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* First row: Length and weight */}
                   <div className="flex flex-col">
-                    <label htmlFor="length" className="font-medium">Length </label>
+                    <label htmlFor="length" className="font-medium">
+                      Length{" "}
+                    </label>
                     <input
                       id="length"
                       name="length"
-                      value={formData.length || ''}
+                      value={formData.length || ""}
                       onChange={handleChange}
                       type="number"
                       className="border rounded px-4 py-2 mt-1"
@@ -476,11 +517,13 @@ export default function EditProduct() {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <label htmlFor="weight" className="font-medium">weight </label>
+                    <label htmlFor="weight" className="font-medium">
+                      weight{" "}
+                    </label>
                     <input
                       id="weight"
                       name="weight"
-                      value={formData.weight || ''}
+                      value={formData.weight || ""}
                       onChange={handleChange}
                       type="number"
                       className="border rounded px-4 py-2 mt-1"
@@ -490,11 +533,13 @@ export default function EditProduct() {
 
                   {/* Second row: Height and Breadth */}
                   <div className="flex flex-col">
-                    <label htmlFor="height" className="font-medium">Height </label>
+                    <label htmlFor="height" className="font-medium">
+                      Height{" "}
+                    </label>
                     <input
                       id="height"
                       name="height"
-                      value={formData.height || ''}
+                      value={formData.height || ""}
                       onChange={handleChange}
                       type="number"
                       className="border rounded px-4 py-2 mt-1"
@@ -502,11 +547,13 @@ export default function EditProduct() {
                     />
                   </div>
                   <div className="flex flex-col">
-                    <label htmlFor="breadth" className="font-medium">Breadth </label>
+                    <label htmlFor="breadth" className="font-medium">
+                      Breadth{" "}
+                    </label>
                     <input
                       id="breadth"
                       name="breadth"
-                      value={formData.breadth || ''}
+                      value={formData.breadth || ""}
                       onChange={handleChange}
                       type="number"
                       className="border rounded px-4 py-2 mt-1"
@@ -533,7 +580,8 @@ export default function EditProduct() {
                 value={formData.category?.id || ""}
                 onChange={(e) => {
                   const selectedId = parseInt(e.target.value);
-                  const selectedName = e.target.options[e.target.selectedIndex].text;
+                  const selectedName =
+                    e.target.options[e.target.selectedIndex].text;
                   setFormData((prev) => ({
                     ...prev,
                     category: { id: selectedId, name: selectedName },
@@ -559,10 +607,10 @@ export default function EditProduct() {
             <div className="grid grid-cols-2 gap-4">
               {[...Array(6)].map((_, i) => (
                 <div key={i} className="flex flex-col gap-1 group">
-                  <label className="text-sm font-medium text-gray-700">Image {i + 1}</label>
-                  <div
-                    className="relative h-32 w-full rounded-lg overflow-hidden border border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400 text-sm cursor-pointer group"
-                  >
+                  <label className="text-sm font-medium text-gray-700">
+                    Image {i + 1}
+                  </label>
+                  <div className="relative h-32 w-full rounded-lg overflow-hidden border border-gray-300 bg-gray-50 flex items-center justify-center text-gray-400 text-sm cursor-pointer group">
                     {imagePreviews[i] ? (
                       <img
                         src={imagePreviews[i].image}
@@ -629,31 +677,38 @@ export default function EditProduct() {
                         />
                     </div> */}
           {/* Tags */}
-          <div className="bg-white rounded-xl p-6 shadow">
-            <h2 className="text-lg font-semibold mb-2">Tags</h2>
+          <div className="border bg-white rounded-md px-3 py-2 flex flex-wrap gap-2 w-full min-h-[45px]">
+            {Array.isArray(formData.tag) &&
+              formData.tag.map((tag, index) => (
+                <span
+                  key={index}
+                  className="bg-[#ECECF0] text-[#505050] px-3 py-1 rounded-full flex items-center gap-2 text-sm"
+                >
+                  {tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(index)}
+                    className="text-blue-500 hover:text-blue-700 text-xs font-bold"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+
             <input
-              name="tag"
-              value={
-                Array.isArray(formData.tag)
-                  ? formData.tag.join(", ")
-                  : formData.tag || ""
-              }
-              onChange={(e) => {
-                const value = e.target.value;
-                const tags = value
-                  .split(",")
-                  .map((tag) => tag.trim())
-                  .filter((tag) => tag.length > 0);
-                setFormData({ ...formData, tag: tags });
-              }}
-              placeholder="Enter tags separated by commas"
-              className="mt-1 border px-3 py-2 rounded-md w-full"
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type and press Enter"
+              className="flex-1 outline-none text-sm min-w-[120px]"
             />
           </div>
-
           {/* Compatible Variant Years */}
           <div className="bg-white rounded-xl p-6 shadow overflow-y-auto max-h-30 scrollbar-none">
-            <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              Compatible Variant Years
+            </h2>
 
             {Array.isArray(varientYears) && varientYears.length > 0 ? (
               <div className="space-y-2">
@@ -666,15 +721,21 @@ export default function EditProduct() {
                       type="checkbox"
                       name="compatible_varient_year_ids"
                       value={year.id}
-                      checked={formData.compatible_varient_year_ids?.includes(year.id)}
+                      checked={formData.compatible_varient_year_ids?.includes(
+                        year.id
+                      )}
                       onChange={(e) => {
                         const checked = e.target.checked;
-                        let updatedYears = [...(formData.compatible_varient_year_ids || [])];
+                        let updatedYears = [
+                          ...(formData.compatible_varient_year_ids || []),
+                        ];
 
                         if (checked) {
                           updatedYears.push(year.id);
                         } else {
-                          updatedYears = updatedYears.filter((id) => id !== year.id);
+                          updatedYears = updatedYears.filter(
+                            (id) => id !== year.id
+                          );
                         }
 
                         setFormData({
@@ -694,9 +755,6 @@ export default function EditProduct() {
               <p className="text-sm text-gray-500">Loading or no data</p>
             )}
           </div>
-
-
-
         </div>
       </div>
 
