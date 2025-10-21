@@ -195,53 +195,57 @@ const VendorDashboard = () => {
   }
 
   const shouldShowBanner =
-    docStatus &&
-    docStatus.missing_count > 0 &&
-    !(docStatus.incomplete_fields?.length === 1 && docStatus.incomplete_fields[0] === "financial_statement");
-  const addresscheck = docStatus && docStatus.has_address === false;
+  docStatus &&
+  docStatus.missing_count > 0 &&
+  !(docStatus.incomplete_fields?.length === 1 && docStatus.incomplete_fields[0] === "address");
 
+const addressCheck = docStatus && docStatus.has_address === false;
   return (
     <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl'>
-      {shouldShowBanner && (
-        <div>
-          <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <AiOutlineInfoCircle className="text-3xl md:text-4xl" />
-              <div>
-                <h3 className="font-semibold text-md md:text-md text-black">
-                  Complete Your Account Setup to Start Selling
-                </h3>
-                <p className="text-md md:text-sm text-gray-600">
-                  You’ve skipped some required steps ({docStatus.missing_count} missing).
-                  Please finish your account setup to add products and start selling on your store.
-                </p>
-              </div>
-            </div>
-
-            <button className="border border-[#5737B4] text-[#5737B4] px-4 py-1.5 lg:w-40 md:w-50 sm:w-40 rounded-md text-sm hover:bg-[#5737B4] hover:text-white transition">
-              <Link to="/vendor/profile">Finish Setup</Link>
-            </button>
+    {(shouldShowBanner || addressCheck) && (
+  <div>
+    {/* General missing steps banner */}
+    {shouldShowBanner && (
+      <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <AiOutlineInfoCircle className="text-3xl md:text-4xl" />
+          <div>
+            <h3 className="font-semibold text-md md:text-md text-black">
+              Complete Your Account Setup to Start Selling
+            </h3>
+            <p className="text-md md:text-sm text-gray-600">
+              You've skipped some required steps ({docStatus.missing_count} missing).
+              Please finish your account setup to add products and start selling on your store.
+            </p>
           </div>
-          {addresscheck && (<div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <AiOutlineInfoCircle className="text-3xl md:text-4xl text-[#5737B4]" />
-              <div>
-                <h3 className="font-semibold text-md md:text-md text-black">
-                  Add Your Address
-                </h3>
-                <p className="text-md md:text-sm text-gray-600">
-                  Please provide your business address to enable shipping, delivery, and accurate tax calculations.
-                </p>
-              </div>
-            </div>
-
-            <button className="border border-[#5737B4] text-[#5737B4] px-4 py-1.5 lg:w-40 md:w-50 sm:w-40 rounded-md text-sm hover:bg-[#5737B4] hover:text-white transition">
-              <Link to="/vendor/profile">Finish Setup</Link>
-            </button>
-          </div>)}
         </div>
-      )}
+        <button className="border border-[#5737B4] text-[#5737B4] px-4 py-1.5 lg:w-40 md:w-50 sm:w-40 rounded-md text-sm hover:bg-[#5737B4] hover:text-white transition">
+          <Link to="/vendor/profile">Finish Setup</Link>
+        </button>
+      </div>
+    )}
 
+    {/* Address-specific banner */}
+    {addressCheck && (
+      <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <AiOutlineInfoCircle className="text-3xl md:text-4xl text-[#5737B4]" />
+          <div>
+            <h3 className="font-semibold text-md md:text-md text-black">
+              Add Your Address
+            </h3>
+            <p className="text-md md:text-sm text-gray-600">
+              Please provide your business address to enable shipping, delivery, and accurate tax calculations.
+            </p>
+          </div>
+        </div>
+        <button className="border border-[#5737B4] text-[#5737B4] px-4 py-1.5 lg:w-40 md:w-50 sm:w-40 rounded-md text-sm hover:bg-[#5737B4] hover:text-white transition">
+          <Link to="/vendor/profile">Finish Setup</Link>
+        </button>
+      </div>
+    )}
+  </div>
+)}
       {/* Dashboard Header */}
       <div className='flex justify-between items-center'>
         <h1 className='text-2xl font-semibold'>Dashboard</h1>

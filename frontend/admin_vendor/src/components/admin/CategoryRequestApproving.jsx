@@ -25,25 +25,30 @@ const CategoryRequestApproving = () => {
     fetchRequests();
   }, []);
 
-  // 🔹 Approve category
-  const handleApprove = async (id) => {
-    try {
-      await approveOrRejectCategoryApi(id, "approved");
-      toast.success("Category approved successfully");
-      setRequests((prev) => prev.filter((req) => req.id !== id));
-    } catch (error) {
-      console.error("Error approving category:", error);
-      toast.error("Failed to approve category");
-    }
-  };
+const handleApprove = async (id) => {
+  try {
+    await approveOrRejectCategoryApi(id, "approved");
+    toast.success("Category approved successfully");
 
-  // 🔹 Reject button click
+    // Remove from request list
+    setRequests((prev) => prev.filter((req) => req.id !== id));
+
+    // Reload the page to see updated categories
+    window.location.reload();
+  } catch (error) {
+    console.error("Error approving category:", error);
+    toast.error("Failed to approve category");
+  }
+};
+
+
+  
   const handleRejectClick = (id) => {
     setSelectedId(id);
     setShowModal(true);
   };
 
-  // 🔹 Confirm reject
+  
   const confirmReject = async () => {
     try {
       await approveOrRejectCategoryApi(selectedId, "rejected");
@@ -58,7 +63,7 @@ const CategoryRequestApproving = () => {
     }
   };
 
-  // 🔹 Cancel modal
+  
   const cancelReject = () => {
     setShowModal(false);
     setSelectedId(null);
@@ -145,7 +150,6 @@ const CategoryRequestApproving = () => {
         </table>
       </div>
 
-      {/* 🔹 Confirmation Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full text-center">

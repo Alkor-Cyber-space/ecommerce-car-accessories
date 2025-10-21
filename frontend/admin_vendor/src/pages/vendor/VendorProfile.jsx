@@ -119,7 +119,8 @@ const VendorProfile = () => {
     setAddressForm({
       line1: "",
       line2: "",
-      landmark: "",
+      city: "",       // keep city here
+      landmark: "",   // optional, if you want this field
       postal_code: "",
       state: "",
       country: ""
@@ -148,9 +149,9 @@ const VendorProfile = () => {
       setAddresses(res);
       toast.success("Address saved successfully!");
       setIsAddAddressModalOpen(false);
-      
-      // Optionally fetch updated data from server
-      await fetchVendorAddress();
+
+      // optional if fetchVendorAddress exists
+      // await fetchVendorAddress();
     } catch (error) {
       console.error("Error saving address:", error);
       toast.error(error.response?.data?.message || "Error saving address");
@@ -568,7 +569,6 @@ const VendorProfile = () => {
         ))}
       </div>
 
-      <hr />
       {/* KYC Uploads */}
       {/* <div className="mt-6">
         <h2 className="font-semibold text-lg mb-3">KYC Uploads</h2>
@@ -1223,16 +1223,7 @@ const VendorProfile = () => {
           </div>
         </div>
       </div> */}
-      <div className="flex justify-end gap-4 mt-10">
-        <button className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">
-          Cancel
-        </button>
-        <button
-          className={`px-16 py-2 bg-[#5737B4] rounded-md text-sm text-white font-medium transition`}
-        >
-          Save
-        </button>
-      </div>
+     
       <input
         type="file"
         ref={fileInputRef}
@@ -1436,7 +1427,7 @@ const VendorProfile = () => {
       )}
       {isAddAddressModalOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+          className="fixed inset-0 bg-opacity-50 flex justify-center items-center backdrop-blur-sm z-50"
           onClick={() => setIsAddAddressModalOpen(false)}
         >
           <div

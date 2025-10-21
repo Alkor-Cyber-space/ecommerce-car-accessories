@@ -78,65 +78,78 @@ const AccountSettings = () => {
 
   // Submit updated profile
   const handleEditProfile = async (e) => {
-    e?.preventDefault?.();
-    setLoading(true);
-    try {
-      const formDataToSend = new FormData();
-      for (const key in formData) {
-        const value = formData[key];
+  e?.preventDefault?.();
+  setLoading(true);
+  try {
+    const formDataToSend = new FormData();
+
+    for (const key in formData) {
+      const value = formData[key];
+
+      if (key === "profile_image") {
+        // Only append if it's a File object (new image)
+        if (value instanceof File) {
+          formDataToSend.append(key, value);
+        }
+      } else {
         if (value !== null && value !== "" && value !== undefined) {
           formDataToSend.append(key, value);
         }
       }
-
-      const response = await updateAccountApi(formDataToSend);
-      console.log("Profile update response:", response);
-
-      let updatedImage = response?.profile_image ?? null;
-      if (updatedImage && typeof updatedImage === 'string' && !updatedImage.startsWith("http")) {
-        updatedImage = `${serverUrl}${updatedImage}`;
-      }
-
-      // Update state instantly with new image
-      setFormData(prev => ({
-        ...prev,
-        ...response,
-        profile_image: updatedImage || prev.profile_image,
-        old_password: "",
-        new_password: "",
-      }));
-
-      if (updatedImage) setImagePreview(updatedImage);
-
-      // Optional callback
-      if (typeof handleProfileUpdate === 'function') {
-        handleProfileUpdate({
-          profile_image: updatedImage,
-          username: response?.username ?? formData.username,
-          email: response?.email ?? formData.email,
-        });
-      }
-
-      // Dispatch event for other components
-      window.dispatchEvent(new CustomEvent("vendorProfileUpdated", {
-        detail: {
-          profile_image: updatedImage,
-          username: response?.username ?? formData.username,
-          email: response?.email ?? formData.email,
-        },
-      }));
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-      toast.success("Profile updated successfully!");
-
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      toast.error("Failed to update profile");
-    } finally {
-      setLoading(false);
     }
-  };
+
+    const response = await updateAccountApi(formDataToSend);
+    console.log("Profile update response:", response);
+
+    let updatedImage = response?.profile_image ?? formData.profile_image;
+
+    if (updatedImage && typeof updatedImage === 'string' && !updatedImage.startsWith("http")) {
+      updatedImage = `${serverUrl}${updatedImage}`;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      ...response,
+      profile_image: updatedImage,
+      old_password: "",
+      new_password: "",
+    }));
+
+    if (updatedImage) setImagePreview(updatedImage);
+
+    // Dispatch global event if needed
+    window.dispatchEvent(new CustomEvent("vendorProfileUpdated", {
+      detail: {
+        profile_image: updatedImage,
+        username: response?.username ?? formData.username,
+        email: response?.email ?? formData.email,
+      },
+    }));
+
+    // Save updated fields in localStorage
+    const localStorageData = {
+      profile_image: updatedImage,
+      username: response?.username ?? formData.username,
+      first_name: response?.first_name ?? formData.first_name,
+      last_name: response?.last_name ?? formData.last_name,
+      email: response?.email ?? formData.email,
+      contact_number: response?.contact_number ?? formData.contact_number,
+      company: response?.company ?? formData.company
+    };
+    localStorage.setItem("vendorProfile", JSON.stringify(localStorageData));
+
+    toast.success("Profile updated successfully!");
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    toast.error("Failed to update profile");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Deactivate confirmation
   const handleDeactivateConfirm = () => {

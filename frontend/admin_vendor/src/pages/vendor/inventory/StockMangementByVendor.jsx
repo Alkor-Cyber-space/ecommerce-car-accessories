@@ -3,7 +3,6 @@ import Modal from "react-modal";
 import { FaBell, FaSyncAlt } from "react-icons/fa";
 import { FiDownload } from "react-icons/fi";
 import { ToastContainer, toast } from "react-toastify";
-import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { getProductsApi, updateStockApi } from "../../../services/allAPI";

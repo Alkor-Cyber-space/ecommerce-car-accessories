@@ -1,39 +1,67 @@
 import React, { useEffect, useState } from "react";
-import { FiEdit3, FiArrowUpRight } from "react-icons/fi";
-import { IoPricetagOutline } from 'react-icons/io5';
+import { FiEdit3 } from "react-icons/fi";
+import { IoPricetagOutline } from "react-icons/io5";
 import { CiBadgeDollar } from "react-icons/ci";
-import { PiToolboxLight } from 'react-icons/pi';
+import { PiToolboxLight } from "react-icons/pi";
 import { IoIosArrowDown } from "react-icons/io";
 import { BsSearch } from "react-icons/bs";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { getProductsApi } from "../../../services/allAPI";
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10); // ✅ default
-  const navigate = useNavigate();
+  const [pageSize, setPageSize] = useState(10);
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  useEffect(() => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+
+  // Fetch Products
+useEffect(() => {
     const fetchProducts = async () => {
       try {
         const data = await getProductsApi();
-        console.log(data);
-        const sortedData = data.sort((a, b) => b.id - a.id);
+        const sortedData = (data?.products || data || []).sort(
+          (a, b) => b.id - a.id
+        );
         setProducts(sortedData);
+
+        // ✅ Store registration status for later use
+        if (data?.registration_complete !== undefined) {
+          localStorage.setItem(
+            "registration_complete",
+            JSON.stringify(data.registration_complete)
+          );
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
       }
     };
     fetchProducts();
   }, []);
-  const { id } = useParams();
 
-  const filtered = products.filter((product) =>
+
+  // Filter products
+ const filtered = products.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  // ✅ Handle Add Product button click
+const handleAddProduct = () => {
+    const storedStatus = localStorage.getItem("registration_complete");
+    const isComplete = storedStatus === "true" || storedStatus === true;
+
+    if (isComplete) {
+      navigate("/vendor/products/add");
+    } else {
+      toast.warning("Please complete your registration before adding a product!");
+    }
+  };
+
+  // Pagination Logic
   const totalPages = Math.ceil(filtered.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const paginatedItems = filtered.slice(startIndex, startIndex + pageSize);
@@ -44,8 +72,7 @@ const ProductList = () => {
     }
   };
 
-  const [showDropdown, setShowDropdown] = useState(false);
-
+  // Stats
   const totalProducts = products.length;
   const totalOrders = 200;
   const totalStocks = products.reduce(
@@ -53,21 +80,21 @@ const ProductList = () => {
     0
   );
 
-  // ✅ page size options logic
- const baseSizes = [1, 10, 20, 50];
-const extraSizes = [100, 500];
-
-const productCount = products?.length ?? 0;
-
-const pageSizeOptions =
-  pageSize >= 50 && productCount > 50
-    ? [...baseSizes.filter(s => s <= productCount), ...extraSizes.filter(s => s <= productCount)]
-    : baseSizes.filter(s => s <= productCount);
   const stats = [
     { icon: <IoPricetagOutline />, title: "Total Products", value: totalProducts },
     { icon: <PiToolboxLight />, title: "Total Orders", value: totalOrders },
     { icon: <CiBadgeDollar />, title: "Stocks", value: totalStocks },
   ];
+
+  // Page size options
+  const baseSizes = [1, 10, 20, 50];
+  const extraSizes = [100, 500];
+  const productCount = products?.length ?? 0;
+
+  const pageSizeOptions =
+    pageSize >= 50 && productCount > 50
+      ? [...baseSizes.filter((s) => s <= productCount), ...extraSizes.filter((s) => s <= productCount)]
+      : baseSizes.filter((s) => s <= productCount);
 
   return (
     <>
@@ -83,10 +110,6 @@ const pageSizeOptions =
             </div>
             <div className="flex items-center justify-between">
               <p className="text-3xl font-bold mt-2">{stat.value}</p>
-              {/* <div className="flex items-center gap-1 text-green-600 text-sm bg-[#e6fff0] px-2 py-1 rounded mt-2">
-                24.6%
-                <FiArrowUpRight className="w-4 h-4" />
-              </div> */}
             </div>
           </div>
         ))}
@@ -95,7 +118,7 @@ const pageSizeOptions =
       {/* Search & Actions */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
         {/* Search */}
-        <div className="relative w-full lg:w-[60%] md:w-[50%] ">
+        <div className="relative w-full lg:w-[60%] md:w-[50%]">
           <BsSearch className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -127,7 +150,7 @@ const pageSizeOptions =
             )}
           </div>
           <button
-            onClick={() => navigate("add")}
+            onClick={handleAddProduct}
             className="bg-[#5737B4] text-white px-4 py-2 rounded-md shadow hover:bg-[#442f96] text-sm font-medium w-full sm:w-auto"
           >
             Add New Product +
@@ -138,7 +161,7 @@ const pageSizeOptions =
       {/* Table */}
       <div className="overflow-x-auto bg-white py-8 px-4 sm:px-6 rounded-xl">
         <table className="min-w-full text-sm">
-          <thead className="text-gray-700 text-left ">
+          <thead className="text-gray-700 text-left">
             <tr>
               <th className="p-3"><input type="checkbox" /></th>
               <th className="p-3">SI.No</th>
@@ -167,13 +190,12 @@ const pageSizeOptions =
                   <td className="p-3">{product.stock}</td>
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-sm font-semibold ${
-                        product.status === "Live"
+                      className={`px-2 py-1 rounded text-sm font-semibold ${product.status === "Live"
                           ? "bg-[#05C16833] text-green-800"
                           : product.status === "Draft"
-                          ? "bg-[#AEB9E133] text-[#6989F9]"
-                          : "bg-red-100 text-[#FF5A65]"
-                      }`}
+                            ? "bg-[#AEB9E133] text-[#6989F9]"
+                            : "bg-red-100 text-[#FF5A65]"
+                        }`}
                     >
                       Live
                     </span>
@@ -199,11 +221,9 @@ const pageSizeOptions =
         </table>
       </div>
 
-      {/* Pagination + Page Size Selector */}
+      {/* Pagination */}
       <div className="mt-6 flex flex-wrap justify-end items-center gap-4 text-sm">
-        {/* Page Size Selector */}
         <div className="flex gap-2 items-center">
-          {/* <span>Show:</span> */}
           {pageSizeOptions.map((size) => (
             <button
               key={size}
@@ -211,16 +231,13 @@ const pageSizeOptions =
                 setPageSize(size);
                 setCurrentPage(1);
               }}
-              className={`px-3 py-1 rounded ${
-                pageSize === size ? "bg-[#5737B4] text-white" : "hover:bg-blue-100"
-              }`}
+              className={`px-3 py-1 rounded ${pageSize === size ? "bg-[#5737B4] text-white" : "hover:bg-blue-100"
+                }`}
             >
               {size}
             </button>
           ))}
         </div>
-
-        {/* Prev / Next */}
         <div className="flex gap-2">
           <button
             onClick={() => handlePageChange(currentPage - 1)}

@@ -855,6 +855,7 @@ export const editPromotionApi = async (promotionId, updatedData) => {
         },
       }
     );
+    return response.data;
   } catch (error) {
     console.error("Error updating promotion:", error);
     throw error;
