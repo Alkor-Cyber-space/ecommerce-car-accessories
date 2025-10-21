@@ -6,16 +6,17 @@ import image from '../../../assets/user.jpg'
 
 const NewVendorRequest = () => {
     const [unverifiedVendors, setUnverifiedVendors] = useState([])
-
+    
     useEffect(() => {
         const fetchUnVerifiedVendors = async () => {
             try {
                 const response = await getUnverifiedVendorsApi();
+                console.log("Unverified vendors:", response);
                 console.log(response);
                 setUnverifiedVendors(response);
             } catch (error) {
                 console.error("Error fetching unverified vendors:", error);
-                toast.error(error)
+                // toast.error(error)
             }
         };
         fetchUnVerifiedVendors();
@@ -58,7 +59,7 @@ const NewVendorRequest = () => {
                                 {/* Vendor Name and Submission Info */}
                                 <div className='flex flex-col gap-1'>
                                     <div className='flex lg:items-center lg:flex-row lg:gap-15 md:flex-col '>
-                                        <h2 className="text-xl font-semibold text-[#5737B4] mb-1 ml-4"><Link to={`/admin/vendor-details/${vendor.vendor_profile?.id}`}>{vendor.vendor_profile?.company_name}</Link></h2>
+                                        <h2 className="text-xl font-semibold text-[#5737B4] mb-1 ml-4"><Link to={`/admin/vendor-details/${vendor.id}`}>{vendor.vendor_profile?.company_name || vendor?.username }</Link></h2>
                                         <p className="text-gray-600 text-sm text-center ml-4">
                                             Submitted On : {new Date().toLocaleDateString()} , Time: {new Date().toLocaleTimeString()}
                                         </p>

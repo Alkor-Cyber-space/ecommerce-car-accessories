@@ -848,7 +848,7 @@ class VendorDocumentsFinalApprovalView(APIView):
 
 
         documents.profile_status = final_status
-        documents.is_verified = (final_status == 'approved')
+        documents.is_verified = True
         documents.save()
 
         # Send notification email to vendor
@@ -867,16 +867,16 @@ class VendorDocumentsFinalApprovalView(APIView):
                     }, status=status.HTTP_400_BAD_REQUEST)
                 print("above the pickupload")
                 pickup_payload = {
-                    "pickup_location": "VENDOR_3",
-                    "name": "Teqora ",
-                    "email": "nadeem@gmail.com",  # fixed typo
-                    "phone": "8089143474",      # added country code
-                    "address": "Mutant Facility, Sector 4",
-                    "address_2": "kundanoor",
-                    "city": "South West Delhi",          # safer than "Kochi"
-                    "state": "Maharshtra",
-                    "country": "India",
-                    "pin_code": "110022"
+                    "pickup_location": pickup_code,
+                    "name": vendor_profile.company_name or vendor_profile.contact_name or vendor_profile.user.username,
+                    "email": vendor_profile.company_email or vendor_profile.contact_email or vendor_profile.user.email,
+                    "phone": str(vendor_profile.company_number or vendor_profile.contact_number or vendor_profile.user.phone_number or ""),    # added country code
+                    "address": primary_address.line1,
+                    "address_2": primary_address.line2 or "",
+                    "city": primary_address.city,          
+                    "state": primary_address.state,
+                    "country": primary_address.country,
+                    "pin_code":  primary_address.postal_code,
                 }
                 print(pickup_payload)
                 try:
@@ -909,7 +909,7 @@ class VendorDocumentsFinalApprovalView(APIView):
         else:
             message = (
                 f"Dear {vendor_profile.user.username},\n\n"
-                "Unfortunately, your vendor documents have not been fully approved. "
+                "Unfortunately, your vendor documents have not been fully approved. "               
                 "Please review and resubmit the necessary documents.\n\n"
                 "Thank you."
             )

@@ -3,6 +3,7 @@ from accounts.models import *
 from products.models import *
 from products.models import *  
 from . models import *
+from orders.models import *
 from orders.serializers import *
 from products.serializers import *
 # from accour.models import VendorDocuments
@@ -38,6 +39,47 @@ class VendorSerializer(serializers.ModelSerializer):
         model = VendorProfile
         fields = '__all__' 
 
+# class VendorListSerializer(serializers.ModelSerializer):
+#     user_id = serializers.IntegerField(source='vendor_profile.id', read_only=True)
+#     username = serializers.CharField(source='user.username', read_only=True)
+#     email = serializers.EmailField(source='user.email', read_only=True)
+#     phone = serializers.CharField(source='contact_number', read_only=True)
+#     location = serializers.SerializerMethodField(read_only=True)
+#     status = serializers.CharField(source='vendordocuments.profile_status', read_only=True)
+#     date_joined = serializers.DateTimeField(source='user.date_joined', format='%Y-%m-%d', read_only=True)
+#     products = serializers.SerializerMethodField()
+#     orders = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = VendorProfile
+#         fields = [
+#             'user_id',
+#             'username',
+#             'email',
+#             'phone',
+#             'location',
+#             'status',
+#             'date_joined',
+#             'products',
+#             'orders',
+#         ]
+
+#     def get_location(self, obj):
+#         """Return the vendor's pickup address from the Address model."""
+#         address = obj.user.addresses.filter(is_pickup=True).first()
+#         if address:
+#             return str(address)  # Uses Address.__str__()
+#         return None
+
+#     def get_products(self, obj):
+#         """Count total products belonging to this vendor."""
+#         return obj.user.products.count()
+
+#     def get_orders(self, obj):
+#         """Count total orders received for this vendor."""
+#         # Count orders where this vendor's products are ordered
+#         return Order.objects.filter(user=obj.user).count()
+
 
 class VendorViewProductSerilizer(serializers.ModelSerializer):
     class Meta:
@@ -48,6 +90,7 @@ class AddressSerilaizer(serializers.ModelSerializer):
     class Meta:
         model=Address
         fields = ["id", "line1", "line2", "city", "state", "postal_code", "country", "is_primary"]
+
 
 class VendorDetailsSerializer(serializers.ModelSerializer):
     vendor_profile = serializers.SerializerMethodField()
@@ -72,6 +115,76 @@ class VendorDetailsSerializer(serializers.ModelSerializer):
         except VendorProfile.DoesNotExist:
             return None
 
+# class VendorDetailsSerializer(serializers.ModelSerializer):
+#     company_details = serializers.SerializerMethodField()
+#     customer_details = serializers.SerializerMethodField()
+#     basic_details = serializers.SerializerMethodField()
+#     total_products = serializers.SerializerMethodField()
+#     total_orders = serializers.SerializerMethodField()
+#     total_stock = serializers.SerializerMethodField()
+
+#     class Meta:
+#         model = CustomUser
+#         fields = [
+#             "id",
+#             "basic_details",
+#             "company_details",
+#             "customer_details",
+#             "total_products",
+#             "total_orders",
+#             "total_stock",
+#         ]
+
+#     # -------------------- BASIC DETAILS --------------------
+#     def get_basic_details(self, obj):
+#         address = obj.addresses.filter(is_primary=True).first()
+#         profile = getattr(obj, "vendor_profile", None)
+
+#         return {
+#             "name": obj.username,
+#             "email": obj.email,
+#             "phone": profile.company_number if profile and profile.company_number else obj.phone_number,
+#             "address": f"{address.line1}, {address.city}, {address.state}, {address.country}, {address.postal_code}" if address else None
+#         }
+
+
+#     # -------------------- COMPANY DETAILS --------------------
+#     def get_company_details(self, obj):
+#         profile = getattr(obj, "vendor_profile", None)
+#         if not profile:
+#             return None
+#         return {
+#             "company_name": profile.company_name,
+#             "company_email": profile.company_email,
+#             "company_number": profile.company_number,
+#             "vendor_type": profile.type_of_vendor,
+#             "bank_account_no": profile.bank_account_no,
+#             "ifsc_code": profile.ifsc_code,
+#             "account_holder_name": profile.bank_account_holder_name,
+#         }
+
+#     # -------------------- CUSTOMER DETAILS --------------------
+#     def get_customer_details(self, obj):
+#         profile = getattr(obj, "vendor_profile", None)
+#         if not profile:
+#             return None
+#         return {
+#             "name": profile.contact_name,
+#             "designation": profile.designation,
+#             "email": profile.contact_email,
+#             "phone": profile.contact_number,
+#         }
+
+#     # -------------------- METRICS --------------------
+#     def get_total_products(self, obj):
+#         pass
+#         # return obj.vendor_profile.products.count()
+
+#     def get_total_stock(self, obj):
+#         return obj.vendor_profile.products.aggregate(total_stock=Sum('stock'))['total_stock'] or 0
+
+#     def get_total_orders(self, obj):
+#         return Order.objects.filter(items__product__vendor_profile=obj.vendor_profile).distinct().count()
 
 class VendorProfileSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source='user.email')
@@ -92,17 +205,22 @@ class VendorProfileSerializer(serializers.ModelSerializer):
         ]
 
 
-class VendorDocumentsSerializer(serializers.ModelSerializer):
+class VendorUnverifiedDocumentsSerializer(serializers.ModelSerializer):
     vendor_profile = VendorProfileSerializer()
     user_id = serializers.PrimaryKeyRelatedField(
-        queryset=CustomUser.objects.all(),  # 🔹 allow passing user_id
-        source='user',                # maps to FK field user
-        write_only=True               # hide from response if you want
+        queryset=CustomUser.objects.all(),
+        source='vendor_profile.user',  # fix: map to user of vendor_profile
+        write_only=True
     )
+    id = serializers.SerializerMethodField()  # override id field
+
     class Meta:
         model = VendorDocuments
-
         fields = ['id', 'user_id', 'vendor_profile', 'is_verified', 'profile_status']
+
+    def get_id(self, obj):
+        # Return the user's ID instead of VendorDocuments ID
+        return obj.vendor_profile.user.id
 
 
 class NotificationSerializer(serializers.ModelSerializer):
