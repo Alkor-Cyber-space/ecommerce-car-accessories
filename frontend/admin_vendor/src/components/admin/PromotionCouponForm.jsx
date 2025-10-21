@@ -619,8 +619,10 @@ const PromotionCouponForm = () => {
                         className="w-full p-3 bg-transparent focus:outline-none"
                       >
                         <option value="" disabled>Select Category</option>
-                        {categories.map(category => (
-                          <option key={category.id} value={category.id}>{category.name}</option>
+                        {categories
+                          .filter(category => category.available === true)
+                          .map(category => (
+                            <option key={category.id} value={category.id}>{category.name}</option>
                         ))}
                       </select>
                     </div>

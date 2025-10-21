@@ -20,7 +20,23 @@ export default function EditProduct() {
   const { id } = useParams();
 
   const { productDetails } = useSelector((state) => state.products);
-  const [formData, setFormData] = useState({});
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    stock: '',
+    category: null,
+    size: '',
+    manufacturing_date: '',
+    tag: [],
+    isActive: false,
+    is_available: false,
+    length: '',
+    breadth: '',
+    height: '',
+    weight: '',
+    compatible_varient_year_ids: [],
+  });
   const [productImages, setProductImages] = useState({});
   const [categories, setCategories] = useState([]);
   const [varientYears, setVarientYears] = useState([]);
@@ -35,22 +51,34 @@ export default function EditProduct() {
   //  Sync fetched product to formData
   useEffect(() => {
     if (productDetails && productDetails.id) {
-      setFormData({ ...productDetails });
+      setFormData({
+        name: productDetails.name || '',
+        description: productDetails.description || '',
+        price: productDetails.price || '',
+        stock: productDetails.stock || '',
+        category: productDetails.category || null,
+        size: productDetails.size || '',
+        manufacturing_date: productDetails.manufacturing_date || '',
+        tag: Array.isArray(productDetails.tag) ? productDetails.tag : [],
+        isActive: Boolean(productDetails.isActive),
+  // prefer explicit is_available if backend provides it, otherwise mirror isActive
+  is_available: productDetails.hasOwnProperty('is_available') ? Boolean(productDetails.is_available) : Boolean(productDetails.isActive),
+        length: productDetails.length || '',
+        breadth: productDetails.breadth || '',
+        height: productDetails.height || '',
+        weight: productDetails.weight || '',
+        compatible_varient_year_ids: productDetails.compatible_varient_year?.map(v => v.id) || [],
+      });
 
       if (productDetails.image_list?.length) {
         const previews = Array(6).fill(null);
         productDetails.image_list.forEach((img, idx) => {
           if (img.image && idx < 6) {
-            previews[idx] = img; // ✅ store full object, not just img.image
+            previews[idx] = img;
           }
         });
         setImagePreviews(previews);
       }
-
-      setFormData((prev) => ({
-        ...prev,
-        compatible_varient_year_ids: productDetails.compatible_varient_year.map(v => v.id),
-      }));
     }
   }, [productDetails]);
 
@@ -82,54 +110,94 @@ export default function EditProduct() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === 'tag' ? value.split(',').map(tag => tag.trim()).filter(Boolean) : value
+    }));
   };
 
   const handleReplace = (index) => {
-    inputRefs.current[index]?.click();
+    if (imagePreviews[index]) {
+      // If there's an existing image, delete it first
+      handleImageDelete(index).then(() => {
+        // After successful deletion, trigger file input
+        inputRefs.current[index]?.click();
+      });
+    } else {
+      // If no existing image, just trigger file input
+      inputRefs.current[index]?.click();
+    }
   };
 
   const handleFileChange = (e, index) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) return;
 
-    const previews = [...imagePreviews];
-    previews[index] = {
-      id: null, // no backend ID yet
-      image: URL.createObjectURL(file), // preview
-      file, // keep file so we can upload later
-    };
-    setImagePreviews(previews);
+    // Create object URL for the new file
+    const imageUrl = URL.createObjectURL(file);
 
+    // Update imagePreviews while preserving other images
+    setImagePreviews(prevPreviews => {
+      const newPreviews = [...prevPreviews];
+      newPreviews[index] = {
+        id: null,
+        image: imageUrl,
+        url: imageUrl, // Add url property for consistency
+        file // Store file reference
+      };
+      return newPreviews;
+    });
+
+    // Update productImages while preserving other images
     const keys = ["main", "close", "other1", "other2", "other3", "other4"];
     const key = keys[index];
-    setProductImages((prev) => ({
-      ...prev,
-      [key]: file,
+    setProductImages(prevImages => ({
+      ...prevImages,
+      [index]: file // use index as the key
     }));
+
+    // Clear the file input for future use
+    e.target.value = '';
   };
 
   const [loading, setLoading] = useState(false);
 
   const handleImageDelete = async (index) => {
     try {
-      setLoading(true); // start loading
+      setLoading(true);
       const imgObj = imagePreviews[index];
+
+      // Delete from server if it's an existing image with an ID
       if (imgObj?.id) {
         await deleteProductImageAPi(imgObj.id);
         toast.success("Image deleted successfully!");
-        console.log(`Image ${imgObj.id} deleted`);
       }
 
-      // remove from local state
+      // Clear local preview state
       const newPreviews = [...imagePreviews];
       newPreviews[index] = null;
       setImagePreviews(newPreviews);
+
+      // Clear the file input
+      if (inputRefs.current[index]) {
+        inputRefs.current[index].value = '';
+      }
+
+      // Clear from productImages state
+      const keys = ["main", "close", "other1", "other2", "other3", "other4"];
+      const key = keys[index];
+      setProductImages(prev => {
+        const updated = { ...prev };
+        delete updated[index];
+        return updated;
+      });
+
+
     } catch (error) {
       console.error("Error deleting product image:", error);
       toast.error("Failed to delete image.");
     } finally {
-      setLoading(false); // stop loading
+      setLoading(false);
     }
   };
 
@@ -144,6 +212,8 @@ export default function EditProduct() {
     form.append("manufacturing_date", formData.manufacturing_date || "");
     form.append("tag", formData.tag || "");
     form.append("isActive", formData.isActive ? "true" : "false");
+  // include availability flag (mirror AddProduct behaviour)
+  form.append("is_available", formData.is_available ? "true" : "false");
     form.append("length", formData.length || "");
     form.append("breadth", formData.breadth || "");
     form.append("height", formData.height || "");
@@ -172,6 +242,7 @@ export default function EditProduct() {
       }
     });
 
+
     try {
       await updateProductApi(id, form);
       toast.success("Product updated successfully!");
@@ -183,45 +254,45 @@ export default function EditProduct() {
   };
 
   const handleDeleteConfirm = () => {
-  confirmAlert({
-    title: "Confirm Deletion",
-    message: "Are you sure you want to delete this product?",
-    buttons: [
-      {
-        label: "Yes",
-        onClick: () => handleDelete(id),
-      },
-      { label: "No" },
-    ],
-    closeOnEscape: true,
-    closeOnClickOutside: true,
-  });
-};
+    confirmAlert({
+      title: "Confirm Deletion",
+      message: "Are you sure you want to delete this product?",
+      buttons: [
+        {
+          label: "Yes",
+          onClick: () => handleDelete(id),
+        },
+        { label: "No" },
+      ],
+      closeOnEscape: true,
+      closeOnClickOutside: true,
+    });
+  };
 
-const handleDelete = async (id) => {
-  try {
-    const response = await deleteProductApi(id);
+  const handleDelete = async (id) => {
+    try {
+      const response = await deleteProductApi(id);
 
-      
-      toast.success(" Product deleted successfully!",response);
 
-      
+      toast.success(" Product deleted successfully!", response);
+
+
       setTimeout(() => {
         navigate("/vendor/products", { replace: true });
       }, 1000);
-    
-  } catch (error) {
-    console.error("Error deleting product:", error);
-    toast.error(" Failed to delete product.");
-  }
-};
- 
+
+    } catch (error) {
+      console.error("Error deleting product:", error);
+      toast.error(" Failed to delete product.");
+    }
+  };
+
 
   const handleCancel = () => {
     navigate(`/vendor/products/`);
   };
 
-  
+
   const ProductImagesSection = () => (
     <div className="bg-white rounded-xl p-6 shadow">
       <h2 className="text-lg font-semibold mb-4">Product Images</h2>
@@ -298,15 +369,17 @@ const handleDelete = async (id) => {
             onClick={() =>
               setFormData((prev) => ({
                 ...prev,
+                // flip isActive and is_available; if is_available is undefined use isActive as source
                 isActive: !prev.isActive,
+                is_available: !(prev.is_available ?? prev.isActive),
               }))
             }
-            className={`w-14 h-7 flex items-center bg-[#5737B4] rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"
-              }`}
+            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${(formData.is_available ?? formData.isActive) ? "bg-[#5737B4]" : "bg-gray-300"}`}
           >
+
+            {/* reflect combined availability for visual position */}
             <div
-              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "translate-x-7" : "translate-x-0"
-                }`}
+              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${(formData.is_available ?? formData.isActive) ? "translate-x-7" : "translate-x-0"}`}
             />
           </div>
         </div>
@@ -323,7 +396,7 @@ const handleDelete = async (id) => {
               <label className="font-medium">Product Name</label>
               <input
                 name="name"
-                value={formData.name || "LumoBeam X9 LED Car Headlight – 6000K Cool White (H4, 60W) "}
+                value={formData.name || "LumoBeam X9 LED Car Headlight -  6000K Cool White (H4, 60W) "}
                 onChange={handleChange}
                 type="text"
                 className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -375,8 +448,13 @@ const handleDelete = async (id) => {
               <div className="flex gap-4 flex-col ">
                 <div className="flex flex-col flex-1">
                   <label className="font-medium">Sizes Available</label>
-                  <select name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" >
-                    <option value="" disabled>(Optional)</option>
+                  <select
+                    name="size"
+                    value={formData.size}
+                    onChange={handleChange}
+                    className="border rounded px-4 py-2 mt-1"
+                  >
+                    <option value="" >(Optional)</option>
                     <option value="Small">Small</option>
                     <option value="Medium">Medium</option>
                     <option value="Large">Large</option>
@@ -406,7 +484,7 @@ const handleDelete = async (id) => {
                       onChange={handleChange}
                       type="number"
                       className="border rounded px-4 py-2 mt-1"
-                      placeholder="0 cm"
+                      placeholder="0 grams"
                     />
                   </div>
 
@@ -471,10 +549,6 @@ const handleDelete = async (id) => {
               </select>
             </div>
           </div>
-          {/* varient year */}
-          {/* Enhanced Variant Year Multi-Select */}
-
-
         </div>
 
         {/* Right Column */}

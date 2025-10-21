@@ -1,5 +1,10 @@
 import random
 from django.shortcuts import render
+from orders.shiprocket_client import create_pickup_location
+import requests
+from datetime import date
+from datetime import date
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from . serializers import *
 from rest_framework import viewsets
@@ -28,6 +33,14 @@ from firebase_admin import auth as firebase_auth
 from django.db.models import Q
 from .utils import log_action
 from rest_framework import generics, status
+from requests.auth import HTTPBasicAuth
+import json
+from django.http import HttpResponse
+import openpyxl
+from io import BytesIO
+from reportlab.platypus import SimpleDocTemplate, Table
+from reportlab.lib.pagesizes import A4
+
 
 User = get_user_model()
 
@@ -183,6 +196,9 @@ class UserViewSet(viewsets.ViewSet):
         serializer = LogoutSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
+            fcm_token = request.data.get('fcm_token')
+            if fcm_token:
+                FCMToken.objects.filter(user=request.user, token=fcm_token).delete()
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -226,7 +242,8 @@ class UserViewSet(viewsets.ViewSet):
     
 
 class VendorRegistrationViewSet(viewsets.ViewSet):
-
+    
+    
     @action(detail=False, methods=['post'], url_path='register', permission_classes=[AllowAny])
     def register_vendor(self, request):
         email = request.data.get('email')
@@ -307,9 +324,11 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated])
     def edit_profile(self, request):
+        print("$$$$$$$$$$$$$$$$")
         user = request.user
         try:
-            vendor_profile = user.vendor_profile
+            vendor_profile = user.VendorProfile
+            print(f"vendor_profile:{vendor_profile}")
         except VendorProfile.DoesNotExist:
             return Response({"error": "Vendor profile not found."}, status=status.HTTP_404_NOT_FOUND)
 
@@ -780,11 +799,16 @@ class VendorProfileUpdateView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+import traceback
 class VendorDocumentsFinalApprovalView(APIView):
 
     def post(self, request, vendor_profile_id):
         try:
             vendor_profile = VendorProfile.objects.get(id=vendor_profile_id)
+            print(vendor_profile)
+            
+            
+            
             documents = VendorDocuments.objects.get(vendor_profile=vendor_profile)
         except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
             return Response({"error": "Vendor profile or documents not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -831,6 +855,51 @@ class VendorDocumentsFinalApprovalView(APIView):
         user_email = vendor_profile.user.email
         subject = "Vendor Documents Final Approval Status"
         if final_status == 'approved':
+            if not vendor_profile.pickup_location:
+                pickup_code = f"VENDOR_{vendor_profile.id}"  # must be unique
+                print("All addresses:", vendor_profile.user.addresses.all())
+                primary_address = vendor_profile.user.addresses.filter(is_primary=True).first()
+                print(primary_address)
+                if not primary_address:
+                    return Response({
+                        "status": "failed",
+                        "message": "No primary address found for this vendor. Please add one before approval."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+                print("above the pickupload")
+                pickup_payload = {
+                    "pickup_location": "VENDOR_3",
+                    "name": "Teqora ",
+                    "email": "nadeem@gmail.com",  # fixed typo
+                    "phone": "8089143474",      # added country code
+                    "address": "Mutant Facility, Sector 4",
+                    "address_2": "kundanoor",
+                    "city": "South West Delhi",          # safer than "Kochi"
+                    "state": "Maharshtra",
+                    "country": "India",
+                    "pin_code": "110022"
+                }
+                print(pickup_payload)
+                try:
+                    resp = create_pickup_location(pickup_payload)
+                    if resp.get("error"):
+                        return Response({
+                            "status": "failed",
+                            "message": "Shiprocket rejected the pickup payload",
+                            "details": resp["details"]
+                        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+                    vendor_profile.pickup_location = pickup_code
+                    vendor_profile.save()
+                except Exception as e:
+                    print("=== Shiprocket Pickup Error ===")
+                    print(str(e))
+                    print(traceback.format_exc())
+                    return Response({
+                        "status": "failed",
+                        "message": f"Vendor approved but failed to create pickup in Shiprocket: {str(e)}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
             message = (
                 f"Dear {vendor_profile.user.username},\n\n"
                 "Congratulations! Your vendor documents have been fully approved.\n"
@@ -861,6 +930,7 @@ class VendorDocumentsFinalApprovalView(APIView):
         }, status=status.HTTP_200_OK)
     
 class VendorAuditLogAll(APIView):
+    permission_classes = [IsAuthenticated]
     def get(self,request):
         data=VendorAuditLog.objects.all()
         if not data:
@@ -874,9 +944,8 @@ class VendorAuditLogAll(APIView):
             "status": "success",
             "status_code": status.HTTP_200_OK,
             "data": serializer.data
-        })
+        })    
     
-
 class VendorDocumentCheck(APIView):
     
     def get_object(self, pk):
@@ -887,7 +956,7 @@ class VendorDocumentCheck(APIView):
             return None
     def get(self, request):
         pk=request.user
-
+        
         profile = self.get_object(pk)    
         if not profile:
             return Response(
@@ -901,7 +970,6 @@ class VendorDocumentCheck(APIView):
             "vendor": profile.company_name or profile.user.email,
             "documents": serializer.data,
         }, status=status.HTTP_200_OK)
-
     
 class AdminProfileEdit(APIView):
     
@@ -919,6 +987,7 @@ class AdminProfileEdit(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
+
         serializer=UserEditSerializer(user,data=request.data,partial=True,context={'request': request})
         if serializer.is_valid():
             serializer.save()
@@ -932,3 +1001,289 @@ class AdminProfileEdit(APIView):
                 "status_code": status.HTTP_400_BAD_REQUEST,
                 "message": serializer.errors
             })
+    
+class AdminRetrieveByIdAPIView(generics.GenericAPIView):
+
+    serializer_class=AdminUserSerializer
+    def post(self,request):
+        admin_id=request.data.get("id",None)
+        if not admin_id:
+            return Response({"status": "Failed","status_code":status.HTTP_400_BAD_REQUEST,"message": "id not provided" })
+        try:
+            user=CustomUser.objects.get(id=admin_id,is_admin_staff=True)
+        except CustomUser.DoesNotExist:
+            return Response({"status": "Failed","status_code":status.HTTP_400_BAD_REQUEST,"message": "Admin with this ID does not exist or is not staff." })
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class GenerateRazorpayContactsView(APIView):
+    """
+    Create Razorpay contact IDs for all vendors who don't have one yet.
+    """
+
+    # permission_classes = [IsAdminUser]  # Uncomment if you want only admin access
+
+    def post(self, request, *args, **kwargs):
+        vendors = CustomUser.objects.filter(vendor_profile__isnull=False)
+        created_contacts = []
+        skipped = []
+
+        for vendor in vendors:
+            vendor_profile = vendor.vendor_profile
+
+            if hasattr(vendor_profile, 'razorpay_contact_id') and vendor_profile.razorpay_contact_id:
+                skipped.append(vendor.email)
+                continue
+
+            try:
+                payload = {
+                "name": vendor_profile.contact_name or vendor_profile.user.username,
+                "email": vendor_profile.contact_email or vendor_profile.user.email,
+                "contact": str(vendor_profile.contact_number or vendor_profile.user.phone_number),
+                "type": "vendor",
+                "reference_id": f"user_{vendor_profile.user.id}"
+                    }
+                response = requests.post(
+                    "https://api.razorpay.com/v1/contacts",
+                    json=payload,
+                    auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                )
+                response.raise_for_status()
+                data = response.json()
+                razorpay_contact_id = data.get("id")
+
+                if razorpay_contact_id:
+                    vendor_profile.razorpay_contact_id = razorpay_contact_id
+                    vendor_profile.save()
+                    created_contacts.append({
+                        "vendor_email": vendor.email,
+                        "razorpay_contact_id": razorpay_contact_id
+                    })
+                else:
+                    skipped.append(vendor.email)
+
+            except requests.exceptions.RequestException as e:
+                skipped.append(vendor.email)
+                print(f"Error creating contact for {vendor.email}: {str(e)}")
+
+        return Response({
+            "created_contacts": created_contacts,
+            "skipped": skipped
+        }, status=200)
+
+# audit/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAdminUser
+from django.db.models import Sum, F
+import razorpay
+from django.conf import settings
+from .models import Payout, CustomUser, VendorProfile
+from orders.models import OrderItem, Order
+
+# Initialize Razorpay client
+razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET,settings.RAZORPAY_ACCOUNT_NUMBER))
+
+
+class ProcessPayoutsView(APIView):
+    permission_classes = [IsAdminUser]  # Uncomment to restrict to admins
+
+    def get(self, request, *args, **kwargs):
+        payouts_result = []
+        processed_count = 0
+
+        vendors = CustomUser.objects.filter(vendor_profile__isnull=False)
+        print(f"Processing payouts for vendors: {vendors}")
+
+        for vendor in vendors:
+            vendor_profile = vendor.vendor_profile
+
+            # Skip if missing bank details
+            if not (vendor_profile.bank_account_no and vendor_profile.ifsc_code and vendor_profile.bank_account_holder_name):
+                print(f"Skipping {vendor.email}: Missing bank details")
+                payouts_result.append({
+                    "vendor_email": vendor.email,
+                    "status": "skipped_missing_bank_details"
+                })
+                continue
+
+            # Calculate total sales and commission
+            order_items = OrderItem.objects.filter(product__vendor=vendor)
+            total_sales = Decimal(0)
+            total_commission = Decimal(0)
+
+            for item in order_items:
+                item_total = Decimal(item.price) * item.quantity
+                total_sales += item_total
+                total_commission += item_total * Decimal('0.03')  # 3% commission
+
+            if total_sales <= 0:
+                payouts_result.append({
+                    "vendor_email": vendor.email,
+                    "status": "no_sales"
+                })
+                continue
+
+            payout_amount = total_sales - total_commission
+            print(f"toatal sale{total_sales}")
+
+            # Create or get Razorpay contact
+            if not vendor_profile.razorpay_contact_id:
+                contact_payload = {
+                    "name": vendor.get_full_name(),
+                    "email": vendor.email,
+                    "contact": vendor_profile.phone_number,
+                    "type": "vendor",
+                    "reference_id": f"vendor_{vendor.id}"
+                }
+
+                try:
+                    contact_response = requests.post(
+                        "https://api.razorpay.com/v1/contacts",
+                        json=contact_payload,
+                        auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                    )
+                    contact_response.raise_for_status()
+                    vendor_profile.razorpay_contact_id = contact_response.json()['id']
+                    vendor_profile.save()
+                    
+                except requests.exceptions.RequestException as e:
+                    
+                    payouts_result.append({
+                        "vendor_email": vendor.email,
+                        "status": "failed_contact_creation",
+                        "error": str(e)
+                    })
+                    continue
+
+            # Create Payout record
+            payout = Payout.objects.create(
+                vendor=vendor,
+                amount=payout_amount,
+                commission=total_commission,
+                week_start=date(2025, 9, 22),
+                week_end=date(2025, 10, 2),
+                status='pending'
+            )
+
+            # Create Fund Account
+            try:
+                fund_payload = {
+                    "contact_id": vendor_profile.razorpay_contact_id,
+                    "account_type": "bank_account",
+                    "bank_account": {
+                        "name": vendor_profile.bank_account_holder_name,
+                        "ifsc": vendor_profile.ifsc_code,
+                        "account_number": vendor_profile.bank_account_no
+                    }
+                }
+
+                fund_response = requests.post(
+                    "https://api.razorpay.com/v1/fund_accounts",
+                    json=fund_payload,
+                    auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                )
+                fund_response.raise_for_status()
+                fund_account_id = fund_response.json()['id']
+                print(f"RAZORPAY_FUND_ACCOUNT:{settings.RAZORPAY_ACCOUNT_NUMBER}")
+                print(f"fund_account_id:{fund_account_id}")
+                # Create Payout
+                payout_payload = {
+                    "account_number": settings.RAZORPAY_FUND.replace(" ", ""),  # remove spaces       
+                    "fund_account_id": fund_account_id,
+                    "amount": int(payout_amount * 100),  # paise
+                    "currency": "INR",
+                    "mode": "IMPS",
+                    "purpose": "payout",
+                    "queue_if_low_balance": True,
+                    "reference_id": f"payout_{payout.id}",
+                    "narration": "weekly statement to vendor"
+                }
+                print("************************")
+                print(f"payload check {payout_payload}")
+                print("************************")
+                payout_response = requests.post(
+                    "https://api.razorpay.com/v1/payouts",
+                    json=payout_payload,
+                    auth=HTTPBasicAuth(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET)
+                )
+                payout_response.raise_for_status()
+                razorpay_payout = payout_response.json()
+
+                payout.razorpay_payout_id = razorpay_payout.get('id')
+                payout.status = 'completed'
+                processed_count += 1
+
+            except requests.exceptions.RequestException as e:
+                payout.status = 'failed'
+                print(f"Razorpay Fund Account / Payout Error for {vendor.email}: {e.response.json() if hasattr(e, 'response') else str(e)}")
+
+            except Exception as e:
+                payout.status = 'failed'
+                print(f"Unexpected error for {vendor.email}: {str(e)}")
+
+            finally:
+                payout.save()
+                payouts_result.append({
+                    "vendor_email": vendor.email,
+                    "amount": payout_amount,
+                    "status": payout.status
+                })
+
+        return Response({
+            "message": f"Processed {processed_count} payouts",
+            "payouts": payouts_result
+        }, status=200)
+
+
+class ExportReportView(APIView):
+    def post(self, request):
+        report_type = request.data.get("report_type")  # e.g. 'sales'
+        format_type = request.data.get("format")  # 'excel' or 'pdf'
+        data = request.data.get("data", [])  # frontend sends table rows
+
+        if not data:
+            return Response({"error": "No data provided"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if format_type == "excel":
+            return self.generate_excel(data, report_type)
+        elif format_type == "pdf":
+            return self.generate_pdf(data, report_type)
+        else:
+            return Response({"error": "Invalid format"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def generate_excel(self, data, report_type):
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = report_type.capitalize()
+
+        # Write headers
+        headers = data[0].keys()
+        sheet.append(list(headers))
+
+        # Write rows
+        for row in data:
+            sheet.append(list(row.values()))
+
+        output = BytesIO()
+        workbook.save(output)
+        output.seek(0)
+
+        response = HttpResponse(
+            output,
+            content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+        response["Content-Disposition"] = f'attachment; filename="{report_type}.xlsx"'
+        return response
+
+    def generate_pdf(self, data, report_type):
+        output = BytesIO()
+        doc = SimpleDocTemplate(output, pagesize=A4)
+        table_data = [list(data[0].keys())] + [list(row.values()) for row in data]
+        table = Table(table_data)
+        doc.build([table])
+
+        output.seek(0)
+        response = HttpResponse(output, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{report_type}.pdf"'
+        return response

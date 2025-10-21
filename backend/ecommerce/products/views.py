@@ -1,13 +1,62 @@
 from django.forms import ValidationError
 from rest_framework import viewsets,permissions,status
-from .models import Product, Category,Review
-from .serializers import ProductSerializer, CategorySerializer, ReviewSerializer
+from .models import *
+from .serializers import *
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError 
 from vehicles.models import *
 from rest_framework.views import APIView
+from coupon_promotion.models import Promotion
+from vehicles.models import SavedVehicle
+from django.utils import timezone
+from products.models import Product
+from django.db.models import Prefetch
+from accounts.permissions import IsVendor
+
+class UserDashboardView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        user = request.user if request.user.is_authenticated else None
+
+        # Fetch products for each section
+        deals_for_you_qs = Product.objects.filter(is_featured=True, is_available=True)[:10]
+        best_sellers_top_rated_qs = Product.objects.filter(
+            is_available=True
+        ).filter(
+            models.Q(is_best_seller=True) | models.Q(is_top_rated=True)
+        ).distinct()[:10]
+        new_products_qs = Product.objects.filter(is_available=True).order_by('-created_at')[:10]
+
+        now = timezone.now()
+        promotions = Promotion.objects.filter(
+            activate=True, start_date__lte=now, end_date__gte=now
+        )
+        big_savings_qs = Product.objects.filter(promotions__in=promotions, is_available=True).distinct()[:10]
+
+        picks_for_you_qs = []
+        if user:
+            saved_variants = SavedVehicle.objects.filter(user=user).values_list('vehicle_variant', flat=True)
+            picks_for_you_qs = Product.objects.filter(
+                compatible_varient_year__in=saved_variants,
+                is_available=True
+            ).distinct()[:10]
+
+        # Serialize all
+        data = {
+            "deals_for_you": DashboardProductSerializer(deals_for_you_qs, many=True, context={'request': request}).data,
+            "best_sellers_top_rated": DashboardProductSerializer(best_sellers_top_rated_qs, many=True, context={'request': request}).data,
+            "new_products": DashboardProductSerializer(new_products_qs, many=True, context={'request': request}).data,
+            "big_savings": DashboardProductSerializer(big_savings_qs, many=True, context={'request': request}).data,
+        }
+
+        if user:
+            data["picks_for_you"] = DashboardProductSerializer(picks_for_you_qs, many=True, context={'request': request}).data
+
+        return Response(data)
+
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
@@ -41,8 +90,9 @@ class ProductListAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        print("hgamshgasdhgasdjh")
-        products = Product.objects.all()
+        products = Product.objects.select_related('vendor').prefetch_related(
+            Prefetch('vendor__addresses', queryset=Address.objects.filter(is_pickup=True))
+        )
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
@@ -171,50 +221,99 @@ class VendorCategoryRequest(APIView):
         
 
 class VendorCategoryApprove(APIView):
-    def get(self,requst):
-        obj=Category.objects.filter(available=False)
-        if obj:
+    def get(self, request):
+        obj = Category.objects.filter(available=False)
+        if obj.exists():
             try:
-                serializer=CategorySerializer(obj,many=True)
+                serializer = CategorySerializer(obj, many=True)
                 return Response({
-                    "status": " successfully",
-                    "code" : status.HTTP_200_OK,
-                    "message" : serializer.data
-                    })
-            except:
+                    "status": "success",
+                    "code": status.HTTP_200_OK,
+                    "message": serializer.data
+                })
+            except Exception as e:
                 return Response({
-                    "status": " failed",
-                    "code" : status.HTTP_400_BAD_REQUEST,
-                    "message" : "internalservererror"
-                    })
-    def post(self,request):
+                    "status": "failed",
+                    "code": status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    "message": str(e)
+                })
+        return Response({
+            "status": "failed",
+            "code": status.HTTP_404_NOT_FOUND,
+            "message": "No pending categories"
+        })
 
-        id=request.data.get("id")
-        if not id:
-            return Response({"status": " failed","code" : status.HTTP_400_BAD_REQUEST,"message" : "internalservererror"})
+    def post(self, request):
+        id = request.data.get("id")
+        request_status = request.data.get("status")
+
+        if not id or not request_status:
+            return Response({
+                "status": "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": "Missing id or status field"
+            })
+
         try:
-            queryset=Category.objects.get(id=id)
+            queryset = Category.objects.get(id=id)
         except Category.DoesNotExist:
             return Response({
                 "status": "failed",
                 "code": status.HTTP_404_NOT_FOUND,
                 "message": f"Category with id {id} does not exist."
-            }, status=status.HTTP_404_NOT_FOUND)
-        request_status=request.data.get("status")
-        
+            })
 
-        if request_status=="approved":
-            serializer=CategorySerializer(queryset,data={"available": True},partial=True)
+        
+        if request_status == "approved":
+            serializer = CategorySerializer(queryset, data={"available": True}, partial=True)
             if serializer.is_valid():
                 serializer.save()
-                return Response({"status": "Updated SuccessFully","code" : status.HTTP_200_OK,"message" : serializer.data})
-            return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
+                return Response({
+                    "status": "success",
+                    "code": status.HTTP_200_OK,
+                    "message": serializer.data
+                })
+            return Response({
+                "status": "failed",
+                "code": status.HTTP_400_BAD_REQUEST,
+                "message": serializer.errors
+            })
 
-        if request_status=="rejected":
+       
+        elif request_status == "rejected":
             queryset.delete()
+
             return Response({"status": "rejected SuccessFully","code" : status.HTTP_200_OK,"message" : "rejected"})
         return Response({"status": "failed","code" : status.HTTP_400_BAD_REQUEST,"message" : serializer.errors})
 
-        
 
+class ReviewReplyView(APIView):
+    permission_classes = [permissions.IsAuthenticated,IsVendor]  # Only logged-in users
 
+    def post(self, request, review_id):
+        try:
+            review = Review.objects.get(id=review_id)
+        except Review.DoesNotExist:
+            return Response({"error": "Review not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if hasattr(review, 'reply'):
+            return Response({"error": "Review already has a reply"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = ReviewReplySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(review=review, replier=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def get(self, request, review_id):
+        """Get reply for a specific review"""
+        try:
+            review = Review.objects.get(id=review_id)
+        except Review.DoesNotExist:
+            return Response({"error": "Review not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if not hasattr(review, 'reply'):
+            return Response({"message": "No reply yet"}, status=status.HTTP_200_OK)
+
+        serializer = ReviewReplySerializer(review.reply)
+        return Response(serializer.data)

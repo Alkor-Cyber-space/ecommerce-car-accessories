@@ -8,6 +8,7 @@ import { IoIosArrowDown } from "react-icons/io";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { addProductApi, getCategoriesApi, getVariantYearsApi } from "../../../services/allAPI";
+import NewCategoryRequest from "../../../components/vendor/NewCategoryRequest";
 
 // tags component
 const TagInput = ({ value, onChange }) => {
@@ -29,6 +30,8 @@ const TagInput = ({ value, onChange }) => {
         updated.splice(index, 1);
         onChange(updated);
     };
+
+
 
     return (
         <div className="border rounded px-2 py-2 w-full mt-2  flex flex-wrap items-center gap-2">
@@ -65,6 +68,7 @@ const AddProduct = () => {
         price: '',
         stock: '',
         manufactureDate: '',
+        is_available: true,
         tags: [],
         category: '',
         sizes: '',
@@ -77,6 +81,16 @@ const AddProduct = () => {
     });
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
     const [dragActiveIndex, setDragActiveIndex] = useState(null);
+    const [isActive, setIsActive] = useState(true);
+    const handleToggle = () => {
+        setIsActive(prev => {
+            const next = !prev;
+            // sync into formData so payload includes availability
+            setFormData(f => ({ ...f, is_available: next }));
+            return next;
+        });
+    };
+
     const inputRefs = useRef([]);
 
     const imageKeys = ["main", "close", "other1", "other2", "other3", "other4"];
@@ -87,7 +101,10 @@ const AddProduct = () => {
         const fetchCategories = async () => {
             try {
                 const data = await getCategoriesApi();
-                setCategories(data);
+
+                const availableCategories = data.filter(cat => cat.available === true);
+
+                setCategories(availableCategories);
             } catch (error) {
                 toast.error('Error fetching categories');
             }
@@ -95,6 +112,7 @@ const AddProduct = () => {
 
         fetchCategories();
     }, []);
+
 
     useEffect(() => {
         const fetchVariantYears = async () => {
@@ -141,6 +159,10 @@ const AddProduct = () => {
         formDataToSend.append("weight", formData.weight);
         formDataToSend.append("height", formData.height);
         formDataToSend.append("breadth", formData.breadth);
+        // include availability flag
+        formDataToSend.append("is_available", formData.is_available ? "true" : "false");
+        // also include isActive for compatibility with edit flow
+        formDataToSend.append("isActive", formData.is_available ? "true" : "false");
         if (formData.compatible_varient_year) {
             const yearIds = Array.isArray(formData.compatible_varient_year)
                 ? formData.compatible_varient_year
@@ -152,26 +174,21 @@ const AddProduct = () => {
         }
 
 
-        // ✅ Append each tag individually
         if (formData.tags && formData.tags.length > 0) {
             formData.tags.forEach(tag => {
                 formDataToSend.append("tag", tag);
             });
         }
 
-        // ✅ Append size if available
         if (formData.sizes) {
             formDataToSend.append("size", formData.sizes);
         }
 
 
-
-        // 🔍 debug check
         for (let pair of formDataToSend.entries()) {
             console.log(pair[0], pair[1]);
         }
 
-        // ✅ Append images
         imageKeys.forEach((key) => {
             if (formData.images?.[key]) {
                 formDataToSend.append("images", formData.images[key]);
@@ -189,6 +206,7 @@ const AddProduct = () => {
                 price: '',
                 stock: '',
                 manufactureDate: '',
+                is_available: true,
                 tags: [],
                 category: '',
                 sizes: '',
@@ -200,6 +218,7 @@ const AddProduct = () => {
                 breadth: ''
             });
             setImagePreviews(Array(6).fill(null));
+            setIsActive(true);
             navigate("/vendor/products");
         } catch (error) {
             console.error("Error adding product:", error.response?.data || error.message);
@@ -254,11 +273,15 @@ const AddProduct = () => {
                     <div className="sm:flex gap-2">
                         <span className="text-sm font-medium text-[#5737B4]">Product Active</span>
                         <div
-                            onClick={() => dispatch(toggleActive())}
-                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.isActive ? "bg-[#5737B4]" : "bg-gray-300"}`}
+                            onClick={handleToggle}
+                            className={`w-14 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${isActive ? "bg-[#5737B4]" : "bg-gray-300"
+                                }`}
                         >
                             <div
-                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${formData.isActive ? "lg:translate-x-8 sm:translate-x-5 translate-x-8" : "translate-x-0"}`}
+                                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${isActive
+                                    ? "lg:translate-x-8 sm:translate-x-5 translate-x-8"
+                                    : "translate-x-0"
+                                    }`}
                             />
                         </div>
                     </div>
@@ -352,7 +375,7 @@ const AddProduct = () => {
                                         onChange={handleChange}
                                         type="number"
                                         className="border rounded px-4 py-2 mt-1"
-                                        placeholder="0 cm"
+                                        placeholder="0 grams"
                                     />
                                 </div>
 
@@ -542,9 +565,7 @@ const AddProduct = () => {
                             <p className="text-sm text-gray-500">Loading or no data</p>
                         )}
                     </div>
-
-
-
+                    <NewCategoryRequest />
                 </div>
             </div>
 

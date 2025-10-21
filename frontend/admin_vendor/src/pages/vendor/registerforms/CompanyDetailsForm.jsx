@@ -203,7 +203,7 @@ export default function CompanyDetails() {
             <input
               type="tel"
               name="company_number"
-              placeholder="+91 9876543210"
+              placeholder="9876543210"
               value={formData.company_number}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   FaTachometerAlt,
   FaBoxes,
@@ -55,6 +55,7 @@ import SalesAnalytics from './SalesAnalytics';
 import RevenueTrends from './RevenueTrends';
 import { BsGraphUpArrow } from 'react-icons/bs';
 import { Link, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { getAdminAccountSettingsApi } from '../../services/allAPI';
 
 const AdminHome = () => {
   const [activeTab, setActiveTab] = useState('Dashboard');
@@ -65,6 +66,57 @@ const AdminHome = () => {
   const handleClick = (component) => {
     setActiveTab(component);
   };
+  const [profileImage, setProfileImage] = useState(null);
+
+
+  const [profileData, setProfileData] = useState({
+    profile_image: null,
+    username: '',
+    email: '',
+  });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await getAdminAccountSettingsApi();
+        if (res) {
+          setProfileData({
+            profile_image: res.profile_image || null,
+            username: res.username || 'Admin',
+            email: res.email || 'admin@example.com',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchProfile();
+
+    // Listen for profile updates
+    const handleProfileUpdate = (event) => {
+      const updatedProfile = event.detail;
+      setProfileData({
+        profile_image: updatedProfile.profile_image ? (
+          updatedProfile.profile_image.startsWith('http') ?
+            updatedProfile.profile_image :
+            updatedProfile.profile_image
+        ) : null,
+        username: updatedProfile.username || 'Admin',
+        email: updatedProfile.email || 'admin@example.com',
+      });
+    };
+
+    window.addEventListener('adminProfileUpdated', handleProfileUpdate);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('adminProfileUpdated', handleProfileUpdate);
+    };
+  }, []);
+
+  const serverUrl = "http://127.0.0.1:8000/"
 
   const toggleDropdown = (menuName) => {
     setOpenDropdown(openDropdown === menuName ? '' : menuName);
@@ -127,10 +179,10 @@ const AdminHome = () => {
     }
   };
   const handleLogout = () => {
-  localStorage.removeItem("access_token");
-  localStorage.removeItem("refresh_token");
-  navigate("/signin", { replace: true });
-};
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    navigate("/signin", { replace: true });
+  };
 
   return (
     <div className='flex-1 px-1 bg-white transition-all duration-500 '>
@@ -160,8 +212,8 @@ const AdminHome = () => {
           <SidebarItem to="/admin/dashboard" label="Dashboard" icon={<AiOutlineAppstore />} activePath={activePath} />
           <SidebarItem to="/admin/sales-analytics" label="Sales Analytics" icon={<BsGraphUpArrow />} activePath={activePath} />
           <SidebarItem to="/admin/revenue-trends" label="Revenue Trends" icon={<HiArrowTrendingUp />} activePath={activePath} />
-          
-          <li>
+
+          {/* <li>
             <div
               className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
               onClick={() => toggleDropdown("Inventory Control")}
@@ -173,12 +225,12 @@ const AdminHome = () => {
             </div>
             {openDropdown === "Inventory Control" && (
               <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
+                
                 <SidebarItem to="/admin/inventory-stock" label="Stock Management" activePath={activePath} />
               </ul>
             )}
-          </li>
-
+          </li> */}
+          <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
           <li>
             <div
               className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
@@ -198,7 +250,7 @@ const AdminHome = () => {
             )}
           </li>
 
-          <SidebarItem to="/admin/settlements" label="Financial Dashboard" icon={<PiCurrencyDollarSimpleBold />} activePath={activePath} />
+          {/* <SidebarItem to="/admin/settlements" label=" ancial Dashboard" icon={<PiCurrencyDollarSimpleBold />} activePath={activePath} /> */}
 
           <li>
             <div
@@ -224,57 +276,60 @@ const AdminHome = () => {
           <SidebarItem to="/admin/auditlogs" label="Audit Logs" icon={<PiCalculatorDuotone />} activePath={activePath} />
 
           <SidebarItem to="/admin/notification-admin" label="Notifications" icon={<GrNotification />} activePath={activePath} />
-          <SidebarItem to="/admin/account-settings-admin" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
-
 
           <SidebarItem to="/admin/support-admin" label="Support/Help" icon={<PiQuestion />} activePath={activePath} />
+          <SidebarItem to="/admin/admin-accounts-admin" label="Account Settings" icon={<GrUserSettings />} activePath={activePath} />
 
           <hr className="my-4 border-gray-300" />
           <li
-                      className="cursor-pointer hover:bg-red-600 hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2"
-                      onClick={handleLogout}
-                    >
-                      <FaSignOutAlt /> Logout
-                    </li>
+            className="cursor-pointer hover:bg-red-600 hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2"
+            onClick={handleLogout}
+          >
+            <FaSignOutAlt /> Logout
+          </li>
         </ul>
-
-    
-
       </div>
 
       {/* Main Content */}
       <div
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
       >
-        {/* 🔍 Search bar */}
-        <div className="flex items-center justify-between mb-6 ">
+        {/* Search + Profile Section (Responsive) */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           {/* Search Bar */}
-          <div className="relative w-full max-w-3xl">
-            <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
+          <div className="relative flex-grow min-w-[240px] sm:min-w-[300px] md:min-w-[400px] lg:max-w-5xl">
+            <IoSearchOutline className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl md:text-2xl" />
             <input
               type="text"
               placeholder="Search"
-              className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
+              className="w-full pl-12 pr-3 py-3 md:py-5 rounded-[2rem] text-base md:text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
             />
-
           </div>
 
           {/* Profile Info */}
-          <div className="flex w-60 items-center gap-3"
-          onClick={() => navigate('/admin/account-settings')}
+          <div
+            className="flex items-center gap-3 cursor-pointer relative w-full sm:w-auto justify-start sm:justify-end"
+            onClick={() => navigate('/admin/admin-accounts-admin')}
           >
             <img
-              src={user}
+              src={
+                profileData.profile_image
+                  ? profileData.profile_image.startsWith('http')
+                    ? profileData.profile_image
+                    : `${serverUrl}${profileData.profile_image}`
+                  : user
+              }
               alt="profile"
-              className="w-17 h-17 rounded-full object-cover"
+              className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover"
             />
-            <div className='flex flex-col font-semibold'>
-              <div className="text-lg text-gray-700 font-medium">Rohit Ravikumar</div>
-              <span>rohitgmail.com</span>
+            <div className="flex flex-col font-semibold text-sm md:text-base truncate">
+              <div className="text-gray-700 font-medium">{profileData.username}</div>
+              <span className="text-gray-600 truncate max-w-[150px] md:max-w-none">
+                {profileData.email}
+              </span>
             </div>
           </div>
         </div>
-
         {/* Dynamic Component Render */}
         <Outlet />
       </div>

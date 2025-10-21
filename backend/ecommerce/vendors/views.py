@@ -6,7 +6,7 @@ from vehicles.models import *
 from products.serializers import ProductSerializer, CategorySerializer
 from vehicles.serializers import *
 from accounts.permissions import IsVendor,IsVendorProfileComplete
-from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer,VendorReviewSerializer
+from .serializers import *
 from products.models import Review
 import csv
 import io
@@ -18,9 +18,16 @@ from django.core.mail import send_mail
 from django.conf import settings
 from accounts.models import VendorProfile
 from orders.models import Order, OrderItem
-from django.db.models import Sum, F, Count
+from django.db.models import Sum, F, Count,Avg
 from django.db.models.functions import TruncMonth
 from django.contrib.auth.models import Group
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from decimal import Decimal
+from accounts.models import CustomUser,Payout
+from django.utils import timezone
+
 
 
 class VendorDashboardViewSet(viewsets.ViewSet):
@@ -32,61 +39,121 @@ class VendorDashboardViewSet(viewsets.ViewSet):
         try:
             profile = user.vendor_profile
             registration_complete = profile.vendordocuments.is_registration_complete()
-        except (VendorProfile.DoesNotExist):
+        except VendorProfile.DoesNotExist:
             registration_complete = False
 
-        
-        total_products = Product.objects.filter(vendor=user).count()
-        recent_products = Product.objects.filter(vendor=user).order_by('-created_at')[:10]
+        # ---------- Products ----------
+        products_qs = Product.objects.filter(vendor=user)
+        total_products = products_qs.count()
+        recent_products = products_qs.order_by('-created_at')[:10]
 
-        
+        # Stock summary
+        stock_summary = {
+            "out_of_stock": products_qs.filter(stock=0).count(),
+            "low_stock": products_qs.filter(stock__gt=0, stock__lt=10).count(),
+            "in_stock": products_qs.filter(stock__gte=10).count(),
+        }
+
+        # ---------- Orders --------------
         order_items = OrderItem.objects.filter(product__vendor=user)
+        orders_qs = Order.objects.filter(items__product__vendor=user).distinct()
 
         total_sales = order_items.aggregate(
             total=Sum(F('price') * F('quantity'))
         )['total'] or 0
 
-        total_orders = Order.objects.filter(items__product__vendor=user).distinct().count()
-        total_profit = total_sales  
+        total_orders = orders_qs.count()
+        total_profit = total_sales
 
+        # Recent orders
+        recent_orders = orders_qs.order_by('-created_at')[:10]
+
+        # ---------- Monthly Trends ----------
         monthly_sales_qs = (
             order_items.annotate(month=TruncMonth('order__created_at'))
             .values('month')
-            .annotate(total_sales=Sum(F('price') * F('quantity')))
+            .annotate(
+                total_sales=Sum(F('price') * F('quantity')),
+                total_profit=Sum(F('price') * F('quantity')),  # same as sales for now
+                total_orders=Count('order', distinct=True),
+            )
             .order_by('month')
         )
 
+        # Convert to structured list
         sales_trends = [
             {
                 "month": item["month"].strftime("%Y-%m"),
-                "total_sales": float(item["total_sales"] or 0)
+                "total_sales": float(item["total_sales"] or 0),
+                "total_profit": float(item["total_profit"] or 0),
+                "total_orders": item["total_orders"] or 0,
             }
             for item in monthly_sales_qs
         ]
 
-        print(sales_trends)
-        total_users = Group.objects.get(name="User").user_set.count()
-        total_vendors = Group.objects.get(name="Vendor").user_set.count()
+        # Separate monthly orders
+        monthly_orders = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_orders": item["total_orders"] or 0,
+            }
+            for item in monthly_sales_qs
+        ]
+
+        # ---------- Monthly Top selling products ----------
+        current_date = timezone.now()
+
+        year_start = current_date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Fetch all order items for this vendor from Jan 1st to today
+        order_items = (
+            OrderItem.objects.filter(
+                product__vendor=user,
+                order__created_at__gte=year_start,
+                order__created_at__lte=current_date
+            )
+            .annotate(month=TruncMonth('order__created_at'))
+            .values('month', 'product__id', 'product__name')
+            .annotate(total_sold=Sum('quantity'))
+            .order_by('month', '-total_sold')
+        )
+
+        # Organize into dictionary {month: [products]}
+        monthly_top_products = {}
+        for item in order_items:
+            month_key = item['month'].strftime("%Y-%m")
+            if month_key not in monthly_top_products:
+                monthly_top_products[month_key] = []
+            if len(monthly_top_products[month_key]) < 10:
+                monthly_top_products[month_key].append({
+                    "product_id": item["product__id"],
+                    "product_name": item["product__name"],
+                    "total_sold": item["total_sold"]
+                })
 
         data = {
-            'total_products': total_products,
-            'recent_products': recent_products,
-            'registration_complete': registration_complete,
-            'total_sales': total_sales,
-            'total_orders': total_orders,
-            'total_profit': total_profit,
-            'total_users': total_users,
-            'total_vendors': total_vendors,
-            'sales_trends': sales_trends,
+            "total_products": total_products,
+            "recent_products": recent_products,
+            "registration_complete": registration_complete,
+            "total_sales": total_sales,
+            "total_orders": total_orders,
+            "total_profit": total_profit,
+            "stock_summary": stock_summary,
+            "recent_orders": recent_orders,
+            "sales_trends": sales_trends,
+            "monthly_orders": monthly_orders,
+            "monthly_top_products": monthly_top_products
         }
 
         serializer = VendorDashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    # permission_classes = [permissions.IsAuthenticated, IsVendor]
     print("reached function")
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
@@ -321,8 +388,95 @@ class VendorReviewViewSet(viewsets.ViewSet):
             for item in monthly_reviews_qs
         ]
 
+        products_qs = (
+            Product.objects.filter(vendor=vendor)
+            .annotate(
+                average_rating=Avg('reviews__rating'),  
+                total_reviews=Count('reviews')          
+            )
+            .order_by('name')
+        )
+
+        products_data = [
+            {
+                "id": product.id,
+                "name": product.name,
+                "average_rating": round(product.average_rating or 0, 1),
+                "total_reviews": product.total_reviews
+            }
+            for product in products_qs
+        ]
+
         return Response({
             "total_reviews": total_reviews,
             "monthly_reviews": monthly_reviews,
+            "products": products_data,
             "reviews": serializer.data
+        })
+
+
+
+class VendorTransactionListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_vendor_sales(self, vendor):
+        sales = []
+        order_items = OrderItem.objects.filter(product__vendor=vendor).select_related('order', 'product')
+
+        for item in order_items:
+            total_amount = item.price * item.quantity
+            admin_commission = total_amount * Decimal('0.03')
+            vendor_amount = total_amount - admin_commission
+            txn_id = f"TXN{item.order.id}{item.id}"
+
+            sales.append({
+                "date": item.order.created_at.date(),
+                "transaction_id": txn_id,
+                "type": "Sale",
+                "product": item.product.name,
+                "status": item.order.status.capitalize(),
+                "order_id": str(item.order.id),
+                "amount": float(total_amount),
+                "admin_commission": float(admin_commission),
+                "vendor_amount": float(vendor_amount),
+                "description": "Payment received"
+            })
+
+        sales.sort(key=lambda x: x['date'], reverse=True)
+        return sales
+
+    def get_vendor_payouts(self, vendor):
+        payouts_list = []
+        payouts = Payout.objects.filter(vendor=vendor)
+
+        for payout in payouts:
+            txn_id = f"PAYOUT{payout.id}"
+            payouts_list.append({
+                "date": payout.created_at.date(),
+                "transaction_id": txn_id,
+                "type": "Payout",
+                "product": "-",
+                "status": payout.status.capitalize(),
+                "order_id": "-",
+                "amount": float(payout.amount + payout.commission),
+                "admin_commission": float(payout.commission),
+                "vendor_amount": float(payout.amount),
+                "description": "Vendor payout"
+            })
+
+        payouts_list.sort(key=lambda x: x['date'], reverse=True)
+        return payouts_list
+
+    def get(self, request, *args, **kwargs):
+        vendor = request.user
+        if not hasattr(vendor, 'vendor_profile'):
+            return Response({"error": "User is not a vendor"}, status=400)
+
+        sales = self.get_vendor_sales(vendor)
+        payouts = self.get_vendor_payouts(vendor)
+
+        # Combine two lists in the response
+        return Response({
+            "sales": sales,
+            "payouts": payouts
         })

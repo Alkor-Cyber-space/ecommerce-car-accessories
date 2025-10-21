@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { CountryDropdown, RegionDropdown } from 'react-country-region-selector';
 import { FaEye } from "react-icons/fa";
 import { FiEdit3 } from "react-icons/fi";
 import { RiDeleteBinLine } from "react-icons/ri";
@@ -62,30 +63,98 @@ const VendorProfile = () => {
   });
   const [editAddressId, setEditAddressId] = useState(null);
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState(false);
+  const [addressErrors, setAddressErrors] = useState({
+    postal_code: "",
+    country: ""
+  });
+
+  // Validation functions
+  const validateAddressForm = (form) => {
+    let newErrors = {};
+    let isValid = true;
+
+    if (!form.postal_code || !/^\d{6}$/.test(form.postal_code)) {
+      newErrors.postal_code = "Pincode must be exactly 6 digits.";
+      isValid = false;
+    }
+
+    if (!form.country) {
+      newErrors.country = "Please select a country.";
+      isValid = false;
+    }
+
+    setAddressErrors(newErrors);
+    return isValid;
+  };
+
+  const handleAddressFormChange = (e) => {
+    const { name, value } = e.target;
+    setAddressForm(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user starts typing
+    if (addressErrors[name]) {
+      setAddressErrors(prev => ({ ...prev, [name]: "" }));
+    }
+  };
+
+  const selectAddressCountry = (val) => {
+    setAddressForm(prev => ({
+      ...prev,
+      country: val,
+      state: ""
+    }));
+    if (addressErrors.country) {
+      setAddressErrors(prev => ({ ...prev, country: "" }));
+    }
+  };
+
+  const selectAddressRegion = (val) => {
+    setAddressForm(prev => ({
+      ...prev,
+      state: val
+    }));
+  };
 
   const handleAddClick = () => {
     setAddressForm({
       line1: "",
       line2: "",
-      landmark: "",
+      city: "",       // keep city here
+      landmark: "",   // optional, if you want this field
       postal_code: "",
       state: "",
       country: ""
-    }); 
+    });
     setIsAddAddressModalOpen(true);
   };
+  const [errors, setErrors] = useState({
+    postal_code: "",
+    country: "",
+  });
+
 
   const handleSaveAddress = async () => {
+    if (!validateAddressForm(addressForm)) {
+      toast.error("Please fix the errors in the form.");
+      return;
+    }
+
     try {
       const res = await VendorAddressesApi({
         ...addressForm,
         vendor: profileData.id
       });
-      console.log(res);
+      
+      // Update the addresses state immediately
+      setAddresses(res);
+      toast.success("Address saved successfully!");
       setIsAddAddressModalOpen(false);
-      await fetchVendorAddress();
+
+      // optional if fetchVendorAddress exists
+      // await fetchVendorAddress();
     } catch (error) {
       console.error("Error saving address:", error);
+      toast.error(error.response?.data?.message || "Error saving address");
     }
   };
 
@@ -98,7 +167,7 @@ const VendorProfile = () => {
 
         //  Fetch addresses
         const addressesList = await getVendorAddressesApi();
-        setAddresses(addressesList.length > 0 ? addressesList[0] : {}); 
+        setAddresses(addressesList.length > 0 ? addressesList[0] : {});
 
         //  Fetch KYC documents 
         if (profile?.user) {
@@ -120,6 +189,7 @@ const VendorProfile = () => {
   }, []);
 
   const [editForm, setEditForm] = useState({});
+
 
   const handleEditClick = (section) => {
     setEditSection(section);
@@ -145,10 +215,9 @@ const VendorProfile = () => {
       });
     }
     else if (section === "address") {
-      // ✅ Store the address ID
+  
       setEditAddressId(addresses.id);
 
-      // ✅ Set the form fields
       setEditForm({
         line1: addresses.line1 || "",
         line2: addresses.line2 || "",
@@ -162,22 +231,113 @@ const VendorProfile = () => {
 
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({
-      ...prev,
-      [name]: value,
+  // Validation functions
+  const validatePhoneNumber = (number) => {
+    const phoneRegex = /^\d{10}$/;
+    return phoneRegex.test(number);
+  };
+
+  const validatePincode = (pincode) => {
+    const pincodeRegex = /^\d{6}$/;
+    return pincodeRegex.test(pincode);
+  };
+
+  const selectCountry = (val) => {
+    setEditForm(current => ({
+      ...current,
+      country: val,
+      state: '',
+      city: ''
     }));
   };
 
+  const selectRegion = (val) => {
+    setEditForm(current => ({
+      ...current,
+      state: val
+    }));
+  };
+
+  const validateCountry = (country) => {
+    return country && country.length > 0;
+  };
+
+  const isFormValid = (form) => {
+    if (editSection === "address") {
+      const isPincodeValid = validatePincode(form.postal_code);
+      const isCountryValid = validateCountry(form.country);
+      return isPincodeValid && isCountryValid;
+    }
+    // Check if form has the required fields based on section
+    if (editSection === 'business') {
+      if (form.company_number && !validatePhoneNumber(form.company_number)) {
+        return false;
+      }
+    } else if (editSection === 'contact') {
+      if (form.contact_number && !validatePhoneNumber(form.contact_number)) {
+        return false;
+      }
+    } else if (editSection === 'address') {
+      if (form.postal_code && !validatePincode(form.postal_code)) {
+        return false;
+      }
+      if (form.country && !validateCountry(form.country)) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    const updatedForm = { ...editForm, [name]: value };
+    setEditForm(updatedForm);
+
+    setEditForm(updatedForm);
+
+    // Real-time validation
+    let newErrors = { ...errors };
+
+    if (name === "postal_code") {
+      if (!validatePincode(value)) {
+        newErrors.postal_code = "Pincode must be exactly 6 digits.";
+      } else {
+        newErrors.postal_code = "";
+      }
+    }
+
+    if (name === "country") {
+      if (!validateCountry(value)) {
+        newErrors.country = "Please enter a valid country name.";
+      } else {
+        newErrors.country = "";
+      }
+    }
+
+    setErrors(newErrors);
+  };
+
+
   const handleSubmitEdit = async () => {
     try {
-      // make sure you get the correct address id from state
-      // const addressId = addresses?.id || addresses[0]?.id; // works if it's an object or array
-      // if (!addressId) {
-      //   toast.error("No address ID found");
-      //   return;
-      // }
+      if (!isFormValid(editForm)) {
+        // Show appropriate error messages
+        if (editSection === 'business' && editForm.company_number && !validatePhoneNumber(editForm.company_number)) {
+          toast.error('Company phone number must be exactly 10 digits');
+        }
+        if (editSection === 'contact' && editForm.contact_number && !validatePhoneNumber(editForm.contact_number)) {
+          toast.error('Contact phone number must be exactly 10 digits');
+        }
+        if (editSection === 'address') {
+          if (editForm.postal_code && !validatePincode(editForm.postal_code)) {
+            toast.error('Pincode must be exactly 6 digits');
+          }
+          if (editForm.country && !validateCountry(editForm.country)) {
+            toast.error('Please enter a valid country name');
+          }
+        }
+        return;
+      }
 
       const response = await updateVendorProfileApi(editForm);
       console.log("Profile updated successfully:", response);
@@ -190,24 +350,33 @@ const VendorProfile = () => {
 
       setIsEditModalOpen(false);
     } catch (error) {
-      toast.error(error);
+      const errorMessage = error.response?.data?.message || error.message || "An error occurred while updating profile";
+      toast.error(errorMessage);
     }
   };
 
   const handleAdressSubmitEdit = async () => {
+    if (!isFormValid(editForm)) {
+      if (!validatePincode(editForm.postal_code)) {
+        toast.error("Please enter a valid 6-digit pincode.");
+      }
+      if (!validateCountry(editForm.country)) {
+        toast.error("Please enter a valid country name.");
+      }
+      return; // ❌ stop the function if invalid
+    }
+
     try {
       const res = await updateVendorAddressApi(editAddressId, editForm);
-      console.log("Address updated successfully:", res);
-
       toast.success("Address updated successfully!");
       setIsEditModalOpen(false);
       setAddresses(prev => ({ ...prev, ...editForm }));
-
     } catch (error) {
       console.error(error);
       toast.error("Failed to update address");
     }
   };
+
   const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
   const maxFileSize = 5 * 1024 * 1024; // 5MB
 
@@ -252,10 +421,10 @@ const VendorProfile = () => {
       } catch (error) {
         console.error(" Upload failed:", error);
         const errorMsg =
-          error.response?.data?.error || 
+          error.response?.data?.error ||
           error.response?.data?.message ||
-          error.message || 
-          "Something went wrong. Please try again."; 
+          error.message ||
+          "Something went wrong. Please try again.";
         toast.error(errorMsg);
       }
     }
@@ -290,7 +459,7 @@ const VendorProfile = () => {
         </div>
 
         {/* Location Details */}
-        <div className="bg-white rounded-lg px-5 py-6 shadow">
+        {/* <div className="bg-white rounded-lg px-5 py-6 shadow">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="font-semibold text-lg">Location Details</h2>
             <FiEdit3
@@ -298,8 +467,8 @@ const VendorProfile = () => {
               onClick={() => handleEditClick("location")}
               className="cursor-pointer"
             />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 mt-4 gap-y-2">
+          </div> */}
+        {/* <div className="grid grid-cols-1 sm:grid-cols-2 mt-4 gap-y-2">
             <p className="font-semibold">Pick Up Location</p>
             <div className="space-y-2">
               <p>ABC Technologies Edathala, Kakkanad - Kochi</p>
@@ -307,9 +476,9 @@ const VendorProfile = () => {
               <button className="text-[#5737B4] mt-2 text-md">
                 Use My Current Location
               </button>
-            </div>
-          </div>
-        </div>
+            </div> */}
+        {/* </div> */}
+        {/* </div> */}
       </div>
 
       {/* Contact & Address Details */}
@@ -400,7 +569,6 @@ const VendorProfile = () => {
         ))}
       </div>
 
-      <hr />
       {/* KYC Uploads */}
       {/* <div className="mt-6">
         <h2 className="font-semibold text-lg mb-3">KYC Uploads</h2>
@@ -1055,16 +1223,7 @@ const VendorProfile = () => {
           </div>
         </div>
       </div> */}
-      <div className="flex justify-end gap-4 mt-10">
-        <button className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">
-          Cancel
-        </button>
-        <button
-          className={`px-16 py-2 bg-[#5737B4] rounded-md text-sm text-white font-medium transition`}
-        >
-          Save
-        </button>
-      </div>
+     
       <input
         type="file"
         ref={fileInputRef}
@@ -1202,22 +1361,35 @@ const VendorProfile = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border rounded-md"
                   />
-                  <input
-                    type="text"
+
+                  <CountryDropdown
+                    name="country"
+                    value={editForm.country || ''}
+                    onChange={(val) => selectCountry(val)}
+                    className="w-full px-4 py-3 border rounded-md"
+                    defaultOptionLabel="Select Country"
+                  />
+                  {errors.country && (
+                    <p className="text-red-500 text-sm mt-1">{errors.country}</p>
+                  )}
+
+                  <RegionDropdown
+                    name="state"
+                    country={editForm.country}
+                    value={editForm.state || ''}
+                    onChange={(val) => selectRegion(val)}
+                    className="w-full px-4 py-3 border rounded-md"
+                    blankOptionLabel="Select State/Region"
+                    disabled={!editForm.country}
+                  />
+                  <input type="text"
                     name="city"
                     placeholder="City"
                     value={editForm.city}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border rounded-md"
                   />
-                  <input
-                    type="text"
-                    name="state"
-                    placeholder="State"
-                    value={editForm.state}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border rounded-md"
-                  />
+
                   <input
                     type="text"
                     name="postal_code"
@@ -1226,14 +1398,10 @@ const VendorProfile = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border rounded-md"
                   />
-                  <input
-                    type="text"
-                    name="country"
-                    placeholder="Country"
-                    value={editForm.country}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border rounded-md"
-                  />
+                  {errors.postal_code && (
+                    <p className="text-red-500 text-sm mt-1">{errors.postal_code}</p>
+                  )}
+
                 </>
               )}
 
@@ -1246,10 +1414,12 @@ const VendorProfile = () => {
                     ? handleAdressSubmitEdit
                     : handleSubmitEdit
                 }
-                className="px-6 py-2 bg-[#5737B4] hover:bg-[#402b91] text-white rounded-md text-sm font-semibold"
+                disabled={!isFormValid(editForm)}
+                className={`px-6 py-2 ${isFormValid(editForm) ? 'bg-[#5737B4] hover:bg-[#402b91]' : 'bg-gray-400 cursor-not-allowed'} text-white rounded-md text-sm font-semibold`}
               >
                 Save Changes
               </button>
+
 
             </div>
           </div>
@@ -1257,7 +1427,7 @@ const VendorProfile = () => {
       )}
       {isAddAddressModalOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+          className="fixed inset-0 bg-opacity-50 flex justify-center items-center backdrop-blur-sm z-50"
           onClick={() => setIsAddAddressModalOpen(false)}
         >
           <div
@@ -1269,56 +1439,71 @@ const VendorProfile = () => {
             {/* Line 1 */}
             <input
               type="text"
+              name="line1"
               placeholder="Line 1"
               value={addressForm.line1}
-              onChange={(e) => setAddressForm({ ...addressForm, line1: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
+              required
             />
 
             {/* Line 2 */}
             <input
               type="text"
+              name="line2"
               placeholder="Line 2"
               value={addressForm.line2}
-              onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
             />
 
-            {/* city */}
+            {/* Country */}
+            <CountryDropdown
+              value={addressForm.country}
+              onChange={selectAddressCountry}
+              className="border p-2 w-full rounded mb-2"
+              defaultOptionLabel="Select Country"
+            />
+            {addressErrors.country && (
+              <p className="text-red-500 text-sm mb-2">{addressErrors.country}</p>
+            )}
+
+            {/* State/Region */}
+            <RegionDropdown
+              country={addressForm.country}
+              value={addressForm.state}
+              onChange={selectAddressRegion}
+              className="border p-2 w-full rounded mb-2"
+              blankOptionLabel="Select State/Region"
+              disabled={!addressForm.country}
+            />
+
+            {/* City */}
             <input
               type="text"
-              placeholder="city"
+              name="city"
+              placeholder="City"
               value={addressForm.city}
-              onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
+              required
             />
 
             {/* Pincode */}
             <input
               type="text"
+              name="postal_code"
               placeholder="Pincode"
               value={addressForm.postal_code}
-              onChange={(e) => setAddressForm({ ...addressForm, postal_code: e.target.value })}
+              onChange={handleAddressFormChange}
               className="border p-2 w-full rounded mb-2"
+              required
+              maxLength={6}
+              pattern="\d{6}"
             />
-
-            {/* State */}
-            <input
-              type="text"
-              placeholder="State"
-              value={addressForm.state}
-              onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
-              className="border p-2 w-full rounded mb-2"
-            />
-
-            {/* Country */}
-            <input
-              type="text"
-              placeholder="Country"
-              value={addressForm.country}
-              onChange={(e) => setAddressForm({ ...addressForm, country: e.target.value })}
-              className="border p-2 w-full rounded mb-4"
-            />
+            {addressErrors.postal_code && (
+              <p className="text-red-500 text-sm mb-2">{addressErrors.postal_code}</p>
+            )}
 
             {/* Buttons */}
             <div className="flex justify-end gap-2">

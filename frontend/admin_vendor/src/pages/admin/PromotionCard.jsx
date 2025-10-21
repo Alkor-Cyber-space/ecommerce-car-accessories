@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { ShoppingCart } from 'lucide-react';
-import { deletePromotionApi, getCategoriesByAll } from '../../services/allAPI';
+import { deletePromotionApi, editPromotionApi, getCategoriesByAll, getProductsByCategory } from '../../services/allAPI';
 import { AiOutlinePlus } from 'react-icons/ai';
 import { FaRegTrashAlt } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 
 // Helper functions — define or import these appropriately
-const formatDiscount = (promotion) => `${promotion.value} OFF`;
+const formatDiscount = (promotion) => {
+    if (promotion.promotion_type === 'BOGO') {
+        return 'Buy One Get One Free';
+    }
+    return `${promotion.value} OFF`;
+};
 const getProductCount = (promotion) =>
     promotion.applicable_product ? promotion.applicable_product.length : 0;
 
@@ -16,8 +22,11 @@ const PromotionCard = ({
     onClose,
     allCategories = [],
     allProducts = [],
-    onDelete
+    onDelete,
+    fetchPromotions,
+    onUpdate
 }) => {
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteConfirmationOpen, setIsDeleteConfirmationOpen] = useState(false);
     const [editFormData, setEditFormData] = useState({
@@ -49,6 +58,14 @@ const PromotionCard = ({
             minute: "2-digit",
         });
     };
+
+    const [selectedCategory, setSelectedCategory] = useState(
+        promotion?.applicable_category?.[0] || ""
+    );
+    const [selectedProducts, setSelectedProducts] = useState(
+        promotion?.applicable_product || []
+    );
+
     // Helper function
     const formatForDateTimeLocal = (isoString) => {
         if (!isoString) return '';
@@ -63,9 +80,21 @@ const PromotionCard = ({
 
         return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
-    const [formRows, setFormRows] = useState([
-        { category: "", productsList: [], products: [], min_price: 0, max_price: 2000 }
-    ]);
+    const [formRows, setFormRows] = useState(
+        promotion.applicable_category.map((catId, index) => ({
+            category: catId,
+            productsList: allProducts.filter(prod => promotion.applicable_product.includes(prod.id) && prod.category_id === catId),
+            products: promotion.applicable_product.filter(prodId => {
+                const prod = allProducts.find(p => p.id === prodId);
+                return prod && prod.category_id === catId;
+            }),
+            min_price: 0,
+            max_price: 2000
+        })) || [
+            { category: "", productsList: [], products: [], min_price: 0, max_price: 2000 }
+        ]
+    );
+
     const [categories, setCategories] = useState([]);
 
     useEffect(() => {
@@ -82,6 +111,8 @@ const PromotionCard = ({
 
         fetchCategories();
     }, []);
+
+
     const [newCategoryName, setNewCategoryName] = useState("");
 
     // Add a new row
@@ -110,20 +141,47 @@ const PromotionCard = ({
             return { ...prev, [listType]: updatedList };
         });
     };
+    const handleSave = async () => {
+    try {
+        // Build arrays from formRows
+        const applicable_category = formRows
+            .map(row => row.category)
+            .filter(catId => catId); // remove empty
 
-    const handleSave = () => {
-        // Here you can either lift the data up or simply log it
-        console.log("Saved data:", editFormData);
-        setIsEditModalOpen(false);
-    };
+        const applicable_product = formRows
+            .flatMap(row => row.products)
+            .filter(prodId => prodId); // remove empty
+
+        const updatedData = {
+            ...editFormData,
+            applicable_category,
+            applicable_product,
+        };
+
+        const response = await editPromotionApi(promotion.id, updatedData);
+
+        if (response) {
+            toast.success("Promotion updated successfully!");
+            if (fetchPromotions) await fetchPromotions();
+            if (onUpdate) onUpdate(response.data);
+            onClose(); // close modal
+        }
+    } catch (error) {
+        console.error("Error updating promotion:", error.response || error);
+        toast.error("Failed to update promotion");
+    }
+};
+
+
+
     const handlePromotionDelete = async () => {
         try {
             await deletePromotionApi(promotion.id);
             console.log("promotion deleted:", promotion.id);
 
-            if (onDelete) onDelete(promotion.id);        
-            setIsDeleteConfirmationOpen(false);          
-            if (onClose) onClose();                      
+            if (onDelete) onDelete(promotion.id);
+            setIsDeleteConfirmationOpen(false);
+            if (onClose) onClose();
         } catch (error) {
             console.error("Failed to delete promotion:", error);
             alert("Failed to delete promotion. Please try again.");
@@ -135,9 +193,9 @@ const PromotionCard = ({
     if (!isModal) {
         return (
             <div
-    onClick={() => !isDeleteConfirmationOpen && onSelect()}
-    className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
->
+                onClick={() => !isDeleteConfirmationOpen && onSelect()}
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            >
 
                 <div className='flex justify-between items-center mb-4'>
                     <div className="bg-[#5737B4] text-white p-3 rounded-lg w-fit mb-4">
@@ -363,7 +421,7 @@ const PromotionCard = ({
 
                 {/* Edit Modal */}
                 {isEditModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-60 p-4 backdrop-blur-sm">
+                    <div className="fixed inset-0 flex justify-center items-center z-60 p-4 backdrop-blur-sm">
                         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] overflow-y-auto">
                             {/* Header */}
                             <div className="bg-[#5737B4] p-6 text-white relative overflow-hidden">
@@ -497,29 +555,37 @@ const PromotionCard = ({
                                                 <div className="bg-gray-50 border border-gray-200 rounded-lg">
                                                     <select
                                                         value={row.category || ""}
-                                                        onChange={(e) => {
+                                                        onChange={async (e) => {
                                                             const categoryId = Number(e.target.value);
                                                             handleRowChange(index, "category", categoryId);
 
-                                                            // Filter products from allProducts based on selected category
-                                                            const productsList = allProducts.filter(
-                                                                (product) => product.category_id === categoryId
-                                                            );
-                                                            handleRowChange(index, "productsList", productsList);
-                                                            handleRowChange(index, "products", []); // reset selected products
+                                                            // Prefill products for the selected category
+                                                            try {
+                                                                const productsResp = await getProductsByCategory(categoryId);
+                                                                handleRowChange(index, "productsList", Array.isArray(productsResp) ? productsResp : []);
+                                                                // Preselect the products that were already in this category (if any)
+                                                                const preSelected = promotion.applicable_product.filter(prodId => {
+                                                                    const prod = productsResp.find(p => p.id === prodId);
+                                                                    return prod;
+                                                                });
+                                                                handleRowChange(index, "products", preSelected);
+                                                            } catch (err) {
+                                                                console.error("Failed to load products for category", err);
+                                                                handleRowChange(index, "productsList", []);
+                                                                handleRowChange(index, "products", []);
+                                                            }
                                                         }}
                                                         required
                                                         className="w-full p-3 bg-transparent focus:outline-none"
                                                     >
-                                                        <option value="" disabled>
-                                                            Select Category
-                                                        </option>
+                                                        <option value="" disabled>Select Category</option>
                                                         {allCategories?.map((category) => (
                                                             <option key={category.id} value={category.id}>
                                                                 {category.name}
                                                             </option>
                                                         ))}
                                                     </select>
+
                                                 </div>
                                             </div>
 
@@ -590,17 +656,15 @@ const PromotionCard = ({
                                     Cancel
                                 </button>
                                 <button
-                                    className="px-6 py-2.5 bg-[#5737B4] text-white rounded-lg font-medium hover:bg-blue-700 transition-colors duration-200 flex items-center shadow-sm hover:shadow-md"
-                                    onClick={() => {
-                                        handleSave(editFormData);
-                                        setIsEditModalOpen(false);
-                                    }}
+                                    className="px-6 py-2.5 bg-[#5737B4] text-white rounded-lg font-medium hover:bg-[#5737B4] transition-colors duration-200 flex items-center shadow-sm hover:shadow-md"
+                                    onClick={handleSave}
                                 >
                                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                     Save Changes
                                 </button>
+
                             </div>
                         </div>
                     </div>

@@ -1,65 +1,28 @@
-import React, { useState } from 'react';
-import Modal from 'react-modal';
-import { FaBell, FaSyncAlt } from 'react-icons/fa';
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import React, { useState, useEffect, useRef } from "react";
+import Modal from "react-modal";
+import { FaBell, FaSyncAlt } from "react-icons/fa";
+import { FiDownload } from "react-icons/fi";
+import { ToastContainer, toast } from "react-toastify";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import { getProductsApi, updateStockApi } from "../../../services/allAPI";
 
-Modal.setAppElement('#root');
-
-const initialData = [
-    {
-        id: 1,
-        name: 'Air Filter',
-        sku: 'AF-124',
-        category: 'Engine',
-        carModel: 'Swift 2018',
-        stock: 32,
-        status: 'In Stock',
-        lastRestocked: '2025-06-12',
-        unitPrice: 450,
-        price: 650,
-        image: '/img/airfilter.jpg',
-    },
-    {
-        id: 2,
-        name: 'Brake Pad',
-        sku: 'BP-567',
-        category: 'Brakes',
-        carModel: 'Innova 2020',
-        stock: 3,
-        status: 'Low Stock',
-        lastRestocked: '2025-06-10',
-        unitPrice: 700,
-        price: 950,
-        image: '/img/brakepad.jpg',
-    },
-       {
-        id: 3,
-        name: ' wheels',
-        sku: 'BP-567',
-        category: 'Brakes',
-        carModel: 'Innova 2020',
-        stock: 0,
-        status: 'Out of Stock',
-        lastRestocked: '2025-06-10',
-        unitPrice: 700,
-        price: 950,
-        image: '/img/brakepad.jpg',
-    },
-];
+Modal.setAppElement("#root");
 
 export default function VendorStockTable() {
-    const [data, setData] = useState(initialData);
-    const [search, setSearch] = useState('');
-    const [category, setCategory] = useState('All');
-    const [status, setStatus] = useState('All');
+    const [data, setData] = useState([]);
+    const [search, setSearch] = useState("");
+    const [category, setCategory] = useState("All");
+    const [status, setStatus] = useState("All");
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+    const dropdownRef = useRef(null);
 
     const statusColor = {
-        'In Stock': 'bg-green-100 text-green-700',
-        'Low Stock': 'bg-yellow-100 text-yellow-700',
-        'Out of Stock': 'bg-red-100 text-red-700',
+        "In Stock": "bg-green-100 text-green-700",
+        "Low Stock": "bg-yellow-100 text-yellow-700",
+        "Out of Stock": "bg-red-100 text-red-700",
     };
 
     const stockOrder = {
@@ -67,6 +30,44 @@ export default function VendorStockTable() {
         "Low Stock": 2,
         "In Stock": 3,
     };
+
+    // Helper function to map API products to table data
+    const mapProducts = (products) => {
+        return products.map((p) => ({
+            id: p.id,
+            name: p.name,
+            category: p.category?.name || "Uncategorized",
+            carModel: p.compatible_varient_year
+                ?.map((v) => `${v.make} ${v.model}`)
+                .join(", ") || "N/A",
+            stock: p.stock,
+            status:
+                p.stock === 0
+                    ? "Out of Stock"
+                    : p.stock < 15
+                        ? "Low Stock"
+                        : "In Stock",
+            lastRestocked: p.updated_at?.split("T")[0] || "N/A",
+            unitPrice: Number(p.price) || 0,
+            price: Number(p.price) || 0,
+            image:
+                p.image_list?.[0]?.image || "/img/default.jpg", // first image fallback
+        }));
+    };
+
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const products = await getProductsApi();
+                setData(mapProducts(products));
+            } catch (error) {
+                console.error("Error fetching products:", error);
+                toast.error("Failed to fetch products!");
+            }
+        };
+
+        fetchData();
+    }, []);
 
     const filteredData = data
         .filter((item) => {
@@ -78,7 +79,6 @@ export default function VendorStockTable() {
         })
         .sort((a, b) => stockOrder[a.status] - stockOrder[b.status]);
 
-
     const openModal = (item) => {
         setSelectedProduct({ ...item });
         setModalOpen(true);
@@ -89,21 +89,110 @@ export default function VendorStockTable() {
         setSelectedProduct(null);
     };
 
-    const handleSave = () => {
-        setData((prev) =>
-            prev.map((item) => (item.id === selectedProduct.id ? selectedProduct : item))
-        );
-        toast.success('Product updated successfully!');
-        closeModal();
+    const handleSave = async () => {
+        if (!selectedProduct) return;
+
+        try {
+            // Call the API to update stock
+            await updateStockApi(selectedProduct.id, selectedProduct.stock);
+
+            // Refetch data to ensure consistency (including updated status, lastRestocked, etc.)
+            const products = await getProductsApi();
+            setData(mapProducts(products));
+
+            toast.success("Product updated successfully!");
+            closeModal();
+        } catch (error) {
+            console.error("Error updating stock:", error);
+            toast.error("Failed to update product!");
+        }
     };
+    const handleDownloadExcel = () => {
+        try {
+            const worksheet = XLSX.utils.json_to_sheet(filteredData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
+            XLSX.writeFile(workbook, "StockOverviewReport.xlsx");
+            setShowDownloadOptions(false);
+            toast.success("Excel report downloaded successfully!");
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to download Excel report!");
+        }
+    };
+    const handleDownloadPDF = () => {
+        try {
+            const doc = new jsPDF();
+            doc.text("Stock Overview Report", 14, 15);
+
+            doc.autoTable({
+                head: [["Product", "Category", "Stock", "Status", "Unit Price", "Total Price"]],
+                body: filteredData.map(item => [
+                    item.name,
+                    item.category,
+                    item.stock,
+                    item.status,
+                    item.unitPrice,
+                    item.stock * item.unitPrice
+                ]),
+                startY: 20,
+            });
+
+            doc.save("StockOverviewReport.pdf");
+            setShowDownloadOptions(false);
+            toast.success("PDF report downloaded successfully!");
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to download PDF report!");
+        }
+    };
+
+    // Add useEffect for handling clicks outside dropdown
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setShowDownloadOptions(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     return (
         <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-[#232832] text-xl font-bold">Stock Overview</h1>
                 <div className="flex items-center gap-4">
-                    <FaBell className="text-xl text-gray-600 cursor-pointer" />
-                    <FaSyncAlt className="text-xl text-gray-600 cursor-pointer" />
+                    <div className="relative" ref={dropdownRef}>
+                        <button
+                            onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+                            className="bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm flex items-center gap-2"
+                        >
+                            {/* <FiDownload className="text-lg" /> */}
+                            Download Report
+                        </button>
+
+                        {showDownloadOptions && (
+                            <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                                <button
+                                    onClick={handleDownloadPDF}
+                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                >
+                                    Download as PDF
+                                </button>
+                                <button
+                                    onClick={handleDownloadExcel}
+                                    className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                                >
+                                    Download as Excel
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <FaSyncAlt
+                        className="text-xl text-[#5737B4] cursor-pointer"
+                        onClick={() => window.location.reload()} // manual refresh
+                    />
                 </div>
             </div>
 
@@ -121,7 +210,7 @@ export default function VendorStockTable() {
                     onChange={(e) => setCategory(e.target.value)}
                     className="p-2 border rounded w-full"
                 >
-                    <option value="All">  Categories</option>
+                    <option value="All">Categories</option>
                     <option value="Engine">Engine</option>
                     <option value="Brakes">Brakes</option>
                 </select>
@@ -131,12 +220,11 @@ export default function VendorStockTable() {
                     onChange={(e) => setStatus(e.target.value)}
                     className="p-2 border rounded w-full"
                 >
-                    <option value="All"> Status</option>
+                    <option value="All">Status</option>
                     <option value="In Stock">In Stock</option>
                     <option value="Low Stock">Low Stock</option>
+                    <option value="Out of Stock">Out of Stock</option>
                 </select>
-
-
             </div>
 
             <div className="overflow-x-auto">
@@ -158,24 +246,34 @@ export default function VendorStockTable() {
                         {filteredData.map((item) => (
                             <tr key={item.id} className="text-center hover:bg-gray-50">
                                 <td className="py-2 px-2">
-                                    <img src={item.image} alt={item.name} className="w-10 h-10 rounded" />
+                                    <img
+                                        src={item.image}
+                                        alt={item.name}
+                                        className="w-10 h-10 rounded"
+                                    />
                                 </td>
                                 <td className="py-2 px-2">
                                     <div className="font-semibold">{item.name}</div>
-                                    <div className="text-xs text-gray-500">SKU: {item.sku}</div>
                                 </td>
                                 <td className="py-2 px-2">{item.category}</td>
                                 <td className="py-2 px-2">{item.carModel}</td>
+
                                 <td className="py-2 px-2">{item.stock}</td>
                                 <td className="py-2 px-2">
-                                    <span className={`px-2 py-1 text-xs rounded ${statusColor[item.status]}`}>{item.status}</span>
+                                    <span
+                                        className={`px-2 py-1 text-xs rounded ${statusColor[item.status]
+                                            }`}
+                                    >
+                                        {item.status}
+                                    </span>
                                 </td>
                                 <td className="py-2 px-2">{item.unitPrice}</td>
-                                <td className="py-2 px-2">{item.price}</td>
+                                <td className="py-2 px-2">{item.stock * item.unitPrice}</td>
+
                                 <td className="py-2 px-2">
                                     <button
                                         onClick={() => openModal(item)}
-                                        className="bg-blue-600 text-white px-3 py-1 rounded text-xs"
+                                        className="bg-[#5737B4] text-white px-3 py-1 rounded text-xs hover:bg-[#4A148C] transition-colors"
                                     >
                                         Update
                                     </button>
@@ -184,14 +282,18 @@ export default function VendorStockTable() {
                         ))}
                     </tbody>
                 </table>
-            </div>
 
+                {/* If no data */}
+                {filteredData.length === 0 && (
+                    <p className="text-center text-gray-500 py-4">No products found</p>
+                )}
+            </div>
             {/* Modal */}
             <Modal
                 isOpen={modalOpen}
                 onRequestClose={closeModal}
-                className="bg-white max-w-lg p-6 mx-auto mt-40 rounded shadow outline-none"
-                overlayClassName="fixed inset-0 bg-black bg-opacity-40"
+                className="bg-white max-w-lg p-6 mx-auto mt-40 rounded shadow outline-none "
+                overlayClassName="fixed inset-0 z-50 backdrop-blur-sm bg-black/50 bg-opacity-1930 "
             >
                 <h2 className="text-xl font-bold mb-4">Edit Product</h2>
                 {selectedProduct && (
@@ -201,7 +303,7 @@ export default function VendorStockTable() {
                             <input
                                 className="w-full border px-3 py-2 rounded mt-1"
                                 value={selectedProduct.name}
-                                onChange={(e) => setSelectedProduct({ ...selectedProduct, name: e.target.value })}
+                                readOnly
                             />
                         </div>
                         <div>
@@ -210,32 +312,25 @@ export default function VendorStockTable() {
                                 className="w-full border px-3 py-2 rounded mt-1"
                                 type="number"
                                 value={selectedProduct.stock}
-                                onChange={(e) => setSelectedProduct({ ...selectedProduct, stock: Number(e.target.value) })}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium">Unit price</label>
-                            <input
-                                className="w-full border px-3 py-2 rounded mt-1"
-                                type="number"
-                                value={selectedProduct.unitPrice}
-                                onChange={(e) => setSelectedProduct({ ...selectedProduct, unitPrice: Number(e.target.value) })}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium">Price</label>
-                            <input
-                                className="w-full border px-3 py-2 rounded mt-1"
-                                type="number"
-                                value={selectedProduct.price}
-                                onChange={(e) => setSelectedProduct({ ...selectedProduct, price: Number(e.target.value) })}
+                                onChange={(e) =>
+                                    setSelectedProduct({
+                                        ...selectedProduct,
+                                        stock: Number(e.target.value),
+                                    })
+                                }
                             />
                         </div>
                         <div className="flex justify-end">
-                            <button onClick={closeModal} className="bg-gray-500 text-white px-4 py-2 rounded mr-2">
+                            <button
+                                onClick={closeModal}
+                                className="bg-[#232832] text-white px-4 py-2 rounded mr-2"
+                            >
                                 Cancel
                             </button>
-                            <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded">
+                            <button
+                                onClick={() => { handleSave(); closeModal(); }}
+                                className="bg-[#5737B4] text-white px-4 py-2 rounded"
+                            >
                                 Save
                             </button>
                         </div>

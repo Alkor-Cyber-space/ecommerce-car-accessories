@@ -9,49 +9,46 @@ import {
   CartesianGrid,
 } from "recharts";
 
-// Sample Data
-const vendorData = [
-  { name: "ABC Automobiles", revenue: 125200, orders: 85000, growth: 28.5 },
-  { name: "DriveDeck", revenue: 102000, orders: 72000, growth: 18.7 },
-  { name: "MotiveGear", revenue: 96000, orders: 65000, growth: 14.3 },
-  { name: "Gearify", revenue: 110000, orders: 77000, growth: 21.9 },
-];
-
-// Custom Tooltip
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
-    const revenue = payload.find((p) => p.dataKey === "revenue")?.value || 0;
-    const growth = payload[0].payload.growth || 0;
-    const name = payload[0].payload.name;
+    const revenue = payload.find((p) => p.dataKey === "total_revenue")?.value || 0;
+    const items = payload.find((p) => p.dataKey === "total_items")?.value || 0;
+    const name = payload[0].payload.vendor_email;
 
     return (
-      <div className="bg-[#004C6D] text-white rounded-xl p-4 shadow-lg w-[180px]">
-        <p className="text-xl font-semibold">₹{revenue.toLocaleString()}</p>
-        <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-[1px] rounded-full mt-1 inline-block">
-          {growth}% ⬈
-        </span>
-        <p className="mt-1 text-sm text-[#C0E8FF]">{name}</p>
+      <div className="bg-[#6a3ab7] text-white rounded-xl p-4 shadow-lg w-[180px]">
+        {/* Show total revenue */}
+        <span className="text-xs font-medium bg-blue-100 text-[#463c5f] px-2 py-1 rounded-full mt-1 inline-block">
+          Revenue: {revenue}
+        </span>       
+         {/* <span className="text-xs font-medium bg-green-100 text-green-700 px-2 py-[1px] rounded-full mt-1 inline-block">
+          Items: {items}
+        </span> */}
+
       </div>
     );
   }
   return null;
 };
 
-// Chart Component
-export default function VendorsVsRevenue() {
+export default function VendorsVsRevenue({ vendorData }) {
+  const shortenName = (name, maxLength = 9) => {
+    return name.length > maxLength ? name.substring(0, maxLength) + "..." : name;
+  };
   return (
     <div className="bg-white border-l border-[#D8D8D8] p-5">
       <h3 className="text-sm font-semibold mb-3">Vendors vs Revenue</h3>
       <ResponsiveContainer width="100%" height={200}>
         <BarChart data={vendorData} barGap={6}>
           <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+          <XAxis dataKey="vendor_email" tick={{ fontSize: 12 }} tickFormatter={(value) => shortenName(value)} />
           <YAxis tickFormatter={(val) => `${val / 1000}K`} tick={{ fontSize: 12 }} />
           <Tooltip content={<CustomTooltip />} />
-          <Bar dataKey="orders" fill="#AE7AFF" radius={[4, 4, 0, 0]} barSize={20} />
-          <Bar dataKey="revenue" fill="#5737B4" radius={[4, 4, 0, 0]} barSize={20} />
+          <Bar dataKey="total_items" fill="#AE7AFF" radius={[4, 4, 0, 0]} barSize={20} />
+          <Bar dataKey="total_revenue" fill="#5737B4" radius={[4, 4, 0, 0]} barSize={20} />
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 }
+

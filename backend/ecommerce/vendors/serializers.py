@@ -2,6 +2,8 @@ from rest_framework import serializers
 from products.models import Product, Category, Review
 
 from products.serializers import ProductSerializer, CategorySerializer
+from orders.models import Order, OrderItem
+from orders.serializers import OrderSerializer
 
 
 class VendorDashboardSerializer(serializers.Serializer):
@@ -11,10 +13,21 @@ class VendorDashboardSerializer(serializers.Serializer):
     total_sales = serializers.DecimalField(max_digits=12, decimal_places=2)
     total_orders = serializers.IntegerField()
     total_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
-    total_users = serializers.IntegerField()
-    total_vendors = serializers.IntegerField()
+    
+    stock_summary = serializers.DictField(child=serializers.IntegerField())
+    recent_orders = OrderSerializer(many=True)  
+    
+    sales_trend = serializers.SerializerMethodField()
+    monthly_orders = serializers.SerializerMethodField()
+    monthly_top_products = serializers.SerializerMethodField()
+    def get_sales_trend(self, obj):                           
+        return obj.get("sales_trends", [])
+    
+    def get_monthly_orders(self, obj):
+        return obj.get("monthly_orders", [])
 
-
+    def get_monthly_top_products(self, obj):
+        return obj.get("monthly_top_products", [])
 
 
 class ProductStockUpdateSerializer(serializers.ModelSerializer):
@@ -47,3 +60,15 @@ class VendorReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'product', 'user_name', 'user_email', 'rating', 'comment', 'created_at']
+
+class VendorTransactionSerializer(serializers.Serializer):
+    date = serializers.DateField()
+    transaction_id = serializers.CharField()
+    type = serializers.CharField()
+    product = serializers.CharField()
+    status = serializers.CharField()
+    order_id = serializers.CharField()
+    amount = serializers.FloatField()
+    admin_commission = serializers.FloatField()
+    vendor_amount = serializers.FloatField()
+    description = serializers.CharField()

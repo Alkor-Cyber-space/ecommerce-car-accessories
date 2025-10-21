@@ -27,14 +27,17 @@ const PromotionBanner = () => {
   const fetchBanners = async () => {
     try {
       const data = await getAllPromotionBannersApi();
+      console.log("Promotions API response:", data);
 
-      // ✅ sort by id or created_at depending on your API response
-      const sortedData = [...(data || [])].sort((a, b) => {
-        // If API has created_at field
+      if (!Array.isArray(data)) {
+        console.warn("Invalid data type received. Expected array but got:", typeof data);
+        setBanners([]); // set empty array to avoid errors
+        return;
+      }
+
+
+      const sortedData = [...data].sort((a, b) => {
         return new Date(b.created_at) - new Date(a.created_at);
-
-        // Or, if you want to sort by ID (assuming higher ID = newer)
-        // return b.id - a.id;
       });
 
       setBanners(sortedData);
