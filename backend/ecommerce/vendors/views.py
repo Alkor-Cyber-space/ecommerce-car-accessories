@@ -170,22 +170,34 @@ class VendorProductViewSet(viewsets.ModelViewSet):
             "products": serializer.data
         })
 
-    def perform_create(self, serializer):
-        user = self.request.user
-
-        # Check if vendor registration is complete (True/False)
+    def create(self, request, *args, **kwargs):
+        user = request.user
         registration_complete = is_vendor_registration_complete(user)
 
-        product = serializer.save(vendor=self.request.user)
-        
-        # Get image files from request.FILES
-        images = self.request.FILES.getlist('images')
+        if not registration_complete:
+            return Response(
+                {"error": "Vendor not verified. Cannot create product."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = serializer.save(vendor=user)
+
+        images = request.FILES.getlist('images')
         for index, image in enumerate(images):
             ProductImage.objects.create(
                 product=product,
                 image=image,
-                is_main=(index == 0)  # First image is_main=True
+                is_main=(index == 0)
             )
+
+        return Response(
+            {"message": "Product created successfully.", "product": ProductSerializer(product).data},
+            status=status.HTTP_201_CREATED
+        )
+
+
 
     def perform_update(self, serializer):
         print("reached update")

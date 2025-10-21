@@ -23,6 +23,7 @@ def is_vendor_registration_complete(user):
     try:
         profile = user.vendor_profile
         registration_complete = profile.vendordocuments.is_registration_complete()
+        print(registration_complete)
         return registration_complete
     except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
         return False

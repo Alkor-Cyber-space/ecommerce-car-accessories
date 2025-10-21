@@ -266,6 +266,8 @@ class CheckoutViewSet(viewsets.ViewSet):
         shipping_fee = Decimal(str(request.data.get("shipping_fee", "0.00")))
         courier_company_id = request.data.get("courier_company_id")
 
+        print(shipping_fee)
+
         for item in items:
             product = item['product']
             quantity = item['quantity']
@@ -273,7 +275,7 @@ class CheckoutViewSet(viewsets.ViewSet):
 
         tax = subtotal * tax_rate
         total = subtotal + tax + shipping_fee
-
+        print(total)
         # Create pending order
         order = Order.objects.create(
             user=user,
@@ -281,100 +283,26 @@ class CheckoutViewSet(viewsets.ViewSet):
             tax=tax,
             shipping_cost=shipping_fee,
             total_price=total,
-            status="pending",
+            status="pending",  # initial state
             payment_method=payment_method,
             courier_company_id=courier_company_id
         )
 
         # Save order items
-        order_items = []
         for item in items:
-            product = item['product']
-            quantity = item['quantity']
-            order_item = OrderItem.objects.create(
+            OrderItem.objects.create(
                 order=order,
-                product=product,
-                quantity=quantity,
-                price=product.price
+                product=item['product'],
+                quantity=item['quantity'],
+                price=item['product'].price
             )
-            order_items.append(order_item)
 
-        # Build dynamic Shiprocket payload
-        try:
-            order_payload = {
-                "order_id": str(order.id),  # DB order ID
-                "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
-                "pickup_location": "VENDOR_2",   # you can map vendor pickup locations if you store them
-                "channel_id": "",  # leave blank unless marketplace
-                "comment": f"Order #{order.id} from {user.email}",
-
-                # Billing/Shipping info (from Address model)
-                "billing_customer_name": user.first_name or user.username,
-                "billing_last_name": user.last_name or "",
-                "billing_address": shipping_address.line1,
-                "billing_address_2": shipping_address.line2 or "",
-                "billing_city": shipping_address.city,
-                "billing_pincode": shipping_address.postal_code,
-                "billing_state": shipping_address.state,
-                "billing_country": shipping_address.country,
-                "billing_email": user.email,
-                "billing_phone": getattr(user, "phone_number", "9999999999"),  # fallback
-
-                "courier_company_id": str(courier_company_id or ""),
-                "shipping_is_billing": True,
-                
-                # Products in the order
-                "order_items": [
-                    {
-                        "name": item.product.name,
-                        "sku": f"SKU-{item.product.id}",
-                        "units": item.quantity,
-                        "selling_price": float(item.price),
-                        "discount": 0,
-                        "hsn": "8708",
-                        "tax": float(item.price) * float(tax_rate),
-                    }
-                    for item in order_items
-                ],
-
-                "payment_method": "COD" if payment_method == "cod" else "Prepaid",
-                "sub_total": float(subtotal),
-                
-                # Package dimensions (taking first product as ref or you can calculate max)
-                "length": float(order_items[0].product.length) if order_items else 10,
-                "breadth": float(order_items[0].product.breadth) if order_items else 10,
-                "height": float(order_items[0].product.height) if order_items else 10,
-                "weight": float(order_items[0].product.weight) if order_items else 1.0,
-            }
-            print(f"order_payload:{order_payload}")
-
-            print("before sr_response")
-            sr_response = create_shiprocket_order(order_payload)
-            print("Shiprocket response:", sr_response)
-            print("after sr_response")
-
-            if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
-                order.shiprocket_order_id = str(sr_response.get("order_id", ""))
-                order.awb_code = sr_response.get("awb_code", "")  # may be empty initially
-                shipment_id = sr_response.get("shipment_id")
-                order.courier_name = sr_response.get("courier_name", "")
-                order.status = "pending"  # or map status if Shiprocket returns
-                order.save()
-            else:
-                sr_response["error"] = "Shiprocket order not created. Check payload or credentials."
-
-            if not sr_response.get("shipment_id") or sr_response.get("status_code") != 1:
-                sr_response["error"] = "Shiprocket order not created. Check payload or credentials."
-
-        except Exception as e:
-            sr_response = {"error": str(e)}
-
-        # Metadata for payment provider
+        # Payment metadata
         metadata = {"order_id": str(order.id)}
 
         try:
             gateway_handler = get_payment_gateway(payment_method)
-            gateway_response = gateway_handler(user, float(total), metadata)
+            gateway_response = gateway_handler(user, float(total)/ 100, metadata)
         except Exception as e:
             raise ValidationError(str(e))
 
@@ -382,8 +310,11 @@ class CheckoutViewSet(viewsets.ViewSet):
             "amount": float(total),
             "payment_gateway_response": gateway_response,
             "order_id": order.id,
-            "shiprocket_response": sr_response
+            "message": "Order created successfully and awaiting vendor confirmation"
         }, status=status.HTTP_200_OK)
+ 
+
+
 
 class UserOrderViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -458,21 +389,128 @@ class VendorOrderListView(generics.ListAPIView):
 class VendorOrderStatusUpdateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self,request, order_id):
-        user = request.user
+    def post(self, request, order_id):
+        vendor = request.user
 
-        if not user.groups.filter(name="Vendor").exists():
-            return Response({"error":"Only vendors can update orders"}, status=status.HTTP_403_FORBIDDEN)
+        # Ensure the user is a vendor
+        if not vendor.groups.filter(name="Vendor").exists():
+            return Response({"error": "Only vendors can update orders"}, status=status.HTTP_403_FORBIDDEN)
 
+        # Fetch the order
         try:
-            order = Order.objects.get(id=order_id, items__product__vendor=user)
+            order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
-            return Response({"error":"Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
-        
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Fetch only the vendor’s items from this order
+        vendor_items = OrderItem.objects.filter(order=order, product__vendor=vendor)
+        if not vendor_items.exists():
+            return Response(
+                {"error": "You don't have any products in this order"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Mark this vendor’s portion as confirmed
         order.status = "confirmed"
         order.save()
 
-        return Response({"message": f"Order #{order.id} has been confirmed"}, status=status.HTTP_200_OK)
+        try:
+            # Calculate subtotal, tax, shipping, totals for this vendor only
+            tax_rate = Decimal("0.18")
+            subtotal = sum(item.price * item.quantity for item in vendor_items)
+            total_tax = subtotal * tax_rate
+            shipping_fee = order.shipping_cost  # shared or per vendor if you decide to split
+            total_amount = subtotal + total_tax + shipping_fee
+
+            # Customer and shipping info
+            shipping_address = order.shipping_address
+            customer = order.user
+
+            # Prepare Shiprocket payload for this vendor’s portion
+            order_payload = {
+                "order_id": f"{order.id}_V{vendor.id}",  # unique per vendor
+                "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
+                "pickup_location": f"VENDOR_{vendor.id}",
+                "comment": f"Order #{order.id} (Vendor #{vendor.id}) from {customer.email}",
+
+                # Billing / Shipping info
+                "billing_customer_name": customer.first_name or customer.username,
+                "billing_last_name": customer.last_name or "",
+                "billing_address": shipping_address.line1,
+                "billing_address_2": shipping_address.line2 or "",
+                "billing_city": shipping_address.city,
+                "billing_pincode": shipping_address.postal_code,
+                "billing_state": shipping_address.state,
+                "billing_country": shipping_address.country,
+                "billing_email": customer.email,
+                "billing_phone": getattr(customer, "phone_number", "9999999999"),
+                "shipping_is_billing": True,
+
+                # Courier and payment info
+                "courier_company_id": str(order.courier_company_id or ""),
+                "payment_method": "COD" if order.payment_method == "cod" else "Prepaid",
+
+                # Vendor’s products only
+                "order_items": [
+                    {
+                        "name": item.product.name,
+                        "sku": f"SKU-{item.product.id}",
+                        "units": item.quantity,
+                        "selling_price": float(item.price),
+                        "discount": 0,
+                        "hsn": getattr(item.product, "hsn", "8708"),
+                        "tax": ""
+                    }
+                    for item in vendor_items
+                ],
+
+                # Totals
+                "sub_total": float(subtotal),
+                "tax_total": float(total_tax),
+                "shipping_charges": float(shipping_fee),
+                "total_amount": float(total_amount),
+
+                # Package dimensions (from first item)
+                "length": float(vendor_items[0].product.length) if vendor_items else 10.0,
+                "breadth": float(vendor_items[0].product.breadth) if vendor_items else 10.0,
+                "height": float(vendor_items[0].product.height) if vendor_items else 10.0,
+                "weight": float(vendor_items[0].product.weight) if vendor_items else 1.0,
+            }
+
+            # ✅ Send to Shiprocket
+            sr_response = create_shiprocket_order(order_payload)
+            print("Shiprocket response:", sr_response)
+
+            # ✅ Save shipment details if successful
+            if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
+                order.shiprocket_order_id = str(sr_response.get("order_id", ""))
+                order.awb_code = sr_response.get("awb_code", "")
+                order.courier_name = sr_response.get("courier_name", "")
+                order.save()
+
+                return Response({
+                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed and sent to Shiprocket",
+                    "shiprocket_response": sr_response,
+                    "calculation_summary": {
+                        "subtotal": float(subtotal),
+                        "tax": float(total_tax),
+                        "shipping": float(shipping_fee),
+                        "total": float(total_amount)
+                    }
+                }, status=status.HTTP_200_OK)
+
+            else:
+                return Response({
+                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket order creation failed",
+                    "shiprocket_response": sr_response
+                }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({
+                "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket API call failed",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class VendorOrderCancelView(APIView):
@@ -505,10 +543,11 @@ class OrderTrackingAPIView(APIView):
         """
         Get Shiprocket tracking status for a specific order.
         URL: /api/orders/<order_id>/track/
-        """
+        """     
         try:
-            order = Order.objects.get(id=order_id, user=request.user)
-        except Order.DoesNotExist:
+            order = Order.objects.get(id=order_id)
+            print(order)
+        except Order.DoesNotExist:  
             return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
 
         if not order.awb_code:

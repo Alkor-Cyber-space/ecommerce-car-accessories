@@ -910,7 +910,7 @@ class AdminSalesReportViewSet(viewsets.ViewSet):
         for item in order_items:
             total = item.price * item.quantity
             commission = total * Decimal("0.03")  # assuming 3% platform commission
-            earnings = total - commission
+            earnings = commission
 
             data.append({
                 "date": item.order.created_at,
