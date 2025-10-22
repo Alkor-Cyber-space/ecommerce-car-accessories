@@ -42,7 +42,6 @@ import AccountSettings from "./pages/vendor/AccountSettings";
 
 import Notification from "./pages/vendor/Notification";
 
-
 import OrderDetailView from "./pages/vendor/orders/OrderDetailView";
 import OrderDetailEdit from "./pages/vendor/orders/OrderDetailEdit";
 import OrderManagement from "./pages/vendor/orders/OrderManagement";
@@ -71,52 +70,63 @@ import PromotionLayout from "./pages/admin/PromotionLayout";
 
 import { useEffect } from "react";
 
-import { generateToken, messaging, onMessageListener } from "./firebase/firebase";
-import VendorStockTable from './pages/vendor/inventory/StockMangementByVendor';
-import AdminAccountSettings from './pages/admin/AdminAccountSettings';
-import NotificationAdmin from './pages/admin/NotificationAdmin';
+import {
+  generateToken,
+  messaging,
+  onMessageListener,
+} from "./firebase/firebase";
+import VendorStockTable from "./pages/vendor/inventory/StockMangementByVendor";
+import AdminAccountSettings from "./pages/admin/AdminAccountSettings";
+import NotificationAdmin from "./pages/admin/NotificationAdmin";
 import NewCategoryRequest from "./components/vendor/NewCategoryRequest";
 import CategoryRequestApproving from "./components/admin/CategoryRequestApproving";
 import PromotionBanner from "./pages/admin/PromotionBanner";
 import ReturnsRefundsTable from "./pages/vendor/ReturnsRefundsTable";
 import SupportResponse from "./pages/admin/SupportResponse";
-
+import Home from "./Static_web/Home";
+import About from "./Static_web/About";
+import PartnerWithUs from "./Static_web/PartnerWithUs";
+import Products from "./Static_web/Products";
+import ContactUs from "./Static_web/ContactUs";
+import ContactSection from "./Static_web/ContactSection";
+import SuccessStories from "./Static_web/SuccessStories";
+import Blog from "./Static_web/Blog";
 
 function App() {
   const navigate = useNavigate();
 
-useEffect(() => {
-  generateToken();
+  useEffect(() => {
+    generateToken();
 
-  // ✅ Token expiry check
-  const accessToken = localStorage.getItem("accessToken");
-  if (accessToken) {
-    try {
-      const decoded = jwtDecode(accessToken);
-      if (decoded.exp * 1000 < Date.now()) {
-        // Token expired — clear and redirect
+    // ✅ Token expiry check
+    const accessToken = localStorage.getItem("accessToken");
+    if (accessToken) {
+      try {
+        const decoded = jwtDecode(accessToken);
+        if (decoded.exp * 1000 < Date.now()) {
+          // Token expired — clear and redirect
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
+          navigate("/login"); // or "/signin"
+        }
+      } catch (error) {
+        // Invalid token — redirect to login
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
-        navigate("/login"); // or "/signin"
+        navigate("/login");
       }
-    } catch (error) {
-      // Invalid token — redirect to login
-      localStorage.removeItem("accessToken");
-      localStorage.removeItem("refreshToken");
-      navigate("/login");
     }
-  }
 
-  // ✅ Foreground message listener (Firebase)
-  onMessageListener(messaging, (payload) => {
-    console.log("Foreground message:", payload);
-    toast(
-      (payload.notification?.title || "") +
-        "\n" +
-        (payload.notification?.body || "")
-    );
-  });
-}, []);
+    // ✅ Foreground message listener (Firebase)
+    onMessageListener(messaging, (payload) => {
+      console.log("Foreground message:", payload);
+      toast(
+        (payload.notification?.title || "") +
+          "\n" +
+          (payload.notification?.body || "")
+      );
+    });
+  }, []);
 
   const PublicRoute = ({ children, redirectTo }) => {
     const token = localStorage.getItem("access_token");
@@ -130,6 +140,15 @@ useEffect(() => {
   return (
     <>
       <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path='/about' element={<About />} />
+        <Route path='/parnterwithus' element={<PartnerWithUs />} />
+        <Route path='/partner&category' element={<Products />} />
+        <Route path='/contact' element={<ContactUs />} /> 
+        <Route path='/successstories' element={<SuccessStories />} />
+        <Route path="/contactsection" element={<ContactSection />} />
+        <Route path='/blog' element={<Blog />} />
+
         <Route
           path="/login"
           element={
@@ -181,27 +200,30 @@ useEffect(() => {
           <Route path="Sales-Report" element={<SalesReport />} />
           <Route path="returns" element={<ReturnsReport />} />
           <Route path="transaction" element={<TransactionReport />} />
-
-          <Route path='tax-reports' element={<TaxReport />} />
-          <Route path='search-filter' element={<SearchFilter />} />
-          <Route path='promotions' element={<PromotionLayout />}>
+          <Route path="tax-reports" element={<TaxReport />} />
+          <Route path="search-filter" element={<SearchFilter />} />
+          <Route path="promotions" element={<PromotionLayout />}>
             <Route index element={<Promotions />} />
             <Route path="promotion-form" element={<PromotionCouponForm />} />
-            <Route path='promotion_banner' element={<PromotionBanner />} />
+            <Route path="promotion_banner" element={<PromotionBanner />} />
           </Route>
-          <Route path='auditlogs' element={<AuditLogs />} />
-          <Route path='notification-admin' element={<NotificationAdmin />} />
-          <Route path='admin-accounts-admin' element={<AdminAccountSettings />} />
-          <Route path='user-details/:id' element={<UserDetails />} />
-          <Route path='support-admin' element={<SupportHelpAdmin />} />
-          <Route path='support-response' element={<SupportResponse />} />
-          <Route path='index-catogery' element={<IndexCatogery />} />
-          <Route path='new-vendor-request' element={<NewVendorRequest />} />
-          <Route path='vendor-details/:id' element={<VendorDetails />} />
-          <Route path='vendor-documents/:id' element={<VendorsDoc />} />
-          <Route path='category-request-approving' element={<CategoryRequestApproving />} />
-
-
+          <Route path="auditlogs" element={<AuditLogs />} />
+          <Route path="notification-admin" element={<NotificationAdmin />} />
+          <Route
+            path="admin-accounts-admin"
+            element={<AdminAccountSettings />}
+          />
+          <Route path="user-details/:id" element={<UserDetails />} />
+          <Route path="support-admin" element={<SupportHelpAdmin />} />
+          <Route path="support-response" element={<SupportResponse />} />
+          <Route path="index-catogery" element={<IndexCatogery />} />
+          <Route path="new-vendor-request" element={<NewVendorRequest />} />
+          <Route path="vendor-details/:id" element={<VendorDetails />} />
+          <Route path="vendor-documents/:id" element={<VendorsDoc />} />
+          <Route
+            path="category-request-approving"
+            element={<CategoryRequestApproving />}
+          />
         </Route>
 
         {/* Vendor Register Steps (Nested under /vendor-register) */}
@@ -233,7 +255,10 @@ useEffect(() => {
             <Route path="add" element={<AddProduct />} />
             <Route path=":id" element={<ProductDetailView />} />
             <Route path=":id/edit" element={<EditProduct />} />
-            <Route path="new-category-request" element={<NewCategoryRequest />} />
+            <Route
+              path="new-category-request"
+              element={<NewCategoryRequest />}
+            />
           </Route>
           <Route path="stock-management" element={<VendorStockTable />} />
           <Route path="returns" element={<ReturnsRefundsTable />} />
@@ -242,16 +267,15 @@ useEffect(() => {
           <Route path="account-settings" element={<AccountSettings />}></Route>
 
           <Route path="orders" element={<OrdersLayout />}>
-  <Route index element={<OrderManagement />} />
-  <Route path=":id" element={<OrderDetailView />} />  {/* <- here */}
-  <Route path="edit-order" element={<OrderDetailEdit />} />
-</Route>
-
+            <Route index element={<OrderManagement />} />
+            <Route path=":id" element={<OrderDetailView />} /> {/* <- here */}
+            <Route path="edit-order" element={<OrderDetailEdit />} />
+          </Route>
 
           <Route path="notification" element={<Notification />} />
           <Route path="support-help" element={<SupportHelp />} />
           <Route path="createticket" element={<CreateTicket />} />
-          <Route path='promotions' element={<PromotionLayout />}>
+          <Route path="promotions" element={<PromotionLayout />}>
             <Route index element={<Promotions />} />
             <Route path="promotion-form" element={<PromotionCouponForm />} />
           </Route>

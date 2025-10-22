@@ -81,9 +81,6 @@ export default function DocumentCard({
                         <FaEye size={22} />
                     </div>
                 )}
-                <div>
-                    <RiDeleteBinLine size={22} />
-                </div>
             </div>
         </div>
     );

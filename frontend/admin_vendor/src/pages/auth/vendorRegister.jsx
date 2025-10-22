@@ -227,10 +227,9 @@ export default function VendorRegister() {
             </button>
           </form>
           <p className="text-center text-sm text-slate-500">
-            By signing in, you agree to our{' '}
-            <Link to="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>{' '}
-            and{' '}
-            <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
+            Already have an account?{' '}
+            <Link to="/login" className="text-blue-600 hover:underline">Login</Link>{' '}
+          
           </p>
         </div>
       </div>
