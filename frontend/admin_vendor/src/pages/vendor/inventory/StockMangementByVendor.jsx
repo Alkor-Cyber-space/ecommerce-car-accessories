@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Modal from "react-modal";
 import { FaSyncAlt } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
-import * as XLSX from "xlsx";
+// import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import {
@@ -69,6 +69,84 @@ export default function VendorStockTable() {
         const products = await getProductsApi();
         setData(mapProducts(products));
 
+        fetchData();
+    }, []);
+
+    const filteredData = data
+        .filter((item) => {
+            return (
+                item.name.toLowerCase().includes(search.toLowerCase()) &&
+                (category === "All" || item.category === category) &&
+                (status === "All" || item.status === status)
+            );
+        })
+        .sort((a, b) => stockOrder[a.status] - stockOrder[b.status]);
+
+    const openModal = (item) => {
+        setSelectedProduct({ ...item });
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+        setSelectedProduct(null);
+    };
+
+    const handleSave = async () => {
+        if (!selectedProduct) return;
+
+        try {
+            // Call the API to update stock
+            await updateStockApi(selectedProduct.id, selectedProduct.stock);
+
+            // Refetch data to ensure consistency (including updated status, lastRestocked, etc.)
+            const products = await getProductsApi();
+            setData(mapProducts(products));
+
+            toast.success("Product updated successfully!");
+            closeModal();
+        } catch (error) {
+            console.error("Error updating stock:", error);
+            toast.error("Failed to update product!");
+        }
+    };
+    const handleDownloadExcel = () => {
+        try {
+            // const worksheet = XLSX.utils.json_to_sheet(filteredData);
+            // const workbook = XLSX.utils.book_new();
+            // XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
+            // XLSX.writeFile(workbook, "StockOverviewReport.xls x");
+            setShowDownloadOptions(false);
+            toast.success("Excel report downloaded successfully!");
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to download Excel report!");
+        }
+    };
+    const handleDownloadPDF = () => {
+        try {
+            const doc = new jsPDF();
+            doc.text("Stock Overview Report", 14, 15);
+
+            doc.autoTable({
+                head: [["Product", "Category", "Stock", "Status", "Unit Price", "Total Price"]],
+                body: filteredData.map(item => [
+                    item.name,
+                    item.category,
+                    item.stock,
+                    item.status,
+                    item.unitPrice,
+                    item.stock * item.unitPrice
+                ]),
+                startY: 20,
+            });
+
+            doc.save("StockOverviewReport.pdf");
+            setShowDownloadOptions(false);
+            toast.success("PDF report downloaded successfully!");
+        } catch (error) {
+            console.error("Download failed:", error);
+            toast.error("Failed to download PDF report!");
         // Fetch categories
         const categoryResponse = await getCategoriesApi();
         if (Array.isArray(categoryResponse)) {

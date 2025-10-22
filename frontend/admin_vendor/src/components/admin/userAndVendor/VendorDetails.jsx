@@ -66,7 +66,7 @@ const VendorDetails = () => {
   const fetchVendorDetails = async (vendorId) => {
     try {
       const data = await getVendorByIdApi(vendorId);
-      console.log(data.data);
+      console.log("vendorrr",data.data);
       setVendorData(data.data);
     } catch (error) {
       console.error("Error loading vendor details:", error);

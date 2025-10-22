@@ -139,7 +139,7 @@ class VendorDocuments(models.Model):
      is_verified=models.BooleanField(default=False)
      submitted_at=models.DateTimeField(auto_now_add=True)
 
-     def is_registration_complete(self):
+     def is_all_documents_submitted(self):
           required_profile_fields=[
                self.vendor_profile.company_name,
                self.vendor_profile.company_email,
@@ -175,6 +175,43 @@ class VendorDocuments(models.Model):
           ]
 
           return all(required_profile_fields) and all(required_documnets)
+
+     def is_registration_complete(self):
+          required_profile_fields=[
+               self.vendor_profile.company_name,
+               self.vendor_profile.company_email,
+               self.vendor_profile.company_number,
+               self.vendor_profile.contact_name,
+               self.vendor_profile.contact_email,
+               self.vendor_profile.contact_number,
+               self.vendor_profile.designation,
+          ]
+          
+          required_documnets=[
+               self.pan_card,
+               self.aadhar_passport_dl,
+               self.gst_certificate,
+               self.business_registration_cert,
+               self.shop_license,
+               self.cancelled_cheque,
+               self.bank_statement,
+               self.it_return,
+               self.financial_statement,
+          ]
+
+          required_status=[
+               self.pan_card_status,
+               self.aadhar_passport_dl_status,
+               self.gst_certificate_status,
+               self.business_registration_cert_status,
+               self.shop_license_status,
+               self.cancelled_cheque_status,
+               self.bank_statement_status,
+               self.it_return_status,
+               self.financial_statement_status
+          ]
+
+          return all(required_profile_fields) and all(required_documnets) and all(status == 'approved' for status in required_status)
      
 
      def update_profile_status(self):
@@ -197,11 +234,11 @@ class VendorDocuments(models.Model):
 
           if 'rejected' in document_statuses:
                self.profile_status='rejected'
-          elif all( status =='approved' for status in document_statuses if status !='pending'):
-               self.profile_status='approved'
+          elif all(status != 'pending' for status in document_statuses):
+               self.profile_status='pending'
           else:
                self.profile_status='pending'
-          self.is_verified=(self.profile_status=='approved') and self.is_registration_complete()
+          self.is_verified= self.is_registration_complete()
           self.save()
 
      def __str__(self):

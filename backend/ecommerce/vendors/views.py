@@ -5,7 +5,7 @@ from products.models import Product, Category,ProductImage
 from vehicles.models import *
 from products.serializers import ProductSerializer, CategorySerializer
 from vehicles.serializers import *
-from accounts.permissions import IsVendor,IsVendorProfileComplete
+from accounts.permissions import IsVendor
 from .serializers import *
 from products.models import Review
 import csv
@@ -27,6 +27,7 @@ from rest_framework.permissions import IsAuthenticated
 from decimal import Decimal
 from accounts.models import CustomUser,Payout
 from django.utils import timezone
+from accounts.utils import is_vendor_registration_complete
 
 
 
@@ -38,7 +39,7 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 
         try:
             profile = user.vendor_profile
-            registration_complete = profile.vendordocuments.is_registration_complete()
+            registration_complete = profile.vendordocuments.is_all_documents_submitted()
         except VendorProfile.DoesNotExist:
             registration_complete = False
 
@@ -153,21 +154,50 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    # permission_classes = [permissions.IsAuthenticated, IsVendor]
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
     print("reached function")
+
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
 
-    def perform_create(self, serializer):
-        product = serializer.save(vendor=self.request.user)
-        # Get image files from request.FILES
-        images = self.request.FILES.getlist('images')
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        registration_complete = is_vendor_registration_complete(user)
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "registration_complete": registration_complete,
+            "products": serializer.data
+        })
+
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        registration_complete = is_vendor_registration_complete(user)
+
+        if not registration_complete:
+            return Response(
+                {"error": "Vendor not verified. Cannot create product."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = serializer.save(vendor=user)
+
+        images = request.FILES.getlist('images')
         for index, image in enumerate(images):
             ProductImage.objects.create(
                 product=product,
                 image=image,
-                is_main=(index == 0)  # First image is_main=True
+                is_main=(index == 0)
             )
+
+        return Response(
+            {"message": "Product created successfully.", "product": ProductSerializer(product).data},
+            status=status.HTTP_201_CREATED
+        )
+
+
 
     def perform_update(self, serializer):
         print("reached update")
@@ -206,51 +236,6 @@ class VendorCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = CategorySerializer
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 
-# Vehicle Makes CRUD by Vendor
-# class VendorVehicleMakeViewSet(viewsets.ModelViewSet):
-#     queryset = VehicleMake.objects.all()
-#     serializer_class = VehicleMakeSerializer
-#     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# # Vehicle Model CRUD by Vendor
-# class VendorVehicleModelViewSet(viewsets.ModelViewSet):
-#     queryset = VehicleModel.objects.all()
-#     serializer_class = VehicleModelSerializer
-#     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# # Year CRUD by Vendor
-# class VendorYearViewSet(viewsets.ModelViewSet):
-#     queryset = Year.objects.all()
-#     serializer_class = YearSerializer
-#     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# # Variant CRUD by Vendor
-# class VendorVariantViewSet(viewsets.ModelViewSet):
-#     queryset = Variant.objects.all()
-#     serializer_class = VariantSerializer
-#     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# # ModelYear CRUD by Vendor
-# class VendorModelYearViewSet(viewsets.ModelViewSet):
-#     queryset = ModelYear.objects.all()
-#     serializer_class = ModelYearSerializer
-#     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# # VariantYear CRUD by Vendor
-# class VendorVariantYearViewSet(viewsets.ModelViewSet):
-#     queryset = VariantYear.objects.all()
-#     serializer_class = VariantYearSerializer
-#     permission_classes = [permissions.IsAuthenticated, IsVendor]
-
-# class ProductBulkUploadViewSet(viewsets.ViewSet):
-#     permission_classes = [IsAuthenticated, IsVendor]
-
-#     def get_or_create_category_hierarchy(self, hierarchy_str):
-#         parent = None
-#         for name in map(str.strip, hierarchy_str.split('>')):
-#             category, _ = Category.objects.get_or_create(name=name, parent=parent)
-#             parent = category
-#         return parent
 
 #     @action(detail=False, methods=['post'], url_path='upload-csv')
 #     def upload_csv(self, request):

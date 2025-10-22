@@ -29,6 +29,7 @@ from django.db.models import Sum, F, Count
 from django.db.models.functions import TruncMonth
 from datetime import timedelta,date
 from django.utils import timezone
+from accounts.utils import is_vendor_registration_complete
 
 User = get_user_model()
 # Create your views here.
@@ -200,6 +201,30 @@ class AdminSalesAnalyticsView(APIView):
             total=Sum('total_price')
         )['total'] or 0
 
+        monthly_refunds = (
+            Order.objects.filter(status='cancelled')
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(total_refunds=Sum('total_price'))
+            .order_by('month')
+        )
+
+        refunds_dict = {
+            entry['month'].strftime('%b %Y'): float(entry['total_refunds'] or 0)
+            for entry in monthly_refunds
+        }
+
+        # ---  Monthly Profit ---
+        monthly_profit = (
+            Order.objects.annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .annotate(
+                total_revenue=Sum('total_price', filter=Q(status__in=['delivered', 'paid', 'confirmed'])),
+                refunds=Sum('total_price', filter=Q(status='cancelled')),
+            )
+            .order_by('month')
+        )
+
         # Profit = Total revenue - total payouts - refunds
         total_profit = (total_revenue or 0) - (total_payouts or 0) - (returns_and_refunds or 0)
 
@@ -210,7 +235,7 @@ class AdminSalesAnalyticsView(APIView):
             .order_by('-total_sales')[:5]
         )
 
-        # Top 5 Products by total sales
+        # Top 5 Pnoroducts by total sales
         top_products = (
             OrderItem.objects.values(product_name=F('product__name'))
             .annotate(total_sales=Sum(F('price') * F('quantity')))
@@ -222,6 +247,8 @@ class AdminSalesAnalyticsView(APIView):
             "products_sold_today": products_sold_today,
             "new_users": new_users,
             "refunds_today": refunds_today,
+            "monthly_profit": list(monthly_profit),
+            "refunds_dict": refunds_dict,
             "sales_trends": list(sales_trends),
             "total_profit": total_profit,
             "returns_and_refunds": returns_and_refunds,
@@ -346,14 +373,13 @@ class VendorDetailsList(APIView):
 
     def post(self, request, *args, **kwargs):
         pk = request.data.get("pk")
+        print(pk)
         if not pk:
             return Response(
                 {"message": "pk is required", "status": status.HTTP_400_BAD_REQUEST}
             )
-        print("above the try")
+
         try:
-            print("inside the try")
-            print(f"filter :{Group.objects.get(name="Vendor")}")
             vendor_group = Group.objects.get(name="Vendor")
             print(f"vendor_group: {vendor_group}")
 
@@ -361,6 +387,7 @@ class VendorDetailsList(APIView):
             message = str(e)
             return Response({"status":"failed","response_code":status.HTTP_500_INTERNAL_SERVER_ERROR,"message":message})
         user = (CustomUser.objects.filter(id=pk, groups=vendor_group).select_related("vendor_profile").first())
+        print(f"Fetched user: {user}")
 
         if not user:
             return Response(
@@ -368,10 +395,12 @@ class VendorDetailsList(APIView):
             )
 
         serializer = VendorDetailsSerializer(user)
+        print(f"serializer.data:{serializer.data}")
         return Response(
             {"message": "Successfully fetched vendor data", "data": serializer.data},
             status=status.HTTP_200_OK,
         )
+
       
 class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
@@ -380,7 +409,7 @@ class VendorListViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         vendor_group = Group.objects.get(name='Vendor')
         return CustomUser.objects.filter(groups=vendor_group)
-
+        
     # @action(detail=True, methods=['post'], url_path='approve')
     # def approve_vendor(self, request, pk=None):
     #     vendor = self.get_object()
@@ -399,9 +428,13 @@ class UserListViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdmin, IsAuthenticated]
 
+    
     def get_queryset(self):
         user_group = Group.objects.get(name='User')
-        return CustomUser.objects.filter(groups=user_group)
+        return (
+            CustomUser.objects.filter(groups=user_group)
+            .prefetch_related('orders')
+        )
 
     #@action(detail=True,methods=['post'], url_path='approve')
     #def approve_user(self, request, pk=None):
@@ -472,6 +505,7 @@ class VendorViewProductAPIView(APIView):
 
     def post(self,request):
         pk=request.data.get('pk')
+        # print(pk)
         if not pk:
             return Response({
                 "status" : "failed",
@@ -495,13 +529,30 @@ class VendorViewProductAPIView(APIView):
         },status=status.HTTP_200_OK)
 
 
+# class UnverifiedVendorsAPIView(APIView):
+#     permission_classes = [IsAuthenticated, IsAdmin]
+
+#     def get(self, request):
+#         unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
+#         serializer = VendorUnverifiedDocumentsSerializer(unverified_vendors, many=True)
+#         return Response(serializer.data, status=status.HTTP_200_OK)
+
 class UnverifiedVendorsAPIView(APIView):
-    permission_classes = [IsAuthenticated, IsAdmin]
+    permission_classes = [IsAdmin, IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get(self, request):
-        unverified_vendors = VendorDocuments.objects.filter(is_verified=False)
-        serializer = VendorDocumentsSerializer(unverified_vendors, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        vendor_group = Group.objects.get(name='Vendor')
+        all_vendors = CustomUser.objects.filter(groups=vendor_group)
+
+        # Filter vendors whose registration is incomplete
+        incomplete_vendors = [
+            vendor for vendor in all_vendors if not is_vendor_registration_complete(vendor)
+        ]
+
+        serializer = self.serializer_class(incomplete_vendors, many=True)
+        return Response(serializer.data)
+
 
 class AdminVehicleUpdate(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
@@ -542,7 +593,7 @@ class AdminVehicleDelete(APIView):
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all().order_by("-created_at")
     serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated, IsAdmin]  
+    permission_classes = [IsAuthenticated]  
 
     def get_queryset(self):
         user = self.request.user
@@ -859,7 +910,7 @@ class AdminSalesReportViewSet(viewsets.ViewSet):
         for item in order_items:
             total = item.price * item.quantity
             commission = total * Decimal("0.03")  # assuming 3% platform commission
-            earnings = total - commission
+            earnings = commission
 
             data.append({
                 "date": item.order.created_at,
