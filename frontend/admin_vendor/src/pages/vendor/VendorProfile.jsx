@@ -409,7 +409,7 @@ const validatePhone = (phone) => {
     }
   };
 
-  const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
   const maxFileSize = 5 * 1024 * 1024; // 5MB
 
   const handleFileChange = async (e) => {

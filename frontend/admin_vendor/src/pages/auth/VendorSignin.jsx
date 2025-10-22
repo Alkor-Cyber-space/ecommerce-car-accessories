@@ -116,7 +116,13 @@ else{
                 {loading ? 'Logging in...' : 'Login'}
               </h2>
             </button>
+            <p className="text-center text-sm text-slate-500">
+                        Don't have an account?{' '}
+                        <Link to="/register" className="text-blue-600 hover:underline">Register</Link>{' '}
+                      
+                      </p>
           </form>
+          
         </div>
       </div>
     </div>
