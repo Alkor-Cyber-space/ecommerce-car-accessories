@@ -12,15 +12,16 @@ const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10); // ✅ default
+  const [pageSize, setPageSize] = useState(10);
   const navigate = useNavigate();
+  const { id } = useParams();
 
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         const data = await getProductsApi();
-        console.log(data);
-        const sortedData = data.sort((a, b) => b.id - a.id);
+        const productsArray = data.products || []; 
+        const sortedData = productsArray.sort((a, b) => b.id - a.id);
         setProducts(sortedData);
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -28,7 +29,6 @@ const ProductList = () => {
     };
     fetchProducts();
   }, []);
-  const { id } = useParams();
 
   const filtered = products.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase())
@@ -44,25 +44,27 @@ const ProductList = () => {
     }
   };
 
+  const baseSizes = [1, 10, 20, 50];
+  const extraSizes = [100, 500];
+  const productCount = products.length;
+
+  // const pageSizeOptions =
+  //   pageSize >= 50 && productCount > 50
+  //     ? [
+  //         ...baseSizes.filter((s) => s <= productCount),
+  //         ...extraSizes.filter((s) => s <= productCount),
+  //       ]
+  //     : baseSizes.filter((s) => s <= productCount);
+
   const [showDropdown, setShowDropdown] = useState(false);
 
   const totalProducts = products.length;
-  const totalOrders = 200;
+  const totalOrders = 200; // static value for now
   const totalStocks = products.reduce(
     (acc, product) => acc + (product.stock || 0),
     0
   );
 
-  // ✅ page size options logic
- const baseSizes = [1, 10, 20, 50];
-const extraSizes = [100, 500];
-
-const productCount = products?.length ?? 0;
-
-const pageSizeOptions =
-  pageSize >= 50 && productCount > 50
-    ? [...baseSizes.filter(s => s <= productCount), ...extraSizes.filter(s => s <= productCount)]
-    : baseSizes.filter(s => s <= productCount);
   const stats = [
     { icon: <IoPricetagOutline />, title: "Total Products", value: totalProducts },
     { icon: <PiToolboxLight />, title: "Total Orders", value: totalOrders },
@@ -165,19 +167,19 @@ const pageSizeOptions =
                   <td className="p-3">{product.category?.name}</td>
                   <td className="p-3">₹{product.price}</td>
                   <td className="p-3">{product.stock}</td>
-                  <td className="p-3">
-                    <span
-                      className={`px-2 py-1 rounded text-sm font-semibold ${
-                        product.status === "Live"
-                          ? "bg-[#05C16833] text-green-800"
-                          : product.status === "Draft"
-                          ? "bg-[#AEB9E133] text-[#6989F9]"
-                          : "bg-red-100 text-[#FF5A65]"
-                      }`}
-                    >
-                      Live
-                    </span>
-                  </td>
+       <td className="p-3">
+  <span
+    className={`px-2 py-1 rounded text-sm font-semibold ${
+      product.is_available
+        ? "bg-[#05C16833] text-green-800"   // ✅ Live
+        : "bg-red-100 text-[#FF5A65]"       // ❌ Inactive
+    }`}
+  >
+    {product.is_available ? "Live" : "Inactive"}
+  </span>
+</td>
+
+
                   <td className="p-3">
                     <button
                       onClick={() => navigate(`${product.id}/edit`)}
@@ -201,24 +203,7 @@ const pageSizeOptions =
 
       {/* Pagination + Page Size Selector */}
       <div className="mt-6 flex flex-wrap justify-end items-center gap-4 text-sm">
-        {/* Page Size Selector */}
-        <div className="flex gap-2 items-center">
-          {/* <span>Show:</span> */}
-          {pageSizeOptions.map((size) => (
-            <button
-              key={size}
-              onClick={() => {
-                setPageSize(size);
-                setCurrentPage(1);
-              }}
-              className={`px-3 py-1 rounded ${
-                pageSize === size ? "bg-[#5737B4] text-white" : "hover:bg-blue-100"
-              }`}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
+     
 
         {/* Prev / Next */}
         <div className="flex gap-2">

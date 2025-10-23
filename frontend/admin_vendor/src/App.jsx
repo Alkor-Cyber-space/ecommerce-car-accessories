@@ -87,7 +87,6 @@ import Home from "./Static_web/Home";
 import About from "./Static_web/About";
 import PartnerWithUs from "./Static_web/PartnerWithUs";
 import Products from "./Static_web/Products";
-import ContactUs from "./Static_web/ContactUs";
 import ContactSection from "./Static_web/ContactSection";
 import SuccessStories from "./Static_web/SuccessStories";
 import Blog from "./Static_web/Blog";
@@ -144,7 +143,7 @@ function App() {
         <Route path='/about' element={<About />} />
         <Route path='/parnterwithus' element={<PartnerWithUs />} />
         <Route path='/partner&category' element={<Products />} />
-        <Route path='/contact' element={<ContactUs />} /> 
+        {/* <Route path='/contact' element={<ContactUs />} />  */}
         <Route path='/successstories' element={<SuccessStories />} />
         <Route path="/contactsection" element={<ContactSection />} />
         <Route path='/blog' element={<Blog />} />

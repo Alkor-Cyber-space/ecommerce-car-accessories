@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import Modal from "react-modal";
 import { FaSyncAlt } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
-// import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import {
@@ -17,15 +16,16 @@ Modal.setAppElement("#root");
 export default function VendorStockTable() {
   const [data, setData] = useState([]);
   const [search, setSearch] = useState("");
-  const [categories, setCategories] = useState([]); // ✅ renamed
-  const [selectedCategory, setSelectedCategory] = useState("All"); // ✅ for filtering
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [status, setStatus] = useState("All");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const dropdownRef = useRef(null);
 
-  const serverurl = baseUrl; // Ensure baseUrl is defined or imported
+  const serverurl = baseUrl;
+
   const statusColor = {
     "In Stock": "bg-green-100 text-green-700",
     "Low Stock": "bg-yellow-100 text-yellow-700",
@@ -38,142 +38,61 @@ export default function VendorStockTable() {
     "In Stock": 3,
   };
 
-    // Helper function to map API products to table data
-    const mapProducts = (products) => {
-        return products.map((p) => ({
-            id: p.id,
-            name: p.name,
-            category: p.category?.name || "Uncategorized",
-            carModel: p.compatible_varient_year
-                ?.map((v) => `${v.make} ${v.model}`)
-                .join(", ") || "N/A",
-            stock: p.stock,
-            status:
-                p.stock === 0
-                    ? "Out of Stock"
-                    : p.stock < 15
-                        ? "Low Stock"
-                        : "In Stock",
-            lastRestocked: p.updated_at?.split("T")[0] || "N/A",
-            unitPrice: Number(p.price) || 0,
-            price: Number(p.price) || 0,
-            image:
-                p.image_list?.[0]?.image || "/img/default.jpg", // first image fallback
-        }));
-    };
+  // Map API products to table format
+  const mapProducts = (products) =>
+    products.map((p) => ({
+      id: p.id,
+      name: p.name,
+      category: p.category?.name || "Uncategorized",
+      carModel:
+        p.compatible_varient_year
+          ?.map((v) => `${v.make} ${v.model}`)
+          .join(", ") || "N/A",
+      stock: p.stock,
+      status:
+        p.stock === 0 ? "Out of Stock" : p.stock < 15 ? "Low Stock" : "In Stock",
+      lastRestocked: p.updated_at?.split("T")[0] || "N/A",
+      unitPrice: Number(p.price) || 0,
+      price: Number(p.price) || 0,
+      image: p.image_list?.[0]?.image || "/img/default.jpg",
+    }));
+
+// Fetch products and categories
+const fetchData = async () => {
+  try {
+    const data = await getProductsApi();
+    const productsArray = Array.isArray(data)
+      ? data
+      : data.products || []; // <-- handle both array and object responses safely
+
+    setData(mapProducts(productsArray));
+
+    const categoryResponse = await getCategoriesApi();
+    if (Array.isArray(categoryResponse)) {
+      setCategories(categoryResponse.map((c) => c.name));
+    } else {
+      setCategories(["Engine", "Brakes", "Electrical", "Body Parts"]);
+    }
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    toast.error("Failed to fetch data!");
+    setCategories(["Engine", "Brakes", "Electrical", "Body Parts"]);
+  }
+};
+
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch products
-        const products = await getProductsApi();
-        setData(mapProducts(products));
-
-        fetchData();
-    }, []);
-
-    const filteredData = data
-        .filter((item) => {
-            return (
-                item.name.toLowerCase().includes(search.toLowerCase()) &&
-                (category === "All" || item.category === category) &&
-                (status === "All" || item.status === status)
-            );
-        })
-        .sort((a, b) => stockOrder[a.status] - stockOrder[b.status]);
-
-    const openModal = (item) => {
-        setSelectedProduct({ ...item });
-        setModalOpen(true);
-    };
-
-    const closeModal = () => {
-        setModalOpen(false);
-        setSelectedProduct(null);
-    };
-
-    const handleSave = async () => {
-        if (!selectedProduct) return;
-
-        try {
-            // Call the API to update stock
-            await updateStockApi(selectedProduct.id, selectedProduct.stock);
-
-            // Refetch data to ensure consistency (including updated status, lastRestocked, etc.)
-            const products = await getProductsApi();
-            setData(mapProducts(products));
-
-            toast.success("Product updated successfully!");
-            closeModal();
-        } catch (error) {
-            console.error("Error updating stock:", error);
-            toast.error("Failed to update product!");
-        }
-    };
-    const handleDownloadExcel = () => {
-        try {
-            // const worksheet = XLSX.utils.json_to_sheet(filteredData);
-            // const workbook = XLSX.utils.book_new();
-            // XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
-            // XLSX.writeFile(workbook, "StockOverviewReport.xls x");
-            setShowDownloadOptions(false);
-            toast.success("Excel report downloaded successfully!");
-        } catch (error) {
-            console.error("Download failed:", error);
-            toast.error("Failed to download Excel report!");
-        }
-    };
-    const handleDownloadPDF = () => {
-        try {
-            const doc = new jsPDF();
-            doc.text("Stock Overview Report", 14, 15);
-
-            doc.autoTable({
-                head: [["Product", "Category", "Stock", "Status", "Unit Price", "Total Price"]],
-                body: filteredData.map(item => [
-                    item.name,
-                    item.category,
-                    item.stock,
-                    item.status,
-                    item.unitPrice,
-                    item.stock * item.unitPrice
-                ]),
-                startY: 20,
-            });
-
-            doc.save("StockOverviewReport.pdf");
-            setShowDownloadOptions(false);
-            toast.success("PDF report downloaded successfully!");
-        } catch (error) {
-            console.error("Download failed:", error);
-            toast.error("Failed to download PDF report!");
-        // Fetch categories
-        const categoryResponse = await getCategoriesApi();
-        if (Array.isArray(categoryResponse)) {
-          const formattedCategories = categoryResponse.map((c) => c.name);
-          setCategories(formattedCategories);
-        } else {
-          setCategories(["Engine", "Brakes", "Electrical", "Body Parts"]); // fallback
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to fetch data!");
-        setCategories(["Engine", "Brakes", "Electrical", "Body Parts"]);
-      }
-    };
-
     fetchData();
   }, []);
 
-  // ✅ Filtering logic fixed
+  // Filtered and sorted data
   const filteredData = data
-    .filter((item) => {
-      return (
+    .filter(
+      (item) =>
         item.name.toLowerCase().includes(search.toLowerCase()) &&
         (selectedCategory === "All" || item.category === selectedCategory) &&
         (status === "All" || item.status === status)
-      );
-    })
+    )
     .sort((a, b) => stockOrder[a.status] - stockOrder[b.status]);
 
   const openModal = (item) => {
@@ -186,36 +105,26 @@ export default function VendorStockTable() {
     setSelectedProduct(null);
   };
 
-  const handleSave = async () => {
-    if (!selectedProduct) return;
+const handleSave = async () => {
+  if (!selectedProduct) return;
 
-    try {
-      await updateStockApi(selectedProduct.id, selectedProduct.stock);
+  try {
+    await updateStockApi(selectedProduct.id, selectedProduct.stock);
 
-      const products = await getProductsApi();
-      setData(mapProducts(products));
+    const data = await getProductsApi();
+    const productsArray = Array.isArray(data)
+      ? data
+      : data.products || []; // ✅ safely extract array again
 
-      toast.success("Product updated successfully!");
-      closeModal();
-    } catch (error) {
-      console.error("Error updating stock:", error);
-      toast.error("Failed to update product!");
-    }
-  };
+    setData(mapProducts(productsArray));
+    toast.success("Product updated successfully!");
+    closeModal();
+  } catch (error) {
+    console.error("Error updating stock:", error);
+    toast.error("Failed to update product!");
+  }
+};
 
-  const handleDownloadExcel = () => {
-    try {
-      const worksheet = XLSX.utils.json_to_sheet(filteredData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
-      XLSX.writeFile(workbook, "StockOverviewReport.xlsx");
-      setShowDownloadOptions(false);
-      toast.success("Excel report downloaded successfully!");
-    } catch (error) {
-      console.error("Download failed:", error);
-      toast.error("Failed to download Excel report!");
-    }
-  };
 
   const handleDownloadPDF = () => {
     try {
@@ -223,14 +132,7 @@ export default function VendorStockTable() {
       doc.text("Stock Overview Report", 14, 15);
       doc.autoTable({
         head: [
-          [
-            "Product",
-            "Category",
-            "Stock",
-            "Status",
-            "Unit Price",
-            "Total Price",
-          ],
+          ["Product", "Category", "Stock", "Status", "Unit Price", "Total Price"],
         ],
         body: filteredData.map((item) => [
           item.name,
@@ -251,6 +153,22 @@ export default function VendorStockTable() {
     }
   };
 
+  const handleDownloadExcel = () => {
+    try {
+      // Uncomment if XLSX is installed
+      // const worksheet = XLSX.utils.json_to_sheet(filteredData);
+      // const workbook = XLSX.utils.book_new();
+      // XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
+      // XLSX.writeFile(workbook, "StockOverviewReport.xlsx");
+      setShowDownloadOptions(false);
+      toast.success("Excel report downloaded successfully!");
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download Excel report!");
+    }
+  };
+
+  // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -265,7 +183,7 @@ export default function VendorStockTable() {
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-[#232832] text-xl font-bold">Stock Overview </h1>
+        <h1 className="text-[#232832] text-xl font-bold">Stock Overview</h1>
         <div className="flex items-center gap-4">
           <div className="relative" ref={dropdownRef}>
             <button
@@ -352,27 +270,18 @@ export default function VendorStockTable() {
             {filteredData.map((item) => (
               <tr key={item.id} className="text-center hover:bg-gray-50">
                 <td className="py-2 px-2">
-  <img
-    src={
-      item.image?.startsWith("http")
-        ? item.image
-        : `${serverurl}${item.image}`
-    }
-    alt={item.name}
-    className="w-10 h-10 rounded object-cover"
-  />
-</td>
-
+                  <img
+                    src={item.image?.startsWith("http") ? item.image : `${serverurl}${item.image}`}
+                    alt={item.name}
+                    className="w-10 h-10 rounded object-cover"
+                  />
+                </td>
                 <td className="py-2 px-2 font-semibold">{item.name}</td>
                 <td className="py-2 px-2">{item.category}</td>
                 <td className="py-2 px-2">{item.carModel}</td>
                 <td className="py-2 px-2">{item.stock}</td>
                 <td className="py-2 px-2">
-                  <span
-                    className={`px-2 py-1 text-xs rounded ${
-                      statusColor[item.status]
-                    }`}
-                  >
+                  <span className={`px-2 py-1 text-xs rounded ${statusColor[item.status]}`}>
                     {item.status}
                   </span>
                 </td>
@@ -421,10 +330,7 @@ export default function VendorStockTable() {
                 type="number"
                 value={selectedProduct.stock}
                 onChange={(e) =>
-                  setSelectedProduct({
-                    ...selectedProduct,
-                    stock: Number(e.target.value),
-                  })
+                  setSelectedProduct({ ...selectedProduct, stock: Number(e.target.value) })
                 }
               />
             </div>
