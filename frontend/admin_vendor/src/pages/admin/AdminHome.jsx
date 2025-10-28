@@ -137,47 +137,7 @@ const AdminHome = () => {
     </li>
   );
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'Dashboard':
-        return <AdminDashboard />;
-      case 'Sales Analytics':
-        return <SalesAnalytics />;
-      case 'Revenue Trends':
-        return <RevenueTrends />;
-      case 'Inventory':
-        return <InventoryOverview />;
-      case 'Stock Management':
-        return <StockTable />;
-      case 'Financial Dashboard':
-        return <FinancialDashboard />;
-      case 'Sales Report':
-        return <SalesReport />;
-      case 'Returns Report':
-        return <ReturnsReport />;
-      case 'Transaction Report':
-        return <Transaction />;
-      case 'Tax Report':
-        return <TaxReport />;
-      case 'User Overview':
-        return <UserDataTable />;
-      case 'Vendor Overview':
-        return <VendorDataTable />;
-      case 'Admin Overview':
-        return <AdminOverview />
-      case 'Audit Logs':
-        return <AuditLogs />;
-      case 'Notifications':
-        return <div>Notifications Content</div>;
-      case 'Account Settings':
-        return <div>Account Settings Content</div>;
-      case 'Support':
-        return <div>Support Content</div>;
 
-      default:
-        return <div>Select a tab</div>;
-    }
-  };
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
@@ -295,9 +255,9 @@ const AdminHome = () => {
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
       >
         {/* 🔍 Search bar */}
-        <div className="flex items-center justify-between mb-6 ">
+        <div className="flex items-center justify-end mb-6 ">
           {/* Search Bar */}
-          <div className="relative w-full max-w-3xl">
+          {/* <div className="relative w-full max-w-3xl">
             <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
             <input
               type="text"
@@ -305,7 +265,7 @@ const AdminHome = () => {
               className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
             />
 
-          </div>
+          </div> */}
 
           {/* Profile Info */}
           <div

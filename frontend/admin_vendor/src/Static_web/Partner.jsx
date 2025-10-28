@@ -1,6 +1,6 @@
 import React from "react";
-import gcar from "../assets/gcar.jpg"; // replace with your image path
-import tick from "../assets/tick.png"; // replace with your tick image path
+import gcar from "../assets/gcar.jpg";
+import tick from "../assets/tick.png";
 import { Link } from "react-router-dom";
 
 const Partner = () => {
@@ -16,18 +16,18 @@ const Partner = () => {
       className="relative bg-cover bg-center h-[500px] flex items-center"
     //   style={{ backgroundImage: `url(${bgImage})` }}
     >
-    <div
+      <div
         className="absolute inset-0"
         style={{
-            backgroundImage: `url(${gcar})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            zIndex: 0,
+          backgroundImage: `url(${gcar})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          zIndex: 0,
         }}
-    >
+      >
         <div className="absolute inset-0 bg-black/70 bg-opacity-50"></div>
-    </div>
-    <div className="relative z-10 max-w-6xl mx-auto px-6 flex flex-col md:flex-row md:items-center md:justify-between w-full">
+      </div>
+      <div className="relative z-10 max-w-6xl mx-auto px-6 flex flex-col md:flex-row md:items-center md:justify-between w-full">
         {/* Left Content */}
         <div className="text-white max-w-lg">
           <h2 className="text-3xl md:text-4xl font-extrabold">
@@ -48,16 +48,19 @@ const Partner = () => {
             {features.map((item, index) => (
               <li key={index} className="flex items-center space-x-3">
                 <img
-                  src = {tick} 
+                  src={tick}
                 />
                 <span className="text-white text-sm">{item}</span>
               </li>
             ))}
           </ul>
 
-          <button className="mt-6 w-full bg-sky-500 text-white font-medium py-2 rounded hover:bg-sky-600 transition">
-          <Link to="/register"> Register as a Vendor </Link>
-          </button>
+          <Link
+            to="/register"
+            className="mt-6 w-full bg-sky-500 text-white font-medium py-2 rounded hover:bg-sky-600 transition block text-center"
+          >
+            Register as a Vendor
+          </Link>
         </div>
       </div>
     </section>

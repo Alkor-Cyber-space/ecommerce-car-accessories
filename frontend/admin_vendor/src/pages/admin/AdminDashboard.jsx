@@ -27,7 +27,7 @@ const AdminDashboard = () => {
           const monthName = date.toLocaleString("default", { month: "short" });
 
           return {
-            month: monthName,
+            month: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
             revenue: item.total_sales,
             expenses: item.total_profit,
           };

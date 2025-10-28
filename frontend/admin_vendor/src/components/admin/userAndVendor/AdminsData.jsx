@@ -35,7 +35,7 @@ export default function AdminOverview() {
     regDateTo: "",
   });
 
-  // ✅ Fetch admins
+  //  Fetch admins
   useEffect(() => {
     const fetchAdminsList = async () => {
       try {
@@ -50,7 +50,7 @@ export default function AdminOverview() {
     fetchAdminsList();
   }, []);
 
-  // ✅ Download Report Function
+  //  Download Report Function
   const handleDownloadReport = async (format) => {
     try {
       const tableData = filteredAdmins.map((admin) => ({
@@ -84,7 +84,7 @@ export default function AdminOverview() {
     }
   };
 
-  // ✅ Filter logic
+  //  Filter logic
   const handleReset = () => {
     setFilters({
       year: "",
@@ -96,24 +96,28 @@ export default function AdminOverview() {
     setFilteredAdmins(admins);
   };
 
-  const handleSearch = () => {
+  // Add this useEffect after fetching admins
+  useEffect(() => {
     const filtered = admins.filter((admin) => {
-      const matchesStatus = filters.status
-        ? admin.status?.toLowerCase() === filters.status.toLowerCase()
-        : true;
-      const matchesDateFrom = filters.regDateFrom
-        ? new Date(admin.date_joined) >= new Date(filters.regDateFrom)
-        : true;
-      const matchesDateTo = filters.regDateTo
-        ? new Date(admin.date_joined) <= new Date(filters.regDateTo)
-        : true;
-      return matchesStatus && matchesDateFrom && matchesDateTo;
+      const adminDate = admin.date_joined ? new Date(admin.date_joined) : null;
+
+      const matchesStatus =
+        !filters.status ||
+        admin.status?.toLowerCase() === filters.status.toLowerCase();
+
+      const matchesRegDateFrom =
+        !filters.regDateFrom || (adminDate && adminDate >= new Date(filters.regDateFrom));
+
+      const matchesRegDateTo =
+        !filters.regDateTo || (adminDate && adminDate <= new Date(filters.regDateTo));
+
+      return matchesStatus && matchesRegDateFrom && matchesRegDateTo;
     });
 
     setFilteredAdmins(filtered);
-  };
+  }, [filters, admins]);
 
-  // ✅ Modal form submit
+  //  Modal form submit
   const validateForm = () => {
     const phoneRegex = /^\d{10}$/;
     const emailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
@@ -164,7 +168,7 @@ export default function AdminOverview() {
     }
   };
 
-  // ✅ Delete admin
+  //  Delete admin
   const handleDelete = async (id) => {
     try {
       const response = await deleteAdminApi(id);
@@ -188,7 +192,7 @@ export default function AdminOverview() {
     setActiveDropdown(null);
   };
 
-  // ✅ Status Color
+  // Status Color
   const getStatusColor = (status) => {
     switch (status) {
       case "Active":
@@ -261,7 +265,7 @@ export default function AdminOverview() {
       <SearchFilter
         filters={filters}
         setFilters={setFilters}
-        onSearch={handleSearch}
+        onSearch={() => { }}
         onReset={handleReset}
         showYear={false}
         showLocation={false}
@@ -305,14 +309,17 @@ export default function AdminOverview() {
                   <td className="py-3 px-4">{admin.username || "N/A"}</td>
                   <td className="py-3 px-4">{admin.email || "N/A"}</td>
                   <td className="py-3 px-4">{admin.phone_number || "N/A"}</td>
-                  <td className="py-3 px-4">{admin.role || "Admin"}</td>
+                  <td className="py-3 px-4">
+                    {admin.is_admin_staff ? "Admin Staff" : "Admin"}
+                  </td>
+
                   <td className="py-3 px-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                        admin.status
+                        admin.is_active ? "Active" : "Inactive"
                       )}`}
                     >
-                      {admin.status || "N/A"}
+                      {admin.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
                   <td className="py-3 px-4 relative">
@@ -329,12 +336,6 @@ export default function AdminOverview() {
 
                     {activeDropdown === admin.id && (
                       <div className="absolute right-1 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                        <button
-                          onClick={() => handleAction("View", admin.id)}
-                          className="w-full px-3 py-2 text-sm hover:bg-gray-50 rounded-t-lg"
-                        >
-                          View
-                        </button>
                         <button
                           onClick={() => handleAction("Edit", admin.id)}
                           className="w-full px-3 py-2 text-sm hover:bg-gray-50"

@@ -26,7 +26,7 @@ const RatingAndReviewLayout = () => {
     }, []);
 
     return (
-        <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl'>
+        <div className='bg-gray-100 px-6 py-10 rounded-2xl'>
             <div className='flex justify-between mb-5'>
                 <h1 className="text-2xl font-semibold mb-6">Rating & Reviews</h1>
                 <div className="relative inline-block" ref={dropdownRef}>

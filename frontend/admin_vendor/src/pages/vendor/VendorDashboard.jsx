@@ -159,7 +159,7 @@ const VendorDashboard = () => {
   };
 
   return (
-    <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl'>
+    <div className='bg-gray-100 px-6 py-10 rounded-2xl'>
       {/* Banner */}
       {shouldShowBanner && (
         <div>

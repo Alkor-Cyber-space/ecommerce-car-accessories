@@ -7,7 +7,7 @@ export default function SalesReport() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchSalesReport = async () => {
@@ -63,7 +63,7 @@ export default function SalesReport() {
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-4">
       <div className="flex justify-between">
-        <h1 className="text-3xl font-bold  text-gray-800">Sales Report</h1>
+        <h1 className="text-2xl font-bold  text-gray-800">Sales Report</h1>
 
         <div className="flex flex-wrap items-end  gap-4  ">
           <div className="flex flex-col">
@@ -123,22 +123,36 @@ export default function SalesReport() {
               <th className="py-4 px-6 text-left">Earnings</th>
             </tr>
           </thead>
-          <tbody>
-            {paginatedData.map((item, index) => (
-              <tr key={index} className="text-left">
-                <td className="py-3 px-6 min-w-[120px]">{new Date(item.date).toLocaleDateString("en-GB")}</td>
-                <td className="py-3 px-6 min-w-[100px]">{item.order_id}</td>
-                <td className="py-3 px-6 min-w-[140px]">{item.product}</td>
-                <td className="py-3 px-6 min-w-[140px]">{item.vendor}</td>
-                <td className="py-3 px-6 min-w-[140px]">{item.buyer}</td>
-                <td className="py-3 px-6">{item.quantity}</td>
-                <td className="py-3 px-6">{formatINR(item.price)}</td>
-                <td className="py-3 px-6">{formatINR(item.total)}</td>
-                <td className="py-3 px-6">{formatINR(item.commission)}</td>
-                <td className="py-3 px-6">{formatINR(item.earnings)}</td>
-              </tr>
-            ))}
-          </tbody>
+        <tbody>
+  {paginatedData.length === 0 ? (
+    <tr>
+      <td
+        colSpan="10"
+        className="py-6 text-center text-gray-500 font-medium"
+      >
+        No sales data available.
+      </td>
+    </tr>
+  ) : (
+    paginatedData.map((item, index) => (
+      <tr key={index} className="text-left hover:bg-gray-50 ">
+        <td className="py-3 px-6 min-w-[120px]">
+          {new Date(item.date).toLocaleDateString("en-GB")}
+        </td>
+        <td className="py-3 px-6 min-w-[100px]">{item.order_id}</td>
+        <td className="py-3 px-6 min-w-[140px]">{item.product}</td>
+        <td className="py-3 px-6 min-w-[140px]">{item.vendor}</td>
+        <td className="py-3 px-6 min-w-[140px]">{item.buyer}</td>
+        <td className="py-3 px-6">{item.quantity}</td>
+        <td className="py-3 px-6">{formatINR(item.price)}</td>
+        <td className="py-3 px-6">{formatINR(item.total)}</td>
+        <td className="py-3 px-6">{formatINR(item.commission)}</td>
+        <td className="py-3 px-6">{formatINR(item.earnings)}</td>
+      </tr>
+    ))
+  )}
+</tbody>
+
           <tfoot>
             <tr className="font-semibold border-t border-gray-200">
               <td className="py-3 px-6 text-left w-35">Total Revenue</td>

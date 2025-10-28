@@ -1,6 +1,4 @@
 import React from "react";
-
-// Sample image imports – replace with actual images
 import seller1 from "../assets/seller1.png";
 import Akshay from "../assets/Akshay.png";
 import seller3 from "../assets/seller3.png";
@@ -41,9 +39,6 @@ const Seller = () => {
 
   return (
     <div className="font-sans text-gray-800 flex flex-col min-h-screen">
-      
-
-      {/* Seller Section */}
       <section className="py-16 px-6 sm:px-12 md:px-20 flex-grow">
         <h2 className="bg-[#F5F3EF] text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-12 p-4">
           HERE WHAT OUR SELLERS ARE SAYING
@@ -53,9 +48,8 @@ const Seller = () => {
           {sellers.map((seller, index) => (
             <div
               key={seller.id}
-              className={`flex flex-col md:flex-row items-center md:items-start gap-6 ${
-                index % 2 === 1 ? "md:flex-row-reverse" : ""
-              }`}qcfw
+              className={`flex flex-col md:flex-row items-center md:items-start gap-6 ${index % 2 === 1 ? "md:flex-row-reverse" : ""
+                }`}
             >
               {/* Image with blue offset */}
               <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex-shrink-0">
@@ -66,8 +60,6 @@ const Seller = () => {
                   className="relative w-28 h-28 sm:w-32 sm:h-32 object-cover rounded-full"
                 />
               </div>
-
-              {/* Text */}
               <div className="text-center md:text-left">
                 <p className="italic text-gray-700 mb-4">{seller.text}</p>
                 <h4 className="font-bold">{seller.name}</h4>
@@ -78,9 +70,7 @@ const Seller = () => {
         </div>
       </section>
 
-      {/* CTA Section with Wave */}
       <section className="relative bg-blue-50 text-center">
-        {/* Top Wave */}
         <div className="absolute top-0 left-0 w-full overflow-hidden leading-none">
           <svg
             viewBox="2 0 500 200"
@@ -101,13 +91,15 @@ const Seller = () => {
           <p className="text-gray-600 mb-8">
             Put your products in front of millions of eager shoppers
           </p>
-          <button className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-700 transition">
-           <Link to="/register"> Start Selling </Link>
-          </button>
+          <Link
+            to="/register"
+            className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-md hover:bg-blue-700 transition inline-block"
+          >
+            Start Selling
+          </Link>
+
         </div>
       </section>
-
-      
     </div>
   );
 };

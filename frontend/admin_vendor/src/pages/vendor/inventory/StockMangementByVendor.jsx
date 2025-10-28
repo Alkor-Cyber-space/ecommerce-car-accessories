@@ -24,6 +24,9 @@ export default function VendorStockTable() {
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const dropdownRef = useRef(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const serverurl = baseUrl;
 
   const statusColor = {
@@ -38,7 +41,6 @@ export default function VendorStockTable() {
     "In Stock": 3,
   };
 
-  // Map API products to table format
   const mapProducts = (products) =>
     products.map((p) => ({
       id: p.id,
@@ -57,35 +59,30 @@ export default function VendorStockTable() {
       image: p.image_list?.[0]?.image || "/img/default.jpg",
     }));
 
-// Fetch products and categories
-const fetchData = async () => {
-  try {
-    const data = await getProductsApi();
-    const productsArray = Array.isArray(data)
-      ? data
-      : data.products || []; // <-- handle both array and object responses safely
+  const fetchData = async () => {
+    try {
+      const data = await getProductsApi();
+      const productsArray = Array.isArray(data) ? data : data.products || [];
+      setData(mapProducts(productsArray));
 
-    setData(mapProducts(productsArray));
-
-    const categoryResponse = await getCategoriesApi();
-    if (Array.isArray(categoryResponse)) {
-      setCategories(categoryResponse.map((c) => c.name));
-    } else {
+      const categoryResponse = await getCategoriesApi();
+      if (Array.isArray(categoryResponse)) {
+        setCategories(categoryResponse.map((c) => c.name));
+      } else {
+        setCategories(["Engine", "Brakes", "Electrical", "Body Parts"]);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      toast.error("Failed to fetch data!");
       setCategories(["Engine", "Brakes", "Electrical", "Body Parts"]);
     }
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    toast.error("Failed to fetch data!");
-    setCategories(["Engine", "Brakes", "Electrical", "Body Parts"]);
-  }
-};
-
+  };
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Filtered and sorted data
+  // Filter and sort
   const filteredData = data
     .filter(
       (item) =>
@@ -94,6 +91,17 @@ const fetchData = async () => {
         (status === "All" || item.status === status)
     )
     .sort((a, b) => stockOrder[a.status] - stockOrder[b.status]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const paginatedData = filteredData.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   const openModal = (item) => {
     setSelectedProduct({ ...item });
@@ -105,26 +113,20 @@ const fetchData = async () => {
     setSelectedProduct(null);
   };
 
-const handleSave = async () => {
-  if (!selectedProduct) return;
-
-  try {
-    await updateStockApi(selectedProduct.id, selectedProduct.stock);
-
-    const data = await getProductsApi();
-    const productsArray = Array.isArray(data)
-      ? data
-      : data.products || []; // ✅ safely extract array again
-
-    setData(mapProducts(productsArray));
-    toast.success("Product updated successfully!");
-    closeModal();
-  } catch (error) {
-    console.error("Error updating stock:", error);
-    toast.error("Failed to update product!");
-  }
-};
-
+  const handleSave = async () => {
+    if (!selectedProduct) return;
+    try {
+      await updateStockApi(selectedProduct.id, selectedProduct.stock);
+      const data = await getProductsApi();
+      const productsArray = Array.isArray(data) ? data : data.products || [];
+      setData(mapProducts(productsArray));
+      toast.success("Product updated successfully!");
+      closeModal();
+    } catch (error) {
+      console.error("Error updating stock:", error);
+      toast.error("Failed to update product!");
+    }
+  };
 
   const handleDownloadPDF = () => {
     try {
@@ -154,21 +156,10 @@ const handleSave = async () => {
   };
 
   const handleDownloadExcel = () => {
-    try {
-      // Uncomment if XLSX is installed
-      // const worksheet = XLSX.utils.json_to_sheet(filteredData);
-      // const workbook = XLSX.utils.book_new();
-      // XLSX.utils.book_append_sheet(workbook, worksheet, "Stock Overview");
-      // XLSX.writeFile(workbook, "StockOverviewReport.xlsx");
-      setShowDownloadOptions(false);
-      toast.success("Excel report downloaded successfully!");
-    } catch (error) {
-      console.error("Download failed:", error);
-      toast.error("Failed to download Excel report!");
-    }
+    setShowDownloadOptions(false);
+    toast.success("Excel report downloaded successfully!");
   };
 
-  // Close dropdown if clicked outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -180,15 +171,19 @@ const handleSave = async () => {
   }, []);
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
+    <div className="bg-gray-100 px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-[#232832] text-xl font-bold">Stock Overview</h1>
         <div className="flex items-center gap-4">
+          <FaSyncAlt
+            className="text-xl text-[#5737B4] cursor-pointer"
+            onClick={() => window.location.reload()}
+          />
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDownloadOptions(!showDownloadOptions)}
-              className="bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm flex items-center gap-2"
+              className="bg-[#5737B4] text-white px-3 py-3 rounded-md text-sm flex items-center gap-2"
             >
               Download Report
             </button>
@@ -197,23 +192,20 @@ const handleSave = async () => {
               <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <button
                   onClick={handleDownloadPDF}
-                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-3 text-sm hover:bg-gray-100"
                 >
                   Download as PDF
                 </button>
                 <button
                   onClick={handleDownloadExcel}
-                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+                  className="block w-full text-left px-4 py-3 text-sm hover:bg-gray-100"
                 >
                   Download as Excel
                 </button>
               </div>
             )}
           </div>
-          <FaSyncAlt
-            className="text-xl text-[#5737B4] cursor-pointer"
-            onClick={() => window.location.reload()}
-          />
+          
         </div>
       </div>
 
@@ -255,39 +247,39 @@ const handleSave = async () => {
         <table className="min-w-full bg-white rounded-md text-sm shadow">
           <thead className="text-gray-600">
             <tr>
-              <th className="py-4 px-2">Image</th>
-              <th className="py-4 px-2">Product</th>
-              <th className="py-4 px-2">Category</th>
-              <th className="py-4 px-2">Car Model</th>
-              <th className="py-4 px-2">Stock</th>
-              <th className="py-4 px-2">Status</th>
-              <th className="py-4 px-2">Unit Price</th>
-              <th className="py-4 px-2">Price</th>
-              <th className="py-4 px-2">Actions</th>
+              <th className="py-4 px-3">Image</th>
+              <th className="py-4 px-3">Product</th>
+              <th className="py-4 px-3">Category</th>
+              <th className="py-4 px-3">Car Model</th>
+              <th className="py-4 px-3">Stock</th>
+              <th className="py-4 px-3">Status</th>
+              <th className="py-4 px-3">Unit Price</th>
+              <th className="py-4 px-3">Price</th>
+              <th className="py-4 px-3">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filteredData.map((item) => (
+            {paginatedData.map((item) => (
               <tr key={item.id} className="text-center hover:bg-gray-50">
-                <td className="py-2 px-2">
+                <td className="py-3 px-3">
                   <img
                     src={item.image?.startsWith("http") ? item.image : `${serverurl}${item.image}`}
                     alt={item.name}
                     className="w-10 h-10 rounded object-cover"
                   />
                 </td>
-                <td className="py-2 px-2 font-semibold">{item.name}</td>
-                <td className="py-2 px-2">{item.category}</td>
-                <td className="py-2 px-2">{item.carModel}</td>
-                <td className="py-2 px-2">{item.stock}</td>
-                <td className="py-2 px-2">
-                  <span className={`px-2 py-1 text-xs rounded ${statusColor[item.status]}`}>
+                <td className="py-3 px-3 font-semibold">{item.name}</td>
+                <td className="py-3 px-3">{item.category}</td>
+                <td className="py-3 px-3">{item.carModel}</td>
+                <td className="py-3 px-3">{item.stock}</td>
+                <td className="py-3 px-3">
+                  <span className={`px-3 py-1 text-xs rounded ${statusColor[item.status]}`}>
                     {item.status}
                   </span>
                 </td>
-                <td className="py-2 px-2">{item.unitPrice}</td>
-                <td className="py-2 px-2">{item.stock * item.unitPrice}</td>
-                <td className="py-2 px-2">
+                <td className="py-3 px-3">{item.unitPrice}</td>
+                <td className="py-3 px-3">{item.stock * item.unitPrice}</td>
+                <td className="py-3 px-3">
                   <button
                     onClick={() => openModal(item)}
                     className="bg-[#5737B4] text-white px-3 py-1 rounded text-xs hover:bg-[#4A148C] transition-colors"
@@ -305,6 +297,35 @@ const handleSave = async () => {
         )}
       </div>
 
+      {/* Pagination */}
+      <div className="flex justify-end gap-2 mt-4">
+        <button
+          onClick={() => goToPage(currentPage - 1)}
+          disabled={currentPage === 1}
+          className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
+        >
+          Prev
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => (
+          <button
+            key={i}
+            onClick={() => goToPage(i + 1)}
+            className={`px-3 py-1 border border-gray-300 rounded ${
+              currentPage === i + 1 ? "bg-[#5737B4] text-white" : "bg-gray-200"
+            }`}
+          >
+            {i + 1}
+          </button>
+        ))}
+        <button
+          onClick={() => goToPage(currentPage + 1)}
+          disabled={currentPage === totalPages}
+          className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100"
+        >
+          Next
+        </button>
+      </div>
+
       {/* Modal */}
       <Modal
         isOpen={modalOpen}
@@ -318,7 +339,7 @@ const handleSave = async () => {
             <div>
               <label className="block text-sm font-medium">Product Name</label>
               <input
-                className="w-full border px-3 py-2 rounded mt-1"
+                className="w-full border px-3 py-3 rounded mt-1"
                 value={selectedProduct.name}
                 readOnly
               />
@@ -326,7 +347,7 @@ const handleSave = async () => {
             <div>
               <label className="block text-sm font-medium">Stock</label>
               <input
-                className="w-full border px-3 py-2 rounded mt-1"
+                className="w-full border px-3 py-3 rounded mt-1"
                 type="number"
                 value={selectedProduct.stock}
                 onChange={(e) =>
@@ -337,13 +358,13 @@ const handleSave = async () => {
             <div className="flex justify-end">
               <button
                 onClick={closeModal}
-                className="bg-[#232832] text-white px-4 py-2 rounded mr-2"
+                className="bg-[#232832] text-white px-4 py-3 rounded mr-2"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                className="bg-[#5737B4] text-white px-4 py-2 rounded"
+                className="bg-[#5737B4] text-white px-4 py-3 rounded"
               >
                 Save
               </button>

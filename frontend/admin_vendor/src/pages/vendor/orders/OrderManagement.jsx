@@ -9,102 +9,8 @@ import {
 } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 import SearchFilter from "../../admin/SearchFilter";
-import { data, useNavigate } from "react-router-dom";
-
-const orders = [
-  {
-    id: "12345769087",
-    date: "20 May 2025",
-    time: "3.30 PM",
-    status: "Return Initiated",
-    total: "41600 ₽",
-
-    products: [
-      {
-        name: "Alloy Wheel XZR15",
-        img: bmw,
-        details: "Color - Black, Size - XL",
-        quantity: 4,
-        price: "800₹",
-        totalPrice: "20800₹",
-      },
-      {
-        name: "Alloy Wheel XZR15",
-        img: bmw,
-        details: "Color - Black, Size - XL",
-        quantity: 4,
-        price: "800₹",
-        totalPrice: "20800₹",
-      },
-    ],
-    refundStatus: "Waiting For Product Delivery",
-    refundMethod: "Mastercard ending 3035",
-  },
-  {
-    id: "12345769088",
-    date: "21 May 2025",
-    time: "10.15 AM",
-    status: "Returned",
-    total: "32500 ₽",
-    paymentMethod: "Visa ending 4242",
-    products: [
-      {
-        name: "Car Seat Cover",
-        details: "Material - Leather, Color - Beige",
-        quantity: 2,
-        price: "1200₹",
-        totalPrice: "2400₹",
-      },
-      {
-        name: "Steering Wheel Cover",
-        details: "Material - Rubber, Color - Black",
-        quantity: 1,
-        price: "500₹",
-        totalPrice: "500₹",
-      },
-    ],
-    refundStatus: "Refund Processed",
-    refundMethod: "Visa ending 4242",
-  },
-  {
-    id: "12345769089",
-    date: "22 May 2025",
-    time: "12:00 PM",
-    status: "Approved",
-    total: "15400 ₽",
-    paymentMethod: "UPI ID: user@upi",
-    products: [
-      {
-        name: "LED Headlights",
-        details: "Model - H4, White Light",
-        quantity: 2,
-        price: "7700₹",
-        totalPrice: "15400₹",
-      },
-    ],
-    refundStatus: "Not Applicable",
-    refundMethod: "—",
-  },
-  {
-    id: "12345769090",
-    date: "23 May 2025",
-    time: "5:45 PM",
-    status: "Expired",
-    total: "9800 ₽",
-    paymentMethod: "Cash on Delivery",
-    products: [
-      {
-        name: "Car Perfume",
-        details: "Color - Black, Size - XL, Any other important details",
-        quantity: 4,
-        price: "2450₹",
-        totalPrice: "9800₹",
-      },
-    ],
-    refundStatus: "Not Applicable",
-    refundMethod: "—",
-  },
-];
+import { useNavigate } from "react-router-dom";
+import { baseUrl } from "../../../services/serverURL";
 
 const OrderManagement = ({ order }) => {
   const [loading, setLoading] = useState(false);
@@ -113,7 +19,7 @@ const OrderManagement = ({ order }) => {
   const serverurl = "http://127.0.0.1:8000/";
   const navigate = useNavigate();
 
-  const [filteredOrders, setFilteredOrders] = useState([]); 
+  const [filteredOrders, setFilteredOrders] = useState([]);
 
   const [filters, setFilters] = useState({
     regDateFrom: "",
@@ -122,53 +28,16 @@ const OrderManagement = ({ order }) => {
     buyerName: "",
     orderStatus: "",
   });
-
-  // Download dropdown state + ref
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-  const dropdownRef = useRef(null); 
+  const dropdownRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage] = useState(10); 
 
-  const handleSearch = () => {
-    const filtered = userOrders.filter((order) => {
-      const matchesStatus = filters.orderStatus
-        ? order.status?.toLowerCase() === filters.orderStatus.toLowerCase()
-        : true;
-
-      const matchesDateFrom = filters.regDateFrom
-        ? new Date(order.created_at) >= new Date(filters.regDateFrom)
-        : true;
-
-      const matchesDateTo = filters.regDateTo
-        ? new Date(order.created_at) <= new Date(filters.regDateTo)
-        : true;
-
-      const matchesOrderId = filters.orderId
-        ? order.id.toString().includes(filters.orderId)
-        : true;
-
-      const matchesBuyerName = filters.buyerName
-        ? order.buyerName
-            ?.toLowerCase()
-            .includes(filters.buyerName.toLowerCase())
-        : true;
-
-      return (
-        matchesStatus &&
-        matchesDateFrom &&
-        matchesDateTo &&
-        matchesOrderId &&
-        matchesBuyerName
-      );
-    });
-
-    setFilteredOrders(filtered);
-  };
-
-  // Fetch orders
   const fetchOrders = async () => {
     try {
       const response = await getOrdersApi();
       setUserOrders(response);
-      setFilteredOrders(response); // initialize filtered list
+      setFilteredOrders(response); 
       console.log(response);
     } catch (error) {
       console.error("Error fetching orders", error);
@@ -197,6 +66,46 @@ const OrderManagement = ({ order }) => {
     }
   };
 
+  // Filter orders
+  useEffect(() => {
+    const filtered = userOrders.filter((order) => {
+      const orderDate = order.created_at ? new Date(order.created_at) : null;
+
+      const matchesStatus = !filters.orderStatus
+        ? true
+        : order.status?.toLowerCase() === filters.orderStatus.toLowerCase();
+
+      const matchesDateFrom = !filters.regDateFrom
+        ? true
+        : orderDate && orderDate >= new Date(filters.regDateFrom);
+
+      const matchesDateTo = !filters.regDateTo
+        ? true
+        : orderDate && orderDate <= new Date(filters.regDateTo);
+
+      const matchesOrderId = !filters.orderId
+        ? true
+        : order.id.toString().includes(filters.orderId);
+
+      const matchesBuyerName = !filters.buyerName
+        ? true
+        : order.buyerName
+            ?.toLowerCase()
+            .includes(filters.buyerName.toLowerCase());
+
+      return (
+        matchesStatus &&
+        matchesDateFrom &&
+        matchesDateTo &&
+        matchesOrderId &&
+        matchesBuyerName
+      );
+    });
+
+    setFilteredOrders(filtered);
+    setCurrentPage(1); // Reset to first page when filter changes
+  }, [filters, userOrders]);
+
   // Reset handler
   const handleReset = () => {
     setFilters({
@@ -207,6 +116,7 @@ const OrderManagement = ({ order }) => {
       orderStatus: "",
     });
     setFilteredOrders(userOrders);
+    setCurrentPage(1);
   };
 
   const toggleOrder = (orderId) => {
@@ -224,7 +134,7 @@ const OrderManagement = ({ order }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Download report handler (uses your backend export endpoint)
+  // Download report handler
   const handleDownloadReport = async (format) => {
     try {
       const tableData = filteredOrders.map((order) => ({
@@ -260,22 +170,27 @@ const OrderManagement = ({ order }) => {
     }
   };
 
+  // Pagination calculations
+  const indexOfLastOrder = currentPage * ordersPerPage;
+  const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
+  const currentOrders = filteredOrders.slice(indexOfFirstOrder, indexOfLastOrder);
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
+    <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">
           Order Management
         </h2>
 
-        {/* Download dropdown (placed without removing anything else) */}
+        {/* Download dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDownloadOptions(!showDownloadOptions)}
             className="bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base flex items-center gap-2"
           >
             Download Report
-            {/* <FiDownload className="text-white text-lg" /> */}
           </button>
 
           {showDownloadOptions && (
@@ -297,20 +212,24 @@ const OrderManagement = ({ order }) => {
         </div>
       </div>
 
+      {/* Filters */}
       <SearchFilter
         filters={filters}
         setFilters={setFilters}
-        onSearch={handleSearch}
+        onSearch={() => {}}
         onReset={handleReset}
         showStatus={false}
         showYear={false}
         showLocation={false}
+        showBuyerName={false}
       />
+
+      {/* Orders list */}
       <div className="space-y-4 mt-4">
-        {filteredOrders.length === 0 ? (
+        {currentOrders.length === 0 ? (
           <p className="text-gray-500">No orders found.</p>
         ) : (
-          filteredOrders.map((order) => (
+          currentOrders.map((order) => (
             <div key={order.id} className="border-b border-gray-200">
               <div
                 className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 hover:bg-gray-50 cursor-pointer"
@@ -386,6 +305,7 @@ const OrderManagement = ({ order }) => {
               {/* Expanded Details */}
               {expandedOrder === order.id && (
                 <div className="p-4 bg-gray-50">
+                  {/* Order details table */}
                   <div className="flex flex-col md:flex-row font-semibold justify-between md:justify-evenly gap-2 md:gap-0 mb-4">
                     <p>
                       Amount Total : <span>₹ {order.total_price}</span>
@@ -418,7 +338,7 @@ const OrderManagement = ({ order }) => {
                             <td className="px-2 py-2">
                               {item.product_image && (
                                 <img
-                                  src={`${serverurl}${item.product_image}`}
+                                  src={`${baseUrl}${item.product_image}`}
                                   alt={item.product_name}
                                   className="w-12 h-12 md:w-16 md:h-16 object-cover rounded"
                                 />
@@ -487,152 +407,46 @@ const OrderManagement = ({ order }) => {
         )}
       </div>
 
-      {/* dummy */}
-      {/* <div className="space-y-4 py-2">
-        {orders.map((order) => (
-          <div key={order.id} className="border-b border-gray-200 ">
-            <div
-              className="flex justify-between items-center bg-white p-4 hover:bg-gray-50 cursor-pointer"
-              onClick={() => toggleOrder(order.id)}
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex justify-center mt-6 gap-2">
+          <button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === page ? "bg-[#5737B4] text-white" : ""
+              }`}
             >
-              <div className="flex gap-26 items-center ">
-                <div className="font-medium">Order Number: {order.id}</div>
-                <div className="font-medium ">
-                  Order Placed At:{" "}
-                  <span className="text-gray-500">
-                    Date: {order.date}, Time: {order.time}
-                  </span>
-                </div>
-                <div className="mt-1">
-                  <span
-                    className={`inline-block w-40 px-4 py-2 text-sm rounded text-left
-      ${
-        order.status.includes("Initiated")
-          ? "bg-red-100 text-red-800"
-          : order.status.includes("Returned")
-          ? "bg-green-100 text-green-800"
-          : order.status.includes("Approved")
-          ? "bg-blue-100 text-blue-800"
-          : order.status.includes("Expired")
-          ? "bg-orange-100 text-orange-800"
-          : "bg-gray-100 text-black"
-      }`}
-                  >
-                    <span className="mr-1">•</span>
-                    {order.status}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="mr-4 text-right text-[#5737B4] font-semibold">
-                  <div className="font-medium" />
-                  Update Status
-                </div>
-                {expandedOrder === order.id ? (
-                  <BsChevronUp className="text-gray-500" />
-                ) : (
-                  <BsChevronDown className="text-gray-500" />
-                )}
-              </div>
-            </div>
-            {expandedOrder === order.id && (
-              <div className="p-4 bg-gray-50">
-                <div className="flex  font-semibold justify-between ">
-                  <p className="fl">
-                    Amount Total : <span>₹ 410000</span>{" "}
-                  </p>
-                  <div className="ml-5">
-                    <p className="pr-113 flex gap-3">
-                      PaymentMethod :{" "}
-                      <span className="flex gap-3">
-                        <PiCreditCardBold className="w-5 h-5 mt-1" />
-                      </span>
-                      {order.refundMethod}{" "}
-                    </p>
-                  </div>
-                </div>
-                <div className="mb-4">
-                  <table className="min-w-full  divide-gray-200 text-sm align-items-lg-end">
-                    <thead className="bg-black-100 text-left">
-                      <tr>
-                        <th className="px-4 py-2">Product</th>
-                        <th className="px-4 py-2"></th>
-                        <th className="px-4 py-2">Qty</th>
-                        <th className="px-4 py-2">Price</th>
-                        <th className="px-4 py-2">Total</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-gray-200">
-                      {order.products.map((product, index) => (
-                        <tr key={index}>
-                          <td className="px-4 py-2">
-                            {product.img && (
-                              <img
-                                src={product.img}
-                                alt={product.name}
-                                className="w-16 h-16 object-cover rounded"
-                              />
-                            )}
-                          </td>
-                          <td className="px-2 py-8 font-bold text-[#5737B4]">
-                            {product.name}
-                            <span className="block font-semibold text-gray-600">
-                              {product.details}
-                            </span>
-                            <span className="block font-semibold  text-gray-600">
-                              Any other important details
-                            </span>
-                          </td>
-                          <td className="px-4 py-2">{product.quantity}</td>
-                          <td className="px-4 py-2">{product.price}</td>
-                          <td className="px-4 py-2">{product.totalPrice}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+              {page}
+            </button>
+          ))}
 
-                <div className=" items-right gap-4">
-                  <div className="flex gap-8">
-                    <h3 className="font-medium mb-1 ">Refund Info</h3>
-                    <span
-                      className={`px-2 py-1 text-sm ${
-                        order.refundStatus.includes("Waiting")
-                          ? "bg-blue-100 text-blue-500"
-                          : order.refundStatus.includes("Processed")
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-blue-100 text-blue-800"
-                      }`}
-                    >
-                      {order.refundStatus}
-                    </span>
-                    <div className="ml-5">
-                      <p className="pr-90 flex gap-3">
-                        Refund Method :{" "}
-                        <span className="flex gap-3">
-                          <PiCreditCardBold className="w-5 h-5 mt-1" />
-                        </span>
-                        {order.refundMethod}{" "}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex justify-end items-end">
-                    <div className="mr-4 text-right text-[#5737B4] font-semibold">
-                      Update Status
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
-      </div> */}
+          <button
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+            }
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
-      <div className="mt-6">
+      {/* <div className="mt-6">
         <button className="border border-[#5737B4] text-[#5737B4] px-4 py-2 rounded hover:bg-[#5737B4] hover:text-white">
           Back
         </button>
-      </div>
+      </div> */}
     </div>
   );
 };

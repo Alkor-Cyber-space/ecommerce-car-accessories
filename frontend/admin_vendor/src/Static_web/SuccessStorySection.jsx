@@ -12,9 +12,12 @@ const SuccessStorySection = () => {
         Our sellers are achieving great milestones. Start selling now and create your own
       </p>
 
-      <button className="px-6 py-3 bg-sky-500 text-white font-medium rounded-md shadow-md hover:bg-sky-600 transition">
-       <Link to="/register"> Start Selling Now </Link>
-      </button>
+      <Link
+        to="/register"
+        className="px-6 py-3 bg-sky-500 text-white font-medium rounded-md shadow-md hover:bg-sky-600 transition inline-block text-center"
+      >
+        Start Selling Now
+      </Link>
     </div>
   );
 };

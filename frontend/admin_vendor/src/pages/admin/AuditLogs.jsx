@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [sortBy, setSortBy] = useState("date");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortOrder, setSortOrder] = useState("desc"); // default newest first
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
@@ -21,28 +21,39 @@ export default function AuditLogs() {
     const fetchLogs = async () => {
       try {
         const res = await getAuditLogsApi();
-        setLogs(Array.isArray(res.data) ? res.data : []);
+        // your API returns { data: [...] }
+        const data = Array.isArray(res.data) ? res.data : [];
+
+        // Sort by timestamp newest first by default
+        const sortedData = data.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+
+        setLogs(sortedData);
       } catch (error) {
         console.error("Failed to load audit logs:", error);
+        setLogs([]);
       } finally {
         setLoading(false);
       }
     };
+
     fetchLogs();
   }, []);
 
-  // Filter + sort logs
+  // Filter + sort logs (derived)
   const filteredLogs = logs
-    .filter((log) =>
-      [
-        String(log.vendor),
-        log.action,
-        log.description,
-        log.timestamp,
-      ]
-        .filter(Boolean)
-        .some((field) => field.toLowerCase().includes(search.toLowerCase()))
-    )
+    .filter((log) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      // consider vendor (id), action, description, timestamp
+      return (
+        String(log.vendor).toLowerCase().includes(q) ||
+        String(log.action || "").toLowerCase().includes(q) ||
+        String(log.description || "").toLowerCase().includes(q) ||
+        String(log.timestamp || "").toLowerCase().includes(q)
+      );
+    })
     .sort((a, b) => {
       const isAsc = sortOrder === "asc";
       if (sortBy === "date") {
@@ -51,8 +62,8 @@ export default function AuditLogs() {
           : new Date(b.timestamp) - new Date(a.timestamp);
       } else if (sortBy === "action") {
         return isAsc
-          ? a.description.localeCompare(b.description)
-          : b.description.localeCompare(a.description);
+          ? String(a.description || "").localeCompare(String(b.description || ""))
+          : String(b.description || "").localeCompare(String(a.description || ""));
       } else {
         return 0;
       }
@@ -60,10 +71,15 @@ export default function AuditLogs() {
 
   // Pagination calculations
   const totalItems = filteredLogs.length;
-  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
   const currentItems = filteredLogs.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    // reset page if filtered results become smaller than current page
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [totalPages, currentPage]);
 
   const handlePrev = () => currentPage > 1 && setCurrentPage(currentPage - 1);
   const handleNext = () =>
@@ -75,7 +91,7 @@ export default function AuditLogs() {
     setSortBy(key);
   };
 
-  // ✅ Handle outside click to close dropdown
+  // Handle outside click to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -86,7 +102,7 @@ export default function AuditLogs() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // ✅ Download report (PDF / Excel)
+  // Download report (PDF / Excel)
   const handleDownloadReport = async (format) => {
     try {
       const tableData = filteredLogs.map((log, index) => ({
@@ -119,7 +135,7 @@ export default function AuditLogs() {
   };
 
   const toggleDownloadOptions = () =>
-    setShowDownloadOptions(!showDownloadOptions);
+    setShowDownloadOptions((s) => !s);
 
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
@@ -127,7 +143,7 @@ export default function AuditLogs() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Audit Logs</h1>
 
-        {/* ✅ Download dropdown */}
+        {/* Download dropdown */}
         <div className="relative download-dropdown" ref={dropdownRef}>
           <button
             onClick={toggleDownloadOptions}
@@ -159,13 +175,19 @@ export default function AuditLogs() {
       <div className="flex gap-4 text-left px-2 items-center">
         <input
           className="bg-white px-4 py-2 rounded w-1/2"
-          placeholder="Search by user, action, or IP..."
+          placeholder="Search by vendor, action, or timestamp..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset to first page on search
+          }}
         />
         <button
-          onClick={() => setSearch("")}
-          className="border border-[#5737B4] text-[#5737B4] hover:bg-[#5737B4] hover:text-white active:bg-[#5737B4] active:text-white px-4 py-2 rounded transition duration-300"
+          onClick={() => {
+            setSearch("");
+            setCurrentPage(1);
+          }}
+          className="border border-[#5737B4] text-[#5737B4] hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded transition duration-300"
         >
           Clear
         </button>
@@ -179,7 +201,7 @@ export default function AuditLogs() {
           <table className="min-w-full bg-white rounded-md text-sm shadow">
             <thead>
               <tr>
-                <th>SI.No</th>
+                <th className="py-3 px-2 text-center">SI.No</th>
                 <th
                   className="py-4 text-left px-2 cursor-pointer"
                   onClick={() => handleSort("date")}
@@ -191,8 +213,7 @@ export default function AuditLogs() {
                   className="py-4 text-left px-2 cursor-pointer"
                   onClick={() => handleSort("action")}
                 >
-                  Description{" "}
-                  {sortBy === "action" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                  Description {sortBy === "action" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
                 </th>
                 <th className="py-4 text-left px-2">Action</th>
               </tr>
@@ -200,11 +221,9 @@ export default function AuditLogs() {
             <tbody>
               {currentItems.length > 0 ? (
                 currentItems.map((log, idx) => (
-                  <tr key={idx} className="hover:bg-gray-50">
-                    <td className="text-center">{startIndex + idx + 1}</td>
-                    <td className="py-4 px-2">
-                      {new Date(log.timestamp).toLocaleString()}
-                    </td>
+                  <tr key={log.id ?? idx} className="hover:bg-gray-50">
+                    <td className="text-center py-3 px-2">{startIndex + idx + 1}</td>
+                    <td className="py-4 px-2">{new Date(log.timestamp).toLocaleString()}</td>
                     <td className="py-4 px-2">{log.vendor}</td>
                     <td className="py-4 px-2">{log.description}</td>
                     <td className="py-4 px-2">{log.action}</td>
@@ -225,7 +244,7 @@ export default function AuditLogs() {
       {/* Pagination */}
       <div className="flex justify-between items-center mt-4 text-sm">
         <span className="text-[#505050] font-medium">
-          Showing {endIndex} of {totalItems}
+          Showing {startIndex + 1} - {endIndex} of {totalItems}
         </span>
         <div className="flex gap-2">
           <button

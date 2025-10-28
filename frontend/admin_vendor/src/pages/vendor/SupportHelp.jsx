@@ -70,7 +70,7 @@ const SupportHelp = () => {
   ];
 
   return (
-    <div className="p-4 sm:p-6 bg-[#f4f4f7] min-h-screen rounded-2xl text-[#1E1E2F]">
+    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen rounded-2xl text-[#1E1E2F]">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-xl font-semibold">Support / Help</h1>

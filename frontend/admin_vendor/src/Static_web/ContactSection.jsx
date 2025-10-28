@@ -1,11 +1,9 @@
 import React from "react";
-import interior from "../assets/interior.png"; // replace with your image path
-import bmblack from "../assets/bmblack.jpeg";
+import interior from "../assets/interior.png"; 
 
 const ContactSection = () => {
   return (
     <div className="w-full">
-      {/* Get in Touch Section */}
       <section className="container mx-auto px-4 sm:px-6 py-10 md:py-16 grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
         {/* Left Form */}
         <div>
@@ -15,7 +13,6 @@ const ContactSection = () => {
           </p>
 
           <form className="space-y-4">
-            {/* Name Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <input
                 type="text"
@@ -29,28 +26,24 @@ const ContactSection = () => {
               />
             </div>
 
-            {/* Mobile */}
             <input
               type="text"
               placeholder="Mobile Number"
               className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
 
-            {/* Email */}
             <input
               type="email"
               placeholder="Email Address"
               className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
 
-            {/* Message */}
             <textarea
               rows="4"
               placeholder="Message"
               className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
             ></textarea>
 
-            {/* Submit Button */}
             <button
               type="submit"
               className="w-full sm:w-auto bg-blue-500 text-white px-10 sm:px-20 py-2 rounded-md hover:bg-blue-600 transition"
@@ -63,7 +56,7 @@ const ContactSection = () => {
         {/* Right Image */}
         <div className="flex justify-center">
           <img
-            src={interior} // replace with your image path
+            src={interior}
             alt="Car Interior"
             className="rounded-lg shadow-lg w-full max-w-sm sm:max-w-md md:max-w-lg object-cover"
           />

@@ -65,33 +65,7 @@ export default function VendorDataTable() {
     setFilteredVendors(vendors);
   };
 
-  const handleSearch = () => {
-    const filtered = vendors.filter(vendor => {
-      const matchesYear = filters.year
-        ? new Date(vendor.date_joined).getFullYear().toString() === filters.year
-        : true;
 
-      const matchesLocation = filters.location
-        ? vendor.location?.toLowerCase().includes(filters.location.toLowerCase())
-        : true;
-
-      const matchesStatus = filters.status
-        ? vendor.status === filters.status
-        : true;
-
-      const matchesRegDateFrom = filters.regDateFrom
-        ? new Date(vendor.date_joined) >= new Date(filters.regDateFrom)
-        : true;
-
-      const matchesRegDateTo = filters.regDateTo
-        ? new Date(vendor.date_joined) <= new Date(filters.regDateTo)
-        : true;
-
-      return matchesYear && matchesLocation && matchesStatus && matchesRegDateFrom && matchesRegDateTo;
-    });
-
-    setFilteredVendors(filtered);
-  };
 
   useEffect(() => {
     const fetchVendorList = async () => {
@@ -105,15 +79,61 @@ export default function VendorDataTable() {
     };
     fetchVendorList();
   }, []);
+  // Add this useEffect after fetching vendors
+  useEffect(() => {
+    const filtered = vendors.filter((vendor) => {
+      const vendorDate = vendor.date_joined ? new Date(vendor.date_joined) : null;
 
+      const matchesYear =
+        !filters.year || (vendorDate && vendorDate.getFullYear().toString() === filters.year);
+
+      const matchesLocation =
+        !filters.location ||
+        (vendor.location
+          ? vendor.location.toLowerCase().includes(filters.location.toLowerCase())
+          : true);
+
+      const matchesStatus =
+        !filters.status ||
+        (filters.status.toLowerCase() === "approved"
+          ? vendor.status.toLowerCase() === "approved"
+          : filters.status.toLowerCase() === "rejected"
+            ? vendor.status.toLowerCase() === "rejected"
+            : filters.status.toLowerCase() === "pending"
+              ? vendor.status.toLowerCase() === "pending"
+              : true);
+
+      const matchesRegDateFrom =
+        !filters.regDateFrom || (vendorDate && vendorDate >= new Date(filters.regDateFrom));
+
+      const matchesRegDateTo =
+        !filters.regDateTo || (vendorDate && vendorDate <= new Date(filters.regDateTo));
+
+      return matchesYear && matchesLocation && matchesStatus && matchesRegDateFrom && matchesRegDateTo;
+    });
+
+    setFilteredVendors(filtered);
+  }, [filters, vendors]);
+
+  // const getStatusColor = (status) => {
+  //   switch (status) {
+  //     case 'Approved': return 'bg-green-100 text-green-600';
+  //     case 'Rejected': return 'bg-red-100 text-red-600';
+  //     case 'Pending': return 'bg-yellow-100 text-yellow-600';
+  //     default: return 'bg-gray-100 text-gray-600';
+  //   }
+  // };
   const getStatusColor = (status) => {
-    switch (status) {
-      case 'Approved': return 'bg-green-100 text-green-600';
-      case 'Rejected': return 'bg-red-100 text-red-600';
-      case 'Pending': return 'bg-yellow-100 text-yellow-600';
-      default: return 'bg-gray-100 text-gray-600';
+    switch (status.toLowerCase()) {
+      case "active":
+        return "bg-green-100 text-green-700";
+      case "inactive":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
     }
   };
+
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -146,7 +166,7 @@ export default function VendorDataTable() {
 
   return (
     <div className="bg-[#ECECF0] px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-10 rounded-2xl w-full space-y-4 sm:space-y-6">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-[#232832] text-lg sm:text-xl font-bold">Vendors Overview</h1>
@@ -206,7 +226,7 @@ export default function VendorDataTable() {
       <SearchFilter
         filters={filters}
         setFilters={setFilters}
-        onSearch={handleSearch}
+        onSearch={() => { }}
         onReset={handleReset}
         showYear={true}
         showLocation={true}
@@ -242,17 +262,22 @@ export default function VendorDataTable() {
                     to={`/admin/vendor-details/${vendor.id}`}
                     onClick={() => localStorage.setItem("selected_vendor", JSON.stringify(vendor))}
                   >
-                    {vendor.username} 
+                    {vendor.username}
                   </Link>
                 </td>
                 <td className="py-3 px-4">{vendor.email}</td>
                 <td className="py-3 px-4">{vendor.contact_number || 'N/A'}</td>
                 <td className="py-3 px-4">{vendor.location || 'N/A'}</td>
                 <td className="py-3 px-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(vendor.status)}`}>
-                    {vendor.status || 'Pending'}
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                      vendor.is_active ? "Active" : "Inactive"
+                    )}`}
+                  >
+                    {vendor.is_active ? "Active" : "Inactive"}
                   </span>
                 </td>
+
                 <td className="py-3 px-4">{formatDate(vendor.date_joined)}</td>
                 <td className="py-3 px-4 font-medium">{vendor.products || 0}</td>
                 <td className="py-3 px-4 font-medium">{vendor.orders || 0}</td>

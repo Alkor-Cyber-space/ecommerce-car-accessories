@@ -293,15 +293,12 @@ const isFormValid = (form) => {
   }
 };
 
-// ✅ Helper for email validation (must end with @gmail.com)
-// ✅ Helper for email validation (must end with @gmail.com)
 const validateEmail = (email) => {
   if (typeof email !== "string") return false;
   const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
   return gmailRegex.test(email.trim());
 };
 
-// ✅ Helper for phone number validation (must be exactly 10 digits)
 const validatePhone = (phone) => {
   if (typeof phone !== "string" && typeof phone !== "number") return false;
   const phoneStr = String(phone).trim();
@@ -317,7 +314,6 @@ const validatePhone = (phone) => {
 
     setEditForm(updatedForm);
 
-    // Real-time validation
     let newErrors = { ...errors };
 
     if (name === "postal_code") {
@@ -342,7 +338,6 @@ const validatePhone = (phone) => {
   const handleSubmitEdit = async () => {
     try {
       if (!isFormValid(editForm)) {
-        // Show appropriate error messages
         if (
           editSection === "business" &&
           editForm.company_number &&
@@ -395,7 +390,7 @@ const validatePhone = (phone) => {
       if (!validateCountry(editForm.country)) {
         toast.error("Please enter a valid country name.");
       }
-      return; //  stop the function if invalid
+      return; 
     }
 
     try {
@@ -463,11 +458,10 @@ const validatePhone = (phone) => {
   };
 
   return (
-    <div className="bg-[#ECECF0] px-8 py-10 rounded-2xl min-h-screen">
+    <div className="bg-gray-100 px-8 py-10 rounded-2xl min-h-screen">
       <h1 className="text-2xl text-[#5737B4] font-semibold">Profile & KYC</h1>
       <p className="my-1">Manage your business details and documents.</p>
 
-      {/* Business & Location Details */}
       {/* Contact & Address Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
         {/* Business Details */}

@@ -20,7 +20,7 @@ const ProductList = () => {
     const fetchProducts = async () => {
       try {
         const data = await getProductsApi();
-        const productsArray = data.products || []; 
+        const productsArray = data.products || [];
         const sortedData = productsArray.sort((a, b) => b.id - a.id);
         setProducts(sortedData);
       } catch (error) {
@@ -167,17 +167,16 @@ const ProductList = () => {
                   <td className="p-3">{product.category?.name}</td>
                   <td className="p-3">₹{product.price}</td>
                   <td className="p-3">{product.stock}</td>
-       <td className="p-3">
-  <span
-    className={`px-2 py-1 rounded text-sm font-semibold ${
-      product.is_available
-        ? "bg-[#05C16833] text-green-800"   // ✅ Live
-        : "bg-red-100 text-[#FF5A65]"       // ❌ Inactive
-    }`}
-  >
-    {product.is_available ? "Live" : "Inactive"}
-  </span>
-</td>
+                  <td className="p-3">
+                    <span
+                      className={`px-2 py-1 rounded text-sm font-semibold ${product.is_available
+                          ? "bg-[#05C16833] text-green-800"   // ✅ Live
+                          : "bg-red-100 text-[#FF5A65]"       // ❌ Inactive
+                        }`}
+                    >
+                      {product.is_available ? "Live" : "Inactive"}
+                    </span>
+                  </td>
 
 
                   <td className="p-3">
@@ -203,7 +202,7 @@ const ProductList = () => {
 
       {/* Pagination + Page Size Selector */}
       <div className="mt-6 flex flex-wrap justify-end items-center gap-4 text-sm">
-     
+
 
         {/* Prev / Next */}
         <div className="flex gap-2">

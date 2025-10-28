@@ -3,7 +3,6 @@ import Navbar from "./Navbar";
 import Footer from "./Footer";
 
 const Blog = () => {
-  // Sample blog repeated 5 times
   const blogs = Array(5).fill({
     title: "TOP 5 MUST-HAVE CAR ACCESSORIES IN 2025",
     content: `Welcome to Caroora, your trusted platform for everything automotive. 
@@ -29,17 +28,15 @@ const Blog = () => {
                 July 20, 2025
               </div>
             ) : (
-              <div></div> // keep grid aligned
+              <div></div> 
             )}
 
-            {/* Title + Description */}
             <div className="md:col-span-3">
               <h2 className="text-xl font-bold text-gray-900 leading-snug mb-3">
                 {blog.title}
               </h2>
               <p className="text-gray-700 leading-relaxed mb-4">{blog.content}</p>
 
-                {/* Centered Read More */}
               <div className="flex justify-center">
               <a
                 href="#"

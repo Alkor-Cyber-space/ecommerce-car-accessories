@@ -1,9 +1,9 @@
 import React from "react";
 
-import car from "../assets/car.png"; // Hero image
-import star from "../assets/star.png"; // Star image
-import circle from "../assets/circle.png"; // Circle image
-import lock from "../assets/lock.png"; // Lock image
+import car from "../assets/car.png"; 
+import star from "../assets/star.png";
+import circle from "../assets/circle.png"; 
+import lock from "../assets/lock.png"; 
 import Navbar from "./Navbar";
 import MobileExperience from "./MobileExperience";
 import Partner from "./Partner";
@@ -18,11 +18,9 @@ const Home = () => {
       <div className="absolute w-full top-0">
       <Navbar bgColor="bg-gradient-to-r from-[#030130] to-[#023669]" />
        </div>
-      {/* Hero Section */}
 <section className="bg-gradient-to-r from-[#030130] to-[#023669] text-white relative overflow-hidden">
   <div className="container mx-auto px-6 pt-32 pb-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           
-          {/* Text Content */}
           <div>
             <h1 className="mt-10 md:mt-20 text-3xl md:text-5xl font-extrabold leading-tight">
               EVERYTHING YOUR VEHICLE NEEDS - IN ONE PLACE
@@ -41,8 +39,6 @@ const Home = () => {
             </div> */}
             
           </div>
-
-          {/* Car Image */}
           <div className=" z-10 flex justify-center">
             <img
             src={car}

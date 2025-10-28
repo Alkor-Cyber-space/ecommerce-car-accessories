@@ -54,14 +54,12 @@ const Story = () => {
       <div className="p-8 space-y-16 font-sans bg-gray-50">
         {caseStudies.map((item, index) => (
           <div key={index} className="space-y-6">
-            {/* Company Name always on top */}
             <h2 className="text-2xl font-bold text-indigo-700 text-left">
               {item.company}
             </h2>
 
             {/* Grid Content (Image + Text) */}
             <div className="grid md:grid-cols-2 gap-8 items-start">
-              {/* Text Section */}
               <div
                 className={`space-y-6 ${
                   index % 2 !== 0 ? "md:order-2" : "md:order-1"

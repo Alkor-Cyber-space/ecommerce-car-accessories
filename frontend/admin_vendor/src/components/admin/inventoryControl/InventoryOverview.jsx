@@ -27,23 +27,7 @@ const defaultStats = [
     { label: "Out of Stock", key: "out_of_stock", icon: <FaWarehouse />, color: "bg-red-100 text-red-600" },
 ];
 
-const fallbackDistribution = [
-    { name: "Engine", value: 120 },
-    { name: "Brakes", value: 80 },
-    { name: "Electrical", value: 50 },
-    { name: "Body Parts", value: 70 },
-];
-
-const fallbackMovement = [
-    { date: "May 5 2021", added: 30, sold: 20, category: "Engine", vendor: "XYZ Motors" },
-    { date: "Jun 5 2022", added: 70, sold: 35, category: "Brakes", vendor: "Autoplus" },
-    { date: "Jun 10 2023", added: 20, sold: 15, category: "Electrical", vendor: "XYZ Motors" },
-    { date: "Jun 15 2023", added: 50, sold: 35, category: "Engine", vendor: "Autoplus" },
-    { date: "Jun 20 2024", added: 80, sold: 40, category: "Brakes", vendor: "XYZ Motors" },
-    { date: "Aug 22 2025", added: 80, sold: 40, category: "Body Parts", vendor: "Autoplus" },
-];
-
-const COLORS = ["#6366F1", "#E5E7EB"];
+const COLORS = ["#1E3A8A", "#2563EB", "#38BDF8", "#0EA5E9"]; // blue shades
 
 export default function InventoryOverview() {
     const [timeRange, setTimeRange] = useState("All");
@@ -52,8 +36,8 @@ export default function InventoryOverview() {
     const [vendor, setVendor] = useState("All");
 
     const [stats, setStats] = useState(null);
-    const [distribution, setDistribution] = useState(fallbackDistribution);
-    const [movement, setMovement] = useState(fallbackMovement);
+    const [distribution, setDistribution] = useState([]);
+    const [movement, setMovement] = useState([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -61,32 +45,37 @@ export default function InventoryOverview() {
             try {
                 setLoading(true);
                 const response = await InventorystatsAPi();
-                console.log(response);
-
-                // Example expected structure:
-                // { total_products: 120, in_stock: 100, low_stock: 10, out_of_stock: 10, stock_distribution: [], stock_movement: [] }
 
                 if (response) {
                     setStats(response);
+
                     if (response.stock_by_category) {
-                        const formattedDistribution = Object.entries(response.stock_by_category).map(([key, value]) => ({
-                            name: key,
-                            value: value,
-                        }));
+                        const formattedDistribution = Object.entries(response.stock_by_category).map(
+                            ([key, value]) => ({
+                                name: key,
+                                value: value,
+                            })
+                        );
                         setDistribution(formattedDistribution);
                     } else {
-                        setDistribution(fallbackDistribution);
+                        setDistribution([]);
                     }
 
-                    setMovement(response.stock_movement || fallbackMovement);
+                    if (response.stock_movement && Array.isArray(response.stock_movement)) {
+                        setMovement(response.stock_movement);
+                    } else {
+                        setMovement([]);
+                    }
                 } else {
                     setStats({});
+                    setDistribution([]);
+                    setMovement([]);
                 }
             } catch (error) {
                 console.error("Error fetching inventory stats:", error);
                 setStats({});
-                setDistribution(fallbackDistribution);
-                setMovement(fallbackMovement);
+                setDistribution([]);
+                setMovement([]);
             } finally {
                 setLoading(false);
             }
@@ -138,7 +127,11 @@ export default function InventoryOverview() {
                         {Array.from({ length: 12 }, (_, i) => {
                             const monthNum = String(i + 1).padStart(2, "0");
                             const monthName = new Date(0, i).toLocaleString("default", { month: "long" });
-                            return <option key={monthNum} value={monthNum}>{monthName}</option>;
+                            return (
+                                <option key={monthNum} value={monthNum}>
+                                    {monthName}
+                                </option>
+                            );
                         })}
                     </select>
                 </div>
@@ -214,6 +207,7 @@ export default function InventoryOverview() {
 
             {/* Charts */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Pie Chart */}
                 <div className="bg-white p-6 rounded-2xl shadow">
                     <h2 className="text-lg font-semibold mb-4 text-gray-700">Stock by Category</h2>
                     {Array.isArray(filteredStockDistribution) && filteredStockDistribution.length > 0 ? (
@@ -237,8 +231,9 @@ export default function InventoryOverview() {
                         <p className="text-gray-500 text-center">No category data available</p>
                     )}
                 </div>
-                {/* Stock Movement */}
-                <div className="bg-white p-6 rounded-2xl shadow">
+
+                {/* Bar Chart */}
+                  <div className="bg-white p-6 rounded-2xl shadow">
                     <h2 className="text-lg font-semibold mb-4 text-gray-700">Stock Movement Over Time</h2>
                     <ResponsiveContainer width="100%" height={300}>
                         <BarChart

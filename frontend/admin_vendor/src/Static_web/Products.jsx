@@ -45,9 +45,12 @@ const Products = () => {
           vendors.
         </p>
 
-        <button className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-12 py-3 rounded-md mb-12 transition">
-          <Link to="/register"> Start Selling </Link>
-        </button>
+        <Link
+          to="/register"
+          className="bg-sky-500 hover:bg-sky-600 text-white font-semibold px-12 py-3 rounded-md mb-12 transition inline-block text-center"
+        >
+          Start Selling
+        </Link>
 
         {/* Curve layout */}
         <div className="flex justify-center gap-4">

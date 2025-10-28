@@ -27,7 +27,6 @@ const Navbar = ({ bgColor = "bg-transparent" }) => {
         <Link to="/contactsection">Contact Us</Link>
       </nav>
 
-      {/* Download App Button (Desktop only) */}
       <div className="hidden md:block">
         <button className="bg-sky-500 hover:bg-sky-600 px-5 py-3 rounded-lg font-medium text-white">
           Download App

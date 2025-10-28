@@ -3,7 +3,7 @@ import { BsDownload } from "react-icons/bs";
 import { HiOutlineDotsVertical } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import SearchFilter from "../../../pages/admin/SearchFilter";
-import { getUserList, exportReportApi } from "../../../services/allAPI"; // <-- ensure this API is imported
+import { getUserList, exportReportApi } from "../../../services/allAPI";
 
 export default function UserDataTable() {
   const [users, setUsers] = useState([]);
@@ -16,7 +16,6 @@ export default function UserDataTable() {
     regDateTo: "",
   });
 
-  const [activeDropdown, setActiveDropdown] = useState(null);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 
   // Fetch user list
@@ -33,6 +32,36 @@ export default function UserDataTable() {
     fetchUserList();
   }, []);
 
+  // Filter users whenever `filters` or `users` change
+  useEffect(() => {
+    const filtered = users.filter((user) => {
+      const userDate = user.date_joined ? new Date(user.date_joined) : null;
+
+      const matchesYear =
+        !filters.year || (userDate && userDate.getFullYear().toString() === filters.year);
+
+      const matchesLocation =
+        !filters.location ||
+        (user.location ? user.location.toLowerCase().includes(filters.location.toLowerCase()) : true);
+
+      const matchesStatus =
+        !filters.status ||
+        (filters.status.toLowerCase() === "active"
+          ? user.is_active === true
+          : user.is_active === false);
+
+      const matchesRegDateFrom =
+        !filters.regDateFrom || (userDate && userDate >= new Date(filters.regDateFrom));
+
+      const matchesRegDateTo =
+        !filters.regDateTo || (userDate && userDate <= new Date(filters.regDateTo));
+
+      return matchesYear && matchesLocation && matchesStatus && matchesRegDateFrom && matchesRegDateTo;
+    });
+
+    setFilteredUsers(filtered);
+  }, [filters, users]);
+
   const handleReset = () => {
     setFilters({
       year: "",
@@ -41,48 +70,14 @@ export default function UserDataTable() {
       regDateFrom: "",
       regDateTo: "",
     });
-    setFilteredUsers(users);
-  };
-
-  const handleSearch = () => {
-    const filtered = users.filter((user) => {
-      const matchesYear =
-        filters.year === "" ||
-        (user.date_joined &&
-          new Date(user.date_joined).getFullYear().toString() === filters.year);
-      const matchesLocation =
-        filters.location === "" ||
-        (user.location &&
-          user.location.toLowerCase() === filters.location.toLowerCase());
-      const matchesStatus =
-        filters.status === "" ||
-        (user.status &&
-          user.status.toLowerCase() === filters.status.toLowerCase());
-      const matchesRegDateFrom =
-        filters.regDateFrom === "" ||
-        (user.date_joined &&
-          new Date(user.date_joined) >= new Date(filters.regDateFrom));
-      const matchesRegDateTo =
-        filters.regDateTo === "" ||
-        (user.date_joined &&
-          new Date(user.date_joined) <= new Date(filters.regDateTo));
-
-      return (
-        matchesYear &&
-        matchesLocation &&
-        matchesStatus &&
-        matchesRegDateFrom &&
-        matchesRegDateTo
-      );
-    });
-
-    setFilteredUsers(filtered);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case "Active":
         return "bg-green-100 text-green-600";
+      case "Inactive":
+        return "bg-gray-100 text-gray-600";
       case "Suspended":
         return "bg-red-100 text-red-600";
       case "Pending Verification":
@@ -92,7 +87,6 @@ export default function UserDataTable() {
     }
   };
 
-  // ✅ Function to handle report download
   const handleDownloadReport = async (format) => {
     try {
       const tableData = filteredUsers.map((user) => ({
@@ -101,7 +95,7 @@ export default function UserDataTable() {
         email: user.email || "N/A",
         phone_number: user.phone_number || "N/A",
         location: user.location || "N/A",
-        status: user.status || "N/A",
+        status: user.is_active ? "Active" : "Inactive",
         date_joined: user.date_joined || "N/A",
         totalOrders: user.totalOrders || 0,
       }));
@@ -123,10 +117,7 @@ export default function UserDataTable() {
     }
   };
 
-  // Dropdown toggle handler
-  const toggleDownloadOptions = () => {
-    setShowDownloadOptions(!showDownloadOptions);
-  };
+  const toggleDownloadOptions = () => setShowDownloadOptions(!showDownloadOptions);
 
   useEffect(() => {
     const closeDropdown = (e) => {
@@ -149,7 +140,7 @@ export default function UserDataTable() {
             onClick={toggleDownloadOptions}
             className="flex items-center gap-2 bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base"
           >
-            Download Report 
+            Download Report
           </button>
 
           {showDownloadOptions && (
@@ -183,14 +174,14 @@ export default function UserDataTable() {
       <SearchFilter
         filters={filters}
         setFilters={setFilters}
-        onSearch={handleSearch}
+        onSearch={() => {}} 
         onReset={handleReset}
         showYear={true}
-        showLocation={true}
+        showLocation={false}
         showStatus={true}
-        showOrderStatus={false}
         showBuyerName={false}
         showOrderId={false}
+        showOrderStatus={false}
       />
 
       {/* Table */}
@@ -208,34 +199,42 @@ export default function UserDataTable() {
             </tr>
           </thead>
           <tbody>
-            {(filteredUsers.length > 0 ? filteredUsers : users).map((user, index) => (
-              <tr
-                key={`${user.id}-${index}`}
-                className="text-left hover:bg-gray-50 border-b border-gray-100"
-              >
-                <td className="py-3 px-4 font-medium text-[#5737B4]">
-                  <Link to="/admin/user-details">{user.id}</Link>
-                </td>
-                <td className="py-3 px-4">{user.username || "N/A"}</td>
-                <td className="py-3 px-4">{user.email || "N/A"}</td>
-                <td className="py-3 px-4">{user.phone_number || "N/A"}</td>
-                <td className="py-3 px-4">
-                  {user.date_joined ? user.date_joined.slice(0, 10) : "N/A"}
-                </td>
-                <td className="py-3 px-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                      user.status
-                    )}`}
-                  >
-                    {user.status || "N/A"}
-                  </span>
-                </td>
-                <td className="py-3 px-4 font-medium">
-                  ₹ {user.totalOrders || "N/A"}
+            {filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-4 text-center text-gray-500">
+                  No users found.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredUsers.map((user) => (
+                <tr
+                  key={user.id}
+                  className="text-left hover:bg-gray-50 border-b border-gray-100"
+                >
+                  <td className="py-3 px-4 font-medium text-[#5737B4]">
+                    <Link to={`/admin/user-details/${user.id}`}>{user.id}</Link>
+                  </td>
+                  <td className="py-3 px-4">{user?.username || "N/A"}</td>
+                  <td className="py-3 px-4">{user?.email || "N/A"}</td>
+                  <td className="py-3 px-4">{user?.phone_number || "N/A"}</td>
+                  <td className="py-3 px-4">
+                    {user?.date_joined
+                      ? new Date(user.date_joined).toLocaleDateString()
+                      : "N/A"}
+                  </td>
+                  <td className="py-3 px-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                        user?.is_active ? "Active" : "Inactive"
+                      )}`}
+                    >
+                      {user?.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+                  <td className="py-3 px-4 font-medium">{user?.orders || "N/A"}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

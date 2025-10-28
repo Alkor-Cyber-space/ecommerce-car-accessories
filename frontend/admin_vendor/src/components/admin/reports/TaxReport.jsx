@@ -66,7 +66,7 @@ export default function TaxReport() {
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-4">
 
       <div className="flex justify-between items-start flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Tax Report</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Tax Report</h1>
 
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col">
@@ -133,7 +133,7 @@ export default function TaxReport() {
           <tbody>
             {paginatedData.length > 0 ? (
               paginatedData.map((item, index) => (
-                <tr key={index} className="text-left border-t border-gray-100">
+                <tr key={index} className="text-left hover:bg-gray-50">
                   <td className="py-3 px-6 min-w-[120px]">
                     {new Date(item.date).toLocaleDateString("en-GB")}
                   </td>
@@ -153,7 +153,7 @@ export default function TaxReport() {
                   colSpan={9}
                   className="text-center py-6 text-gray-500 font-medium"
                 >
-                  No tax data found for the selected date range.
+                  No tax data found.
                 </td>
               </tr>
             )}

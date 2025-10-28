@@ -1,9 +1,5 @@
 import React, { useState } from "react";
 import { IoSearchOutline } from "react-icons/io5";
-
-
-// Import your images
-
 import tool1 from "../assets/tool1.png";
 import tool2 from "../assets/tool2.png";
 import tool3 from "../assets/tool3.png";
@@ -17,7 +13,6 @@ import tool10 from "../assets/tool10.png";
 import tool11 from "../assets/tool11.png";
 
 
-// Category data
 const categories = [
   { name: "Exterior Accessories", image: tool1 },
   { name: "Interior Accessories", image: tool2 },
@@ -70,9 +65,7 @@ const Categories = () => {
             key={index}
             className="flex flex-row items-center justify-center gap-3 bg-white hover:bg-gray-100 rounded-xl shadow-md p-6 cursor-pointer transition"
           >
-            {/* Category Image */}
             <img src={cat.image} alt={cat.name} className="w-16 h-16 object-contain" />
-            {/* Category Title */}
             <p className="text-lg font-semibold text-[#5737B4] text-start">{cat.name}</p>
           </div>
         ))}

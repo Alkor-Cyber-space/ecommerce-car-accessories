@@ -44,7 +44,7 @@ const About = () => {
           <h3>
             Why Caroora?
           </h3>
-          <ul className="text-lg list-disc list-inside space-y-2 text-sm sm:text-base">
+          <ul className="text-lg list-disc list-inside space-y-2  sm:text-base">
             <li>Wide network of reliable vendors</li>
             <li>Quality-checked automotive products</li>
             <li>Easy search and purchase experience</li>

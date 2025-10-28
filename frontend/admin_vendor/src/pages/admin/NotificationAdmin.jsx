@@ -16,6 +16,7 @@ const MultiSelectDropdown = ({
   setLockedField,
   fieldName,
   disabled = false,
+  setTargetGroup,
 }) => {
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -34,7 +35,18 @@ const MultiSelectDropdown = ({
 
     setSelectedOptions(newSelected);
 
-    if (newSelected.length === 0) setLockedField(null);
+    //  Auto-assign group based on which dropdown was used
+    if (newSelected.length > 0) {
+      if (label.toLowerCase() === "vendors") {
+        setTargetGroup("vendors");
+      } else if (label.toLowerCase() === "admin staff") {
+        setTargetGroup("admin staff");
+      }
+    }
+
+    if (newSelected.length === 0) {
+      setLockedField(null);
+    }
   };
 
   return (
@@ -43,11 +55,10 @@ const MultiSelectDropdown = ({
         type="button"
         onClick={toggleDropdown}
         disabled={disabled}
-        className={`w-full border rounded px-3 py-2 flex justify-between items-center ${
-          disabled
-            ? "bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed"
-            : "bg-white border-gray-300 text-gray-800"
-        }`}
+        className={`w-full border rounded px-3 py-2 flex justify-between items-center ${disabled
+          ? "bg-gray-200 border-gray-300 text-gray-400 cursor-not-allowed"
+          : "bg-white border-gray-300 text-gray-800"
+          }`}
       >
         <span>
           {selectedOptions.length > 0
@@ -149,15 +160,12 @@ const NotificationAdmin = () => {
               hour: "2-digit",
               minute: "2-digit",
             }),
-            group: n.group,
+            group: n.group, // keep original group
           };
         });
 
-        // Only add sent notifications to sentNotifications
-        setSentNotifications((prev) => [
-          ...prev,
-          ...formatted.filter((n) => n.group === 2),
-        ]);
+        // Show all notifications instead of only group === 2
+        setSentNotifications(formatted);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
       }
@@ -256,21 +264,19 @@ const NotificationAdmin = () => {
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <button
             onClick={() => setActive("received")}
-            className={`flex-1 py-3 px-6 font-semibold rounded-lg shadow transition-colors ${
-              active === "received"
-                ? "bg-[#5737B4] text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`flex-1 py-3 px-6 font-semibold rounded-lg shadow transition-colors ${active === "received"
+              ? "bg-[#5737B4] text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             Received
           </button>
           <button
             onClick={() => setActive("sending")}
-            className={`flex-1 py-3 px-6 font-semibold rounded-lg shadow transition-colors ${
-              active === "sending"
-                ? "bg-[#5737B4] text-white"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
+            className={`flex-1 py-3 px-6 font-semibold rounded-lg shadow transition-colors ${active === "sending"
+              ? "bg-[#5737B4] text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
           >
             Send
           </button>
@@ -288,11 +294,13 @@ const NotificationAdmin = () => {
               >
                 <div>
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <h4 className="font-semibold text-gray-800">
-                      {item.title}
-                    </h4>
+                    <h4 className="font-semibold text-gray-800">{item.title}</h4>
                     <span className="text-gray-500">
                       Date: {item.date}, Time: {item.time}
+                    </span>
+                    {/* Group tag */}
+                    <span className="text-xs px-2 py-1 bg-gray-200 rounded">
+                      {item.group === 1 ? "Users" : item.group === 2 ? "Vendors" : "Admin"}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{item.message}</p>
@@ -301,6 +309,7 @@ const NotificationAdmin = () => {
                   Mark as Read
                 </button>
               </div>
+
             ))
           )}
         </div>
@@ -345,28 +354,29 @@ const NotificationAdmin = () => {
               </div>
 
               {/* Multi-Select Dropdowns */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <MultiSelectDropdown
-                  label="Vendors"
-                  options={vendorOptions}
-                  selectedOptions={checkboxOption1}
-                  setSelectedOptions={setCheckboxOption1}
-                  lockedField={lockedField}
-                  setLockedField={setLockedField}
-                  fieldName="checkbox1"
-                  disabled={checkboxOption2.length > 0}
-                />
-                <MultiSelectDropdown
-                  label="Admin Staff"
-                  options={adminOptions}
-                  selectedOptions={checkboxOption2}
-                  setSelectedOptions={setCheckboxOption2}
-                  lockedField={lockedField}
-                  setLockedField={setLockedField}
-                  fieldName="checkbox2"
-                  disabled={checkboxOption1.length > 0}
-                />
-              </div>
+              <MultiSelectDropdown
+                label="Vendors"
+                options={vendorOptions}
+                selectedOptions={checkboxOption1}
+                setSelectedOptions={setCheckboxOption1}
+                lockedField={lockedField}
+                setLockedField={setLockedField}
+                fieldName="checkbox1"
+                disabled={checkboxOption2.length > 0}
+                setTargetGroup={setTargetGroup} // ✅ Add this line
+              />
+              <MultiSelectDropdown
+                label="Admin Staff"
+                options={adminOptions}
+                selectedOptions={checkboxOption2}
+                setSelectedOptions={setCheckboxOption2}
+                lockedField={lockedField}
+                setLockedField={setLockedField}
+                fieldName="checkbox2"
+                disabled={checkboxOption1.length > 0}
+                setTargetGroup={setTargetGroup} // ✅ Add this line
+              />
+
 
               {/* Title & Message */}
               <div className="space-y-3">

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { IoSearchOutline } from "react-icons/io5";
 
-// Product images
 import wheel1 from "../assets/wheel1.png";
 import wheel2 from "../assets/wheel2.png";
 import wheel3 from "../assets/wheel3.png";
@@ -18,7 +17,6 @@ import wheel13 from "../assets/wheel3.png";
 import wheel14 from "../assets/wheel4.png";
 import wheel15 from "../assets/wheel5.png";
 import wheel16 from "../assets/wheel6.png";
-import Footer from "./Footer";
 
 // Product data
 const products = [
@@ -78,7 +76,6 @@ const WheelsPart = () => {
 
   return (
     <div>
-
     <div className="px-6  max-w-7xl mx-auto">
       {/* Product Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">

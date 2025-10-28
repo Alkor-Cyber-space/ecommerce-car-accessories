@@ -63,7 +63,7 @@ export default function TransactionReport() {
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-4">
       <div className="flex justify-between items-start flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Transaction Report</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Transaction Report</h1>
 
         <div className="flex flex-wrap items-end gap-4   ">
           <div className="flex flex-col">
@@ -132,7 +132,7 @@ export default function TransactionReport() {
                   (Number(item.refund || 0) + Number(item.gateway_fee || 0));
 
                 return (
-                  <tr key={index} className="text-left">
+                  <tr key={index} className="text-left hover:bg-gray-50">
                     <td className="py-3 px-6">
                       {new Date(item.date).toLocaleDateString("en-GB")}
                     </td>
@@ -162,7 +162,7 @@ export default function TransactionReport() {
                   colSpan={9}
                   className="text-center py-6 text-gray-500 font-medium"
                 >
-                  No transactions found for the selected date range.
+                  No transactions found 
                 </td>
               </tr>
             )}

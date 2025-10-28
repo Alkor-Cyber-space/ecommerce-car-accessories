@@ -77,7 +77,6 @@ const HeroSection = () => {
 
   return (
     <div className="w-full">
-      {/* Hero Section */}
       <section className="relative h-[300px] md:h-[500px]">
         <div className="h-[300px]">
           <img
@@ -87,9 +86,6 @@ const HeroSection = () => {
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-[#66666633]/30 to-[#000000]"></div>
-      
-    
-        
         <div className="absolute inset-0 bg-opacity-60 flex flex-col justify-center items-end px-26 text-white shadow-lg ">
           <h1 className="text-3xl md:text-4xl font-bold ">
             FIND THE PERFECT PARTS FOR YOUR RIDE
@@ -98,7 +94,6 @@ const HeroSection = () => {
         </div>
       </section>
      
-      {/* Reviews Section */}
       <section className="bg-blue-50 py-10 px-6">
         <div className="text-center mb-6">
           <h2 className="text-xl md:text-2xl font-bold">
