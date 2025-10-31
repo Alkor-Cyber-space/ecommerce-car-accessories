@@ -1,4 +1,4 @@
-# Gemini Project Analysis: ecommerce-car-accessories
+#Project Analysis: ecommerce-car-accessories
 
 This document provides a comprehensive overview of the `ecommerce-car-accessories` project, including its architecture, technology stack, and setup instructions.
 
