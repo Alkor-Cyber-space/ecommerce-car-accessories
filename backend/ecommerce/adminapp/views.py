@@ -176,14 +176,13 @@ class AdminSalesAnalyticsView(APIView):
 
         # Sales trends (last 7 days)
         sales_trends = (
-            Order.objects.filter(created_at__date__gte=week_ago)
-            .extra({'day': "date(created_at)"})
-            .values('day')
+            Order.objects.annotate(month=TruncMonth('created_at'))
+            .values('month')
             .annotate(
-                total_sales=Sum('total_price'),
-                total_refunds=Sum('tax', default=0)
+                total_sales=Sum('total_price', filter=Q(status__in=['paid', 'confirmed', 'delivered'])),
+                total_refunds=Sum('total_price', filter=Q(status='cancelled'))
             )
-            .order_by('day')
+            .order_by('month')
         )
 
         # Total payouts (completed only)

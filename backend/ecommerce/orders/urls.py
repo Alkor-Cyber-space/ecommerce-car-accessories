@@ -15,4 +15,5 @@ urlpatterns = [
     path("vendor/orders/<int:order_id>/confirm/", VendorOrderStatusUpdateView.as_view(), name="vendor-order-confirm"),  
     path("vendor/orders/<int:order_id>/cancel/", VendorOrderCancelView.as_view(), name="vendor-order-cancel"),
     path("orders/<int:order_id>/track/", OrderTrackingAPIView.as_view(), name="order-track"),
+    path("orders/<int:order_id>/invoice/", InvoiceDownloadView.as_view(), name="download_invoice"),
 ]

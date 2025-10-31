@@ -307,6 +307,7 @@ class AdminSalesAnalyticsSerializer(serializers.Serializer):
     refunds_today = serializers.IntegerField()
     
     sales_trends = serializers.ListField(child=serializers.DictField())
+    monthly_profit = serializers.ListField(child=serializers.DictField())
     total_profit = serializers.DecimalField(max_digits=12, decimal_places=2)
     returns_and_refunds = serializers.DecimalField(max_digits=12, decimal_places=2)
     
