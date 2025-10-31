@@ -82,18 +82,31 @@ const [tickets, setTickets] = useState([]);
   //   }
   // ]);
 
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesSearch = searchTerm === '' ||
-      ticket.vendorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === '' || ticket.status === statusFilter;
-    const matchesPriority = priorityFilter === '' || ticket.priority === priorityFilter;
-    const matchesTab = activeTab === 'all' || ticket.status.toLowerCase() === activeTab;
+const filteredTickets = tickets.filter(ticket => {
+  const idString = ticket.id?.toString().toLowerCase() || '';
+  const vendorName = ticket.vendorName?.toLowerCase() || '';
+  const subject = ticket.subject?.toLowerCase() || '';
+  const search = searchTerm.toLowerCase();
 
-    return matchesSearch && matchesStatus && matchesPriority && matchesTab;
-  });
+  const matchesSearch =
+    searchTerm === '' ||
+    vendorName.includes(search) ||
+    subject.includes(search) ||
+    idString.includes(search);
+
+  const matchesStatus =
+    statusFilter === '' || ticket.status === statusFilter;
+
+  const matchesPriority =
+    priorityFilter === '' || ticket.priority === priorityFilter;
+
+  const matchesTab =
+    activeTab === 'all' ||
+    ticket.status?.toLowerCase() === activeTab;
+
+  return matchesSearch && matchesStatus && matchesPriority && matchesTab;
+});
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -211,13 +224,10 @@ const [tickets, setTickets] = useState([]);
   }, [activeDropdown]);
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
+    <div className="bg-[#ECECF0] p-6 rounded-2xl w-full space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-xl md:text-2xl font-bold">Support & Help Management</h1>
-        <button className="bg-[#5737B4] text-white px-4 py-2 rounded text-sm">
-          Download Report
-        </button>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Support & Help Management</h1>
       </div>
 
       {/* Stats Cards */}

@@ -111,11 +111,11 @@ export default function InventoryOverview() {
     }, [category, distribution]);
 
     return (
-        <div className="p-6 bg-gray-100 min-h-screen">
-            <h1 className="text-3xl font-bold mb-8 text-gray-800">Inventory Overview</h1>
+        <div className="p-6 bg-gray-100 min-h-screen rounded-2xl">
+            <h1 className="text-2xl font-bold text-[#5737B4] mb-8">Inventory Overview</h1>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded-2xl shadow mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-2xl shadow mb-6">
                 <div>
                     <label className="block text-sm text-gray-600 mb-1">Month</label>
                     <select
@@ -169,7 +169,7 @@ export default function InventoryOverview() {
                     </select>
                 </div>
 
-                <div>
+                {/* <div>
                     <label className="block text-sm text-gray-600 mb-1">Vendor</label>
                     <select
                         className="p-2 border rounded w-full"
@@ -183,7 +183,7 @@ export default function InventoryOverview() {
                             </option>
                         ))}
                     </select>
-                </div>
+                </div> */}
             </div>
 
             {/* KPI Cards */}

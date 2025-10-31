@@ -63,10 +63,10 @@ export default function TaxReport() {
   };
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-4">
+    <div className="bg-[#ECECF0] p-6 rounded-2xl w-full space-y-4">
 
       <div className="flex justify-between items-start flex-wrap gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">Tax Report</h1>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Tax Report</h1>
 
         <div className="flex flex-wrap items-end gap-4">
           <div className="flex flex-col">

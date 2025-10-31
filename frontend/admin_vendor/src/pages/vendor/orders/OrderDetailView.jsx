@@ -33,7 +33,7 @@ const orderItems = [
     description: "Color - Black, Size - XL",
     quantity: 2,
     price: 5200,
-    image: bmw // ✅ use imported image directly
+    image: bmw
   },
   {
     name: "LED Fog Light Pro",
@@ -82,7 +82,6 @@ const OrderDetailView = () => {
     pending: "current",
     completed: "done",
     refunded: "done",
-    // Add more mappings if needed
   };
   const timelineLabels = [
     "Pending",
@@ -94,7 +93,6 @@ const OrderDetailView = () => {
     "Cancelled",
   ];
 
-  // Define the correct order for progression
   const statusOrder = [
     "pending",
     "paid",
@@ -209,7 +207,7 @@ const OrderDetailView = () => {
         </div>
 
         {/* Order History */}
-        <div className="bg-white p-6 rounded shadow h-fit">
+        {/* <div className="bg-white p-6 rounded shadow h-fit">
           <h2 className="font-semibold mb-2 text-lg">Order History</h2>
           <ul className="relative border-l-2 border-gray-200 ml-2 space-y-4">
             {orderHistory.map((item, idx) => (
@@ -233,31 +231,43 @@ const OrderDetailView = () => {
               </li>
             ))}
           </ul>
-        </div>
+        </div> */}
 
         <div className="bg-white p-6 rounded shadow h-fit">
-          <h2 className="font-semibold mb-2 text-lg">Order History</h2>
+          <h2 className="font-semibold mb-2 text-lg">Order- History</h2>
           <ul className="relative border-l-2 border-gray-200 ml-2 space-y-4">
             {timelineLabels.map((label, idx) => {
               const statusKey = statusOrder[idx];
-              let statusClass = "bg-gray-300"; // default - pending/future
+              let statusClass = "bg-gray-300";
               let labelColor = "text-gray-700";
 
-              // Highlight completed + current steps
-              if (idx < currentIndex) {
-                statusClass = "bg-green-500"; // completed
-                labelColor = "text-green-600 font-medium";
-              } else if (idx === currentIndex) {
-                if (statusKey === "cancelled") {
+              // Determine behavior if cancelled
+              const isCancelled = order.status === "cancelled";
+              const cancelledIndex = statusOrder.indexOf("cancelled");
+
+              if (isCancelled) {
+                if (idx < cancelledIndex) {
+                  // Before cancelled - grey (not completed)
+                  statusClass = "bg-gray-300";
+                  labelColor = "text-gray-500";
+                } else if (idx === cancelledIndex) {
+                  // Cancelled step
                   statusClass = "bg-red-500";
                   labelColor = "text-red-600 font-semibold";
                 } else {
-                  statusClass = "bg-[#5737B4]"; // active
+                  // After cancelled - grey (not applicable)
+                  statusClass = "bg-gray-300";
+                  labelColor = "text-gray-400";
+                }
+              } else {
+                // Normal order flow (not cancelled)
+                if (idx < currentIndex) {
+                  statusClass = "bg-green-500";
+                  labelColor = "text-green-600 font-medium";
+                } else if (idx === currentIndex) {
+                  statusClass = "bg-[#5737B4]";
                   labelColor = "text-[#5737B4] font-semibold";
                 }
-              } else if (statusKey === "cancelled" && currentIndex === idx) {
-                statusClass = "bg-red-500";
-                labelColor = "text-red-600 font-semibold";
               }
 
               return (

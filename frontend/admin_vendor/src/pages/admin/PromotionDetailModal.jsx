@@ -9,7 +9,6 @@ const PromotionCard = ({ promotion }) => {
       try {
         const data = await promotionByIdApi(promotion.id);
         console.log("Fetched promotion details:", data);
-        // You can set the fetched data to state if needed
       } catch (error) {
         console.error('Error fetching promotion details:', error);
       }
@@ -60,7 +59,7 @@ const PromotionCard = ({ promotion }) => {
 
       {/* Promotion Card */}
          {selectedPromotion && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 bg-black/50 backdrop-blur-sm">
+        <div className="fixed inset-0  bg-opacity-30 flex justify-center items-center z-50 p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl relative transform transition-all duration-300 ease-in-out scale-100 max-h-[90vh] overflow-hidden">
             {/* Header Section */}
             <div className="bg-[#5737B4] p-6 text-white relative overflow-hidden">

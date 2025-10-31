@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  getNotificationsApi,
+  getVendorNotificationsApi,
   markNotificationAsReadApi,
 } from "../../services/allAPI";
 import { FiX } from "react-icons/fi";
@@ -16,7 +16,7 @@ const Notification = () => {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        const data = await getNotificationsApi();
+        const data = await getVendorNotificationsApi();
         setNotifications(data);
         setReadStatus(data.map(() => false));
       } catch (error) {
@@ -58,11 +58,11 @@ const Notification = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 md:p-10 rounded-2xl">
+    <div className="min-h-screen bg-gray-100 p-6  rounded-2xl">
       <div className="max-w-6xl">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-          <h2 className="text-2xl font-semibold text-gray-800">
+          <h2 className="text-xl md:text-2xl font-bold text-[#5737B4]">
             Notifications
           </h2>
           <select

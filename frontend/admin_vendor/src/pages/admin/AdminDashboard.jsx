@@ -21,7 +21,6 @@ const AdminDashboard = () => {
         setMonthlyProducts(data?.monthly_products || []);
         setRecentOrders(data?.recent_orders || []);
 
-        // Prepare monthly chart data (Sales Trends)
         const formattedSales = (data?.monthly_sales || []).map((item) => {
           const date = new Date(item.month + "-01");
           const monthName = date.toLocaleString("default", { month: "short" });
@@ -65,13 +64,10 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div className="bg-[#ECECF0] px-6 py-10 rounded-2xl">
-      {/* Header */}
+    <div className="bg-[#ECECF0] px-6 py-6 rounded-2xl">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <button className="bg-[#5737B4] text-white px-4 py-2 rounded-md">
-          Download report
-        </button>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Dashboard</h1>
+        
       </div>
 
       {/* Stats Cards */}

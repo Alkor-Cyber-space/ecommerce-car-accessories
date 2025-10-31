@@ -70,10 +70,10 @@ const SalesAnalytics = () => {
   ];
 
   return (
-    <div className="bg-[#ECECF0] px-6 py-10 rounded-2xl">
+    <div className="bg-[#ECECF0] px-6 py-6 rounded-2xl">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Sales Anayltics</h1>
         <button className="bg-[#5737B4] text-white px-4 py-2 rounded-md">
           Download report
         </button>

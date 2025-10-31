@@ -42,10 +42,10 @@ const ReturnsRefundsTable = () => {
   };
 
   return (
-    <div className=" bg-gray-100 rounded-2xl min-h-screen px-4 sm:px-6 py-8">
+    <div className=" bg-gray-100 rounded-2xl min-h-screen p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">Returns & Refunds</h2>
+        <h2 className="text-2xl font-bold text-[#5737B4]">Returns & Refunds</h2>
         <button className="bg-[#5737B4] text-white text-sm px-4 py-2 rounded  flex items-center">
           Download Report
         </button>

@@ -255,7 +255,7 @@ const AdminHome = () => {
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
       >
         {/* 🔍 Search bar */}
-        <div className="flex items-center justify-end mb-6 ">
+        <div className="flex items-center justify-end mb-4 pr-1">
           {/* Search Bar */}
           {/* <div className="relative w-full max-w-3xl">
             <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
@@ -269,7 +269,7 @@ const AdminHome = () => {
 
           {/* Profile Info */}
           <div
-            className="flex w-60 items-center gap-3 z-50 cursor-pointer relative"
+            className="flex w-40 items-center gap-3 z-50 cursor-pointer relative"
             onClick={() => navigate('/admin/admin-accounts-admin')}
           >
             <img
@@ -279,13 +279,12 @@ const AdminHome = () => {
                 `${serverUrl}${profileData.profile_image}`
               ) : user}
               alt="profile"
-              className="w-17 h-17 rounded-full object-cover"
+              className="w-12 h-12 rounded-full object-cover"
             />
             <div className="flex flex-col font-semibold">
               <div className="text-lg text-gray-700 font-medium">
                 {profileData.username}
               </div>
-              <span>{profileData.email}</span>
             </div>
           </div>
         </div>

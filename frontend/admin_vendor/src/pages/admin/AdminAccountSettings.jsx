@@ -18,19 +18,15 @@ const AdminAccountSettings = () => {
     old_password: "",
     new_password: "",
     company: "",
-    id: null, // Add id to formData
+    id: null, 
   });
   const [loading, setLoading] = useState(false);
-  // Fetch admin profile on mount
   const serverUrl = "http://127.0.0.1:8000/"
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const res = await getAdminAccountSettingsApi();
         console.log(res);
-        // hardcoded id=1 for super admin
-        // Assuming the API returns an 'id' field for the admin
-        // Assuming res.profile_image contains the URL of the profile image
         setFormData({
           username: res.username || "",
           first_name: res.first_name || "",
@@ -40,7 +36,7 @@ const AdminAccountSettings = () => {
           old_password: "",
           new_password: "",
           company: res.company || "",
-          id: res.id || null, // Populate id from the API response
+          id: res.id || null, 
           profile_image: res.profile_image || null,
         });
       } catch (error) {
@@ -62,13 +58,11 @@ const AdminAccountSettings = () => {
         ...prev,
         profile_image: file,
       }));
-      // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setImagePreview(previewUrl);
     }
   };
 
-  // Cleanup preview URL when component unmounts
   useEffect(() => {
     return () => {
       if (imagePreview) {
@@ -76,7 +70,6 @@ const AdminAccountSettings = () => {
       }
     };
   }, [imagePreview]);
-  // Handle form input changes
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -84,7 +77,7 @@ const AdminAccountSettings = () => {
       [name]: value,
     }));
   };
-  // Handle profile update submission
+
   const handleEditProfile = async () => {
   setLoading(true);
   try {
@@ -104,7 +97,7 @@ const AdminAccountSettings = () => {
       updatedImage = `${serverUrl}${updatedImage}`;
     }
 
-    // ✅ Update state in this component
+    //  Update state in this component
     setFormData((prev) => ({
       ...prev,
       ...response,
@@ -114,7 +107,6 @@ const AdminAccountSettings = () => {
     }));
     if (updatedImage) setImagePreview(updatedImage);
 
-    // ✅ Dispatch event globally so AdminHome can listen
     window.dispatchEvent(
       new CustomEvent("adminProfileUpdated", {
         detail: {
@@ -133,8 +125,6 @@ const AdminAccountSettings = () => {
     setLoading(false);
   }
 };
-
-
 
   const handleDeactivateConfirm = () => {
     confirmAlert({
@@ -180,16 +170,14 @@ const AdminAccountSettings = () => {
   return (
     <div>
       <div className="bg-gray-100 px-3 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <h1 className="text-[#232832] text-xl font-semibold">
+          <h1 className="text-2xl font-bold text-[#5737B4]">
             Admin Account Settings
           </h1>
         </div>
         {/* Profile Card */}
         <div className="bg-white p-6 pb-16 rounded-xl shadow-md">
           <div className="flex flex-col lg:flex-row justify-between gap-3 items-start lg:items-center">
-            {/* Profile Info */}
             <div className="flex items-center gap-3">
               <img
                 src={

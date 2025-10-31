@@ -90,7 +90,6 @@ const handleSaveChanges = async () => {
       setMessage({ type: 'success', text: 'Promotion updated successfully!' });
       setIsEditModalOpen(false);
       setselectedPromotion(null);
-      // Optionally, refresh promotions list
       const data = await getAllPromotionsApi();
       setPromotions(Array.isArray(data.message) ? data.message : []);
     } catch (error) {
@@ -126,8 +125,8 @@ const handleSaveChanges = async () => {
     value: '',
     start_date: '',
     end_date: '',
-    applicable_category: [],  // always an array
-    applicable_product: []    // always an array
+    applicable_category: [],  
+    applicable_product: []    
   });
 
   const featuredPromotions = [
@@ -268,7 +267,7 @@ const handleSaveChanges = async () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Promotions & Offers</h1>
+        <h1 className="text-2xl font-bold text-[#5737B4] mb-2">Promotions & Offers</h1>
         <p className="text-gray-600">Manage and track your promotional campaigns for vehicle spare parts</p>
       </div>
 

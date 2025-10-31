@@ -1,27 +1,8 @@
 import React, { useState } from 'react';
 import { BsStar } from 'react-icons/bs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import userImage from '../../../assets/user.jpg';
-import car from '../../../assets/car.jpeg'
-import { Link } from 'react-router-dom';
 import { useEffect } from 'react';
 import { getProductReviewsApi } from '../../../services/allAPI';
-
-const data = [
-  { month: 'Jan', reviews: 90 },
-  { month: 'Feb', reviews: 100 },
-  { month: 'Mar', reviews: 85 },
-  { month: 'Apr', reviews: 120 },
-  { month: 'May', reviews: 95 },
-  { month: 'Jun', reviews: 130 },
-];
-
-// const ratings = [
-//   { name: "Aryan Sharma", product: "Alloy Wheel XZR15", rating: 4.5 },
-//   { name: "Aryan Sharma", product: "Alloy Wheel XZR15", rating: 4.5 },
-//   { name: "Aryan Sharma", product: "Alloy Wheel XZR15", rating: 4.5 },
-//   { name: "Aryan Sharma", product: "Alloy Wheel XZR15", rating: 4.5 },
-// ];
 
 const SummaryCards = () => {
   const [reviewsData, setReviewsData] = useState({
@@ -36,7 +17,7 @@ const SummaryCards = () => {
       try {
         const data = await getProductReviewsApi();
         console.log("API Responseee", data);
-        setReviewsData(data); // save entire response
+        setReviewsData(data); 
       } catch (error) {
         console.error("Error fetching products:", error);
       }
@@ -73,10 +54,6 @@ const SummaryCards = () => {
               />
             </BarChart>
           </ResponsiveContainer>
-        </div>
-        <hr className="text-[#D8D8D8] my-3" />
-        <div className="mt-3 text-right">
-          <Link className="text-sm text-[#5737B4]">Download Report</Link>
         </div>
       </div>
 
