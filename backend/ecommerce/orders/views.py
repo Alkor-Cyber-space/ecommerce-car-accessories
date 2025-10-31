@@ -20,6 +20,8 @@ from .shiprocket_client import *
 from datetime import datetime
 from rest_framework import generics, permissions
 from django.db.models import Q
+from accounts.utils import generate_invoice_pdf
+from accounts.utils import send_order_invoice_email
 
 
 class ShippingOptionsView(APIView):
@@ -297,6 +299,9 @@ class CheckoutViewSet(viewsets.ViewSet):
                 price=item['product'].price
             )
 
+        invoice_pdf = generate_invoice_pdf(order)
+        send_order_invoice_email(order, invoice_pdf)
+
         # Payment metadata
         metadata = {"order_id": str(order.id)}
 
@@ -558,3 +563,12 @@ class OrderTrackingAPIView(APIView):
             return Response(tracking_data, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class InvoiceDownloadView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+        pdf_file = generate_invoice_pdf(order)
+        return FileResponse(pdf_file, as_attachment=True, filename=pdf_file.name)

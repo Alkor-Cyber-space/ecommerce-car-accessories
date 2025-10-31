@@ -22,19 +22,19 @@ class UserDashboardView(APIView):
         user = request.user if request.user.is_authenticated else None
 
         # Fetch products for each section
-        deals_for_you_qs = Product.objects.filter(is_featured=True, is_available=True)[:10]
+        deals_for_you_qs = Product.objects.filter(is_featured=True, is_available=True)[:7]
         best_sellers_top_rated_qs = Product.objects.filter(
             is_available=True
         ).filter(
             models.Q(is_best_seller=True) | models.Q(is_top_rated=True)
         ).distinct()[:10]
-        new_products_qs = Product.objects.filter(is_available=True).order_by('-created_at')[:10]
+        new_products_qs = Product.objects.filter(is_available=True).order_by('-created_at')[:7]
 
         now = timezone.now()
         promotions = Promotion.objects.filter(
             activate=True, start_date__lte=now, end_date__gte=now
         )
-        big_savings_qs = Product.objects.filter(promotions__in=promotions, is_available=True).distinct()[:10]
+        big_savings_qs = Product.objects.filter(promotions__in=promotions, is_available=True).distinct()[:7]
 
         picks_for_you_qs = []
         if user:
