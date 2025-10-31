@@ -130,10 +130,10 @@ export default function UserDataTable() {
   }, []);
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6 relative">
+    <div className="bg-gray-100 p-6 rounded-2xl w-full space-y-6 relative">
       {/* Header */}
       <div className="flex justify-between items-center relative">
-        <h1 className="text-[#232832] text-xl font-bold">Users Overview</h1>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Users Overview</h1>
 
         <div className="relative download-dropdown">
           <button

@@ -159,7 +159,7 @@ const VendorDashboard = () => {
   };
 
   return (
-    <div className='bg-gray-100 px-6 py-10 rounded-2xl'>
+    <div className='bg-gray-100 px-6 py-6 rounded-2xl'>
       {/* Banner */}
       {shouldShowBanner && (
         <div>
@@ -201,10 +201,8 @@ const VendorDashboard = () => {
         </div>
       )}
 
-      {/* Dashboard Header */}
       <div className='flex justify-between items-center'>
-        <h1 className='text-2xl font-semibold'>Dashboard</h1>
-        <button className='bg-[#5737B4] text-white px-4 py-2 rounded-md'>Download report</button>
+        <h1 className='text-xl md:text-2xl font-bold text-[#5737B4]'>Dashboard</h1>
       </div>
 
       {/* Stats Cards */}

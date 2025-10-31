@@ -195,19 +195,19 @@ const VendorHome = () => {
           }`}
       >
         {/* Search Bar */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="relative w-full max-w-3xl">
+        <div className="flex items-center justify-end mb-4 pr-1">
+          {/* <div className="relative w-full max-w-3xl">
             <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
             <input
               type="text"
               placeholder="Search"
               className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
             />
-          </div>
+          </div> */}
 
-          {/* ✅ Profile Info */}
+          {/* Profile Info */}
           <div
-            className="flex w-60 items-center gap-3 z-50 cursor-pointer relative"
+            className="flex w-40 items-center gap-3 z-50 cursor-pointer relative"
             onClick={() => navigate("/vendor/account-settings")}
           >
             <img
@@ -220,13 +220,12 @@ const VendorHome = () => {
                   : user
               }
               alt="profile"
-              className="w-17 h-17 rounded-full object-cover"
+              className="w-12 h-12 rounded-full object-cover"
             />
             <div className="flex flex-col font-semibold">
               <div className="text-lg text-gray-700 font-medium">
                 {profileData.username}
               </div>
-              <span>{profileData.email}</span>
             </div>
           </div>
         </div>

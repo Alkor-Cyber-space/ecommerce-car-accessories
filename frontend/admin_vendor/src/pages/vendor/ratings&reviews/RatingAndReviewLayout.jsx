@@ -26,10 +26,10 @@ const RatingAndReviewLayout = () => {
     }, []);
 
     return (
-        <div className='bg-gray-100 px-6 py-10 rounded-2xl'>
+        <div className='bg-gray-100 px-6 py-6 rounded-2xl'>
             <div className='flex justify-between mb-5'>
-                <h1 className="text-2xl font-semibold mb-6">Rating & Reviews</h1>
-                <div className="relative inline-block" ref={dropdownRef}>
+                <h1 className="text-xl md:text-2xl font-bold text-[#5737B4] mb-6">Rating & Reviews</h1>
+                {/* <div className="relative inline-block" ref={dropdownRef}>
                     <button
                         onClick={() => setShowDropdown((prev) => !prev)}
                         className="flex items-center justify-between gap-2 bg-white px-4 py-2 rounded-md text-sm font-medium text-[#5737B4] hover:bg-gray-50"
@@ -53,7 +53,7 @@ const RatingAndReviewLayout = () => {
                             ))}
                         </ul>
                     </div>
-                </div>
+                </div> */}
             </div>
             <div>
                 <SummaryCards />

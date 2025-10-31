@@ -4,8 +4,9 @@ import { PiCreditCardBold } from "react-icons/pi";
 import { BsChevronDown, BsChevronUp } from "react-icons/bs";
 import {
   getOrdersApi,
-  updateOrderStatusApi,
+  ConfirmOrderStatusApi,
   exportReportApi,
+  CancelOrderApi,
 } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 import SearchFilter from "../../admin/SearchFilter";
@@ -31,13 +32,13 @@ const OrderManagement = ({ order }) => {
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   const dropdownRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [ordersPerPage] = useState(10); 
+  const [ordersPerPage] = useState(10);
 
   const fetchOrders = async () => {
     try {
       const response = await getOrdersApi();
       setUserOrders(response);
-      setFilteredOrders(response); 
+      setFilteredOrders(response);
       console.log(response);
     } catch (error) {
       console.error("Error fetching orders", error);
@@ -49,18 +50,32 @@ const OrderManagement = ({ order }) => {
     fetchOrders();
   }, []);
 
-  const handleUpdateStatus = async (order) => {
+  const handleConfirmOrder = async (order) => {
     setLoading(true);
     try {
-      const response = await updateOrderStatusApi(order.id);
+      const response = await ConfirmOrderStatusApi(order.id);
       console.log(response);
 
-      toast.success("Order status updated successfully");
+      toast.success("Order status confirmed successfully");
 
       if (fetchOrders) fetchOrders();
     } catch (error) {
-      toast.error("Failed to update order status");
-      console.error("Error updating order status", error);
+      toast.error("Failed to confirm order status");
+      console.error("Error confirming order status", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelOrder = async (order) => {
+    setLoading(true);
+    try {
+      const response = await CancelOrderApi(order.id);
+      console.log(response);
+      if (fetchOrders) fetchOrders();
+    } catch (error) {
+      toast.error("Failed to cancel order");
+      console.error("Error canceling order", error);
     } finally {
       setLoading(false);
     }
@@ -90,8 +105,8 @@ const OrderManagement = ({ order }) => {
       const matchesBuyerName = !filters.buyerName
         ? true
         : order.buyerName
-            ?.toLowerCase()
-            .includes(filters.buyerName.toLowerCase());
+          ?.toLowerCase()
+          .includes(filters.buyerName.toLowerCase());
 
       return (
         matchesStatus &&
@@ -103,10 +118,9 @@ const OrderManagement = ({ order }) => {
     });
 
     setFilteredOrders(filtered);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
   }, [filters, userOrders]);
 
-  // Reset handler
   const handleReset = () => {
     setFilters({
       regDateFrom: "",
@@ -134,7 +148,7 @@ const OrderManagement = ({ order }) => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Download report handler
+  // Download report 
   const handleDownloadReport = async (format) => {
     try {
       const tableData = filteredOrders.map((order) => ({
@@ -180,7 +194,7 @@ const OrderManagement = ({ order }) => {
     <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">
+        <h2 className="text-xl md:text-2xl font-bold text-[#5737B4]">
           Order Management
         </h2>
 
@@ -216,7 +230,7 @@ const OrderManagement = ({ order }) => {
       <SearchFilter
         filters={filters}
         setFilters={setFilters}
-        onSearch={() => {}}
+        onSearch={() => { }}
         onReset={handleReset}
         showStatus={false}
         showYear={false}
@@ -240,6 +254,10 @@ const OrderManagement = ({ order }) => {
                   <div className="font-medium">
                     Order Placed At:{" "}
                     <span className="text-gray-500">
+                      {/* {order.created_at
+                        ? new Date(order.created_at).toLocaleDateString("en-GB") // en-GB gives dd/mm/yyyy
+                        : "N/A"} */}
+
                       Date:{" "}
                       {order.created_at
                         ? new Date(order.created_at).toLocaleDateString()
@@ -247,9 +265,9 @@ const OrderManagement = ({ order }) => {
                       , Time:{" "}
                       {order.created_at
                         ? new Date(order.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
                         : "N/A"}
                     </span>
                   </div>
@@ -257,17 +275,16 @@ const OrderManagement = ({ order }) => {
                   <div className="mt-1">
                     <span
                       className={`inline-block px-2 md:px-4 py-1 md:py-2 text-sm rounded text-left
-                  ${
-                    order.status?.includes("pending")
-                      ? "bg-red-100 text-red-800"
-                      : order.status?.includes("returned")
-                      ? "bg-green-100 text-green-800"
-                      : order.status?.includes("confirmed")
-                      ? "bg-green-200 text-green-900"
-                      : order.status?.includes("expired")
-                      ? "bg-orange-100 text-orange-800"
-                      : "bg-gray-100 text-black"
-                  }`}
+                  ${order.status?.includes("pending")
+                          ? "bg-red-100 text-red-800"
+                          : order.status?.includes("returned")
+                            ? "bg-green-100 text-green-800"
+                            : order.status?.includes("confirmed")
+                              ? "bg-green-200 text-green-900"
+                              : order.status?.includes("expired")
+                                ? "bg-orange-100 text-orange-800"
+                                : "bg-gray-100 text-black"
+                        }`}
                     >
                       <span className="mr-1">•</span>
                       {order.status}
@@ -287,19 +304,47 @@ const OrderManagement = ({ order }) => {
                   </div>
 
                   <div
-                    className={`mr-4 text-right text-[#5737B4] font-semibold cursor-pointer ${
-                      loading ? "opacity-50 pointer-events-none" : ""
-                    }`}
-                    onClick={() => handleUpdateStatus(order)}
+                    className={`text-right font-semibold px-2 py-1 rounded  transition-all duration-200
+      ${order.status?.toLowerCase() !== "pending"
+                        ? "text-gray-400 cursor-not-allowed opacity-60"
+                        : "text-[#5737B4] hover:text-[#3c10c1] cursor-pointer"
+                      }
+      ${loading ? "opacity-50 pointer-events-none" : ""}
+    `}
+                    onClick={() => {
+                      if (order.status?.toLowerCase() === "pending" && !loading) {
+                        handleConfirmOrder(order);
+                      }
+                    }}
                   >
-                    {loading ? "Updating..." : "Update Status"}
+                    {loading ? "Updating..." : "Confirm Order"}
                   </div>
+
+                  <div
+                    className={`mr-1 text-right font-semibold px-2 py-1 rounded  transition-all duration-200
+      ${order.status?.toLowerCase() !== "pending"
+                        ? "text-gray-400 cursor-not-allowed opacity-60"
+                        : "text-[#ee0000] hover:text-[#c70000] cursor-pointer"
+                      }
+      ${loading ? "opacity-50 pointer-events-none" : ""}
+    `}
+                    onClick={() => {
+                      if (order.status?.toLowerCase() === "pending" && !loading) {
+                        handleCancelOrder(order);
+                      }
+                    }}
+                  >
+                    {loading ? "Updating..." : "Cancel"}
+                  </div>
+
+                  {/* Expand/Collapse Icon */}
                   {expandedOrder === order.id ? (
                     <BsChevronUp className="text-gray-500" />
                   ) : (
                     <BsChevronDown className="text-gray-500" />
                   )}
                 </div>
+
               </div>
 
               {/* Expanded Details */}
@@ -360,12 +405,12 @@ const OrderManagement = ({ order }) => {
                             </td>
                           </tr>
                         )) || (
-                          <tr>
-                            <td className="px-2 py-2" colSpan={5}>
-                              No items
-                            </td>
-                          </tr>
-                        )}
+                            <tr>
+                              <td className="px-2 py-2" colSpan={5}>
+                                No items
+                              </td>
+                            </tr>
+                          )}
                       </tbody>
                       <tfoot className="bg-gray-50">
                         <tr>
@@ -422,9 +467,8 @@ const OrderManagement = ({ order }) => {
             <button
               key={page}
               onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 border rounded ${
-                currentPage === page ? "bg-[#5737B4] text-white" : ""
-              }`}
+              className={`px-3 py-1 border rounded ${currentPage === page ? "bg-[#5737B4] text-white" : ""
+                }`}
             >
               {page}
             </button>

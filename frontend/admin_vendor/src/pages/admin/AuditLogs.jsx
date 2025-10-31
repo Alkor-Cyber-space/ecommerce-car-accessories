@@ -5,26 +5,20 @@ import { toast } from "react-toastify";
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [sortBy, setSortBy] = useState("date");
-  const [sortOrder, setSortOrder] = useState("desc"); // default newest first
+  const [sortOrder, setSortOrder] = useState("desc"); 
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
-
   const dropdownRef = useRef(null);
-
-  // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // Fetch logs from API
   useEffect(() => {
     const fetchLogs = async () => {
       try {
         const res = await getAuditLogsApi();
-        // your API returns { data: [...] }
         const data = Array.isArray(res.data) ? res.data : [];
 
-        // Sort by timestamp newest first by default
         const sortedData = data.sort(
           (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
         );
@@ -41,12 +35,10 @@ export default function AuditLogs() {
     fetchLogs();
   }, []);
 
-  // Filter + sort logs (derived)
   const filteredLogs = logs
     .filter((log) => {
       if (!search) return true;
       const q = search.toLowerCase();
-      // consider vendor (id), action, description, timestamp
       return (
         String(log.vendor).toLowerCase().includes(q) ||
         String(log.action || "").toLowerCase().includes(q) ||
@@ -69,7 +61,7 @@ export default function AuditLogs() {
       }
     });
 
-  // Pagination calculations
+  // Pagination 
   const totalItems = filteredLogs.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -77,7 +69,6 @@ export default function AuditLogs() {
   const currentItems = filteredLogs.slice(startIndex, endIndex);
 
   useEffect(() => {
-    // reset page if filtered results become smaller than current page
     if (currentPage > totalPages) setCurrentPage(1);
   }, [totalPages, currentPage]);
 
@@ -91,7 +82,6 @@ export default function AuditLogs() {
     setSortBy(key);
   };
 
-  // Handle outside click to close dropdown
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -138,12 +128,10 @@ export default function AuditLogs() {
     setShowDownloadOptions((s) => !s);
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-      {/* Header */}
+    <div className="bg-[#ECECF0] p-6 rounded-2xl w-full space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Audit Logs</h1>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Audit Logs</h1>
 
-        {/* Download dropdown */}
         <div className="relative download-dropdown" ref={dropdownRef}>
           <button
             onClick={toggleDownloadOptions}
@@ -179,7 +167,7 @@ export default function AuditLogs() {
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
-            setCurrentPage(1); // reset to first page on search
+            setCurrentPage(1); 
           }}
         />
         <button
@@ -193,7 +181,6 @@ export default function AuditLogs() {
         </button>
       </div>
 
-      {/* Loading state */}
       {loading ? (
         <p className="text-center text-gray-500">Loading logs...</p>
       ) : (

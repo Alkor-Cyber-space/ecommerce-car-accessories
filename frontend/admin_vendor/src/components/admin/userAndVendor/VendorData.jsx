@@ -165,11 +165,11 @@ export default function VendorDataTable() {
   }, []);
 
   return (
-    <div className="bg-[#ECECF0] px-3 sm:px-4 md:px-6 py-4 sm:py-6 md:py-10 rounded-2xl w-full space-y-4 sm:space-y-6">
+    <div className="bg-gray-100 p-6 rounded-2xl w-full space-y-4 sm:space-y-6">
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-[#232832] text-lg sm:text-xl font-bold">Vendors Overview</h1>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Vendors Overview</h1>
 
         {/* Download Report Button with Dropdown */}
         <div className="relative" ref={dropdownRef}>

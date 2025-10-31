@@ -238,11 +238,11 @@ const NotificationAdmin = () => {
 
   // ----------------- Render -----------------
   return (
-    <div className="min-h-screen bg-gray-100 p-6 md:p-10 rounded-2xl">
+    <div className="min-h-screen bg-gray-100 p-6  rounded-2xl">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">
+          <h2 className="text-2xl font-bold text-[#5737B4]">
             Admin Notifications
           </h2>
           <div className="flex items-center gap-4">

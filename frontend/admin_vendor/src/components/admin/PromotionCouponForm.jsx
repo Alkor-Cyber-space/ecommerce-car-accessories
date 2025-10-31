@@ -59,7 +59,6 @@ const PromotionCouponForm = () => {
         const data = await getCategoriesByAll();
         setCategories(data);
         console.log("Categories fetched:", data);
-        // Assuming the API returns an array of categories
       } catch (error) {
         console.error("Failed to load categories:", error);
       }
@@ -94,7 +93,6 @@ const PromotionCouponForm = () => {
     });
   };
 
-  // Removed duplicate couponData declaration here
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -110,13 +108,12 @@ const PromotionCouponForm = () => {
     setIsSubmitting(true);
     setMessage({ type: '', text: '' });
 
-    // Check required fields
     if (
       !promotionData.name ||
       !promotionData.code ||
       !promotionData.description ||
       !promotionData.promotion_type ||
-      (!promotionData.value && promotionData.promotion_type !== 'BOGO') || // Skip value check for BOGO
+      (!promotionData.value && promotionData.promotion_type !== 'BOGO') || 
       !promotionData.start_date ||
       !promotionData.end_date
     ) {
@@ -137,12 +134,10 @@ const PromotionCouponForm = () => {
     }
 
     try {
-      // Collect applicable categories as an array of IDs
       const applicable_category = [...new Set(
         formRows.map(row => row.category).filter(Boolean)
       )];
 
-      // Collect applicable products as an array of IDs
       const applicable_product = formRows.reduce((acc, row) => {
         if (row.products && row.products.length > 0) {
           acc.push(...row.products);
@@ -290,7 +285,7 @@ const PromotionCouponForm = () => {
     end_date: '',
     activate: true,
     useage_limit: 1,
-    applicable_products: [] // If needed, depending on API
+    applicable_products: []
   });
 
   const [couponRows, setCouponRows] = useState([
@@ -386,11 +381,8 @@ const PromotionCouponForm = () => {
 };
 
 
-
-
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => window.history.back()}

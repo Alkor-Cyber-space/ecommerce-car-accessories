@@ -87,10 +87,9 @@ const CombinedChartPanel = () => {
   };
 
   return (
-    <div className='bg-[#ECECF0] px-6 py-10 rounded-2xl h-full'>
+    <div className='bg-[#ECECF0] px-6 py-6 rounded-2xl h-full'>
       <div className='flex justify-between items-center'>
-        <h1 className='text-2xl font-semibold'>Revenue Trends</h1>
-        <button className='bg-[#5737B4] text-white px-4 py-2 rounded-md'>Download report</button>
+        <h1 className='text-2xl font-bold text-[#5737B4]'>Revenue Trends</h1>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 bg-white my-6  p-1 border  border-[#D8D8D8] rounded-2xl shadow-lg ">

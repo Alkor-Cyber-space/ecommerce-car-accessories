@@ -116,9 +116,9 @@ const PaymentsEarnings = () => {
   };
 
   return (
-    <div className="bg-gray-100 px-6 py-10 rounded-2xl relative">
+    <div className="bg-gray-100 px-6 py-6 rounded-2xl relative">
       <div className='flex mb-5 justify-between items-center'>
-        <h1 className="text-[#232832] text-2xl font-semibold">Payments & Earnings</h1>
+        <h1 className="text-[#5737B4] text-xl md:text-2xl font-bold">Payments & Earnings</h1>
         <div className="relative">
           <button
             onClick={() => setShowDropdown(!showDropdown)}

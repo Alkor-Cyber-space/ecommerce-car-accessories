@@ -206,7 +206,7 @@ export default function AdminOverview() {
     }
   };
 
-  // ✅ Close dropdowns on outside click
+  //  Close dropdowns on outside click
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -219,13 +219,11 @@ export default function AdminOverview() {
   }, []);
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6 relative">
-      {/* Header */}
+    <div className="bg-gray-100 p-6 rounded-2xl w-full space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-        <h1 className="text-[#232832] text-xl font-bold">Admin Overview</h1>
+        <h1 className="text-2xl font-bold text-[#5737B4]">Admin Overview</h1>
 
         <div className="flex items-center gap-3" ref={dropdownRef}>
-          {/* Download Button */}
           <div className="relative">
             <button
               onClick={() => setShowDownloadOptions(!showDownloadOptions)}

@@ -458,8 +458,8 @@ const validatePhone = (phone) => {
   };
 
   return (
-    <div className="bg-gray-100 px-8 py-10 rounded-2xl min-h-screen">
-      <h1 className="text-2xl text-[#5737B4] font-semibold">Profile & KYC</h1>
+    <div className="bg-gray-100 p-6 rounded-2xl min-h-screen">
+      <h1 className="text-2xl text-[#5737B4] font-bold">Profile & KYC</h1>
       <p className="my-1">Manage your business details and documents.</p>
 
       {/* Contact & Address Details */}

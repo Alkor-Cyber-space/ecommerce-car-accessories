@@ -710,7 +710,7 @@ export const getUserOrderListApi = async (vendorId) => {
   }
 };
 // update order status
-export const updateOrderStatusApi = async (orderId) => {
+export const ConfirmOrderStatusApi = async (orderId) => {
   try {
     const response = await api.post(`/orders/vendor/orders/${orderId}/confirm/`);
     return response.data;
@@ -720,6 +720,15 @@ export const updateOrderStatusApi = async (orderId) => {
   }
 };
 
+export const CancelOrderApi = async (orderId) => {
+  try {
+    const response = await api.post(`/orders/vendor/orders/${orderId}/cancel/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    throw error;
+  }
+};
 
 export const getAuditLogsApi = async () => {
   try {
@@ -1188,6 +1197,15 @@ export const getSupportTicketsApi = async () => {
 export const getNotificationsApi = async () => {
   try {
     const response = await api.get("/admin/notifications/sent/");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    throw error;
+  }
+};
+export const getVendorNotificationsApi = async () => {
+  try {
+    const response = await api.get("/admin/notifications/");
     return response.data;
   } catch (error) {
     console.error("Error fetching notifications:", error);
