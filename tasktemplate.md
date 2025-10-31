@@ -77,4 +77,4 @@ This template provides a structured approach for adding new features to the `eco
 - [ ] **Frontend**: All frontend changes are complete and tested.
 - [ ] **End-to-End**: The feature works seamlessly from the UI to the database.
 - [ ] **Code Quality**: Code adheres to project conventions and best practices.
-- [ ] **Documentation**: `GEMINI.MD` or other relevant docs are updated if necessary.
+- [ ] **Documentation**: `PROJECT_DOC.MD` or other relevant docs are updated if necessary.
