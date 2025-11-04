@@ -19,11 +19,12 @@ const Home = () => {
       <Navbar bgColor="bg-gradient-to-r from-[#030130] to-[#023669]" />
        </div>
 <section className="bg-gradient-to-r from-[#030130] to-[#023669] text-white relative overflow-hidden">
-  <div className="container mx-auto px-6 pt-32 pb-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+  <div className="container mx-auto  pt-12  pb-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           
-          <div>
-            <h1 className="mt-10 md:mt-20 text-3xl md:text-5xl font-extrabold leading-tight">
+          <div className="pl-12 mt-32 sm:mt-8 md:mt-0 z-10">
+            <h1 className="text-3xl md:text-5xl font-extrabold leading-tight">
               EVERYTHING YOUR VEHICLE NEEDS - IN ONE PLACE
+              
             </h1>
             <p className="mt-6 text-base md:text-lg text-gray-300 max-w-lg">
               Discover quality automotive products from trusted vendors. Shop by
@@ -43,7 +44,7 @@ const Home = () => {
             <img
             src={car}
             alt="Car"
-            className="w-full -mt-2 sm:-mt-20 md:-mt-1 ml-4 sm:ml-[76px] md:ml-28 object-cover h-auto rounded-lg"
+            className="w-full mt-2 sm:-mt-0  md:mt-1 ml-4 sm:ml-[76px] md:ml-28 object-cover h-auto rounded-lg"
             />
 
           </div>

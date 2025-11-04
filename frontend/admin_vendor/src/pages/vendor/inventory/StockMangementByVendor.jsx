@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Modal from "react-modal";
 import { FaSyncAlt } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
+import * as xlsx from "xlsx";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import {
@@ -10,7 +11,6 @@ import {
   updateStockApi,
 } from "../../../services/allAPI";
 import { baseUrl } from "../../../services/serverURL";
-
 Modal.setAppElement("#root");
 
 export default function VendorStockTable() {
@@ -150,15 +150,39 @@ export default function VendorStockTable() {
       setShowDownloadOptions(false);
       toast.success("PDF report downloaded successfully!");
     } catch (error) {
-      console.error("Download failed:", error);
+      console.error("Download failed:", error); 
       toast.error("Failed to download PDF report!");
     }
   };
 
-  const handleDownloadExcel = () => {
+ const handleDownloadExcel = () => {
+  try {
+    // Prepare data for Excel
+    const worksheetData = filteredData.map((item) => ({
+      Product: item.name,
+      Category: item.category,
+      Stock: item.stock,
+      Status: item.status,
+      "Unit Price": item.unitPrice,
+      "Total Price": item.stock * item.unitPrice,
+    }));
+
+    // Create worksheet and workbook
+    const worksheet = xlsx.utils.json_to_sheet(worksheetData);
+    const workbook = xlsx.utils.book_new();
+    xlsx.utils.book_append_sheet(workbook, worksheet, "Stock Report");
+
+    // Trigger download
+    xlsx.writeFile(workbook, "StockOverviewReport.xlsx");
+
     setShowDownloadOptions(false);
     toast.success("Excel report downloaded successfully!");
-  };
+  } catch (error) {
+    console.error("Excel download failed:", error);
+    toast.error("Failed to download Excel report!");
+  }
+};
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -171,10 +195,10 @@ export default function VendorStockTable() {
   }, []);
 
   return (
-    <div className="bg-gray-100 p-6 rounded-2xl w-full space-y-6">
+    <div className="bg-gray-100 px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-[#5737B4]">Stock Overview</h1>
+        <h1 className="text-[#232832] text-xl font-bold">Stock Overview</h1>
         <div className="flex items-center gap-4">
           <FaSyncAlt
             className="text-xl text-[#5737B4] cursor-pointer"

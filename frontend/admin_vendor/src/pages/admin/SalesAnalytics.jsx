@@ -9,6 +9,7 @@ import UsersOverview from '../../components/admin/adminDashboard/UserOverview';
 import TopSalesOverview from '../../components/admin/Top';
 import RefundReturnStats from '../../components/admin/adminDashboard/RefundReturnStats';
 import { salesAnalyticsApi } from '../../services/allAPI';
+import MonthlyRevenueChart from '../../components/admin/adminDashboard/MonthlyRevenueChart';
 
 const SalesAnalytics = () => {
   const [salesData, setSalesData] = useState({});
@@ -17,6 +18,8 @@ const SalesAnalytics = () => {
   const [monthlyProducts, setMonthlyProducts] = useState([]);
   const [totalSales, setTotalSales] = useState(0);
   const [totalRefunds, setTotalRefunds] = useState(0);
+  const [refundStats, setRefundStats] = useState([]);
+  const [monthlyRevenue, setMonthlyRevenue] = useState([]);
 
   useEffect(() => {
     const fetchSalesAnalytics = async () => {
@@ -28,13 +31,13 @@ const SalesAnalytics = () => {
         setMonthlyProducts(data?.top_products || []);
         setRecentOrders(data?.recent_orders || []);
 
-        // ✅ Fixed template literal inside map
+        // ✅ Format sales_trends for Sales & Refunds overview
         const formatted = (data?.sales_trends || []).map((item) => {
-          const date = new Date(item.day);
+          const date = new Date(item.month || item.day);
           const year = date.getFullYear();
           const month = String(date.getMonth() + 1).padStart(2, "0");
           return {
-            month: `${year}-${month}`, // ✅ Corrected template literal
+            month: `${year}-${month}`,
             revenue: item.total_sales || 0,
             expenses: item.total_refunds || 0,
           };
@@ -54,7 +57,30 @@ const SalesAnalytics = () => {
         setTotalSales(totalSales);
         setTotalRefunds(totalRefunds);
 
-        console.log("Formatted Sales Trends:", formatted);
+        // ✅ Refund stats for RefundReturnStats
+        const refundStatsData = (data?.monthly_profit || []).map((item) => {
+          const date = new Date(item.month);
+          const monthName = date.toLocaleString("default", { month: "short" });
+          return {
+            month: monthName,
+            value: item.refunds || 0,
+          };
+        });
+        setRefundStats(refundStatsData);
+
+        // ✅ Revenue data for MonthlyRevenueChart
+        const revenueData = (data?.monthly_profit || []).map((item) => {
+          const date = new Date(item.month);
+          const monthName = date.toLocaleString("default", { month: "short" });
+          return {
+            month: monthName,
+            revenue: item.total_revenue || 0,
+          };
+        });
+        setMonthlyRevenue(revenueData);
+
+        console.log("Refund Stats Data:", refundStatsData);
+        console.log("Revenue Data:", revenueData);
       } catch (error) {
         console.error("Error fetching sales analytics data:", error);
       }
@@ -71,12 +97,8 @@ const SalesAnalytics = () => {
 
   return (
     <div className="bg-[#ECECF0] px-6 py-6 rounded-2xl">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-[#5737B4]">Sales Anayltics</h1>
-        <button className="bg-[#5737B4] text-white px-4 py-2 rounded-md">
-          Download report
-        </button>
       </div>
 
       {/* Stats Cards */}
@@ -100,12 +122,12 @@ const SalesAnalytics = () => {
               expenses: item.expenses,
             }))}
             title="Sales & Refunds Overview"
-            totalValue={totalSales} // ✅ use totalSales instead of total_profit
+            totalValue={totalSales} 
             growth={24.6}
             revenueLabel="Sales"
             expensesLabel="Refunds"
             xKey="month"
-            yFormatter={(v) => (v ? `${(v / 1000).toFixed(1)}K` : "0")} // ✅ fixed template literal
+            yFormatter={(v) => (v ? `${(v / 1000).toFixed(1)}K` : "0")} 
             revenueColor="#5737B4"
             expensesColor="#00C2FF"
           />
@@ -113,30 +135,25 @@ const SalesAnalytics = () => {
 
         {/* Right side (stacked vertically) */}
         <div className="flex flex-col w-full lg:col-span-1">
-          <div className="text-black w-full">
-            {/* <ProfitCard
-              title="Monthly Products"
-              profit={totalProducts}
-              percentage={28.5}
-              bars={filteredBars}
-              xLabels={filteredLabels}
-              filterOptions={filterOptions}
-              durationLabels={filteredLabels.map(label => `${label} - Duration`)} // ✅ corrected
-            /> */}
-          </div>
 
-          <hr className="border border-[#D8D8D8]" />
+          <div className="w-full space-y-1 mt-1">
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm h-60">
+              <MonthlyRevenueChart data={monthlyRevenue} />
+            </div>
 
-          <div className="w-full">
-            <RefundReturnStats />
+            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm h-60">
+              <RefundReturnStats data={refundStats} />
+            </div>
           </div>
         </div>
+
       </div>
 
       {/* Users Overview */}
-      <div>
-        <TopSalesOverview />
-      </div>
+      {/* <div>
+  <MonthlyRevenueChart data={monthlyRevenue} />
+
+      </div> */}
 
       {/* Optional Section (commented) */}
       {/* <div className='grid grid-cols-1 md:grid-cols-1 lg:grid-cols-2 gap-2 '>

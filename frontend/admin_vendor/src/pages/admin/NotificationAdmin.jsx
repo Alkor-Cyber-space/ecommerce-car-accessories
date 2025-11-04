@@ -246,11 +246,11 @@ const NotificationAdmin = () => {
             Admin Notifications
           </h2>
           <div className="flex items-center gap-4">
-            <select className="border border-gray-300 rounded px-3 py-2 bg-white">
+            {/* <select className="border border-gray-300 rounded px-3 py-2 bg-white">
               <option>All</option>
               <option>Unread</option>
               <option>Read</option>
-            </select>
+            </select> */}
             <button
               onClick={() => setIsModalOpen(true)}
               className="bg-[#5737B4] p-2 rounded border border-gray-300 hover:bg-[#4228a4] transition"
@@ -305,9 +305,9 @@ const NotificationAdmin = () => {
                   </div>
                   <p className="text-sm text-gray-600 mt-1">{item.message}</p>
                 </div>
-                <button className="bg-[#5737B4] text-white text-[12px] px-4 py-[6px] rounded hover:bg-[#4228a4] transition whitespace-nowrap">
+                {/* <button className="bg-[#5737B4] text-white text-[12px] px-4 py-[6px] rounded hover:bg-[#4228a4] transition whitespace-nowrap">
                   Mark as Read
-                </button>
+                </button> */}
               </div>
 
             ))

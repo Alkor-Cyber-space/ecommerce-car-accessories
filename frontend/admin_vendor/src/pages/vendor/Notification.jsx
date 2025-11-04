@@ -8,7 +8,6 @@ import { FiX } from "react-icons/fi";
 const Notification = () => {
   const [selectedFilter, setSelectedFilter] = useState("All");
   const [notifications, setNotifications] = useState([]);
-  const [readStatus, setReadStatus] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState(null);
 
@@ -17,8 +16,13 @@ const Notification = () => {
       try {
         setLoading(true);
         const data = await getVendorNotificationsApi();
-        setNotifications(data);
-        setReadStatus(data.map(() => false));
+
+        const formattedData = data.map((item) => ({
+          ...item,
+          is_read: !!item.is_read,
+        }));
+
+        setNotifications(formattedData);
       } catch (error) {
         console.error("Error fetching notifications:", error);
       } finally {
@@ -29,38 +33,31 @@ const Notification = () => {
     fetchNotifications();
   }, []);
 
-  // Mark as read API
-  const handleMarkAsRead = async (idx, id) => {
+  const handleMarkAsRead = async (id) => {
     try {
       await markNotificationAsReadApi(id);
-      setReadStatus((prev) =>
-        prev.map((status, i) => (i === idx ? true : status))
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, is_read: true } : item
+        )
       );
     } catch (error) {
       console.error("Error marking as read:", error);
     }
   };
 
-  // Open modal
-  const handleOpenModal = (notification) => {
-    setSelectedNotification(notification);
-  };
+  const handleOpenModal = (notification) => setSelectedNotification(notification);
+  const handleCloseModal = () => setSelectedNotification(null);
 
-  // Close modal
-  const handleCloseModal = () => {
-    setSelectedNotification(null);
-  };
-
-  const filteredNotifications = notifications.filter((_, idx) => {
-    if (selectedFilter === "Unread") return !readStatus[idx];
-    if (selectedFilter === "Read") return readStatus[idx];
+  const filteredNotifications = notifications.filter((item) => {
+    if (selectedFilter === "Unread") return !item.is_read;
+    if (selectedFilter === "Read") return item.is_read;
     return true;
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6  rounded-2xl">
+    <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
       <div className="max-w-6xl">
-        {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
           <h2 className="text-xl md:text-2xl font-bold text-[#5737B4]">
             Notifications
@@ -83,12 +80,12 @@ const Notification = () => {
           <p className="text-gray-500">No notifications found.</p>
         ) : (
           <div className="space-y-4">
-            {filteredNotifications.map((item, idx) => (
+            {filteredNotifications.map((item) => (
               <div
-                key={item.id || idx}
+                key={item.id}
                 onClick={() => handleOpenModal(item)}
                 className={`bg-white p-4 rounded-lg shadow-sm flex items-center justify-between cursor-pointer hover:shadow-md transition ${
-                  readStatus[idx] ? "opacity-70" : ""
+                  item.is_read ? "opacity-70" : ""
                 }`}
               >
                 <div className="flex items-start gap-4">
@@ -118,17 +115,17 @@ const Notification = () => {
 
                 <button
                   onClick={(e) => {
-                    e.stopPropagation(); // prevent modal open
-                    handleMarkAsRead(idx, item.id);
+                    e.stopPropagation();
+                    handleMarkAsRead(item.id);
                   }}
                   className={`px-4 py-[6px] rounded text-[12px] transition whitespace-nowrap ${
-                    readStatus[idx]
+                    item.is_read
                       ? "bg-gray-400 text-white cursor-not-allowed"
                       : "bg-[#5737B4] text-white hover:bg-[#4228a4]"
                   }`}
-                  disabled={readStatus[idx]}
+                  disabled={item.is_read}
                 >
-                  {readStatus[idx] ? "DONE" : "Mark as Read"}
+                  {item.is_read ? "DONE" : "Mark as Read"}
                 </button>
               </div>
             ))}
@@ -163,7 +160,8 @@ const Notification = () => {
               )}
             </p>
             <p className="text-gray-700 whitespace-pre-wrap">
-              {selectedNotification.message || "No message content available."}
+              {selectedNotification.message ||
+                "No message content available."}
             </p>
 
             <div className="mt-5 flex justify-end">

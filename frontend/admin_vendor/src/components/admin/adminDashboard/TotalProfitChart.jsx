@@ -75,7 +75,7 @@ const ProfitCard = ({
             <h1 className="text-3xl font-bold">{profit.toLocaleString()}</h1>
           </div>
         </div>
-        <select
+        {/* <select
           className="border border-gray-300 rounded px-2 py-1 text-sm"
           value={selectedFilter}
           onChange={handleFilterChange}
@@ -83,7 +83,7 @@ const ProfitCard = ({
           {filterOptions.map((option, i) => (
             <option key={i} value={option}>{option}</option>
           ))}
-        </select>
+        </select> */}
       </div>
 
       {/* Bars */}
