@@ -254,41 +254,42 @@ const AdminHome = () => {
       <div
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
       >
-        {/* 🔍 Search bar */}
-        <div className="flex items-center justify-end mb-4 pr-1">
+        {/* Search + Profile Section (Responsive) */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           {/* Search Bar */}
-          {/* <div className="relative w-full max-w-3xl">
-            <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
+          <div className="relative flex-grow min-w-[240px] sm:min-w-[300px] md:min-w-[400px] lg:max-w-5xl">
+            <IoSearchOutline className="absolute left-6 top-1/2 transform -translate-y-1/2 text-gray-500 text-xl md:text-2xl" />
             <input
               type="text"
               placeholder="Search"
-              className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
+              className="w-full pl-12 pr-3 py-3 md:py-5 rounded-[2rem] text-base md:text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
             />
-
-          </div> */}
+          </div>
 
           {/* Profile Info */}
           <div
-            className="flex w-40 items-center gap-3 z-50 cursor-pointer relative"
+            className="flex items-center gap-3 cursor-pointer relative w-full sm:w-auto justify-start sm:justify-end"
             onClick={() => navigate('/admin/admin-accounts-admin')}
           >
             <img
-              src={profileData.profile_image ? (
-                profileData.profile_image.startsWith('http') ? 
-                profileData.profile_image : 
-                `${serverUrl}${profileData.profile_image}`
-              ) : user}
+              src={
+                profileData.profile_image
+                  ? profileData.profile_image.startsWith('http')
+                    ? profileData.profile_image
+                    : `${serverUrl}${profileData.profile_image}`
+                  : user
+              }
               alt="profile"
-              className="w-12 h-12 rounded-full object-cover"
+              className="w-12 h-12 md:w-16 md:h-16 rounded-full object-cover"
             />
-            <div className="flex flex-col font-semibold">
-              <div className="text-lg text-gray-700 font-medium">
-                {profileData.username}
-              </div>
+            <div className="flex flex-col font-semibold text-sm md:text-base truncate">
+              <div className="text-gray-700 font-medium">{profileData.username}</div>
+              <span className="text-gray-600 truncate max-w-[150px] md:max-w-none">
+                {profileData.email}
+              </span>
             </div>
           </div>
         </div>
-
         {/* Dynamic Component Render */}
         <Outlet />
       </div>

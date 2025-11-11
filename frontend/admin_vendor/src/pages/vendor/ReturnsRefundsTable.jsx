@@ -42,79 +42,78 @@ const ReturnsRefundsTable = () => {
   };
 
   return (
-    <div className=" bg-gray-100 rounded-2xl min-h-screen p-6">
+    <div className="bg-[#ECECF0] rounded-2xl min-h-screen px-4 sm:px-6 py-8">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-[#5737B4]">Returns & Refunds</h2>
-        <button className="bg-[#5737B4] text-white text-sm px-4 py-2 rounded  flex items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
+        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+          Returns & Refunds
+        </h2>
+        <button className="bg-[#5737B4] text-white text-sm px-4 py-2 rounded-md hover:bg-[#452fa4] transition w-full sm:w-auto">
           Download Report
         </button>
       </div>
 
       {/* Filter Form */}
-      <div className="bg-white w-4xl py-4 px-6 rounded-lg shadow-sm mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
-              <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5737B4]">
-                <option>Select Status</option>
-                <option>Approved</option>
-                <option>Pending</option>
-                <option>Returned</option>
-                <option>Expired</option>
-              </select>
-            </div>
+      <div className="bg-white w-full py-4 px-5 sm:px-6 rounded-lg shadow-sm mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
+            />
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Buyer Name</label>
-              <input
-                type="text"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date - From</label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date - To</label>
-                <input
-                  type="date"
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
-                />
-              </div>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Buyer Name</label>
+            <input
+              type="text"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Order Status</label>
+            <select className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]">
+              <option>Select Status</option>
+              <option>Approved</option>
+              <option>Pending</option>
+              <option>Returned</option>
+              <option>Expired</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date - From</label>
+            <input
+              type="date"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date - To</label>
+            <input
+              type="date"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#5737B4]"
+            />
           </div>
         </div>
 
-        <div className="mt-8 flex justify-end space-x-4">
-          <button className="border border-gray-300 text-gray-700 px-6 py-2 text-sm rounded-md hover:bg-gray-50">
+        <div className="mt-6 flex flex-col sm:flex-row justify-end gap-3">
+          <button className="border border-gray-300 text-gray-700 px-6 py-2 text-sm rounded-md hover:bg-gray-50 w-full sm:w-auto">
             Reset
           </button>
-          <button className="bg-[#5737B4] text-white px-6 py-2 text-sm rounded-md hover:bg-[#5737B4]">
+          <button className="bg-[#5737B4] text-white px-6 py-2 text-sm rounded-md hover:bg-[#452fa4] w-full sm:w-auto">
             Search
           </button>
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="overflow-auto">
+      {/* Products Table (Desktop) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="min-w-full bg-white rounded-md shadow text-sm">
-          <thead className="text-gray-600">
+          <thead className="text-gray-600 bg-gray-50">
             <tr>
               <th className="p-3 text-left"></th>
               <th className="p-3 text-left">Product Name</th>
@@ -125,7 +124,6 @@ const ReturnsRefundsTable = () => {
               <th className="p-3 text-left">Actions</th>
             </tr>
           </thead>
-          <tbody>
             {/* {currentItems.map((product, idx) => (
               <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
                 <td className="p-3">
@@ -164,16 +162,60 @@ const ReturnsRefundsTable = () => {
               </tr>
             ))} */}
 
-          </tbody>
-        </table>
-        <p className="text-center text-gray-500 py-4">No data found</p>
+          </table>
+      </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {currentItems.map((product, idx) => (
+          <div key={idx} className="bg-white rounded-lg shadow p-4">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-[#5737B4] font-medium text-sm">{product.name}</h3>
+              <span
+                className={`px-2 py-1 rounded-full text-xs font-semibold ${product.status === "Approved"
+                  ? "bg-green-100 text-green-600"
+                  : product.status === "Pending"
+                    ? "bg-yellow-100 text-yellow-600"
+                    : product.status === "Expired"
+                      ? "bg-red-100 text-red-600"
+                      : product.status === "Received"
+                        ? "bg-blue-100 text-blue-600"
+                        : product.status === "Returned"
+                          ? "bg-purple-100 text-purple-600"
+                          : "bg-gray-100 text-gray-600"
+                  }`}
+              >
+                {product.status}
+              </span>
+            </div>
+            <p className="text-gray-700 text-sm mb-1">
+              <span className="font-medium">Customer:</span> {product.customer}
+            </p>
+            <p className="text-gray-700 text-sm mb-1">
+              <span className="font-medium">Reason:</span> {product.reason}
+            </p>
+            <p className="text-gray-700 text-sm mb-2">
+              <span className="font-medium">Price:</span> {product.price}
+            </p>
+            <div className="flex justify-end gap-4">
+              <Link to={`/vendor/orders/edit-order`}>
+                <PiPencilSimpleLineLight className="text-lg text-gray-700 hover:text-[#5737B4]" />
+              </Link>
+              <Link
+                to={`/vendor/orders/order-detail`}
+                className="text-[#5737B4] font-semibold text-sm hover:underline"
+              >
+                View More
+              </Link>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Pagination */}
-      <div className="flex justify-between items-center mt-4 text-sm">
-        <span className="text-[#505050] font-medium ">
-          {/* Showing {endIndex} of {totalItems} */}
-          showing {0} of {0}
+      <div className="flex flex-col sm:flex-row justify-between items-center mt-6 text-sm gap-3">
+        <span className="text-gray-600">
+          Showing {endIndex} of {totalItems}
         </span>
         <div className="flex gap-2">
           <button

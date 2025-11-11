@@ -159,8 +159,8 @@ const AddProduct = () => {
         formDataToSend.append("weight", formData.weight);
         formDataToSend.append("height", formData.height);
         formDataToSend.append("breadth", formData.breadth);
-    // include availability flag
-    formDataToSend.append("is_available", formData.is_available ? "true" : "false");
+        // include availability flag
+        formDataToSend.append("is_available", formData.is_available ? "true" : "false");
         // also include isActive for compatibility with edit flow
         formDataToSend.append("isActive", formData.is_available ? "true" : "false");
         if (formData.compatible_varient_year) {
@@ -205,8 +205,8 @@ const AddProduct = () => {
                 description: '',
                 price: '',
                 stock: '',
-                    manufactureDate: '',
-                    is_available: true,
+                manufactureDate: '',
+                is_available: true,
                 tags: [],
                 category: '',
                 sizes: '',
@@ -218,7 +218,7 @@ const AddProduct = () => {
                 breadth: ''
             });
             setImagePreviews(Array(6).fill(null));
-                setIsActive(true);
+            setIsActive(true);
             navigate("/vendor/products");
         } catch (error) {
             console.error("Error adding product:", error.response?.data || error.message);
@@ -279,8 +279,8 @@ const AddProduct = () => {
                         >
                             <div
                                 className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${isActive
-                                        ? "lg:translate-x-8 sm:translate-x-5 translate-x-8"
-                                        : "translate-x-0"
+                                    ? "lg:translate-x-8 sm:translate-x-5 translate-x-8"
+                                    : "translate-x-0"
                                     }`}
                             />
                         </div>

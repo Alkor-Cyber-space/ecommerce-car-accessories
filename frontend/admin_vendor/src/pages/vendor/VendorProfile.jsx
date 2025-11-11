@@ -122,6 +122,7 @@ const VendorProfile = () => {
     setAddressForm({
       line1: "",
       line2: "",
+      city: "",
       landmark: "",
       postal_code: "",
       state: "",
@@ -152,7 +153,7 @@ const VendorProfile = () => {
       setIsAddAddressModalOpen(false);
 
       // Optionally fetch updated data from server
-      await fetchVendorAddress();
+      // await fetchVendorAddress();
     } catch (error) {
       console.error("Error saving address:", error);
       toast.error(error.response?.data?.message || "Error saving address");
@@ -572,16 +573,6 @@ const validatePhone = (phone) => {
         ))}
       </div>
 
-      <div className="flex justify-end gap-4 mt-10">
-        <button className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">
-          Cancel
-        </button>
-        <button
-          className={`px-16 py-2 bg-[#5737B4] rounded-md text-sm text-white font-medium transition`}
-        >
-          Save
-        </button>
-      </div>
       <input
         type="file"
         ref={fileInputRef}

@@ -6,7 +6,14 @@ import { SlCloudUpload } from "react-icons/sl";
 import { RiDeleteBinLine } from "react-icons/ri";
 import { uploadBussinessDocApi } from "../../../services/allAPI";
 
-const allowedTypes = ["application/pdf", "image/jpeg"];
+const allowedTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/x-webp"
+];
 
 export default function BusinessDocumentsUpload() {
   const dispatch = useDispatch();
@@ -273,7 +280,13 @@ const simulateUpload = (file, key) => {
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
-        <h1 className="text-5xl font-bold text-[#232832] mb-10">Business Documents</h1>
+        <div className="mb-6">
+        <h1 className="text-5xl font-bold text-[#232832]">Business Documents</h1>
+        <span className="block text-sm font-normal text-gray-600 mt-1">
+            (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+            <span className="text-red-900">*</span>)
+          </span>
+          </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="flex flex-col sm:flex-row justify-between gap-10 text-lg">
