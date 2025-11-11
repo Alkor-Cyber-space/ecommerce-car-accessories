@@ -12,7 +12,14 @@ import {
 import { uploadBankAndTaxDocsApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 
-const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+const allowedTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/x-webp"
+];
 
 export default function BankAndTaxDetails() {
     const dispatch = useDispatch();
@@ -265,7 +272,13 @@ export default function BankAndTaxDetails() {
             <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
                 {!showTaxSection ? (
                     <>
-                        <h1 className="text-5xl font-bold text-[#232832] mb-10">Bank & Tax Details</h1>
+                        <div className="mb-6">
+                            <h1 className="text-5xl font-bold text-[#232832]">Bank & Tax Details</h1>
+                            <span className="block text-sm font-normal text-gray-600 mt-1">
+                                (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+                                <span className="text-red-900">*</span>)
+                            </span>
+                        </div>
 
                         <div className="flex flex-col sm:flex-row gap-10">
                             <div className="mt-18 text-xl w-full max-w-[300px] ">
@@ -313,9 +326,15 @@ export default function BankAndTaxDetails() {
                     </>
                 ) : (
                     <>
-                        <h1 className="text-5xl font-bold text-[#232832] mb-10">
-                            Tax / Financial Documents
-                        </h1>
+                        <div className="mb-6">
+                            <h1 className="text-5xl font-bold text-[#232832]">
+                                Tax / Financial Documents
+                            </h1>
+                            <span className="block text-sm font-normal text-gray-600 mt-1">
+                                (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+                                <span className="text-red-900">*</span>)
+                            </span>
+                        </div>
                         <div className="flex flex-col sm:flex-row gap-10">
                             <div className="mt-10 text-xl w-full max-w-[300px]">
                                 {renderUploader(

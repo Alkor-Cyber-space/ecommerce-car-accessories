@@ -177,7 +177,6 @@ export default function CompanyDetails() {
             >
               <option value="">Type of Vendor</option>
               <option value="business">Business</option>
-              <option value="wholesale">Wholesaler</option>
             </select>
 
             <div className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-[#7F7F7F]">
@@ -203,7 +202,7 @@ export default function CompanyDetails() {
             <input
               type="tel"
               name="company_number"
-              placeholder="+91 9876543210"
+              placeholder="9876543210"
               value={formData.company_number}
               onChange={handleChange}
               className="w-full px-4 py-3 rounded-lg bg-white font-semibold focus:ring-2"

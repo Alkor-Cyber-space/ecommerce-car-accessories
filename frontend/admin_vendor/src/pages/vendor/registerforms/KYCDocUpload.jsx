@@ -94,7 +94,13 @@ export default function KYCDocumentsUpload() {
   return (
     <div className="flex min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-4xl p-8 mx-auto my-10">
-        <h1 className="text-5xl font-bold text-[#232832] mb-6">KYC Documents</h1>
+        <div className="mb-6">
+          <h1 className="text-5xl font-bold text-[#232832]">KYC Documents</h1>
+          <span className="block text-sm font-normal text-gray-600 mt-1">
+            (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+            <span className="text-red-900">*</span>)
+          </span>
+        </div>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
           {/* PAN Card Upload */}

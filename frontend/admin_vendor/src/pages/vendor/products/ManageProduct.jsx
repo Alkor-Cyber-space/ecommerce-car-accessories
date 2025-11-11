@@ -6,6 +6,7 @@ import { PiToolboxLight } from 'react-icons/pi';
 import { IoIosArrowDown } from "react-icons/io";
 import { BsSearch } from "react-icons/bs";
 import { useNavigate, useParams } from "react-router-dom";
+import { toast } from "react-toastify";
 import { getProductsApi } from "../../../services/allAPI";
 
 const ProductList = () => {
@@ -20,9 +21,17 @@ const ProductList = () => {
     const fetchProducts = async () => {
       try {
         const data = await getProductsApi();
-        const productsArray = data.products || [];
-        const sortedData = productsArray.sort((a, b) => b.id - a.id);
+        const sortedData = (data?.products || data || []).sort(
+          (a, b) => b.id - a.id
+        );
         setProducts(sortedData);
+        // ✅ Store registration status for later use
+        if (data?.registration_complete !== undefined) {
+          localStorage.setItem(
+            "registration_complete",
+            JSON.stringify(data.registration_complete)
+          );
+        }
       } catch (error) {
         console.error("Error fetching products:", error);
       }
@@ -33,6 +42,16 @@ const ProductList = () => {
   const filtered = products.filter((product) =>
     product.name.toLowerCase().includes(search.toLowerCase())
   );
+  const handleAddProduct = () => {
+    const storedStatus = localStorage.getItem("registration_complete");
+    const isComplete = storedStatus === "true" || storedStatus === true;
+
+    if (isComplete) {
+      navigate("/vendor/products/add");
+    } else {
+      toast.warning("Please complete your registration before adding a product!");
+    }
+  };
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
@@ -70,6 +89,12 @@ const ProductList = () => {
     { icon: <PiToolboxLight />, title: "Total Orders", value: totalOrders },
     { icon: <CiBadgeDollar />, title: "Stocks", value: totalStocks },
   ];
+
+
+  const pageSizeOptions =
+    pageSize >= 50 && productCount > 50
+      ? [...baseSizes.filter((s) => s <= productCount), ...extraSizes.filter((s) => s <= productCount)]
+      : baseSizes.filter((s) => s <= productCount);
 
   return (
     <>
@@ -129,7 +154,7 @@ const ProductList = () => {
             )}
           </div>
           <button
-            onClick={() => navigate("add")}
+            onClick={handleAddProduct}
             className="bg-[#5737B4] text-white px-4 py-2 rounded-md shadow hover:bg-[#442f96] text-sm font-medium w-full sm:w-auto"
           >
             Add New Product +
@@ -169,9 +194,11 @@ const ProductList = () => {
                   <td className="p-3">{product.stock}</td>
                   <td className="p-3">
                     <span
-                      className={`px-2 py-1 rounded text-sm font-semibold ${product.is_available
-                          ? "bg-[#05C16833] text-green-800"   // ✅ Live
-                          : "bg-red-100 text-[#FF5A65]"       // ❌ Inactive
+                      className={`px-2 py-1 rounded text-sm font-semibold ${product.status === "Live"
+                        ? "bg-[#05C16833] text-green-800"
+                        : product.status === "Draft"
+                          ? "bg-[#AEB9E133] text-[#6989F9]"
+                          : "bg-red-100 text-[#FF5A65]"
                         }`}
                     >
                       {product.is_available ? "Live" : "Inactive"}

@@ -7,7 +7,14 @@ import { setAgreements, setCompletedStep, resetVendorRegistration } from "../../
 import { uploadAgreementsApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 
-const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+const allowedTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/x-webp"
+];
 
 export default function AgreementsUpload() {
   const dispatch = useDispatch();
@@ -99,7 +106,7 @@ export default function AgreementsUpload() {
           ...prev,
           [key]: {
             file,
-            metadata, 
+            metadata,
             progress: 100,
             status: "success",
           },
@@ -263,7 +270,15 @@ export default function AgreementsUpload() {
   return (
     <div className="min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
-        <h1 className="text-5xl font-bold text-[#232832] mb-10">Agreements & Supporting Docs</h1>
+        <div className="mb-6">
+          <h1 className="text-5xl font-bold text-[#232832]">
+            Agreements & Supporting Docs
+          </h1>
+          <span className="block text-sm font-normal text-gray-600 mt-1">
+            (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+            <span className="text-red-900">*</span>)
+          </span>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-15 flex-wrap">
           <div className="mt-11 text-xl w-full max-w-[320px]">

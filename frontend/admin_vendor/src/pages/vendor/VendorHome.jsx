@@ -14,7 +14,7 @@ import {
 } from "react-icons/fa";
 import { GiProgression } from "react-icons/gi";
 import { MdNotificationsNone, MdOutlineDashboard } from "react-icons/md";
-import { IoSearchOutline, IoStarHalf } from "react-icons/io5";
+import { IoStarHalf } from "react-icons/io5";
 import logo from "../../assets/logo.png";
 import { TbUsersGroup } from "react-icons/tb";
 import { HiArrowTrendingUp } from "react-icons/hi2";
@@ -57,14 +57,15 @@ const VendorHome = () => {
   useEffect(() => {
     const handleProfileEvent = (e) => {
       const { profile_image, username } = e.detail;
-      setProfile(prev => ({
+      setProfileData((prev) => ({
         ...prev,
         profile_image,
-        username
+        username,
       }));
     };
     window.addEventListener("vendorProfileUpdated", handleProfileEvent);
-    return () => window.removeEventListener("vendorProfileUpdated", handleProfileEvent);
+    return () =>
+      window.removeEventListener("vendorProfileUpdated", handleProfileEvent);
   }, []);
 
 
@@ -81,7 +82,10 @@ const VendorHome = () => {
       <Link
         to={to}
         className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 
-        ${activePath === to ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
+        ${activePath === to
+            ? "bg-[#5737B4] text-white shadow-xl"
+            : "text-gray-700"
+          }`}
       >
         {icon} {label}
       </Link>
@@ -194,38 +198,26 @@ const VendorHome = () => {
         className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? "pl-72" : "pl-14"
           }`}
       >
-        {/* Search Bar */}
-        <div className="flex items-center justify-end mb-4 pr-1">
-          {/* <div className="relative w-full max-w-3xl">
-            <IoSearchOutline className="absolute left-7 top-1/2 transform -translate-y-1/2 text-gray-500 text-2xl" />
-            <input
-              type="text"
-              placeholder="Search"
-              className="w-58/50 pl-16 pr-3 py-5 rounded-[2rem] text-xl font-semibold focus:outline-none focus:ring-2 focus:ring-[#5737B4] shadow-[0_-4px_8px_-4px_rgba(0,0,0,0.2),0_4px_8px_-4px_rgba(0,0,0,0.2)]"
-            />
-          </div> */}
-
-          {/* Profile Info */}
-          <div
-            className="flex w-40 items-center gap-3 z-50 cursor-pointer relative"
-            onClick={() => navigate("/vendor/account-settings")}
-          >
-            <img
-              src={
-                profileData.profile_image
-                  ? typeof profileData.profile_image === "string" &&
-                    profileData.profile_image.startsWith("http")
-                    ? profileData.profile_image
-                    : `${serverUrl}${profileData.profile_image}`
-                  : user
-              }
-              alt="profile"
-              className="w-12 h-12 rounded-full object-cover"
-            />
-            <div className="flex flex-col font-semibold">
-              <div className="text-lg text-gray-700 font-medium">
-                {profileData.username}
-              </div>
+        {/* Profile Info */}
+        <div
+          className="flex w-40 items-center gap-3 z-50 cursor-pointer relative ml-auto"
+          onClick={() => navigate("/vendor/account-settings")}
+        >
+          <img
+            src={
+              profileData.profile_image
+                ? typeof profileData.profile_image === "string" &&
+                  profileData.profile_image.startsWith("http")
+                  ? profileData.profile_image
+                  : `${serverUrl}${profileData.profile_image}`
+                : user
+            }
+            alt="profile"
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          <div className="flex flex-col font-semibold">
+            <div className="text-lg text-gray-700 font-medium">
+              {profileData.username}
             </div>
           </div>
         </div>

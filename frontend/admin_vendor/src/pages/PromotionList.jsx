@@ -1,56 +1,75 @@
 import React, { useState, useEffect } from 'react';
-import { getAllPromotionsApi, getCategoriesByAll, getProductsByCategory } from '../services/allAPI';
+import {
+  getAllPromotionsApi,
+  getCategoriesByAll,
+  getProductsByCategory,
+} from '../services/allAPI';
 import PromotionCard from './admin/PromotionCard';
 
 const PromotionsList = () => {
   const [promotions, setPromotions] = useState([]);
   const [selectedPromotion, setSelectedPromotion] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-
   const [allCategories, setAllCategories] = useState([]);
-  const [allProducts, setAllProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]); // Products filtered by category
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showAll, setShowAll] = useState(false);
+
+
+  const fetchPromotions = async () => {
+    try {
+      const res = await getAllPromotionsApi();
+      setPromotions(res?.data || res?.message || []);
+    } catch (error) {
+      console.error("Error fetching promotions:", error);
+    }
+  };
+
+  const fetchInitialData = async () => {
+    try {
+      await fetchPromotions();
+
+      const categories = await getCategoriesByAll();
+      setAllCategories(categories || []);
+
+      if (categories?.length > 0) {
+        const products = await getProductsByCategory(categories[0].id);
+        setFilteredProducts(products || []);
+      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const promos = await getAllPromotionsApi();
-        setPromotions(promos.message);
-
-        const categories = await getCategoriesByAll();
-        setAllCategories(categories);
-
-        if (categories.length > 0) {
-          const products = await getProductsByCategory(categories[0].id);
-          setAllProducts(products);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
-    fetchData();
+    fetchInitialData();
   }, []);
 
-
-  // Handler for category selection inside modal
+  // ✅ Category change handler (for modal dropdown)
   const handleCategoryChange = async (categoryId) => {
     try {
       const products = await getProductsByCategory(categoryId);
-      setFilteredProducts(products);
+      setFilteredProducts(products || []);
     } catch (error) {
       console.error("Error fetching products:", error);
     }
   };
-  const [showAll, setShowAll] = useState(false);
 
-  const displayedPromotions = showAll ? promotions : promotions.slice(0, 6);
+  // ✅ After deletion
   const handleDelete = (deletedId) => {
-    setPromotions(prevPromotions => prevPromotions.filter(promotion => promotion.id !== deletedId));
+    setPromotions((prev) => prev.filter((p) => p.id !== deletedId));
   };
+
+  // ✅ Handle after update (live update)
+  const handleUpdate = async () => {
+    await fetchPromotions();
+  };
+
+  const displayedPromotions = showAll
+    ? promotions
+    : promotions.slice(0, 6);
+
   return (
     <div className="p-4">
-      <h2 className="text-2xl font-bold mb-4">Active Promotionss</h2>
+      <h2 className="text-2xl font-bold mb-4">Active Promotions</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {Array.isArray(displayedPromotions) && displayedPromotions.length > 0 ? (
@@ -59,13 +78,13 @@ const PromotionsList = () => {
               key={promo.id}
               promotion={promo}
               onSelect={() => setSelectedPromotion(promo)}
-              onDelete={handleDelete} // <-- Pass the handler
+              onDelete={handleDelete}
+              fetchPromotions={handleUpdate} // ✅ refresh instantly after edit
             />
           ))
         ) : (
           <p>No active promotions available.</p>
         )}
-
       </div>
 
       {/* View All / Show Less Button */}
@@ -87,15 +106,14 @@ const PromotionsList = () => {
           isModal={true}
           onClose={() => setSelectedPromotion(null)}
           allCategories={allCategories}
-          allProducts={filteredProducts} // Only show filtered products
-          isEditModalOpen={isEditModalOpen}
-          setIsEditModalOpen={setIsEditModalOpen}
-          onCategoryChange={handleCategoryChange} // Pass handler to modal
+          allProducts={filteredProducts}
+          fetchPromotions={handleUpdate}
+          onUpdate={(updatedPromo) => setSelectedPromotion(updatedPromo)}
         />
+
       )}
     </div>
   );
 };
 
 export default PromotionsList;
-

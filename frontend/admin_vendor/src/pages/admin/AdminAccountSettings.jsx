@@ -79,52 +79,81 @@ const AdminAccountSettings = () => {
   };
 
   const handleEditProfile = async () => {
-  setLoading(true);
-  try {
-    const formDataToSend = new FormData();
-    for (const key in formData) {
-      const value = formData[key];
-      if (value !== null && value !== "" && value !== undefined) {
-        formDataToSend.append(key, value);
+    setLoading(true);
+    try {
+      const formDataToSend = new FormData();
+      for (const key in formData) {
+        const value = formData[key];
+
+        // Only append profile_image if it's a File
+        if (key === "profile_image") {
+          if (value instanceof File) {
+            formDataToSend.append(key, value);
+          }
+        } else {
+          if (value !== null && value !== "" && value !== undefined) {
+            formDataToSend.append(key, value);
+          }
+        }
       }
+
+      const response = await updateAdminAccountSettingsApi(formData.id, formDataToSend);
+      console.log("Update Response:", response);
+
+      let updatedImage = response.profile_image;
+      if (updatedImage && !updatedImage.startsWith("http")) {
+        updatedImage = `${serverUrl}${updatedImage}`;
+      }
+
+      setFormData((prev) => ({
+        ...prev,
+        ...response,
+        profile_image: updatedImage,
+        old_password: "",
+        new_password: "",
+      }));
+      if (updatedImage) setImagePreview(updatedImage);
+
+      // Save to localStorage
+      const localStorageData = {
+        profile_image: updatedImage || formData.profile_image,
+        username: response.username || formData.username,
+        first_name: response.first_name || formData.first_name,
+        last_name: response.last_name || formData.last_name,
+        email: response.email || formData.email,
+        phone_number: response.phone_number || formData.phone_number,
+        company: response.company || formData.company,
+      };
+      localStorage.setItem("adminProfile", JSON.stringify(localStorageData));
+
+      // Dispatch event
+      window.dispatchEvent(
+        new CustomEvent("adminProfileUpdated", {
+          detail: localStorageData,
+        })
+      );
+
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error("Error updating profile:", error);
+
+      // If API returns any password-related errors, show the fixed toast
+      if (error?.response?.data?.non_field_errors?.length) {
+        toast.error(
+          "Password must have at least 8 characters and include both letters and numbers"
+        );
+        setFormData(prev => ({ ...prev, new_password: "" }));
+        setLoading(false);
+        return;
+      }
+
+
+      toast.error("Failed to update profile");
+
+    } finally {
+      setLoading(false);
     }
-
-    const response = await updateAdminAccountSettingsApi(formData.id, formDataToSend);
-    console.log("Update Response:", response);
-
-    let updatedImage = response.profile_image;
-    if (updatedImage && !updatedImage.startsWith("http")) {
-      updatedImage = `${serverUrl}${updatedImage}`;
-    }
-
-    //  Update state in this component
-    setFormData((prev) => ({
-      ...prev,
-      ...response,
-      profile_image: updatedImage,
-      old_password: "",
-      new_password: "",
-    }));
-    if (updatedImage) setImagePreview(updatedImage);
-
-    window.dispatchEvent(
-      new CustomEvent("adminProfileUpdated", {
-        detail: {
-          profile_image: updatedImage,
-          username: response.username,
-          email: response.email,
-        },
-      })
-    );
-
-    toast.success("Profile updated successfully!");
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    toast.error("Failed to update profile");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleDeactivateConfirm = () => {
     confirmAlert({
