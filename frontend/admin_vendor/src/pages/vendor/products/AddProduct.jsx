@@ -285,7 +285,7 @@ const AddProduct = () => {
                             />
                         </div>
                     </div>
-                    <div className="relative inline-block text-left">
+                    {/* <div className="relative inline-block text-left">
                         <button
                             onClick={() => setShowDropdown(!showDropdown)}
                             className="flex items-center justify-between gap-2 px-4 py-1.5 text-sm font-medium text-[#5737B4] border border-[#5737B4] rounded hover:bg-[#5737B4] hover:text-white transition"
@@ -302,7 +302,7 @@ const AddProduct = () => {
                                 </ul>
                             </div>
                         )}
-                    </div>
+                    </div> */}
 
                 </div>
             </div>

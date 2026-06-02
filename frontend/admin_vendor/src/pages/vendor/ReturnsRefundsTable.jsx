@@ -124,43 +124,55 @@ const ReturnsRefundsTable = () => {
               <th className="p-3 text-left">Actions</th>
             </tr>
           </thead>
-            {/* {currentItems.map((product, idx) => (
-              <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
-                <td className="p-3">
-                  <input type="checkbox" />
-                </td>
-                <td className="p-3 text-indigo-600 font-medium">{product.name}</td>
-                <td className="p-3">{product.customer}</td>
-                <td className="p-3">{product.reason}</td>
-                <td className="p-3">
-                  <span
-                    className={`px-2 py-1 rounded-full text-xs font-semibold ${product.status === "Approved"
-                        ? "bg-green-100 text-green-600"
-                        : product.status === "Pending"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : product.status === "Expired"
-                            ? "bg-red-100 text-red-600"
-                            : product.status === "Received"
-                              ? "bg-blue-100 text-blue-600"
-                              : product.status === "Returned"
-                                ? "bg-purple-100 text-purple-600"
-                                : "bg-gray-100 text-gray-600"
-                      }`}
-                  >
-                    {product.status}
-                  </span>
-                </td>
-                <td className="p-3">{product.price}</td>
-                <td className="flex p-3 gap-4 text-gray-500 hover:text-black cursor-pointer">
-                  <Link to={`/vendor/orders/edit-order`}>
-                    <PiPencilSimpleLineLight className="text-lg mb-2 text-gray-700" />
-                  </Link>
-                  <Link to={`/vendor/orders/order-detail`} className="flex items-center text-[#5737B4] font-semibold">
-                    View More
-                  </Link>
-                </td>
-              </tr>
-            ))} */}
+            <tbody>
+  {currentItems.length === 0 ? (
+    <tr>
+      <td colSpan="7" className="text-center py-6 text-gray-500">
+        No Data Found
+      </td>
+    </tr>
+  ) : (
+    currentItems.map((product, idx) => (
+      <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+        <td className="p-3">
+          <input type="checkbox" />
+        </td>
+        <td className="p-3 text-indigo-600 font-medium">{product.name}</td>
+        <td className="p-3">{product.customer}</td>
+        <td className="p-3">{product.reason}</td>
+        <td className="p-3">
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+              product.status === "Approved"
+                ? "bg-green-100 text-green-600"
+                : product.status === "Pending"
+                ? "bg-yellow-100 text-yellow-600"
+                : product.status === "Expired"
+                ? "bg-red-100 text-red-600"
+                : product.status === "Received"
+                ? "bg-blue-100 text-blue-600"
+                : product.status === "Returned"
+                ? "bg-purple-100 text-purple-600"
+                : "bg-gray-100 text-gray-600"
+            }`}
+          >
+            {product.status}
+          </span>
+        </td>
+        <td className="p-3">{product.price}</td>
+        <td className="flex p-3 gap-4 text-gray-500 hover:text-black cursor-pointer">
+          <Link to={`/vendor/orders/edit-order`}>
+            <PiPencilSimpleLineLight className="text-lg mb-2 text-gray-700" />
+          </Link>
+          <Link to={`/vendor/orders/order-detail`} className="flex items-center text-[#5737B4] font-semibold">
+            View More
+          </Link>
+        </td>
+      </tr>
+    ))
+  )}
+</tbody>
+
 
           </table>
       </div>

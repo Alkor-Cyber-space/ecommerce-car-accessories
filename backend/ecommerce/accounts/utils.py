@@ -7,18 +7,18 @@ import razorpay
 from django.conf import settings
 from .models import *
 
-from io import BytesIO
-from django.core.files.base import ContentFile
-from reportlab.lib.pagesizes import A4
-from reportlab.lib import colors
-from reportlab.platypus import (
-    Table, TableStyle, Paragraph, SimpleDocTemplate, Spacer, Image
-)
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import cm
-from reportlab.pdfbase import pdfmetrics
-from reportlab.pdfbase.ttfonts import TTFont
-import os
+# from io import BytesIO
+# from django.core.files.base import ContentFile
+# from reportlab.lib.pagesizes import A4
+# from reportlab.lib import colors
+# from reportlab.platypus import (
+#     Table, TableStyle, Paragraph, SimpleDocTemplate, Spacer, Image
+# )
+# from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+# from reportlab.lib.units import cm
+# from reportlab.pdfbase import pdfmetrics
+# from reportlab.pdfbase.ttfonts import TTFont
+# import os
 
 
 from django.core.mail import EmailMessage
@@ -142,9 +142,9 @@ def create_and_process_payouts(week_start=None, week_end=None):
 
 
 # Register font for ₹ symbol
-pdfmetrics.registerFont(TTFont("DejaVuSans", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
+# pdfmetrics.registerFont(TTFont("DejaVuSans", "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"))
 
-def generate_invoice_pdf(order, logo_path=None):
+# def generate_invoice_pdf(order, logo_path=None):
     buffer = BytesIO()
     doc = SimpleDocTemplate(buffer, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm)
 

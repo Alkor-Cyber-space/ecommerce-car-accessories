@@ -20,8 +20,8 @@ from .shiprocket_client import *
 from datetime import datetime
 from rest_framework import generics, permissions
 from django.db.models import Q
-from accounts.utils import generate_invoice_pdf
-from accounts.utils import send_order_invoice_email
+# from accounts.utils import generate_invoice_pdf
+# from accounts.utils import send_order_invoice_email
 
 
 class ShippingOptionsView(APIView):
@@ -299,8 +299,8 @@ class CheckoutViewSet(viewsets.ViewSet):
                 price=item['product'].price
             )
 
-        invoice_pdf = generate_invoice_pdf(order)
-        send_order_invoice_email(order, invoice_pdf)
+        # invoice_pdf = generate_invoice_pdf(order)
+        # send_order_invoice_email(order, invoice_pdf)
 
         # Payment metadata
         metadata = {"order_id": str(order.id)}

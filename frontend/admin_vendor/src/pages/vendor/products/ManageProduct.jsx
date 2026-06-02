@@ -135,7 +135,7 @@ const ProductList = () => {
 
         {/* Bulk Actions + Add */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full md:w-auto">
-          <div className="relative w-full sm:w-auto">
+          {/* <div className="relative w-full sm:w-auto">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center justify-between gap-2 border-2 border-[#5737B4] px-4 py-2 rounded-md text-sm font-medium text-[#5737B4] hover:bg-gray-50 w-full sm:w-auto"
@@ -152,7 +152,7 @@ const ProductList = () => {
                 </ul>
               </div>
             )}
-          </div>
+          </div> */}
           <button
             onClick={handleAddProduct}
             className="bg-[#5737B4] text-white px-4 py-2 rounded-md shadow hover:bg-[#442f96] text-sm font-medium w-full sm:w-auto"
