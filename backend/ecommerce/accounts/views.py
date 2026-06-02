@@ -666,7 +666,7 @@ class PasswordResetViewSet(viewsets.ViewSet):
                 send_mail(
                     subject="Password Reset Request",
                     message=f"Click the link to reset your password: {reset_link}",
-                    from_email="nandakishore.p.r2002@gmail.com",
+                    from_email=settings.DEFAULT_FROM_EMAIL,
                     recipient_list=[email],
                     fail_silently=False,
                 )

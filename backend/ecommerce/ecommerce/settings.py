@@ -231,13 +231,14 @@ AUTHENTICATION_BACKENDS = [
 
 EMAIL_BACKEND = env('EMAIL_BACKEND')
 EMAIL_HOST = env('EMAIL_HOST')
-EMAIL_PORT = env('EMAIL_PORT')
-EMAIL_USE_TLS = env('EMAIL_USE_TLS')
+EMAIL_PORT = int(env('EMAIL_PORT', default=587))
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Your React/Vue etc. frontend
+    "http://localhost:8000",  # Your React/Vue etc. frontend
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
