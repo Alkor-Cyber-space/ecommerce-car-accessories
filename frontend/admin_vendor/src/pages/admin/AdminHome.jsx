@@ -173,7 +173,7 @@ const AdminHome = () => {
           <SidebarItem to="/admin/sales-analytics" label="Sales Analytics" icon={<BsGraphUpArrow />} activePath={activePath} />
           <SidebarItem to="/admin/revenue-trends" label="Revenue Trends" icon={<HiArrowTrendingUp />} activePath={activePath} />
 
-          {/* <li>
+           <li>
             <div
               className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
               onClick={() => toggleDropdown("Inventory Control")}
@@ -189,7 +189,7 @@ const AdminHome = () => {
                 <SidebarItem to="/admin/inventory-stock" label="Stock Management" activePath={activePath} />
               </ul>
             )}
-          </li> */}
+          </li> 
         <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
           <li>
             <div
