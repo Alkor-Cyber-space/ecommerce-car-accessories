@@ -1,152 +1,186 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getMeApi } from "../../services/allAPI";
+import { Outlet, useLocation, useNavigate, Link } from "react-router-dom";
 import {
-  FaBoxOpen, FaListAlt, FaTruckLoading, FaChartBar,
-  FaTags, FaUserCircle, FaChevronRight, FaChevronDown,
-  FaSignOutAlt, FaBars, FaTimes
+  FaListAlt,
+  FaTruckLoading,
+  FaChartBar,
+  FaTags,
+  FaUserCircle,
+  FaChevronRight,
+  FaChevronDown,
+  FaSignOutAlt,
+  FaRegQuestionCircle,
 } from "react-icons/fa";
-import { MdOutlineDashboard } from "react-icons/md";
-import { useNavigate } from "react-router-dom";
-
-import VendorDashboard from "./VendorDashboard";
-import PerformanceMetrics from "../../components/vendor/perfomanceMetrics/PerformanceMetrics";
-import VendorProfile from "./VendorProfile";
-// import ProductManager from "../components/vendor/ProductManager";
-// import Orders from "../components/vendor/Orders";
-// import Returns from "../components/vendor/Returns";
-// import Promotions from "../components/vendor/Promotions";
-// import Settlements from "../components/vendor/Settlements";
-// import Performance from "../components/vendor/Performance";
-// import VendorProfile from "../components/vendor/VendorProfile";
-
+import { GiProgression } from "react-icons/gi";
+import { MdNotificationsNone, MdOutlineDashboard } from "react-icons/md";
+import { IoStarHalf } from "react-icons/io5";
 import logo from "../../assets/logo.png";
-import ProductList from "../../components/vendor/products/manageProduct";
+import { TbUsersGroup } from "react-icons/tb";
+import { HiArrowTrendingUp } from "react-icons/hi2";
+import user from "../../assets/user.jpg";
+import { RiUserSettingsLine } from "react-icons/ri";
+import { PiBuildings, PiChartLine } from "react-icons/pi";
+
+const serverUrl = "http://127.0.0.1:8000/";
 
 const VendorHome = () => {
-  const [activeTab, setActiveTab] = useState("Dashboard");
-  const [openDropdown, setOpenDropdown] = useState("");
   const [showSidebar, setShowSidebar] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const toggleDropdown = (name) => {
-    setOpenDropdown(openDropdown === name ? "" : name);
-  };
+  const [profileData, setProfileData] = useState({
+    profile_image: null,
+    username: "",
+    email: "",
+  });
 
-  const handleClick = (tab) => {
-    setActiveTab(tab);
-  };
+  // ✅ Fetch profile when component mounts
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await getMeApi();
+        if (res) {
+          setProfileData({
+            profile_image: res.profile_image || null,
+            username: res.username || "Vendor",
+            email: res.email || "vendor@example.com",
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile:", error);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const handleProfileEvent = (e) => {
+      const { profile_image, username } = e.detail;
+      setProfileData((prev) => ({
+        ...prev,
+        profile_image,
+        username,
+      }));
+    };
+    window.addEventListener("vendorProfileUpdated", handleProfileEvent);
+    return () =>
+      window.removeEventListener("vendorProfileUpdated", handleProfileEvent);
+  }, []);
+
+
+  const activePath = location.pathname;
 
   const handleLogout = () => {
-    localStorage.removeItem("user");
-    navigate("/vendor");
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    navigate("/login", { replace: true });
   };
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case "Dashboard": return <VendorDashboard />;
-      case "Product Manager": return <ProductList />;
-      case "Orders": return <Orders />;
-      case "Returns": return <Returns />;
-      case "Promotions": return <Promotions />;
-      case "Settlements": return <Settlements />;
-      case "Performance": return <PerformanceMetrics />;
-      case "Profile": return <VendorProfile />;
-      default: return <div>Select an option</div>;
-    }
-  };
+  const SidebarItem = ({ to, label, icon, activePath }) => (
+    <li>
+      <Link
+        to={to}
+        className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 
+        ${activePath === to
+            ? "bg-[#5737B4] text-white shadow-xl"
+            : "text-gray-700"
+          }`}
+      >
+        {icon} {label}
+      </Link>
+    </li>
+  );
 
   return (
-    <div className="flex min-h-screen gap-5  px-2">
+    <div className="flex min-h-screen gap-5 px-2">
       {/* Toggle Button */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}
-        className={`fixed top-1 z-50 text-xl p-2 rounded transition-all duration-500 ease-in-out ${showSidebar ? 'left-4' : 'left-0'
+        className={`fixed top-1 z-50 text-xl p-2 rounded transition-all duration-500 ease-in-out ${showSidebar ? "left-4" : "left-0"
           }`}
       >
         <div
-          className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? 'px-3 w-48' : 'w-12 justify-center'
+          className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? "px-3 py-2 w-67" : "w-12 justify-center"
             }`}
         >
           <img src={logo} alt="Logo" className="h-8" />
-          {showSidebar && <p className="text-2xl font-semibold transition-all duration-1000">carooa</p>}
+          {showSidebar && <p className="text-2xl font-semibold">carooa</p>}
         </div>
       </button>
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-white text-slate-800 p-6 overflow-y-auto z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}
+        className={`fixed top-0 left-0 h-full w-72 bg-white text-slate-800 p-6 overflow-y-auto scrollbar-none z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
-        {/* <h2 className="text-2xl font-bold text-[#5737B4] px-4 py-8">Vendor Panel</h2> */}
         <ul className="space-y-4 text-md py-10 font-medium">
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Dashboard" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Dashboard")}
-          >
-            <MdOutlineDashboard /> Dashboard
-          </li>
-
-          {/* Product Management */}
-          <li>
-            <div
-              className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
-              onClick={() => toggleDropdown("Products")}
-            >
-              <span className="flex items-center gap-2"><FaBoxOpen /> Products</span>
-              {openDropdown === "Products" ? <FaChevronDown /> : <FaChevronRight />}
-            </div>
-            {openDropdown === "Products" && (
-              <ul className="pl-6 mt-2 space-y-2 text-sm">
-                <li
-                  className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl ${activeTab === "Product Manager" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-                  onClick={() => handleClick("Product Manager")}
-                >
-                  Manage Products
-                </li>
-              </ul>
-            )}
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Orders" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Orders")}
-          >
-            <FaListAlt /> Orders
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Returns" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Returns")}
-          >
-            <FaTruckLoading /> Returns & Refunds
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Promotions" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Promotions")}
-          >
-            <FaTags /> Promotions
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Settlements" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Settlements")}
-          >
-            💰 Settlements
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Performance" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Performance")}
-          >
-            <FaChartBar /> Performance Metrics
-          </li>
-
-          <li
-            className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 ${activeTab === "Profile" ? "bg-[#5737B4] text-white shadow-xl" : ""}`}
-            onClick={() => handleClick("Profile")}
-          >
-            <FaUserCircle /> Vendor Profile
-          </li>
+          <SidebarItem
+            to="/vendor/dashboard"
+            label="Dashboard"
+            icon={<MdOutlineDashboard />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/products"
+            label="Product Management"
+            icon={<PiChartLine />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/orders"
+            label="Order Management"
+            icon={<HiArrowTrendingUp />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/returns"
+            label="Returns & Refunds"
+            icon={<TbUsersGroup />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/stock-management"
+            label="Inventory Management"
+            icon={<GiProgression />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/payments-earnings"
+            label="Payments & Earnings"
+            icon={<PiBuildings />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/reviews"
+            label="Ratings & Reviews"
+            icon={<IoStarHalf />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/profile"
+            label="Profile & KYC"
+            icon={<FaUserCircle />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/notification"
+            label="Notifications"
+            icon={<MdNotificationsNone />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/support-help"
+            label="Support/Help"
+            icon={<FaRegQuestionCircle />}
+            activePath={activePath}
+          />
+          <SidebarItem
+            to="/vendor/account-settings"
+            label="Account Settings"
+            icon={<RiUserSettingsLine />}
+            activePath={activePath}
+          />
 
           <hr className="my-4 border-gray-300" />
 
@@ -159,12 +193,37 @@ const VendorHome = () => {
         </ul>
       </div>
 
-
       {/* Main Content */}
       <div
-        className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? 'pl-72' : 'pl-14'}`}
+        className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? "pl-72" : "pl-14"
+          }`}
       >
-        {renderContent()}
+        {/* Profile Info */}
+        <div
+          className="flex w-40 items-center gap-3 z-50 cursor-pointer relative ml-auto"
+          onClick={() => navigate("/vendor/account-settings")}
+        >
+          <img
+            src={
+              profileData.profile_image
+                ? typeof profileData.profile_image === "string" &&
+                  profileData.profile_image.startsWith("http")
+                  ? profileData.profile_image
+                  : `${serverUrl}${profileData.profile_image}`
+                : user
+            }
+            alt="profile"
+            className="w-12 h-12 rounded-full object-cover"
+          />
+          <div className="flex flex-col font-semibold">
+            <div className="text-lg text-gray-700 font-medium">
+              {profileData.username}
+            </div>
+          </div>
+        </div>
+
+        {/* Render Child Routes */}
+        <Outlet />
       </div>
     </div>
   );

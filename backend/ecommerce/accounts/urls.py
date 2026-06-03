@@ -15,4 +15,21 @@ urlpatterns = [
     path('', include(router.urls)),
     path('password/reset-password/<uidb64>/<token>/', PasswordResetViewSet.as_view({'post': 'reset_password'}), name='reset-password'),
     path('social_auth/', GoogleLoginAPIView.as_view(), name='google-login'),
+    path('save-fcm-token/', SaveFCMTokenView.as_view(), name='save_fcm_token'),
+
+    path('otp-verification/',OTPVerification.as_view(),name='otp-verification'),
+    path('resend-otp/',ResendOptVerification.as_view(),name='resend-otp'),
+
+    path('vendor_profile_update/<int:pk>/', VendorProfileUpdateView.as_view(), name='vendor-profile-update'),
+    path('vendor-final-approve/<int:vendor_profile_id>/',VendorDocumentsFinalApprovalView.as_view(),name='vendor-final-approve'),
+    # path('vendor-edit/vendor-profile/<int:user_id>/', VendorProfileEditAPIView.as_view()),
+    # path('user-profile/<int:user_id>/', UserProfileEditAPIView.as_view(), name='user-profile-edit'),
+    path('vendor-audit-log-all/',VendorAuditLogAll.as_view(),name="vendor-audit-log"),
+    path('vendor-document-check/',VendorDocumentCheck.as_view(),name="vendor-document-check"),
+    path('admin-profile-edit/<int:pk>/',AdminProfileEdit.as_view(),name="admin-profile-edit"),
+    path('admin-is_staff-fetch',AdminRetrieveByIdAPIView.as_view(),name='admin-is_staff-fetch'),
+    path('process-payouts/', ProcessPayoutsView.as_view(), name='process_payouts'),
+    path('generate-razorpay-contacts/', GenerateRazorpayContactsView.as_view(), name='generate-razorpay-contacts'),
+    path('export-report/', ExportReportView.as_view(), name='export-report'),
+
 ]

@@ -7,6 +7,8 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('paid', 'Paid'),
+        ('processing', 'Processing'),
+        ('confirmed', 'Confirmed'),
         ('shipped', 'Shipped'),
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
@@ -20,12 +22,20 @@ class Order(models.Model):
     ]
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='orders')
+    
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
     tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     shipping_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cod')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    courier_company_id= models.IntegerField()
+    shiprocket_order_id = models.CharField(max_length=255, blank=True, null=True)
+    shipment_id = models.CharField(max_length=255, blank=True, null=True)
+    courier_name = models.CharField(max_length=255, blank=True, null=True)
+    awb_code = models.CharField(max_length=255, blank=True, null=True)   # Tracking number
+    tracking_url = models.URLField(blank=True, null=True)                # Shiprocket tracking URL
+    shiprocket_order_id = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

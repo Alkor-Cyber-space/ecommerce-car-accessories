@@ -7,9 +7,19 @@ import {
     setCurrentStep,
     setBankDetails,
     setTaxDocuments,
+    setCompletedStep,
 } from "../../../store/vendorRegisterSlice";
+import { uploadBankAndTaxDocsApi } from "../../../services/allAPI";
+import { toast } from "react-toastify";
 
-const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+const allowedTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/x-webp"
+];
 
 export default function BankAndTaxDetails() {
     const dispatch = useDispatch();
@@ -18,18 +28,18 @@ export default function BankAndTaxDetails() {
     const [showTaxSection, setShowTaxSection] = useState(false);
 
     const [bankDocs, setBankDocs] = useState({
-        cancelledCheque: { file: null, progress: 0, status: "idle" },
-        bankStatement: { file: null, progress: 0, status: "idle" },
+        cancelled_cheque: { file: null, progress: 0, status: "idle" },
+        bank_statement: { file: null, progress: 0, status: "idle" },
     });
 
     const [taxDocs, setTaxDocs] = useState({
-        itrReport: { file: null, progress: 0, status: "idle" },
-        plOrBalanceSheet: { file: null, progress: 0, status: "idle" },
+        it_return: { file: null, progress: 0, status: "idle" },
+        financial_statement: { file: null, progress: 0, status: "idle" },
     });
 
     const uploadIntervals = useRef({});
 
-    // ✅ RESTORE FROM LOCALSTORAGE ON LOAD
+    // RESTORE FROM LOCALSTORAGE 
     useEffect(() => {
         const restoreDocs = (key, fields, setDocs) => {
             const saved = localStorage.getItem(key);
@@ -46,7 +56,7 @@ export default function BankAndTaxDetails() {
             });
 
             setDocs(restored);
-            console.log(`✅ Restored ${key} from localStorage`, restored);
+            console.log(`Restored ${key} from localStorage`, restored);
         };
 
         restoreDocs("vendorBankDocuments", bankDocs, setBankDocs);
@@ -104,15 +114,16 @@ export default function BankAndTaxDetails() {
     };
 
     const isBankDocsComplete =
-        bankDocs.cancelledCheque.status === "success" &&
-        bankDocs.bankStatement.status === "success";
+        bankDocs.cancelled_cheque.status === "success" &&
+        bankDocs.bank_statement.status === "success";
 
-    const isTaxDocsComplete = taxDocs.itrReport.status === "success";
+    const isTaxDocsComplete = taxDocs.it_return.status === "success";
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (isTaxDocsComplete) {
-            // ✅ Prepare and store Bank Documents in Redux
             const uploadedBankDocs = {};
+            const uploadedTaxDocs = {};
+
             Object.entries(bankDocs).forEach(([key, doc]) => {
                 if (doc.file) {
                     uploadedBankDocs[key] = {
@@ -122,12 +133,7 @@ export default function BankAndTaxDetails() {
                     };
                 }
             });
-            dispatch(setBankDetails(uploadedBankDocs));
-            localStorage.setItem("vendorBankDocuments", JSON.stringify(uploadedBankDocs));
-            console.log("✅ Bank Documents saved:", uploadedBankDocs);
 
-            // ✅ Prepare and store Tax Documents in Redux
-            const uploadedTaxDocs = {};
             Object.entries(taxDocs).forEach(([key, doc]) => {
                 if (doc.file) {
                     uploadedTaxDocs[key] = {
@@ -137,13 +143,39 @@ export default function BankAndTaxDetails() {
                     };
                 }
             });
-            dispatch(setTaxDocuments(uploadedTaxDocs));
-            localStorage.setItem("vendorTaxDocuments", JSON.stringify(uploadedTaxDocs));
-            console.log("✅ Tax Documents saved:", uploadedTaxDocs);
 
-            // ✅ Move to next step
-            dispatch(setCurrentStep(6));
-            navigate("/vendor-register/agreements");
+            try {
+                const vendorId = localStorage.getItem("vendorId");
+
+                const formData = new FormData();
+                for (const key in uploadedBankDocs) {
+                    formData.append(key, bankDocs[key].file); 
+                }
+                for (const key in uploadedTaxDocs) {
+                    formData.append(key, taxDocs[key].file); 
+                }
+                const response = await uploadBankAndTaxDocsApi(vendorId, formData);
+                console.log(response.data);
+                if (response.status === 200) {
+                    dispatch(setBankDetails(uploadedBankDocs));
+                    localStorage.setItem("vendorBankDocuments", JSON.stringify(uploadedBankDocs));
+                    console.log(" Bank Documents saved:", uploadedBankDocs);
+
+                    dispatch(setTaxDocuments(uploadedTaxDocs));
+                    localStorage.setItem("vendorTaxDocuments", JSON.stringify(uploadedTaxDocs));
+                    console.log("Tax Documents saved:", uploadedTaxDocs);
+                    dispatch(setCompletedStep(4))
+                    // Move to next step
+                    dispatch(setCurrentStep(5));
+                    navigate("/vendor-register/agreements");
+                } else {
+                    console.error("Upload failed with status:", response.status);
+                    toast.error("Failed to upload documents. Try again.");
+                }
+            } catch (error) {
+                console.error("API error:", error);
+                toast.error("Server error. Please try again later.", error);
+            }
         }
     };
 
@@ -240,13 +272,19 @@ export default function BankAndTaxDetails() {
             <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
                 {!showTaxSection ? (
                     <>
-                        <h1 className="text-5xl font-bold text-[#232832] mb-10">Bank & Tax Details</h1>
+                        <div className="mb-6">
+                            <h1 className="text-5xl font-bold text-[#232832]">Bank & Tax Details</h1>
+                            <span className="block text-sm font-normal text-gray-600 mt-1">
+                                (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+                                <span className="text-red-900">*</span>)
+                            </span>
+                        </div>
 
                         <div className="flex flex-col sm:flex-row gap-10">
                             <div className="mt-18 text-xl w-full max-w-[300px] ">
                                 {renderUploader(
                                     "Upload Cancelled Cheque",
-                                    "cancelledCheque",
+                                    "cancelled_cheque",
                                     bankDocs,
                                     setBankDocs,
                                     "bank"
@@ -255,7 +293,7 @@ export default function BankAndTaxDetails() {
                             <div className="mt-4 text-lg w-full max-w-[350px]">
                                 {renderUploader(
                                     "Bank Passbook or Statement (with IFSC, account holder name, account number)",
-                                    "bankStatement",
+                                    "bank_statement",
                                     bankDocs,
                                     setBankDocs,
                                     "bank"
@@ -267,7 +305,6 @@ export default function BankAndTaxDetails() {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    dispatch(setCurrentStep(6));
                                     navigate("/vendor-register/agreements");
                                 }}
                                 className="w-[280px] py-2 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
@@ -278,11 +315,10 @@ export default function BankAndTaxDetails() {
                             <button
                                 disabled={!isBankDocsComplete}
                                 onClick={() => setShowTaxSection(true)}
-                                className={`w-[280px] py-2 text-white font-medium rounded-full transition-all ${
-                                    isBankDocsComplete
+                                className={`w-[280px] py-2 text-white font-medium rounded-full transition-all ${isBankDocsComplete
                                         ? "bg-[#5737B4] hover:bg-[#432a91]"
                                         : "bg-[#D8D8D8] cursor-not-allowed"
-                                }`}
+                                    }`}
                             >
                                 Next: Tax / Financial Records
                             </button>
@@ -290,14 +326,20 @@ export default function BankAndTaxDetails() {
                     </>
                 ) : (
                     <>
-                        <h1 className="text-5xl font-bold text-[#232832] mb-10">
-                            Tax / Financial Documents
-                        </h1>
+                        <div className="mb-6">
+                            <h1 className="text-5xl font-bold text-[#232832]">
+                                Tax / Financial Documents
+                            </h1>
+                            <span className="block text-sm font-normal text-gray-600 mt-1">
+                                (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+                                <span className="text-red-900">*</span>)
+                            </span>
+                        </div>
                         <div className="flex flex-col sm:flex-row gap-10">
                             <div className="mt-10 text-xl w-full max-w-[300px]">
                                 {renderUploader(
                                     "Latest IT Return (1 year)",
-                                    "itrReport",
+                                    "it_return",
                                     taxDocs,
                                     setTaxDocs,
                                     "tax"
@@ -306,7 +348,7 @@ export default function BankAndTaxDetails() {
                             <div className="mt-4 text-lg w-full max-w-[300px]">
                                 {renderUploader(
                                     "P&L Statement or Balance Sheet (Optional for Small Vendors)",
-                                    "plOrBalanceSheet",
+                                    "financial_statement",
                                     taxDocs,
                                     setTaxDocs,
                                     "tax"
@@ -318,7 +360,6 @@ export default function BankAndTaxDetails() {
                             <button
                                 type="button"
                                 onClick={() => {
-                                    dispatch(setCurrentStep(6));
                                     navigate("/login");
                                 }}
                                 className="w-[280px] py-2 text-[#5737B4] border border-[#5737B4] font-medium rounded-full hover:bg-[#f4f4f4] transition-all"
@@ -328,11 +369,10 @@ export default function BankAndTaxDetails() {
                             <button
                                 onClick={handleSubmit}
                                 disabled={!isTaxDocsComplete}
-                                className={`w-[280px] py-2 rounded-full text-white font-medium transition-all ${
-                                    isTaxDocsComplete
+                                className={`w-[280px] py-2 rounded-full text-white font-medium transition-all ${isTaxDocsComplete
                                         ? "bg-[#5737B4] hover:bg-[#432a91]"
                                         : "bg-[#D8D8D8] cursor-not-allowed"
-                                }`}
+                                    }`}
                             >
                                 Save & Continue
                             </button>

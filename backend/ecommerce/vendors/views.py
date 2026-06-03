@@ -1,27 +1,34 @@
 
-from rest_framework import viewsets, permissions
+from rest_framework import viewsets, permissions,status
 from rest_framework.response import Response
-from rest_framework import status
-from products.models import Product, Category
-from vehicles.models import VehicleMake, VehicleModel, Year, Variant, ModelYear, VariantYear
+from products.models import Product, Category,ProductImage
+from vehicles.models import *
 from products.serializers import ProductSerializer, CategorySerializer
-from vehicles.serializers import (
-    VehicleMakeSerializer, VehicleModelSerializer, YearSerializer, 
-    VariantSerializer, ModelYearSerializer, VariantYearSerializer
-)
-from accounts.permissions import IsVendor,IsVendorProfileComplete
-from .serializers import ProductStockUpdateSerializer, VendorDashboardSerializer
+from vehicles.serializers import *
+from accounts.permissions import IsVendor
+from .serializers import *
+from products.models import Review
 import csv
 import io
 import pandas as pd
-from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
 from accounts.models import VendorProfile
+from orders.models import Order, OrderItem
+from django.db.models import Sum, F, Count,Avg
+from django.db.models.functions import TruncMonth
+from django.contrib.auth.models import Group
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from decimal import Decimal
+from accounts.models import CustomUser,Payout
+from django.utils import timezone
+from accounts.utils import is_vendor_registration_complete
+
 
 
 class VendorDashboardViewSet(viewsets.ViewSet):
@@ -32,172 +39,290 @@ class VendorDashboardViewSet(viewsets.ViewSet):
 
         try:
             profile = user.vendor_profile
-            registration_complete = profile.is_registration_complete()
+            registration_complete = profile.vendordocuments.is_all_documents_submitted()
         except VendorProfile.DoesNotExist:
             registration_complete = False
 
-        total_products = Product.objects.filter(vendor=user).count()
-        recent_products = Product.objects.filter(vendor=user).order_by('-created_at')[:5]
+        # ---------- Products ----------
+        products_qs = Product.objects.filter(vendor=user)
+        total_products = products_qs.count()
+        recent_products = products_qs.order_by('-created_at')[:10]
+
+        # Stock summary
+        stock_summary = {
+            "out_of_stock": products_qs.filter(stock=0).count(),
+            "low_stock": products_qs.filter(stock__gt=0, stock__lt=10).count(),
+            "in_stock": products_qs.filter(stock__gte=10).count(),
+        }
+
+        # ---------- Orders --------------
+        order_items = OrderItem.objects.filter(product__vendor=user)
+        orders_qs = Order.objects.filter(items__product__vendor=user).distinct()
+
+        total_sales = order_items.aggregate(
+            total=Sum(F('price') * F('quantity'))
+        )['total'] or 0
+
+        total_orders = orders_qs.count()
+        total_profit = total_sales
+
+        # Recent orders
+        recent_orders = orders_qs.order_by('-created_at')[:10]
+
+        # ---------- Monthly Trends ----------
+        monthly_sales_qs = (
+            order_items.annotate(month=TruncMonth('order__created_at'))
+            .values('month')
+            .annotate(
+                total_sales=Sum(F('price') * F('quantity')),
+                total_profit=Sum(F('price') * F('quantity')),  # same as sales for now
+                total_orders=Count('order', distinct=True),
+            )
+            .order_by('month')
+        )
+
+        # Convert to structured list
+        sales_trends = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_sales": float(item["total_sales"] or 0),
+                "total_profit": float(item["total_profit"] or 0),
+                "total_orders": item["total_orders"] or 0,
+            }
+            for item in monthly_sales_qs
+        ]
+
+        # Separate monthly orders
+        monthly_orders = [
+            {
+                "month": item["month"].strftime("%Y-%m"),
+                "total_orders": item["total_orders"] or 0,
+            }
+            for item in monthly_sales_qs
+        ]
+
+        # ---------- Monthly Top selling products ----------
+        current_date = timezone.now()
+
+        year_start = current_date.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        # Fetch all order items for this vendor from Jan 1st to today
+        order_items = (
+            OrderItem.objects.filter(
+                product__vendor=user,
+                order__created_at__gte=year_start,
+                order__created_at__lte=current_date
+            )
+            .annotate(month=TruncMonth('order__created_at'))
+            .values('month', 'product__id', 'product__name')
+            .annotate(total_sold=Sum('quantity'))
+            .order_by('month', '-total_sold')
+        )
+
+        # Organize into dictionary {month: [products]}
+        monthly_top_products = {}
+        for item in order_items:
+            month_key = item['month'].strftime("%Y-%m")
+            if month_key not in monthly_top_products:
+                monthly_top_products[month_key] = []
+            if len(monthly_top_products[month_key]) < 10:
+                monthly_top_products[month_key].append({
+                    "product_id": item["product__id"],
+                    "product_name": item["product__name"],
+                    "total_sold": item["total_sold"]
+                })
 
         data = {
-            'total_products': total_products,
-            'recent_products': recent_products,
-            'registration_complete': registration_complete
+            "total_products": total_products,
+            "recent_products": recent_products,
+            "registration_complete": registration_complete,
+            "total_sales": total_sales,
+            "total_orders": total_orders,
+            "total_profit": total_profit,
+            "stock_summary": stock_summary,
+            "recent_orders": recent_orders,
+            "sales_trends": sales_trends,
+            "monthly_orders": monthly_orders,
+            "monthly_top_products": monthly_top_products
         }
 
         serializer = VendorDashboardSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
 # Product CRUD by Vendor
 class VendorProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor,IsVendorProfileComplete]
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+    print("reached function")
 
     def get_queryset(self):
         return Product.objects.filter(vendor=self.request.user)
 
-    def perform_create(self, serializer):
-        serializer.save(vendor=self.request.user)
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        registration_complete = is_vendor_registration_complete(user)
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({
+            "registration_complete": registration_complete,
+            "products": serializer.data
+        })
 
+    def create(self, request, *args, **kwargs):
+        user = request.user
+        registration_complete = is_vendor_registration_complete(user)
+
+        if not registration_complete:
+            return Response(
+                {"error": "Vendor not verified. Cannot create product."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        product = serializer.save(vendor=user)
+
+        images = request.FILES.getlist('images')
+        for index, image in enumerate(images):
+            ProductImage.objects.create(
+                product=product,
+                image=image,
+                is_main=(index == 0)
+            )
+
+        return Response(
+            {"message": "Product created successfully.", "product": ProductSerializer(product).data},
+            status=status.HTTP_201_CREATED
+        )
+
+
+
+    def perform_update(self, serializer):
+        print("reached update")
+        product = serializer.save()
+        new_images = self.request.FILES
+
+        for key in new_images.keys():
+            # delete old image for this slot
+            ProductImage.objects.filter(product=product, slot=key).delete()
+
+            for file in new_images.getlist(key):  # handle multiple files in same slot
+                ProductImage.objects.create(
+                    product=product,
+                    image=file,
+                    slot=key,
+                    is_main=(key == "main_image")
+                )
+
+        return product
+
+
+
+    @action(detail=True, methods=['delete'], url_path='delete-image')
+    def delete_image(self, request, pk=None):
+        try:
+            image = ProductImage.objects.get(pk=pk, product__vendor=request.user)
+            print(f"image : {image}")
+            image.delete()
+            return Response({'message': 'Image deleted successfully.'}, status=status.HTTP_200_OK)
+        except ProductImage.DoesNotExist:
+            return Response({'error': 'Image not found.'}, status=status.HTTP_404_NOT_FOUND)
+    
 # Category CRUD by Vendor
 class VendorCategoryViewSet(viewsets.ModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor,IsVendorProfileComplete]
-
-# Vehicle Makes CRUD by Vendor
-class VendorVehicleMakeViewSet(viewsets.ModelViewSet):
-    queryset = VehicleMake.objects.all()
-    serializer_class = VehicleMakeSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
-
-# Vehicle Model CRUD by Vendor
-class VendorVehicleModelViewSet(viewsets.ModelViewSet):
-    queryset = VehicleModel.objects.all()
-    serializer_class = VehicleModelSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
-
-# Year CRUD by Vendor
-class VendorYearViewSet(viewsets.ModelViewSet):
-    queryset = Year.objects.all()
-    serializer_class = YearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
-
-# Variant CRUD by Vendor
-class VendorVariantViewSet(viewsets.ModelViewSet):
-    queryset = Variant.objects.all()
-    serializer_class = VariantSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
-
-# ModelYear CRUD by Vendor
-class VendorModelYearViewSet(viewsets.ModelViewSet):
-    queryset = ModelYear.objects.all()
-    serializer_class = ModelYearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
-
-# VariantYear CRUD by Vendor
-class VendorVariantYearViewSet(viewsets.ModelViewSet):
-    queryset = VariantYear.objects.all()
-    serializer_class = VariantYearSerializer
-    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
 
 
-class ProductBulkUploadViewSet(viewsets.ViewSet):
-    permission_classes = [IsAuthenticated, IsVendor, IsVendorProfileComplete]
+#     @action(detail=False, methods=['post'], url_path='upload-csv')
+#     def upload_csv(self, request):
+#         file = request.FILES.get('file')
+#         print(file)
+#         if not file or not file.name.endswith('.csv'):
+#             return Response({'error': 'Please upload a valid CSV file.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    def get_or_create_category_hierarchy(self, hierarchy_str):
-        parent = None
-        for name in map(str.strip, hierarchy_str.split('>')):
-            category, _ = Category.objects.get_or_create(name=name, parent=parent)
-            parent = category
-        return parent
+#         try:
+#             decoded_file = file.read().decode('utf-8')
+#             reader = csv.DictReader(io.StringIO(decoded_file))
 
-    @action(detail=False, methods=['post'], url_path='upload-csv')
-    def upload_csv(self, request):
-        file = request.FILES.get('file')
-        print(file)
-        if not file or not file.name.endswith('.csv'):
-            return Response({'error': 'Please upload a valid CSV file.'}, status=status.HTTP_400_BAD_REQUEST)
+#             products_created = []
 
-        try:
-            decoded_file = file.read().decode('utf-8')
-            reader = csv.DictReader(io.StringIO(decoded_file))
+#             for row in reader:
+#                 row = {k.strip().lower(): v.strip() for k, v in row.items()}
 
-            products_created = []
+#                 category = self.get_or_create_category_hierarchy(row.get('category_hierarchy'))
+#                 make, _ = VehicleMake.objects.get_or_create(name=row.get('vehicle_make'))
+#                 model, _ = VehicleModel.objects.get_or_create(make=make, name=row.get('vehicle_model'))
+#                 year_obj, _ = Year.objects.get_or_create(year=int(row.get('vehicle_year')))
+#                 variant, _ = Variant.objects.get_or_create(model=model, name=row.get('vehicle_variant'))
+#                 variant_year, _ = VariantYear.objects.get_or_create(variant=variant, year=year_obj)
 
-            for row in reader:
-                row = {k.strip().lower(): v.strip() for k, v in row.items()}
+#                 product = Product.objects.create(
+#                     name=row.get('product_name'),
+#                     description=row.get('product_description', ''),
+#                     price=row.get('product_price'),
+#                     stock=row.get('product_stock'),
+#                     category=category,
+#                     vendor=request.user
+#                 )
+#                 product.compatible_varient_year.add(variant_year)
+#                 products_created.append(product)
 
-                category = self.get_or_create_category_hierarchy(row.get('category_hierarchy'))
-                make, _ = VehicleMake.objects.get_or_create(name=row.get('vehicle_make'))
-                model, _ = VehicleModel.objects.get_or_create(make=make, name=row.get('vehicle_model'))
-                year_obj, _ = Year.objects.get_or_create(year=int(row.get('vehicle_year')))
-                variant, _ = Variant.objects.get_or_create(model=model, name=row.get('vehicle_variant'))
-                variant_year, _ = VariantYear.objects.get_or_create(variant=variant, year=year_obj)
+#             return Response({'message': f'{len(products_created)} products uploaded successfully.'}, status=status.HTTP_201_CREATED)
 
-                product = Product.objects.create(
-                    name=row.get('product_name'),
-                    description=row.get('product_description', ''),
-                    price=row.get('product_price'),
-                    stock=row.get('product_stock'),
-                    category=category,
-                    vendor=request.user
-                )
-                product.compatible_varient_year.add(variant_year)
-                products_created.append(product)
+#         except Exception as e:
+#             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            return Response({'message': f'{len(products_created)} products uploaded successfully.'}, status=status.HTTP_201_CREATED)
+#     @action(detail=False, methods=['post'], url_path='upload-excel')
+#     def upload_excel(self, request):
+#         file = request.FILES.get('file')
+#         print(file)
+#         if not file or not file.name.endswith(('.xlsx', '.xls')):
+#             return Response({'error': 'Please upload a valid Excel file (.xlsx or .xls).'}, status=status.HTTP_400_BAD_REQUEST)
 
-        except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+#         try:
+#             df = pd.read_excel(file)
+#         except Exception as e:
+#             return Response({'error': f'Failed to read Excel file: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=False, methods=['post'], url_path='upload-excel')
-    def upload_excel(self, request):
-        file = request.FILES.get('file')
-        print(file)
-        if not file or not file.name.endswith(('.xlsx', '.xls')):
-            return Response({'error': 'Please upload a valid Excel file (.xlsx or .xls).'}, status=status.HTTP_400_BAD_REQUEST)
+#         required_columns = {'category_hierarchy', 'vehicle_make', 'vehicle_model', 'vehicle_year', 'vehicle_variant', 'product_name', 'product_description', 'product_price', 'product_stock'}
+#         if not required_columns.issubset(set(df.columns.str.lower())):
+#             return Response({'error': f'Missing columns. Required: {required_columns}'}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            df = pd.read_excel(file)
-        except Exception as e:
-            return Response({'error': f'Failed to read Excel file: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+#         products_created = []
+#         for _, row in df.iterrows():
+#             try:
+#                 row = {str(k).strip().lower(): str(v).strip() for k, v in row.items()}
 
-        required_columns = {'category_hierarchy', 'vehicle_make', 'vehicle_model', 'vehicle_year', 'vehicle_variant', 'product_name', 'product_description', 'product_price', 'product_stock'}
-        if not required_columns.issubset(set(df.columns.str.lower())):
-            return Response({'error': f'Missing columns. Required: {required_columns}'}, status=status.HTTP_400_BAD_REQUEST)
+#                 category = self.get_or_create_category_hierarchy(row.get('category_hierarchy'))
+#                 make, _ = VehicleMake.objects.get_or_create(name=row.get('vehicle_make'))
+#                 model, _ = VehicleModel.objects.get_or_create(make=make, name=row.get('vehicle_model'))
+#                 year_obj, _ = Year.objects.get_or_create(year=int(row.get('vehicle_year')))
+#                 variant, _ = Variant.objects.get_or_create(model=model, name=row.get('vehicle_variant'))
+#                 variant_year, _ = VariantYear.objects.get_or_create(variant=variant, year=year_obj)
 
-        products_created = []
-        for _, row in df.iterrows():
-            try:
-                row = {str(k).strip().lower(): str(v).strip() for k, v in row.items()}
+#                 product = Product.objects.create(
+#                     name=row.get('product_name'),
+#                     description=row.get('product_description', ''),
+#                     price=row.get('product_price'),
+#                     stock=row.get('product_stock'),
+#                     category=category,
+#                     vendor=request.user
+#                 )
+#                 product.compatible_varient_year.add(variant_year)
+#                 products_created.append(product)
 
-                category = self.get_or_create_category_hierarchy(row.get('category_hierarchy'))
-                make, _ = VehicleMake.objects.get_or_create(name=row.get('vehicle_make'))
-                model, _ = VehicleModel.objects.get_or_create(make=make, name=row.get('vehicle_model'))
-                year_obj, _ = Year.objects.get_or_create(year=int(row.get('vehicle_year')))
-                variant, _ = Variant.objects.get_or_create(model=model, name=row.get('vehicle_variant'))
-                variant_year, _ = VariantYear.objects.get_or_create(variant=variant, year=year_obj)
+#             except Exception as e:
+#                 return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-                product = Product.objects.create(
-                    name=row.get('product_name'),
-                    description=row.get('product_description', ''),
-                    price=row.get('product_price'),
-                    stock=row.get('product_stock'),
-                    category=category,
-                    vendor=request.user
-                )
-                product.compatible_varient_year.add(variant_year)
-                products_created.append(product)
-
-            except Exception as e:
-                return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        return Response({'message': f'{len(products_created)} products uploaded successfully.'}, status=status.HTTP_201_CREATED)
+#         return Response({'message': f'{len(products_created)} products uploaded successfully.'}, status=status.HTTP_201_CREATED)
     
     
 class InventoryUpdateViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated, IsVendor, IsVendorProfileComplete]
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
 
     @action(detail=True, methods=['patch'], url_path='update-stock')
     def update_stock(self, request, pk=None):
@@ -221,3 +346,122 @@ class InventoryUpdateViewSet(viewsets.ViewSet):
 
             return Response({'message': 'Stock updated successfully.'})
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+
+class VendorReviewViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+
+    def list(self, request):
+        vendor = request.user
+
+        # Filter reviews for products created by this vendor
+        reviews = Review.objects.filter(product__vendor=vendor).order_by('-created_at')
+
+        serializer = VendorReviewSerializer(reviews, many=True)
+        total_reviews = reviews.count()
+
+        # Monthly review count
+        monthly_reviews_qs = (
+            reviews.annotate(month=TruncMonth('created_at'))
+                   .values('month')
+                   .annotate(count=Count('id'))
+                   .order_by('month')
+        )
+        monthly_reviews = [
+            {"month": item["month"].strftime("%Y-%m"), "count": item["count"]}
+            for item in monthly_reviews_qs
+        ]
+
+        products_qs = (
+            Product.objects.filter(vendor=vendor)
+            .annotate(
+                average_rating=Avg('reviews__rating'),  
+                total_reviews=Count('reviews')          
+            )
+            .order_by('name')
+        )
+
+        products_data = [
+            {
+                "id": product.id,
+                "name": product.name,
+                "average_rating": round(product.average_rating or 0, 1),
+                "total_reviews": product.total_reviews
+            }
+            for product in products_qs
+        ]
+
+        return Response({
+            "total_reviews": total_reviews,
+            "monthly_reviews": monthly_reviews,
+            "products": products_data,
+            "reviews": serializer.data
+        })
+
+
+
+class VendorTransactionListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_vendor_sales(self, vendor):
+        sales = []
+        order_items = OrderItem.objects.filter(product__vendor=vendor).select_related('order', 'product')
+
+        for item in order_items:
+            total_amount = item.price * item.quantity
+            admin_commission = total_amount * Decimal('0.03')
+            vendor_amount = total_amount - admin_commission
+            txn_id = f"TXN{item.order.id}{item.id}"
+
+            sales.append({
+                "date": item.order.created_at.date(),
+                "transaction_id": txn_id,
+                "type": "Sale",
+                "product": item.product.name,
+                "status": item.order.status.capitalize(),
+                "order_id": str(item.order.id),
+                "amount": float(total_amount),
+                "admin_commission": float(admin_commission),
+                "vendor_amount": float(vendor_amount),
+                "description": "Payment received"
+            })
+
+        sales.sort(key=lambda x: x['date'], reverse=True)
+        return sales
+
+    def get_vendor_payouts(self, vendor):
+        payouts_list = []
+        payouts = Payout.objects.filter(vendor=vendor)
+
+        for payout in payouts:
+            txn_id = f"PAYOUT{payout.id}"
+            payouts_list.append({
+                "date": payout.created_at.date(),
+                "transaction_id": txn_id,
+                "type": "Payout",
+                "product": "-",
+                "status": payout.status.capitalize(),
+                "order_id": "-",
+                "amount": float(payout.amount + payout.commission),
+                "admin_commission": float(payout.commission),
+                "vendor_amount": float(payout.amount),
+                "description": "Vendor payout"
+            })
+
+        payouts_list.sort(key=lambda x: x['date'], reverse=True)
+        return payouts_list
+
+    def get(self, request, *args, **kwargs):
+        vendor = request.user
+        if not hasattr(vendor, 'vendor_profile'):
+            return Response({"error": "User is not a vendor"}, status=400)
+
+        sales = self.get_vendor_sales(vendor)
+        payouts = self.get_vendor_payouts(vendor)
+
+        # Combine two lists in the response
+        return Response({
+            "sales": sales,
+            "payouts": payouts
+        })

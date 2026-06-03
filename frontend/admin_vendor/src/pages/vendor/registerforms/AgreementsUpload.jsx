@@ -3,9 +3,18 @@ import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { SlCloudUpload } from "react-icons/sl";
 import { RiDeleteBinLine } from "react-icons/ri";
-import { setAgreements, setCurrentStep, setCompletedStep, resetVendorRegistration } from "../../../store/vendorRegisterSlice";
+import { setAgreements, setCompletedStep, resetVendorRegistration } from "../../../store/vendorRegisterSlice";
+import { uploadAgreementsApi } from "../../../services/allAPI";
+import { toast } from "react-toastify";
 
-const allowedTypes = ["application/pdf", "image/jpeg", "image/png"];
+const allowedTypes = [
+  "application/pdf",
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+  "image/x-webp"
+];
 
 export default function AgreementsUpload() {
   const dispatch = useDispatch();
@@ -13,39 +22,39 @@ export default function AgreementsUpload() {
   const [loading, setLoading] = useState(false);
 
   const [docs, setDocs] = useState({
-    vendorForm: { file: null, progress: 0, status: "idle" },
-    ndaOrAgreement: { file: null, progress: 0, status: "idle" },
-    authorizationLetter: { file: null, progress: 0, status: "idle" },
-    signatoryLetter: { file: null, progress: 0, status: "idle" },
+    vendor_registration_form: { file: null, progress: 0, status: "idle" },
+    signed_terms_and_con: { file: null, progress: 0, status: "idle" },
+    dealership_letter: { file: null, progress: 0, status: "idle" },
+    authorized_signatory_letter: { file: null, progress: 0, status: "idle" },
   });
 
   const uploadIntervals = useRef({});
 
-  // ✅ Restore saved agreements when coming back
+  // Restore saved agreements when coming back
   useEffect(() => {
     const saved = localStorage.getItem("vendorAgreements");
     if (saved) {
       const parsed = JSON.parse(saved);
       const restored = {
-        vendorForm: parsed.vendorForm
-          ? { file: parsed.vendorForm, progress: 100, status: "success" }
+        vendor_registration_form: parsed.vendor_registration_form
+          ? { file: parsed.vendor_registration_form, progress: 100, status: "success" }
           : { file: null, progress: 0, status: "idle" },
 
-        ndaOrAgreement: parsed.ndaOrAgreement
-          ? { file: parsed.ndaOrAgreement, progress: 100, status: "success" }
+        signed_terms_and_con: parsed.signed_terms_and_con
+          ? { file: parsed.signed_terms_and_con, progress: 100, status: "success" }
           : { file: null, progress: 0, status: "idle" },
 
-        authorizationLetter: parsed.authorizationLetter
-          ? { file: parsed.authorizationLetter, progress: 100, status: "success" }
+        dealership_letter: parsed.dealership_letter
+          ? { file: parsed.dealership_letter, progress: 100, status: "success" }
           : { file: null, progress: 0, status: "idle" },
 
-        signatoryLetter: parsed.signatoryLetter
-          ? { file: parsed.signatoryLetter, progress: 100, status: "success" }
+        authorized_signatory_letter: parsed.authorized_signatory_letter
+          ? { file: parsed.authorized_signatory_letter, progress: 100, status: "success" }
           : { file: null, progress: 0, status: "idle" },
       };
 
       setDocs(restored);
-      console.log("📥 Restored agreements from localStorage", restored);
+      console.log("Restored agreements from localStorage", restored);
     }
   }, []);
 
@@ -87,7 +96,7 @@ export default function AgreementsUpload() {
       if (!isInvalid && progress >= 100) {
         clearInterval(uploadIntervals.current[key]);
 
-        const fileData = {
+        const metadata = {
           name: file.name,
           size: file.size,
           type: file.type,
@@ -95,14 +104,19 @@ export default function AgreementsUpload() {
 
         setDocs((prev) => ({
           ...prev,
-          [key]: { file: fileData, progress: 100, status: "success" },
+          [key]: {
+            file,
+            metadata,
+            progress: 100,
+            status: "success",
+          },
         }));
 
-        // ✅ Save only meta to localStorage
+        // Only store metadata in localStorage
         const existing = JSON.parse(localStorage.getItem("vendorAgreements") || "{}");
         localStorage.setItem(
           "vendorAgreements",
-          JSON.stringify({ ...existing, [key]: fileData })
+          JSON.stringify({ ...existing, [key]: metadata })
         );
       }
     }, 150);
@@ -129,24 +143,47 @@ export default function AgreementsUpload() {
 
   const isComplete = Object.values(docs).every((doc) => doc.status === "success");
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const uploadedDocs = {};
+    const vendorId = localStorage.getItem("vendorId");
+    const formData = new FormData();
+
     Object.entries(docs).forEach(([key, doc]) => {
-      if (doc.file) uploadedDocs[key] = doc.file;
+      if (doc.file) {
+        uploadedDocs[key] = {
+          name: doc.file.name,
+          size: doc.file.size,
+          type: doc.file.type,
+        };
+        formData.append(key, doc.file);
+      }
     });
-    console.log("📤 Submitting agreements:", uploadedDocs);
 
-    // Save to Redux
-    dispatch(setAgreements(uploadedDocs));
-    dispatch(setCompletedStep(5));
-    setLoading(true);
+    console.log(" Submitting agreements:", uploadedDocs);
 
-    setTimeout(() => {
-      dispatch(setCurrentStep(6));
+    try {
+      setLoading(true);
+      const response = await uploadAgreementsApi(vendorId, formData)
+      console.log("agreements", response.data);
+      if (response.status === 200) {
+        dispatch(setAgreements(uploadedDocs));
+        localStorage.setItem("vendorAgreements", JSON.stringify(uploadedDocs));
+        dispatch(setCompletedStep(5));
+        setTimeout(() => {
+          setLoading(false);
+          navigate("/login");
+          dispatch(resetVendorRegistration());
+
+        }, 1000);
+      } else {
+        toast.error("Failed to submit agreements.");
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Error uploading agreements:", error);
+      toast.error("Server error. Please try again later.");
       setLoading(false);
-      navigate("/login");
-      dispatch(resetVendorRegistration());
-    }, 1500);
+    }
   };
 
   const renderUploader = (label, id) => {
@@ -233,26 +270,34 @@ export default function AgreementsUpload() {
   return (
     <div className="min-h-screen bg-[#ECECF0]">
       <div className="w-full max-w-[1200px] p-4 sm:p-6 lg:p-8 mx-auto my-10">
-        <h1 className="text-5xl font-bold text-[#232832] mb-10">Agreements & Supporting Docs</h1>
+        <div className="mb-6">
+          <h1 className="text-5xl font-bold text-[#232832]">
+            Agreements & Supporting Docs
+          </h1>
+          <span className="block text-sm font-normal text-gray-600 mt-1">
+            (Allowed file types: .pdf, .jpg, .jpeg, .png{" "}
+            <span className="text-red-900">*</span>)
+          </span>
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-15 flex-wrap">
           <div className="mt-11 text-xl w-full max-w-[320px]">
-            {renderUploader("Filled Vendor Registration Form", "vendorForm")}
+            {renderUploader("Filled Vendor Registration Form", "vendor_registration_form")}
           </div>
           <div className="mt-4 text-xl w-full max-w-[320px]">
             {renderUploader(
               "Signed NDA / Supply Agreement / Terms & Conditions",
-              "ndaOrAgreement"
+              "signed_terms_and_con"
             )}
           </div>
           <div className="mt-4 text-xl w-full max-w-[320px]">
             {renderUploader(
               "Authorization Letter / Dealership Certificate",
-              "authorizationLetter"
+              "dealership_letter"
             )}
           </div>
           <div className="mt-1 text-xl w-full max-w-[360px]">
-            {renderUploader("Authorized Signatory Letter (with seal)", "signatoryLetter")}
+            {renderUploader("Authorized Signatory Letter (with seal)", "authorized_signatory_letter")}
           </div>
         </div>
 
@@ -268,8 +313,8 @@ export default function AgreementsUpload() {
             onClick={handleSubmit}
             disabled={!isComplete || loading}
             className={`w-[280px] py-2.5 rounded-full text-white font-medium transition-all ${isComplete && !loading
-                ? "bg-[#5737B4] hover:bg-[#432a91]"
-                : "bg-[#D8D8D8] cursor-not-allowed"
+              ? "bg-[#5737B4] hover:bg-[#432a91]"
+              : "bg-[#D8D8D8] cursor-not-allowed"
               }`}
           >
             {loading ? (

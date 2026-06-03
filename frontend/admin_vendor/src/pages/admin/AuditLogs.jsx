@@ -1,108 +1,254 @@
-import React, { useState } from "react";
-
-// Initial mock data
-const initialLogs = [
-  { date: "2025-06-20", user: "Admin1", action: "Deleted product", ip: "192.168.1.10" },
-  { date: "2025-06-18", user: "VendorX", action: "Updated price", ip: "192.168.1.12" },
-  { date: "2025-06-19", user: "Admin2", action: "Approved vendor", ip: "192.168.1.13" },
-  { date: "2025-06-17", user: "VendorY", action: "Added product", ip: "192.168.1.14" },
-];
+import React, { useState, useEffect, useRef } from "react";
+import { getAuditLogsApi, exportReportApi } from "../../services/allAPI";
+import { toast } from "react-toastify";
 
 export default function AuditLogs() {
-  const [logs, setLogs] = useState(initialLogs);
+  const [logs, setLogs] = useState([]);
   const [sortBy, setSortBy] = useState("date");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortOrder, setSortOrder] = useState("desc"); 
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const dropdownRef = useRef(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  // Filter + sort logs
+  useEffect(() => {
+    const fetchLogs = async () => {
+      try {
+        const res = await getAuditLogsApi();
+        const data = Array.isArray(res.data) ? res.data : [];
+
+        const sortedData = data.sort(
+          (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+
+        setLogs(sortedData);
+      } catch (error) {
+        console.error("Failed to load audit logs:", error);
+        setLogs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLogs();
+  }, []);
+
   const filteredLogs = logs
-    .filter((log) =>
-      [log.user, log.action, log.ip].some((field) =>
-        field.toLowerCase().includes(search.toLowerCase())
-      )
-    )
+    .filter((log) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        String(log.vendor).toLowerCase().includes(q) ||
+        String(log.action || "").toLowerCase().includes(q) ||
+        String(log.description || "").toLowerCase().includes(q) ||
+        String(log.timestamp || "").toLowerCase().includes(q)
+      );
+    })
     .sort((a, b) => {
       const isAsc = sortOrder === "asc";
       if (sortBy === "date") {
         return isAsc
-          ? new Date(a.date) - new Date(b.date)
-          : new Date(b.date) - new Date(a.date);
-      } else {
+          ? new Date(a.timestamp) - new Date(b.timestamp)
+          : new Date(b.timestamp) - new Date(a.timestamp);
+      } else if (sortBy === "action") {
         return isAsc
-          ? a[sortBy].localeCompare(b[sortBy])
-          : b[sortBy].localeCompare(a[sortBy]);
+          ? String(a.description || "").localeCompare(String(b.description || ""))
+          : String(b.description || "").localeCompare(String(a.description || ""));
+      } else {
+        return 0;
       }
     });
 
-  // Sorting function
+  // Pagination 
+  const totalItems = filteredLogs.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(startIndex + itemsPerPage, totalItems);
+  const currentItems = filteredLogs.slice(startIndex, endIndex);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(1);
+  }, [totalPages, currentPage]);
+
+  const handlePrev = () => currentPage > 1 && setCurrentPage(currentPage - 1);
+  const handleNext = () =>
+    currentPage < totalPages && setCurrentPage(currentPage + 1);
+
   const handleSort = (key) => {
     const isSameKey = sortBy === key;
     setSortOrder(isSameKey && sortOrder === "asc" ? "desc" : "asc");
     setSortBy(key);
   };
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowDownloadOptions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Download report (PDF / Excel)
+  const handleDownloadReport = async (format) => {
+    try {
+      const tableData = filteredLogs.map((log, index) => ({
+        id: index + 1,
+        timestamp: new Date(log.timestamp).toLocaleString(),
+        vendor: log.vendor || "N/A",
+        description: log.description || "N/A",
+        action: log.action || "N/A",
+      }));
+
+      const response = await exportReportApi("audit_logs", format, tableData);
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `audit_logs.${format === "pdf" ? "pdf" : "xlsx"}`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setShowDownloadOptions(false);
+    } catch (error) {
+      console.error("Download failed:", error);
+      toast.error("Failed to download report.");
+    }
+  };
+
+  const toggleDownloadOptions = () =>
+    setShowDownloadOptions((s) => !s);
+
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Audit Logs</h1>
+    <div className="bg-[#ECECF0] p-6 rounded-2xl w-full space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-[#5737B4]">Audit Logs</h1>
+
+        <div className="relative download-dropdown" ref={dropdownRef}>
+          <button
+            onClick={toggleDownloadOptions}
+            className="flex items-center gap-2 bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base"
+          >
+            Download Report
+          </button>
+
+          {showDownloadOptions && (
+            <div className="absolute right-0 mt-2 bg-white shadow-lg rounded-md border border-gray-200 z-50 w-40">
+              <button
+                onClick={() => handleDownloadReport("pdf")}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Download as PDF
+              </button>
+              <button
+                onClick={() => handleDownloadReport("excel")}
+                className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
+              >
+                Download as Excel
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Search input */}
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-4 text-left px-2 items-center">
         <input
-          className="border px-4 py-2 rounded w-1/2"
-          placeholder="Search by user, action, or IP..."
+          className="bg-white px-4 py-2 rounded w-1/2"
+          placeholder="Search by vendor, action, or timestamp..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1); 
+          }}
         />
         <button
-          onClick={() => setSearch("")}
-          className="bg-gray-200 px-4 py-2 rounded"
+          onClick={() => {
+            setSearch("");
+            setCurrentPage(1);
+          }}
+          className="border border-[#5737B4] text-[#5737B4] hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded transition duration-300"
         >
           Clear
         </button>
       </div>
 
-      {/* Logs table */}
-      <div className="bg-white shadow rounded p-4">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-gray-100">
-              <th
-                className="p-2 border cursor-pointer"
-                onClick={() => handleSort("date")}
-              >
-                Date{" "}
-                {sortBy === "date" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th className="p-2 border">User</th>
-              <th
-                className="p-2 border cursor-pointer"
-                onClick={() => handleSort("action")}
-              >
-                Action{" "}
-                {sortBy === "action" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
-              </th>
-              <th className="p-2 border">IP Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredLogs.length > 0 ? (
-              filteredLogs.map((log, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="p-2 border">{log.date}</td>
-                  <td className="p-2 border">{log.user}</td>
-                  <td className="p-2 border">{log.action}</td>
-                  <td className="p-2 border">{log.ip}</td>
-                </tr>
-              ))
-            ) : (
+      {loading ? (
+        <p className="text-center text-gray-500">Loading logs...</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full bg-white rounded-md text-sm shadow">
+            <thead>
               <tr>
-                <td className="p-2 border text-center" colSpan="4">
-                  No results found.
-                </td>
+                <th className="py-3 px-2 text-center">SI.No</th>
+                <th
+                  className="py-4 text-left px-2 cursor-pointer"
+                  onClick={() => handleSort("date")}
+                >
+                  Date {sortBy === "date" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th className="py-4 text-left px-2">User</th>
+                <th
+                  className="py-4 text-left px-2 cursor-pointer"
+                  onClick={() => handleSort("action")}
+                >
+                  Description {sortBy === "action" ? (sortOrder === "asc" ? "↑" : "↓") : ""}
+                </th>
+                <th className="py-4 text-left px-2">Action</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {currentItems.length > 0 ? (
+                currentItems.map((log, idx) => (
+                  <tr key={log.id ?? idx} className="hover:bg-gray-50">
+                    <td className="text-center py-3 px-2">{startIndex + idx + 1}</td>
+                    <td className="py-4 px-2">{new Date(log.timestamp).toLocaleString()}</td>
+                    <td className="py-4 px-2">{log.vendor}</td>
+                    <td className="py-4 px-2">{log.description}</td>
+                    <td className="py-4 px-2">{log.action}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td className="py-4 px-2 text-center" colSpan="5">
+                    No results found.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Pagination */}
+      <div className="flex justify-between items-center mt-4 text-sm">
+        <span className="text-[#505050] font-medium">
+          Showing {startIndex + 1} - {endIndex} of {totalItems}
+        </span>
+        <div className="flex gap-2">
+          <button
+            onClick={handlePrev}
+            disabled={currentPage === 1}
+            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+          <button
+            onClick={handleNext}
+            disabled={currentPage === totalPages}
+            className="text-[#5737B4] px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );

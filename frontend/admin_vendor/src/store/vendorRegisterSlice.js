@@ -1,20 +1,18 @@
-// src/redux/vendorRegisterSlice.js
 import { createSlice } from "@reduxjs/toolkit";
 
-// ✅ Load from localStorage (if exists)
+//  Load from localStorage (if exists)
 const savedSteps = JSON.parse(localStorage.getItem("vendor_completed_steps") || "[]");
 const savedCurrentStep = parseInt(localStorage.getItem("vendor_current_step") || "0");
 
 const initialState = {
   // Auth
   email: "",
-  phone: "",
   password: "",
   otpVerified: false,
 
   // Step tracking
-  currentStep: savedCurrentStep,       // ✅ Load last visited step
-  completedSteps: savedSteps,          // ✅ Load completed ticks
+  currentStep: savedCurrentStep,
+  completedSteps: savedSteps,
   registrationStatus: "PENDING",
 
   // Step 0
@@ -27,6 +25,7 @@ const initialState = {
   businessDocs: null,
   // Step 4
   bankDetails: null,
+
   taxDocuments: null,
 
   // Step 5
@@ -41,10 +40,8 @@ const vendorRegisterSlice = createSlice({
   name: "vendorRegister",
   initialState,
   reducers: {
-    // ✅ Reset everything for a NEW vendor registration
     resetVendorRegistration: (state) => {
       state.email = "";
-      state.phone = "";
       state.password = "";
       state.otpVerified = false;
 
@@ -60,7 +57,6 @@ const vendorRegisterSlice = createSlice({
       state.taxDocuments = null;
       state.agreements = [];
 
-      // ✅ Clear localStorage too
       localStorage.removeItem("vendor_current_step");
       localStorage.removeItem("vendor_completed_steps");
       localStorage.removeItem("vendorCompanyDetails");
@@ -72,13 +68,13 @@ const vendorRegisterSlice = createSlice({
       localStorage.removeItem("vendorAgreements");
     },
 
-    // ✅ Save & persist current step
+    //  Save & persist current step
     setCurrentStep: (state, action) => {
       state.currentStep = action.payload;
       localStorage.setItem("vendor_current_step", action.payload);
     },
 
-    // ✅ Mark step completed & persist
+    //  Mark step completed & persist
     setCompletedStep: (state, action) => {
       if (!state.completedSteps.includes(action.payload)) {
         state.completedSteps.push(action.payload);
@@ -89,51 +85,33 @@ const vendorRegisterSlice = createSlice({
       }
     },
 
-    // ✅ Credentials + OTP
+    //  Credentials + OTP
     setCredentials: (state, action) => {
-      const { email, phone, password } = action.payload;
-      state.email = email;
-      state.phone = phone;
+      const { username, email, password } = action.payload;
+      state.username = username,
+        state.email = email;
       state.password = password;
     },
     setOtpVerified: (state, action) => {
       state.otpVerified = action.payload;
     },
 
-    // ✅ Step 0: Company
+    //  Step 0: Company
     setCompanyDetails: (state, action) => {
       state.companyDetails = action.payload;
-      if (!state.completedSteps.includes(0)) {
-        state.completedSteps.push(0);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
+
     },
 
-    // ✅ Step 1: Contact
+    //  Step 1: Contact
     setContactDetails: (state, action) => {
       state.contactDetails = action.payload;
-      if (!state.completedSteps.includes(1)) {
-        state.completedSteps.push(1);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
+
     },
 
-    // ✅ Step 2: KYC
+    //  Step 2: KYC
     addKycDocument: (state, action) => {
       state.kycDocuments.push(action.payload);
-      if (!state.completedSteps.includes(2)) {
-        state.completedSteps.push(2);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
+
     },
     removeKycDocument: (state, action) => {
       state.kycDocuments = state.kycDocuments.filter(
@@ -141,65 +119,31 @@ const vendorRegisterSlice = createSlice({
       );
     },
 
-    // ✅ Step 3: Business Docs
+    // Step 3: Business Docs
     setBusinessDoc: (state, action) => {
       const { key, file } = action.payload;
+
       if (!state.businessDocs) {
         state.businessDocs = {};
       }
-      state.businessDocs[key] = file;
-
-      // ✅ Check all required docs uploaded
-      if (
-        state.businessDocs.gstinCertificate &&
-        state.businessDocs.registrationCertificate &&
-        state.businessDocs.shopLicense &&
-        !state.completedSteps.includes(3)
-      ) {
-        state.completedSteps.push(3);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
-    },
-
-    // ✅ Step 4: Bank Details
+      state.businessDocs[key] = file.name;
+    }
+    ,
+    //  Step 4: Bank Details
     setBankDetails: (state, action) => {
       state.bankDetails = action.payload;
-      if (!state.completedSteps.includes(4)) {
-        state.completedSteps.push(4);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
     },
 
     setTaxDocuments: (state, action) => {
       state.taxDocuments = action.payload;
-      if (!state.completedSteps.includes(5)) {
-        state.completedSteps.push(5);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
     },
 
-    // ✅ Step 5: Agreements
+    //  Step 5: Agreements
     setAgreements: (state, action) => {
       state.agreements = action.payload;
-      if (!state.completedSteps.includes(6)) {
-        state.completedSteps.push(6);
-        localStorage.setItem(
-          "vendor_completed_steps",
-          JSON.stringify(state.completedSteps)
-        );
-      }
     },
 
-    // ✅ Status & Errors
+    //  Status & Errors
     setRegistrationStatus: (state, action) => {
       state.registrationStatus = action.payload;
     },

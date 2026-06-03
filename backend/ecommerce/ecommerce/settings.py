@@ -14,6 +14,8 @@ from datetime import timedelta
 import os
 import environ
 from pathlib import Path
+import firebase_admin
+from firebase_admin import credentials
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -70,6 +72,8 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'drf_spectacular',
     'adminapp',
+    'coupon_promotion',
+    'fcm_django',      
 ]
 
 MIDDLEWARE = [
@@ -113,6 +117,11 @@ CACHES = {
         }
     }
 }
+
+cred_path = os.path.join('accounts', 'firebase', 'serviceAccountKey.json')  
+cred = credentials.Certificate(cred_path)
+firebase_admin.initialize_app(cred)
+
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
@@ -189,38 +198,47 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
 
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.ScopedRateThrottle',
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle',
-    ],
-    'DEFAULT_THROTTLE_RATES': {
-        'otp_send': '3/m',
-        'otp_verify': '10/hour',
-        'anon': '100/hour',
-        'user': '100/hour'
-    },
+    # 'DEFAULT_THROTTLE_CLASSES': [
+    #     'rest_framework.throttling.ScopedRateThrottle',
+    #     'rest_framework.throttling.AnonRateThrottle',
+    #     'rest_framework.throttling.UserRateThrottle',
+    # ],
+    # 'DEFAULT_THROTTLE_RATES': {
+    #     'otp_send': '3/m',
+    #     'otp_verify': '10/hour',
+    #     'anon': '100/hour',
+    #     'user': '100/hour'
+    # },
+    
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema'
 }
 
 SIMPLE_JWT = {
+    
     'AUTH_HEADER_TYPES': ('JWT',),
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=10),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
 AUTH_USER_MODEL = 'accounts.CustomUser'
 
+AUTHENTICATION_BACKENDS = [
+    'accounts.auth_backend.EmailBackend',  
+    'django.contrib.auth.backends.ModelBackend',  
+]
+
+
 EMAIL_BACKEND = env('EMAIL_BACKEND')
 EMAIL_HOST = env('EMAIL_HOST')
-EMAIL_PORT = env('EMAIL_PORT')
-EMAIL_USE_TLS = env('EMAIL_USE_TLS')
+EMAIL_PORT = int(env('EMAIL_PORT', default=587))
+EMAIL_USE_TLS = env.bool('EMAIL_USE_TLS', default=True)
 EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Your React/Vue etc. frontend
+    "http://localhost:8000",  # Your React/Vue etc. frontend
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
@@ -232,3 +250,14 @@ CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
 STRIPE_TEST_SECRET_KEY = env('STRIPE_TEST_SECRET_KEY')
 STRIPE_TEST_PUBLISHABLE_KEY = env('STRIPE_TEST_PUBLISHABLE_KEY')
 # STRIPE_TEST_WEBHOOK_KEY = env('STRIPE_TEST_WEBHOOK_KEY')  # Uncomment if you have a webhook key
+
+RAZORPAY_TEST_KEY_ID = env("RAZORPAY_TEST_KEY_ID")
+RAZORPAY_TEST_KEY_SECRET = env("RAZORPAY_TEST_KEY_SECRET")
+
+RAZORPAY_FUND_ACCOUNT = env("RAZORPAY_FUND_ACCOUNT")
+RAZORPAY_ACCOUNT_NUMBER=env("RAZORPAY_ACCOUNT_NUMBER")
+RAZORPAY_FUND=env("RAZORPAY_FUND")
+# settings.py
+SHIPROCKET_API_EMAIL = env("SHIPROCKET_API_EMAIL")
+SHIPROCKET_API_PASSWORD = env("SHIPROCKET_API_PASSWORD")
+

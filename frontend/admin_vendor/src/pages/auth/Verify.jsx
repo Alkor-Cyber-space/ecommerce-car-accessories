@@ -1,14 +1,27 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // also add useNavigate
+import React, { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
-import { setOtpVerified, setCurrentStep, resetVendorRegistration } from '../../store/vendorRegisterSlice'; // import your actions
+import { setOtpVerified, setCurrentStep, resetVendorRegistration } from '../../store/vendorRegisterSlice';
 import loggo from '../../assets/loggo.png';
+import { resendOtpApi, verifyVendorOtpApi } from '../../services/allAPI';
+import { toast } from 'react-toastify';
 
 export default function Verify() {
-  const dispatch = useDispatch(); // ✅ this line fixes the error
-  const navigate = useNavigate(); // ✅ to navigate to next step
+  const dispatch = useDispatch(); 
+  const navigate = useNavigate(); 
 
   const [otp, setOtp] = useState(["", "", "", ""]);
+  const [resendTimer, setResendTimer] = useState(0); // Timer in seconds
+
+  useEffect(() => {
+    let interval = null;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(prev => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const handleChange = (value, index) => {
     if (!/^\d*$/.test(value)) return;
@@ -25,34 +38,76 @@ export default function Verify() {
 
   const isOtpComplete = otp.every(digit => digit !== "");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    if (!isOtpComplete) {
-      alert("Please enter the complete OTP");
+  if (!isOtpComplete) {
+    alert("Please enter the complete OTP");
+    return;
+  }
+
+  const code = otp.join("");
+  const vendorId = localStorage.getItem("vendorId");
+
+  if (!vendorId) {
+    alert("User not found. Please re-register.");
+    return;
+  }
+
+  try {
+    const payload = {
+      user_id: vendorId,
+      otp: code,
+      email: localStorage.getItem("vendorEmail") 
+    };
+
+    const response = await verifyVendorOtpApi(payload);
+
+    console.log(response.data);
+    toast.success(response.data)
+
+    dispatch(setOtpVerified(true));
+    dispatch(setCurrentStep(0));
+    localStorage.setItem("vendorOtpVerified", "true");
+    dispatch(resetVendorRegistration());
+    navigate("/vendor-register/company-details");
+
+  } catch (error) {
+    console.error("OTP verification failed:", error);
+    toast.error(response.data);
+    const msg = error?.response?.data?.error || "Invalid OTP. Please try again.";
+    alert(msg);
+  }
+};
+
+ const handleResendOtp = async () => {
+    const email = localStorage.getItem("vendorEmail");
+    if (!email) {
+      alert("Email not found. Please re-register.");
       return;
     }
 
-    const code = otp.join("");
-    console.log("Submitted OTP:", code);
-
-    // ✅ Mock OTP check
-    if (code === "1234") {
-      console.log("✅ OTP verified successfully");
-      dispatch(setOtpVerified(true));
-      dispatch(setCurrentStep(0));
-       localStorage.setItem("vendorOtpVerified", "true");
-    dispatch(resetVendorRegistration()); 
-
-      navigate("/vendor-register/company-details");
-    } else {
-      alert("❌ Invalid OTP. Try again.");
+    try {
+      const result = await resendOtpApi(email);
+      console.log(result);
+      if(result.status === 200){
+      toast.success("OTP resent successfully to your email.");
+      setResendTimer(60); 
+      }else{
+      toast.error(result.data);
+      }
+    } catch (error) {
+      console.error(" Failed to resend OTP:", error);
+      const msg = error?.response?.data?.error || "Failed to resend OTP. Try again.";
+      toast.error(error?.response.data.error);
     }
   };
-
-//   To expire OTP status after some time,
-
-// Or to clear it after logout/reset.
+// useEffect(() => {
+//   const isVerified = localStorage.getItem("vendorOtpVerified") === "true";
+//   if (isVerified) {
+//     navigate("/vendor-register/company-details", { replace: true }); 
+//   }
+// }, []);
 
 
   return (
@@ -90,21 +145,25 @@ export default function Verify() {
             <button
               type="submit"
               disabled={!isOtpComplete}
-              className={`w-full text-white py-3 rounded-3xl mt-4 transition duration-200 ${
-                isOtpComplete
+              className={`w-full text-white py-3 rounded-3xl mt-4 transition duration-200 ${isOtpComplete
                   ? "bg-[#5737B4] hover:bg-[#3e2991] cursor-pointer"
                   : "bg-[#D8D8D8] cursor-not-allowed"
-              }`}
+                }`}
             >
               <h2 className="text-md">Verify</h2>
             </button>
           </form>
 
-          <p className="text-center text-sm text-slate-500">
-            Didn't receive the code?{" "}
-            <Link to="#" className="text-blue-600 hover:underline">
-              Resend
-            </Link>
+           <p className="text-center text-sm text-slate-500">
+            Didn’t receive the code?{" "}
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={resendTimer > 0}
+              className={`ml-1 font-medium ${resendTimer > 0 ? "text-gray-400 cursor-not-allowed" : "text-blue-600 hover:underline"}`}
+            >
+              {resendTimer > 0 ? `Resend in ${resendTimer}s` : "Resend"}
+            </button>
           </p>
         </div>
       </div>

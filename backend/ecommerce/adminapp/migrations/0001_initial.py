@@ -1,0 +1,46 @@
+import django.db.models.deletion
+from django.conf import settings
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+
+    initial = True
+
+    dependencies = [
+        ('auth', '0012_alter_user_first_name_max_length'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name='Notification',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('heading', models.CharField(max_length=100)),
+                ('message', models.CharField(max_length=255)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('is_read', models.BooleanField(default=False)),
+                ('created_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='created_notifications', to=settings.AUTH_USER_MODEL)),
+                ('group', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='notifications', to='auth.group')),
+                ('users', models.ManyToManyField(blank=True, related_name='notifications', to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
+            name='SupportTicket',
+            fields=[
+                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('ticket_id', models.CharField(editable=False, max_length=20, unique=True)),
+                ('subject', models.CharField(max_length=255)),
+                ('category', models.CharField(choices=[('order_issue', 'Order Issue'), ('product_listing', 'Product Listing'), ('accounts_kyc', 'Accounts and KYC'), ('returns_refunds', 'Returns and Refunds'), ('payments_earnings', 'Payments and Earnings'), ('app_feedback', 'App Feedback or Suggestion'), ('technical_issue', 'Technical Issue'), ('other', 'Other')], max_length=50)),
+                ('priority', models.CharField(choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='low', max_length=10)),
+                ('description', models.TextField()),
+                ('status', models.CharField(choices=[('pending', 'Pending'), ('in_progress', 'In Progress'), ('answered', 'Answered'), ('resolved', 'Resolved')], default='pending', max_length=20)),
+                ('is_read', models.BooleanField(default=False)),
+                ('answer', models.TextField(blank=True, null=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
+                ('vendor', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='tickets', to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+    ]

@@ -5,13 +5,13 @@ from django.core.validators import RegexValidator
 from django.utils.timezone import now
 from hashlib import sha256
 from datetime import datetime, timedelta
-
+from django.utils import timezone
 
 
 class CustomUser(AbstractUser):
     email = models.EmailField(unique=True)
-    username = models.CharField(max_length=255)
-    phone_number = models.CharField(max_length=15)
+    username = models.CharField(max_length=255, unique=True)
+    phone_number = models.CharField(unique=True, max_length=15, blank=True, null=True, default=None)
     is_admin_staff = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'email'
@@ -19,78 +19,234 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return self.email
-# models.py
+
 
 class VendorProfile(models.Model):
+
+     VENDOR_TYPE = [
+          ('business','business')
+     ]
+
      user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE,related_name='vendor_profile')
 
      # Step 2: Company Details
      company_name = models.CharField(max_length=255, null=True, blank=True)
+     type_of_vendor = models.CharField(max_length=20, choices=VENDOR_TYPE, default='business')
+     company_email = models.EmailField(null=True,blank=True)
+     company_number = models.IntegerField(null=True,blank=True)
 
      # Step 3: Contact Details
      contact_name = models.CharField(max_length=255, null=True, blank=True)
      contact_email = models.EmailField(null=True, blank=True)
-     contact_address = models.TextField(null=True, blank=True)
+     contact_number = models.IntegerField(null=True, blank=True)
+     designation = models.CharField(null=True, blank=True,max_length=255)
+     pickup_location = models.CharField(max_length=100,null=True,blank=True)
 
-     # Step 4: KYC Documents
-     kyc_name = models.CharField(max_length=255, null=True, blank=True)
-     pan_card = models.FileField(upload_to='kyc/pan/', null=True, blank=True)
-     aadhar_passport_dl = models.FileField(upload_to='kyc/id/', null=True, blank=True)
+     bank_account_no = models.CharField(max_length=50, null=True, blank=True)
+     ifsc_code = models.CharField(max_length=12, null=True, blank=True)  # IFSC code for Indian banks
+     bank_account_holder_name = models.CharField(max_length=255, null=True, blank=True)
+     razorpay_contact_id = models.CharField(max_length=100, blank=True, null=True) 
+     # # Step 4: KYC Documents
+     # pan_card = models.FileField(upload_to='kyc/pan/', null=True, blank=True)
+     # aadhar_passport_dl = models.FileField(upload_to='kyc/id/', null=True, blank=True)
 
-     # Step 5: Business Documents
-     gst_certificate = models.FileField(upload_to='business/gst/', null=True, blank=True)
-     business_registration_cert = models.FileField(upload_to='business/registration/', null=True, blank=True)
-     shop_license = models.FileField(upload_to='business/shop_license/', null=True, blank=True)
+     # # Step 5: Business Documents
+     # gst_certificate = models.FileField(upload_to='business/gst/', null=True, blank=True)
+     # business_registration_cert = models.FileField(upload_to='business/registration/', null=True, blank=True)
+     # shop_license = models.FileField(upload_to='business/shop_license/', null=True, blank=True)
 
-     # Step 6: Bank and Tax Details
-     cancelled_cheque = models.FileField(upload_to='bank/cheque/', null=True, blank=True)
-     bank_statement = models.FileField(upload_to='bank/statement/', null=True, blank=True)
-     it_return = models.FileField(upload_to='finance/it_return/', null=True, blank=True)
-     financial_statement = models.FileField(upload_to='finance/statement/', null=True, blank=True)
+     # # Step 6: Bank and Tax Details
+     # cancelled_cheque = models.FileField(upload_to='bank/cheque/', null=True, blank=True)
+     # bank_statement = models.FileField(upload_to='bank/statement/', null=True, blank=True)
+     # it_return = models.FileField(upload_to='finance/it_return/', null=True, blank=True)
+     # financial_statement = models.FileField(upload_to='finance/statement/', null=True, blank=True)
 
-     # Supporting Documents (optional)
-     dealership_letter = models.FileField(upload_to='supporting/dealership/', null=True, blank=True)
-     authorized_signatory_letter = models.FileField(upload_to='supporting/signatory/', null=True, blank=True)
+     # # step 8 Supporting Documents (optional)
+     # dealership_letter = models.FileField(upload_to='supporting/dealership/', null=True, blank=True)
+     # authorized_signatory_letter = models.FileField(upload_to='supporting/signatory/', null=True, blank=True)
+     # vendor_registration_form = models.FileField(upload_to='supporting/regform/', null=True, blank=True)
+     # signed_terms_and_con = models.FileField(upload_to='supporting/termsandcondition/', null=True, blank=True)
 
-     is_verified = models.BooleanField(default=False)
-     submitted_at = models.DateTimeField(auto_now_add=True)
+     # is_verified = models.BooleanField(default=False)
+     # submitted_at = models.DateTimeField(auto_now_add=True)
 
-     def is_registration_complete(self):
-          required_fields = [
-               self.company_name,
-               self.contact_name,
-               self.contact_email,
-               self.contact_address,
-               self.kyc_name,
-               bool(self.pan_card),
-               bool(self.aadhar_passport_dl),
-               bool(self.gst_certificate),
-               bool(self.business_registration_cert),
-               bool(self.cancelled_cheque),
-               bool(self.bank_statement),
-          ]
-          return all(required_fields)
+     # def is_registration_complete(self):
+     #      required_fields = [
+     #           self.company_name,
+     #           self.company_email,
+     #           self.company_number,
+     #           self.contact_name,
+     #           self.contact_email,
+     #           self.contact_number,
+     #           self.designation,
+     #           self.pan_card,
+     #           self.aadhar_passport_dl,
+     #           self.gst_certificate,
+     #           self.business_registration_cert,
+     #           self.shop_license,
+     #           self.cancelled_cheque,
+     #           self.bank_statement,
+     #           self.it_return,
+     #           self.financial_statement,
+     #      ]
+     #      return all(required_fields)
+
 
      def __str__(self):
           return self.user.email
 
+class VendorDocuments(models.Model):
+     STATUS_CHOICES=[
+          ('pending','PENDING'),
+          ('approved','APPROVED'),
+          ('rejected','REJECTED')
+     ]
 
-class VendorAgreement(models.Model):
-    vendor = models.OneToOneField(VendorProfile, on_delete=models.CASCADE)
+     vendor_profile=models.OneToOneField('VendorProfile',on_delete=models.CASCADE,blank=True)
+     pan_card=models.FileField(upload_to='kyc/pan/',null=True,blank=True)
+     pan_card_status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
+     aadhar_passport_dl=models.FileField(upload_to='kyc/id/',null=True,blank=True)
+     aadhar_passport_dl_status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
 
-    registration_form = models.FileField(upload_to='agreements/form/')
-    nda_agreement = models.FileField(upload_to='agreements/nda/')
-    terms_conditions = models.FileField(upload_to='agreements/terms/')
+     gst_certificate=models.FileField(upload_to='business/gst/',null=True,blank=True)
+     gst_certificate_status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
+     business_registration_cert=models.FileField(upload_to='business/registration/',blank=True,null=True)
+     business_registration_cert_status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
+     shop_license=models.FileField(upload_to='business/shop_license/',blank=True,null=True)
+     shop_license_status=models.CharField(max_length=20,choices=STATUS_CHOICES,default='pending')
 
-    signed_at = models.DateTimeField(auto_now_add=True)
+     cancelled_cheque = models.FileField(upload_to='bank/cheque/', null=True, blank=True)
+     cancelled_cheque_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     bank_statement = models.FileField(upload_to='bank/statement/', null=True, blank=True)
+     bank_statement_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     it_return = models.FileField(upload_to='finance/it_return/', null=True, blank=True)
+     it_return_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     financial_statement = models.FileField(upload_to='finance/statement/', null=True, blank=True)
+     financial_statement_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
-    def __str__(self):
-        return f"Agreements - {self.vendor.user.email}"
+    
+     dealership_letter = models.FileField(upload_to='supporting/dealership/', null=True, blank=True)
+     dealership_letter_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     authorized_signatory_letter = models.FileField(upload_to='supporting/signatory/', null=True, blank=True)
+     authorized_signatory_letter_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     vendor_registration_form = models.FileField(upload_to='supporting/regform/', null=True, blank=True)
+     vendor_registration_form_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     signed_terms_and_con = models.FileField(upload_to='supporting/termsandcondition/', null=True, blank=True)
+     signed_terms_and_con_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
+    
+     profile_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+     is_verified=models.BooleanField(default=False)
+     submitted_at=models.DateTimeField(auto_now_add=True)
 
+     def is_all_documents_submitted(self):
+          required_profile_fields=[
+               self.vendor_profile.company_name,
+               self.vendor_profile.company_email,
+               self.vendor_profile.company_number,
+               self.vendor_profile.contact_name,
+               self.vendor_profile.contact_email,
+               self.vendor_profile.contact_number,
+               self.vendor_profile.designation,
+          ]
+          
+          required_documnets=[
+               self.pan_card,
+               self.aadhar_passport_dl,
+               self.gst_certificate,
+               self.business_registration_cert,
+               self.shop_license,
+               self.cancelled_cheque,
+               self.bank_statement,
+               self.it_return,
+               self.financial_statement,
+          ]
 
+          required_status=[
+               self.pan_card_status,
+               self.aadhar_passport_dl_status,
+               self.gst_certificate_status,
+               self.business_registration_cert_status,
+               self.shop_license_status,
+               self.cancelled_cheque_status,
+               self.bank_statement_status,
+               self.it_return_status,
+               self.financial_statement_status
+          ]
+
+          return all(required_profile_fields) and all(required_documnets)
+
+     def is_registration_complete(self):
+          required_profile_fields=[
+               self.vendor_profile.company_name,
+               self.vendor_profile.company_email,
+               self.vendor_profile.company_number,
+               self.vendor_profile.contact_name,
+               self.vendor_profile.contact_email,
+               self.vendor_profile.contact_number,
+               self.vendor_profile.designation,
+          ]
+          
+          required_documnets=[
+               self.pan_card,
+               self.aadhar_passport_dl,
+               self.gst_certificate,
+               self.business_registration_cert,
+               self.shop_license,
+               self.cancelled_cheque,
+               self.bank_statement,
+               self.it_return,
+               self.financial_statement,
+          ]
+
+          required_status=[
+               self.pan_card_status,
+               self.aadhar_passport_dl_status,
+               self.gst_certificate_status,
+               self.business_registration_cert_status,
+               self.shop_license_status,
+               self.cancelled_cheque_status,
+               self.bank_statement_status,
+               self.it_return_status,
+               self.financial_statement_status
+          ]
+
+          return all(required_profile_fields) and all(required_documnets) and all(status == 'approved' for status in required_status)
+     
+
+     def update_profile_status(self):
+
+          document_statuses =[
+               self.pan_card_status,
+               self.aadhar_passport_dl_status,
+               self.gst_certificate_status,
+               self.business_registration_cert_status,
+               self.shop_license_status,
+               self.cancelled_cheque_status,
+               self.bank_statement_status,
+               self.it_return_status,
+               self.financial_statement_status,
+               self.dealership_letter_status,
+               self.authorized_signatory_letter_status,
+               self.vendor_registration_form_status,
+               self.signed_terms_and_con_status,
+          ]
+
+          if 'rejected' in document_statuses:
+               self.profile_status='rejected'
+          elif all(status != 'pending' for status in document_statuses):
+               self.profile_status='pending'
+          else:
+               self.profile_status='pending'
+          self.is_verified= self.is_registration_complete()
+          self.save()
+
+     def __str__(self):
+        return f"Documents for {self.vendor_profile.user.email}"
+     
 class UserOTPS(models.Model):
      user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="reverse_Userotp_details")
+     email = models.EmailField()
      hashed_code = models.CharField(max_length=100, blank=False, null=False)
      created_at = models.DateTimeField(auto_now_add=True)
      expires_at = models.DateTimeField()
@@ -151,7 +307,9 @@ class Address(models.Model):
      state = models.CharField(max_length=100)
      postal_code = models.CharField(max_length=20)
      country = models.CharField(max_length=100)
-     is_primary = models.BooleanField(default=False)
+     is_primary = models.BooleanField(default=True)
+     is_pickup = models.BooleanField(default=True)
+
 
      def __str__(self):
           return f"{self.line1}, {self.city}, {self.country}"
@@ -174,3 +332,68 @@ class UserLocation(models.Model):
      def __str__(self):
           return f"{self.user.email} - {self.latitude}, {self.longitude}"
 
+class FCMToken(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token = models.CharField(max_length=255, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+class OTP(models.Model):
+     user=models.ForeignKey(CustomUser,on_delete=models.CASCADE,related_name='otps')
+     otp=models.CharField(max_length=4)
+     created_at=models.DateTimeField(auto_now_add=True)
+     expire_at=models.DateTimeField()
+     is_used=models.BooleanField(default=False)
+
+     def is_valid(self):
+          now=timezone.now()
+          return not self.is_used and now <=self.expire_at
+
+     def __str__(self):
+          return f"OTP{self.otp} for {self.user.email}" 
+     
+class VendorAuditLog(models.Model):
+    ACTION_CHOICES = [
+        ('create', 'Create'),
+        ('update', 'Update'),
+        ('delete', 'Delete'),
+        ('document_upload', 'Document Upload'),
+        ('profile_update', 'Profile Update'),
+        ('account_update', 'Account Update'),
+    ]
+
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="vendor_audit_logs"
+    )
+    action = models.CharField(max_length=50, choices=ACTION_CHOICES)
+    description = models.TextField(blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.vendor.email} - {self.action} - {self.timestamp}"
+    
+# yourapp/models.py (add to existing Payout model)
+class Payout(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('failed', 'Failed'),
+    ]
+
+    vendor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='payouts'
+    )
+    amount = models.DecimalField(max_digits=10, decimal_places=2)  # Amount after 3% deduction
+    commission = models.DecimalField(max_digits=10, decimal_places=2)  # Total 3% commission
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    razorpay_payout_id = models.CharField(max_length=100, null=True, blank=True)  # Razorpay payout ID
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    week_start = models.DateField()
+    week_end = models.DateField()
+
+    def __str__(self):
+        return f"Payout {self.id} to {self.vendor.email} - ₹{self.amount} ({self.week_start} to {self.week_end})"
