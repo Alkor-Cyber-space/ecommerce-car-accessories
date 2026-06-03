@@ -205,15 +205,24 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         new_images = self.request.FILES
 
         for key in new_images.keys():
-            # delete old image for this slot
-            ProductImage.objects.filter(product=product, slot=key).delete()
+            # If the key is 'images', we do not delete existing images.
+            # They are managed (deleted/replaced) individually by the frontend via the delete-image API.
+            if key != 'images':
+                ProductImage.objects.filter(product=product, slot=key).delete()
 
-            for file in new_images.getlist(key):  # handle multiple files in same slot
+            has_main = ProductImage.objects.filter(product=product, is_main=True).exists()
+            for index, file in enumerate(new_images.getlist(key)):  # handle multiple files in same slot
+                is_main_image = False
+                if key == "main_image":
+                    is_main_image = True
+                elif key == "images" and not has_main and index == 0:
+                    is_main_image = True
+
                 ProductImage.objects.create(
                     product=product,
                     image=file,
-                    slot=key,
-                    is_main=(key == "main_image")
+                    slot=None if key == "images" else key,
+                    is_main=is_main_image
                 )
 
         return product

@@ -84,39 +84,34 @@ class ProductSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         print(attrs.get("price"))
         print("reached serilaasjaj")
-        if not attrs.get('name'):
+        
+        name = attrs.get('name') or getattr(self.instance, 'name', None)
+        price = attrs.get('price') if 'price' in attrs else getattr(self.instance, 'price', None)
+        length = attrs.get('length') if 'length' in attrs else getattr(self.instance, 'length', None)
+        breadth = attrs.get('breadth') if 'breadth' in attrs else getattr(self.instance, 'breadth', None)
+        height = attrs.get('height') if 'height' in attrs else getattr(self.instance, 'height', None)
+        weight = attrs.get('weight') if 'weight' in attrs else getattr(self.instance, 'weight', None)
+
+        if not name:
             raise serializers.ValidationError("Name is required.")
-        if attrs.get('price') <= 0:
+        if price is not None and price <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
 
-        # if attrs.get('weight') is not None and attrs.get('weight') <= 0:
-        #     raise serializers.ValidationError("Weight must be greater than zero.")
-        if attrs.get('length') is not None and attrs.get('length') <= 0:
+        if length is not None and length <= 0:
             raise serializers.ValidationError("Length must be greater than zero.")
-        if attrs.get('breadth') is not None and attrs.get('breadth') <= 0:
+        if breadth is not None and breadth <= 0:
             raise serializers.ValidationError("Breadth must be greater than zero.")
-        if attrs.get('height') is not None and attrs.get('height') <= 0:
+        if height is not None and height <= 0:
             raise serializers.ValidationError("Height must be greater than zero.")
 
-        if not attrs.get("length"):
+        if not length:
             raise serializers.ValidationError("length is mandatory field")
-        if not attrs.get("breadth"):
+        if not breadth:
             raise serializers.ValidationError("breadth is mandatory field")
-        if not attrs.get("height"):
+        if not height:
             raise serializers.ValidationError("height is mandatory field")
-        if not attrs.get("weight"):
+        if not weight:
             raise serializers.ValidationError("weight is mandatory field")
-
-        # if attrs.get('price') <= 0:
-        #     raise serializers.ValidationError("Price must be greater than zero.")
-        # if not attrs.get("length")z:
-        #     raise serializers.ValidationError("length is mandatory field")
-        # if not attrs.get("breadth"):
-        #     raise serializers.ValidationError("breadth is mandatory field")
-        # if not attrs.get("height"):
-        #     raise serializers.ValidationError("height is mandatory field")
-        # if not attrs.get("weight"):
-        #     raise serializers.ValidationError("weight is mandatory field")
 
         return attrs
 
