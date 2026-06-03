@@ -73,8 +73,11 @@ export default function EditProduct() {
       if (productDetails.image_list?.length) {
         const previews = Array(6).fill(null);
         productDetails.image_list.forEach((img, idx) => {
-          if (img.image && idx < 6) {
-            previews[idx] = img;
+          if (img.image) {
+            const slotIdx = (img.slot !== null && img.slot !== undefined && !isNaN(img.slot)) ? parseInt(img.slot, 10) : idx;
+            if (slotIdx >= 0 && slotIdx < 6) {
+              previews[slotIdx] = img;
+            }
           }
         });
         setImagePreviews(previews);
@@ -236,9 +239,9 @@ export default function EditProduct() {
       });
     }
 
-    Object.values(productImages).forEach((file) => {
+    Object.entries(productImages).forEach(([index, file]) => {
       if (file) {
-        form.append("images", file);
+        form.append(index, file);
       }
     });
 

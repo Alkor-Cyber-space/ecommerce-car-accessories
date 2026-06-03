@@ -45,7 +45,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    image_list = ProductImageSerializer(many=True, read_only=True, source='images')
+    image_list = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     tag = serializers.CharField(required=False, allow_blank=True)
     vendor = VendorSerializer(read_only=True)
@@ -146,6 +146,19 @@ class ProductSerializer(serializers.ModelSerializer):
         if isinstance(tags, list):
             data['tag'] = ', '.join(tags)
         return super().to_internal_value(data)
+
+    def get_image_list(self, obj):
+        images = obj.images.all()
+        def get_sort_key(img):
+            if img.slot is not None:
+                try:
+                    return (0, int(img.slot))
+                except ValueError:
+                    return (1, img.slot)
+            return (2, img.id)
+
+        sorted_images = sorted(images, key=get_sort_key)
+        return ProductImageSerializer(sorted_images, many=True, context=self.context).data
     
 class ReviewSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField(read_only=True)

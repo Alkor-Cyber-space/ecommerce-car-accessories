@@ -67,9 +67,9 @@ class VendorProductImageTests(APITestCase):
         images = ProductImage.objects.filter(product=self.product)
         self.assertEqual(images.count(), 2)
         
-        # Verify the new image was created with slot=None
+        # Verify the new image was created with slot="0"
         new_img = images.get(image__contains="image2")
-        self.assertIsNone(new_img.slot)
+        self.assertEqual(new_img.slot, "0")
 
     def test_consecutive_updates_preserve_previously_added_images(self):
         # 1st edit: add image2
