@@ -167,7 +167,7 @@ class DashboardProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
-            "id", "name", "description", "price", "stock",
+            "id", "name", " description", "price", "stock",
             "category", "is_featured", "is_best_seller",
             "is_top_rated", "is_new", "compatible_varient_year","images",
         ]
