@@ -208,7 +208,7 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                         is_main=(key == "0" or key == "main_image")
                     )
 
-        return product
+        return product; 
 
 
 
