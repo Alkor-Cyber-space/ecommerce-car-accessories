@@ -184,17 +184,45 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         product = serializer.save(vendor=user)
 
+        # 1. Handle slot-specific images (e.g. images_0, images_1, etc.)
+        for key in request.FILES.keys():
+            if key.startswith('images_'):
+                try:
+                    slot_index = int(key.split('_')[1])
+                except (ValueError, IndexError):
+                    slot_index = 0
+                
+                is_main_image = (slot_index == 0)
+                for file in request.FILES.getlist(key):
+                    ProductImage.objects.create(
+                        product=product,
+                        image=file,
+                        slot=key,
+                        is_main=is_main_image
+                    )
+
+        # 2. Fallback for general 'images' list
         images = request.FILES.getlist('images')
         for index, image in enumerate(images):
+            # Check if there is already a main image to avoid duplicate mains
+            has_main = ProductImage.objects.filter(product=product, is_main=True).exists()
+            
+            # Find an unused slot index for general images
+            slot_index = 0
+            while ProductImage.objects.filter(product=product, slot=f"images_{slot_index}").exists():
+                slot_index += 1
+                
             ProductImage.objects.create(
                 product=product,
                 image=image,
-                is_main=(index == 0)
+                slot=f"images_{slot_index}",
+                is_main=not has_main and (slot_index == 0)
             )
 
         return Response(
             {"message": "Product created successfully.", "product": ProductSerializer(product).data},
             status=status.HTTP_201_CREATED
+            
         )
 
 
@@ -205,24 +233,55 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         new_images = self.request.FILES
 
         for key in new_images.keys():
-            # If the key is 'images', we do not delete existing images.
-            # They are managed (deleted/replaced) individually by the frontend via the delete-image API.
-            if key != 'images':
+            # If the key is slot-specific (e.g. images_0)
+            if key.startswith('images_'):
                 ProductImage.objects.filter(product=product, slot=key).delete()
+                
+                try:
+                    slot_index = int(key.split('_')[1])
+                except (ValueError, IndexError):
+                    slot_index = 0
+                
+                is_main_image = (slot_index == 0)
+                for file in new_images.getlist(key):
+                    ProductImage.objects.create(
+                        product=product,
+                        image=file,
+                        slot=key,
+                        is_main=is_main_image
+                    )
+            elif key != 'images':
+                # Existing legacy/specific slot keys delete and recreate logic
+                ProductImage.objects.filter(product=product, slot=key).delete()
+                has_main = ProductImage.objects.filter(product=product, is_main=True).exists()
+                for index, file in enumerate(new_images.getlist(key)):
+                    is_main_image = False
+                    if key == "main_image":
+                        is_main_image = True
+                    elif key == "images" and not has_main and index == 0:
+                        is_main_image = True
 
-            has_main = ProductImage.objects.filter(product=product, is_main=True).exists()
-            for index, file in enumerate(new_images.getlist(key)):  # handle multiple files in same slot
-                is_main_image = False
-                if key == "main_image":
-                    is_main_image = True
-                elif key == "images" and not has_main and index == 0:
-                    is_main_image = True
+                    ProductImage.objects.create(
+                        product=product,
+                        image=file,
+                        slot=None if key == "images" else key,
+                        is_main=is_main_image
+                    )
 
+        # Fallback for general 'images' list in update
+        if 'images' in new_images:
+            for index, file in enumerate(new_images.getlist('images')):
+                has_main = ProductImage.objects.filter(product=product, is_main=True).exists()
+                
+                slot_index = 0
+                while ProductImage.objects.filter(product=product, slot=f"images_{slot_index}").exists():
+                    slot_index += 1
+                
                 ProductImage.objects.create(
                     product=product,
                     image=file,
-                    slot=None if key == "images" else key,
-                    is_main=is_main_image
+                    slot=f"images_{slot_index}",
+                    is_main=not has_main and (slot_index == 0)
                 )
 
         return product

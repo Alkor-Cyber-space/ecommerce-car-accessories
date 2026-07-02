@@ -107,24 +107,67 @@ class CategoryListAPIView(APIView):
         serializer = CategorySerializer(categories, many=True, context={'request': request})
         return Response(serializer.data)
 
+from drf_spectacular.utils import extend_schema, OpenApiParameter
+
 class ProductSearchAPIView(APIView):
     """
-    Search products by name using ?query=
+    Search and filter products by name, category, and price range.
     """
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='query',
+                type=str,
+                description='Search products by name',
+                required=False
+            ),
+            OpenApiParameter(
+                name='category_id',
+                type=int,
+                description='Filter products by category ID',
+                required=False
+            ),
+            OpenApiParameter(
+                name='min_price',
+                type=float,
+                description='Filter products with price >= min_price',
+                required=False
+            ),
+            OpenApiParameter(
+                name='max_price',
+                type=float,
+                description='Filter products with price <= max_price',
+                required=False
+            ),
+        ],
+        responses={200: ProductSerializer(many=True)}
+    )
     def get(self, request):
         query = request.query_params.get('query', None)
-        if not query:
-            return Response({"message": "Query parameter is required."}, status=400)
+        category_id = request.query_params.get('category_id', None)
+        min_price = request.query_params.get('min_price', None)
+        max_price = request.query_params.get('max_price', None)
 
-        products = Product.objects.filter(name__icontains=query)
+        products = Product.objects.all()
+
+        if query:
+            products = products.filter(name__icontains=query)
+        if category_id:
+            products = products.filter(category_id=category_id)
+        if min_price:
+            products = products.filter(price__gte=min_price)
+        if max_price:
+            products = products.filter(price__lte=max_price)
+
         if not products.exists():
-            return Response({"message": "No product available."})
+            return Response({"message": "No product available."}, status=status.HTTP_200_OK)
         
         serializer = ProductSerializer(products, many=True, context={'request': request})
-        return Response(serializer.data)
-        return Response(serializer.data)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
     
 
 class ReviewViewSet(viewsets.ModelViewSet):
