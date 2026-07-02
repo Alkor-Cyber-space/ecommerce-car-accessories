@@ -10,7 +10,59 @@ class OrderItemSerializer(serializers.Serializer):
     quantity = serializers.IntegerField(min_value=1)
 
 
+class UserOrderItemSerializer(serializers.ModelSerializer):
+    """Serializer for order items with product details and images"""
+    product_id = serializers.IntegerField(source='product.id', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_image = serializers.SerializerMethodField()
+    product_price = serializers.DecimalField(source='product.price', max_digits=10, decimal_places=2, read_only=True)
+    item_total = serializers.SerializerMethodField()
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product_id', 'product_name', 'product_image', 'product_price', 'quantity', 'item_total']
+
+    def get_product_image(self, obj):
+        """Get main product image or first available image"""
+        try:
+            # First try to get image marked as main
+            main_image = obj.product.images.filter(is_main=True).first()
+            if main_image and main_image.image:
+                return main_image.image.url
+            
+            # Fallback: get first available image
+            first_image = obj.product.images.first()
+            if first_image and first_image.image:
+                return first_image.image.url
+                
+            return None
+        except Exception as e:
+            return None
+    
+    def get_item_total(self, obj):
+        """Calculate total price for this line item"""
+        try:
+            return str(round(float(obj.price) * obj.quantity, 2))
+        except:
+            return "0.00"
+
+
 class OrderSerializer(serializers.ModelSerializer):
+    items = UserOrderItemSerializer(many=True, read_only=True)
+    shipping_address = serializers.PrimaryKeyRelatedField(queryset=Address.objects.all())
+    payment_method = serializers.ChoiceField(choices=Order.PAYMENT_METHOD_CHOICES)
+    
+    class Meta:
+        model = Order
+        fields = [
+            'id', 'user', 'total_price', 'tax', 'shipping_cost',
+            'status', 'created_at', 'updated_at', 'items', 'shipping_address','payment_method'
+        ]
+        read_only_fields = ['user', 'status', 'created_at', 'updated_at', 'total_price', 'tax', 'shipping_cost', 'items']
+
+
+class OrderCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating orders with writable items"""
     items = OrderItemSerializer(many=True)
     shipping_address = serializers.PrimaryKeyRelatedField(queryset=Address.objects.all())
     payment_method = serializers.ChoiceField(choices=Order.PAYMENT_METHOD_CHOICES)

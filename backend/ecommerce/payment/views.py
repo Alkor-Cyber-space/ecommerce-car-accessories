@@ -1,5 +1,5 @@
 from django.shortcuts import render
-import strip
+import stripe
 from django.http import JsonResponse,HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
@@ -16,8 +16,7 @@ from .factory import get_gateway_verifier
 from payment.razorpay_payment import verify_razorpay_payment
 
 # Create your views here.
-
-strip.api_key = settings.STRIPE_TEST_SECRET_KEY
+stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
 
 
 

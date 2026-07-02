@@ -15,6 +15,7 @@ from rest_framework import status,permissions
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .permissions import IsAdmin, IsVendor
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.db import transaction
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.throttling import ScopedRateThrottle
@@ -40,6 +41,7 @@ import openpyxl
 from io import BytesIO
 from reportlab.platypus import SimpleDocTemplate, Table
 from reportlab.lib.pagesizes import A4
+import time
 
 
 User = get_user_model()
@@ -48,6 +50,7 @@ User = get_user_model()
 
 class UserViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
+    authentication_classes = [JWTAuthentication]
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
@@ -553,8 +556,17 @@ class GoogleLoginAPIView(APIView):
             return Response({'error': 'idToken is required'}, status=400)
 
         try:
-            # Verify Firebase token
-            decoded = firebase_auth.verify_id_token(id_token)
+            # Verify Firebase token. If system clock is slightly behind the token iat,
+            # firebase can raise "Token used too early" — retry once after a short sleep.
+            try:
+                decoded = firebase_auth.verify_id_token(id_token)
+            except Exception as e_verify:
+                msg = str(e_verify)
+                if 'Token used too early' in msg or 'used too early' in msg:
+                    time.sleep(1)
+                    decoded = firebase_auth.verify_id_token(id_token)
+                else:
+                    raise
             email = decoded.get('email')
             uid = decoded.get('uid')
             name = decoded.get('name', 'User')
@@ -563,8 +575,13 @@ class GoogleLoginAPIView(APIView):
             # Get or create user in your backend
             user, created = User.objects.get_or_create(
                 email=email,
-                defaults={'username': name}
+                defaults={'username': name, 'is_active': True}  # Auto-activate social login users
             )
+
+            # If user exists but is inactive, activate them (in case they tried email signup before)
+            if not user.is_active:
+                user.is_active = True
+                user.save()
 
             # Optionally: update profile picture or UID if needed
 
@@ -581,6 +598,8 @@ class GoogleLoginAPIView(APIView):
             })
 
         except Exception as e:
+            import traceback
+            traceback.print_exc()
             return Response({'error': str(e)}, status=400)
 
 class OTPViewSet(viewsets.ViewSet):
