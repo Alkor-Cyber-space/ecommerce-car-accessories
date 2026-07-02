@@ -9,6 +9,19 @@ class OrderItemSerializer(serializers.Serializer):
     product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     quantity = serializers.IntegerField(min_value=1)
 
+    def validate(self, attrs):
+        product = attrs.get('product')
+        quantity = attrs.get('quantity')
+        
+        if not product.is_available:
+            raise serializers.ValidationError(f"Product '{product.name}' is not available.")
+        
+        if product.stock < quantity:
+            raise serializers.ValidationError(
+                f"Insufficient stock for '{product.name}'. Available: {product.stock}, requested: {quantity}."
+            )
+        return attrs
+
 
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True)
