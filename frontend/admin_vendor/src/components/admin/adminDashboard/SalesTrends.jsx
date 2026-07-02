@@ -24,12 +24,12 @@ const SalesTrends = ({
   revenueLabel = "",
   expensesLabel = "",
   xKey = "month",
-  yFormatter = (v) => `${v / 1000}K`, // ✅ fixed template literal
+  yFormatter = (v) => `${v / 1000}K`, 
   revenueColor = "#5737B4",
   expensesColor = "#00C2FF",
 }) => {
-  const [startDate, setStartDate] = useState(new Date("2024-01-01"));
-  const [endDate, setEndDate] = useState(new Date("2025-12-31"));
+  const [startDate, setStartDate] = useState(new Date("2026-01-01"));
+  const [endDate, setEndDate] = useState(new Date("2026-12-31"));
   const [open, setOpen] = useState(false);
    const [showMenu, setShowMenu] = useState(false);
 

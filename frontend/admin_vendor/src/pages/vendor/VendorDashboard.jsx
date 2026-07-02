@@ -206,9 +206,9 @@ const VendorDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-9 ">
+      <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mt-9 ">
         {stats.map((stat, i) => (
-          <div key={i} className="bg-white rounded-2xl shadow p-4">
+          <div key={i} className="bg-white rounded-2xl shadow p-2 md:p-4">
             <div className="flex items-center gap-2">
               <span className="text-xl ">{stat.icon}</span>
               <h4 className="text-sm font-semibold text-gray-500">{stat.title}</h4>
@@ -232,7 +232,7 @@ const VendorDashboard = () => {
             expensesLabel="Profit"
           />
         </div>
-        <div className="flex flex-col w-full lg:col-span-1">
+        <div className="flex flex-col w-full lg:col-span-1 gap-1">
           <ProfitCard
             title="Monthly Orders"
             profit={totalOrders}
@@ -240,7 +240,7 @@ const VendorDashboard = () => {
             bars={filteredBars}
             xLabels={filteredLabels} 
           />
-          <hr className='border border-[#D8D8D8] mt-4 mb-4' />
+          {/* <hr className='border border-[#D8D8D8] mt-4 mb-4' /> */}
           <TopProductsChart monthly_top_products={topProducts} />
         </div>
       </div>

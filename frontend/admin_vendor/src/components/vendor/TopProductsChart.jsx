@@ -72,7 +72,7 @@ export default function TopProductsChart({ monthly_top_products }) {
   };
 
   return (
-    <div className="bg-white border-l border-l-[#D8D8D8] p-5 h-full relative">
+    <div className="bg-white border border-[#D8D8D8] rounded-xl p-4 h-full relative">
       {/* Header with month selector */}
       <div className="flex justify-between items-center mb-4 p-2">
         <h2 className="text-gray-800 flex items-center gap-1">

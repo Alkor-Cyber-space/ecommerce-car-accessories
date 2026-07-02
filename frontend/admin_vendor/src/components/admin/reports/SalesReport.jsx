@@ -111,16 +111,16 @@ export default function SalesReport() {
         <table className="min-w-full bg-white rounded-md text-sm shadow">
           <thead className="text-gray-600">
             <tr>
-              <th className="py-4 px-6 text-left">Date</th>
-              <th className="py-4 px-6 text-left">Order ID</th>
-              <th className="py-4 px-6 text-left">Product</th>
-              <th className="py-4 px-6 text-left">Vendor</th>
-              <th className="py-4 px-6 text-left">Buyer</th>
-              <th className="py-4 px-6 text-left">Qty</th>
-              <th className="py-4 px-6 text-left">Price</th>
-              <th className="py-4 px-6 text-left">Total</th>
-              <th className="py-4 px-6 text-left">Commission</th>
-              <th className="py-4 px-6 text-left">Earnings</th>
+              <th className="py-4 px-2 text-left">Date</th>
+              <th className="py-4 px-2">Order ID</th>
+              <th className="py-4 px-4 text-left">Product</th>
+              <th className="py-4 px-4 text-left">Vendor</th>
+              <th className="py-4 px-2 text-left">Buyer</th>
+              <th className="py-4 px-2 text-left">Qty</th>
+              <th className="py-4 px-2 text-left">Price</th>
+              <th className="py-4 px-2 text-left">Total</th>
+              <th className="py-4 px-1 text-left">Commission</th>
+              <th className="py-4 px-2 text-left">Earnings</th>
             </tr>
           </thead>
         <tbody>
@@ -136,18 +136,18 @@ export default function SalesReport() {
   ) : (
     paginatedData.map((item, index) => (
       <tr key={index} className="text-left hover:bg-gray-50 ">
-        <td className="py-3 px-6 min-w-[120px]">
+        <td className="py-3 px-2 ">
           {new Date(item.date).toLocaleDateString("en-GB")}
         </td>
-        <td className="py-3 px-6 min-w-[100px]">{item.order_id}</td>
-        <td className="py-3 px-6 min-w-[140px]">{item.product}</td>
-        <td className="py-3 px-6 min-w-[140px]">{item.vendor}</td>
-        <td className="py-3 px-6 min-w-[140px]">{item.buyer}</td>
-        <td className="py-3 px-6">{item.quantity}</td>
-        <td className="py-3 px-6">{formatINR(item.price)}</td>
-        <td className="py-3 px-6">{formatINR(item.total)}</td>
-        <td className="py-3 px-6">{formatINR(item.commission)}</td>
-        <td className="py-3 px-6">{formatINR(item.earnings)}</td>
+        <td className="py-3 px-2 ">{item.order_id}</td>
+        <td className="py-3 px-2 min-w-[140px]">{item.product}</td>
+        <td className="py-3 px-1 min-w-[140px]">{item.vendor}</td>
+        <td className="py-3 px-1 min-w-[140px]">{item.buyer}</td>
+        <td className="py-3 px-2">{item.quantity}</td>
+        <td className="py-3 px-2">{formatINR(item.price)}</td>
+        <td className="py-3 px-2">{formatINR(item.total)}</td>
+        <td className="py-3 px-1">{formatINR(item.commission)}</td>
+        <td className="py-3 px-2">{formatINR(item.earnings)}</td>
       </tr>
     ))
   )}
