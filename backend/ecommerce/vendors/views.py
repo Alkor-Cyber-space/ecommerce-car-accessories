@@ -222,6 +222,7 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         return Response(
             {"message": "Product created successfully.", "product": ProductSerializer(product).data},
             status=status.HTTP_201_CREATED
+            
         )
 
 
