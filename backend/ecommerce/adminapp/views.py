@@ -259,9 +259,13 @@ class AdminSalesAnalyticsView(APIView):
         serializer = AdminSalesAnalyticsSerializer(data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+from drf_spectacular.utils import extend_schema
+
 class AdminLoginAPIView(APIView):
     permission_classes = [AllowAny]
+    serializer_class = AdminLoginSerializer
 
+    @extend_schema(request=AdminLoginSerializer)
     def post(self, request):
         email_or_username = request.data.get('email_or_username')
         password = request.data.get('password')
