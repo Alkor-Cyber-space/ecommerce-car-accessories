@@ -48,6 +48,8 @@ User = get_user_model()
 
 # Create your views here.
 
+from drf_spectacular.utils import extend_schema
+
 class UserViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
     authentication_classes = [JWTAuthentication]
@@ -205,6 +207,7 @@ class UserViewSet(viewsets.ViewSet):
             return Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    @extend_schema(request=UserEditSerializer)
     @action(detail=False, methods=['patch'], permission_classes=[IsAuthenticated])
     def edit_profile(self, request):
         user = request.user

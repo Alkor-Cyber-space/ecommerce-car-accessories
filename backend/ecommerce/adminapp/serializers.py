@@ -349,3 +349,7 @@ class AdminTaxTableSerializer(serializers.Serializer):
     total = serializers.DecimalField(max_digits=12, decimal_places=2)
     state = serializers.CharField()
     buyer_type = serializers.CharField()
+
+class AdminLoginSerializer(serializers.Serializer):
+    email_or_username = serializers.CharField(required=True)
+    password = serializers.CharField(required=True, write_only=True)

@@ -299,17 +299,19 @@ class CheckoutViewSet(viewsets.ViewSet):
                 price=item['product'].price
             )
 
-        # invoice_pdf = generate_invoice_pdf(order)
-        # send_order_invoice_email(order, invoice_pdf)
+        # Trigger stock deduction if COD by saving the order again
+        if payment_method == 'cod':
+            order.save()
 
         # Payment metadata
-        metadata = {"order_id": str(order.id)}
-
-        try:
-            gateway_handler = get_payment_gateway(payment_method)
-            gateway_response = gateway_handler(user, float(total)/ 100, metadata)
-        except Exception as e:
-            raise ValidationError(str(e))
+        gateway_response = None
+        if payment_method != 'cod':
+            metadata = {"order_id": str(order.id)}
+            try:
+                gateway_handler = get_payment_gateway(payment_method)
+                gateway_response = gateway_handler(user, float(total) / 100, metadata)
+            except Exception as e:
+                raise ValidationError(str(e))
 
         return Response({
             "amount": float(total),

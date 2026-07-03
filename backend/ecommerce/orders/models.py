@@ -38,6 +38,40 @@ class Order(models.Model):
     shiprocket_order_id = models.CharField(max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    stock_deducted = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        # Determine if we need to deduct or restore stock
+        should_deduct = (
+            self.status in ['paid', 'confirmed', 'shipped', 'delivered'] or
+            (self.status == 'pending' and self.payment_method == 'cod')
+        )
+        should_restore = self.status in ['cancelled', 'failed']
+
+        # Call standard save first so the record (and ID) exists
+        super().save(*args, **kwargs)
+
+        # Apply stock updates
+        if should_deduct and not self.stock_deducted:
+            items = self.items.all()
+            if items.exists():
+                for item in items:
+                    product = item.product
+                    product.stock = max(0, product.stock - item.quantity)
+                    product.save(update_fields=['stock'])
+                # Direct SQL update to avoid calling save() again and recursing
+                self.__class__.objects.filter(id=self.id).update(stock_deducted=True)
+                self.stock_deducted = True
+        elif should_restore and self.stock_deducted:
+            items = self.items.all()
+            if items.exists():
+                for item in items:
+                    product = item.product
+                    product.stock += item.quantity
+                    product.save(update_fields=['stock'])
+                # Direct SQL update to avoid calling save() again and recursing
+                self.__class__.objects.filter(id=self.id).update(stock_deducted=False)
+                self.stock_deducted = False
 
     def __str__(self):
         return f"Order #{self.id} - {self.user.email}"

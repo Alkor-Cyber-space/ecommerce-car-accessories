@@ -11,6 +11,7 @@ import {
   FaChevronDown,
   FaSignOutAlt,
   FaRegQuestionCircle,
+  FaBars,
 } from "react-icons/fa";
 import { GiProgression } from "react-icons/gi";
 import { MdNotificationsNone, MdOutlineDashboard } from "react-icons/md";
@@ -25,9 +26,21 @@ import { PiBuildings, PiChartLine } from "react-icons/pi";
 const serverUrl = "http://127.0.0.1:8000/";
 
 const VendorHome = () => {
-  const [showSidebar, setShowSidebar] = useState(true);
+  const [showSidebar, setShowSidebar] = useState(window.innerWidth >= 1024);
   const navigate = useNavigate();
   const location = useLocation();
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setShowSidebar(false);
+      } else {
+        setShowSidebar(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const [profileData, setProfileData] = useState({
     profile_image: null,
@@ -81,6 +94,9 @@ const VendorHome = () => {
     <li>
       <Link
         to={to}
+        onClick={() => {
+          if (window.innerWidth < 1024) setShowSidebar(false);
+        }}
         className={`cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex items-center gap-2 
         ${activePath === to
             ? "bg-[#5737B4] text-white shadow-xl"
@@ -94,6 +110,14 @@ const VendorHome = () => {
 
   return (
     <div className="flex min-h-screen gap-5 px-2">
+      {/* Overlay for mobile and medium screens */}
+      {showSidebar && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setShowSidebar(false)}
+        ></div>
+      )}
+
       {/* Toggle Button */}
       <button
         onClick={() => setShowSidebar(!showSidebar)}
@@ -195,7 +219,7 @@ const VendorHome = () => {
 
       {/* Main Content */}
       <div
-        className={`flex-1 p-6 bg-white transition-all duration-300 ${showSidebar ? "pl-72" : "pl-14"
+        className={`flex-1 min-w-0 p-6 bg-white transition-all duration-300 ${showSidebar ? "lg:pl-72 pl-14" : "pl-14"
           }`}
       >
         {/* Profile Info */}

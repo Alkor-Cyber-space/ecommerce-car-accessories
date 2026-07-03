@@ -113,15 +113,15 @@ export default function TransactionReport() {
         <table className="min-w-full bg-white rounded-md text-sm shadow">
           <thead className="text-gray-600">
             <tr>
-              <th className="py-4 px-6 text-left">Date</th>
-              <th className="py-4 px-6 text-left">Order ID</th>
-              <th className="py-4 px-6 text-left">Buyer</th>
-              <th className="py-4 px-6 text-left">Payment Method</th>
-              <th className="py-4 px-6 text-left">Status</th>
-              <th className="py-4 px-6 text-left">Amount</th>
-              <th className="py-4 px-6 text-left">Refund</th>
-              <th className="py-4 px-6 text-left">Gateway Fee</th>
-              <th className="py-4 px-6 text-left">Net Received</th>
+              <th className="py-4 px-2 text-left">Date</th>
+              <th className="py-4 px-2 text-left">Order ID</th>
+              <th className="py-4 px-2 text-left">Buyer</th>
+              <th className="py-4 px-2 text-left">Payment Method</th>
+              <th className="py-4 px-2 ">Status</th>
+              <th className="py-4 px-2 ">Amount</th>
+              <th className="py-4 px-2 text-left">Refund</th>
+              <th className="py-4 px-2 text-left">Gateway Fee</th>
+              <th className="py-4 px-2 text-left">Net Received</th>
             </tr>
           </thead>
           <tbody>
@@ -133,14 +133,14 @@ export default function TransactionReport() {
 
                 return (
                   <tr key={index} className="text-left hover:bg-gray-50">
-                    <td className="py-3 px-6">
+                    <td className="py-3 px-2">
                       {new Date(item.date).toLocaleDateString("en-GB")}
                     </td>
-                    <td className="py-3 px-6">{item.order_id}</td>
-                    <td className="py-3 px-6">{item.buyer}</td>
-                    <td className="py-3 px-6">{item.payment_method}</td>
+                    <td className="py-3 px-2">{item.order_id}</td>
+                    <td className="py-3 px-2">{item.buyer}</td>
+                    <td className="py-3 px-2">{item.payment_method}</td>
                     <td
-                      className={`py-3 px-6 font-medium ${item.status === "confirmed"
+                      className={`py-3 px-2 font-medium ${item.status === "confirmed"
                           ? "text-green-600"
                           : item.status === "Pending"
                             ? "text-yellow-600"
@@ -149,10 +149,10 @@ export default function TransactionReport() {
                     >
                       {item.status}
                     </td>
-                    <td className="py-3 px-6">{formatINR(item.amount)}</td>
-                    <td className="py-3 px-6">{formatINR(item.refund)}</td>
-                    <td className="py-3 px-6">{formatINR(item.gateway_fee)}</td>
-                    <td className="py-3 px-6">{formatINR(netReceived)}</td>
+                    <td className="py-3 px-2">{formatINR(item.amount)}</td>
+                    <td className="py-3 px-2">{formatINR(item.refund)}</td>
+                    <td className="py-3 px-2">{formatINR(item.gateway_fee)}</td>
+                    <td className="py-3 px-2">{formatINR(netReceived)}</td>
                   </tr>
                 );
               })

@@ -306,7 +306,7 @@ const AddProduct = () => {
 
                 </div>
             </div>
-
+            
             <div className="flex flex-col lg:flex-row gap-6 mt-3">
                 {/* Left Column */}
                 <div className="flex flex-col gap-6 flex-1">
