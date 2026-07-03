@@ -173,23 +173,6 @@ const AdminHome = () => {
           <SidebarItem to="/admin/sales-analytics" label="Sales Analytics" icon={<BsGraphUpArrow />} activePath={activePath} />
           <SidebarItem to="/admin/revenue-trends" label="Revenue Trends" icon={<HiArrowTrendingUp />} activePath={activePath} />
 
-           <li>
-            <div
-              className="cursor-pointer hover:bg-[#5737B4] hover:text-white px-4 py-2 rounded-3xl flex justify-between items-center"
-              onClick={() => toggleDropdown("Inventory Control")}
-            >
-              <span className="flex items-center gap-2">
-                <FaStar /> Inventory Control
-              </span>
-              {openDropdown === "Inventory Control" ? <FaChevronDown /> : <FaChevronRight />}
-            </div>
-            {openDropdown === "Inventory Control" && (
-              <ul className="pl-6 mt-2 space-y-2 text-sm">
-                
-                <SidebarItem to="/admin/inventory-stock" label="Stock Management" activePath={activePath} />
-              </ul>
-            )}
-          </li> 
         <SidebarItem to="/admin/inventory-overview" label="Inventory Overview" activePath={activePath} />
           <li>
             <div

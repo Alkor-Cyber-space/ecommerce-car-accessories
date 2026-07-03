@@ -4,7 +4,7 @@ const ProductLayout = () => {
   return (
 
    <> 
-      <div className="bg-gray-100 p-6 rounded-2xl">
+      <div className="bg-gray-100 p-6 rounded-2xl min-w-0 w-full">
         <Outlet />
       </div>
    </>
