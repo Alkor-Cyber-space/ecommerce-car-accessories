@@ -45,10 +45,51 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
-    image_list = ProductImageSerializer(many=True, read_only=True, source='images')
+    image_list = serializers.SerializerMethodField()
     category = CategorySerializer(read_only=True)
     tag = serializers.CharField(required=False, allow_blank=True)
     vendor = VendorSerializer(read_only=True)
+
+    def get_image_list(self, obj):
+        images = list(obj.images.all())
+        slots_data = [None] * 6
+        
+        # First, place slot-specific images into their respective slots if they are in 0-5 range
+        unplaced_images = []
+        for img in images:
+            placed = False
+            if img.slot and img.slot.startswith('images_'):
+                try:
+                    idx = int(img.slot.split('_')[1])
+                    if 0 <= idx < 6:
+                        slots_data[idx] = ProductImageSerializer(img, context=self.context).data
+                        placed = True
+                except (ValueError, IndexError):
+                    pass
+            if not placed:
+                unplaced_images.append(img)
+                
+        # For any unplaced images (like legacy main_image, etc.), place them in empty slots
+        for img in unplaced_images:
+            # find first empty slot
+            for idx in range(6):
+                if slots_data[idx] is None:
+                    serialized = ProductImageSerializer(img, context=self.context).data
+                    serialized['slot'] = f"images_{idx}"
+                    slots_data[idx] = serialized
+                    break
+                    
+        # Fill any remaining empty slots with blank image dicts so the frontend maps them correctly
+        for idx in range(6):
+            if slots_data[idx] is None:
+                slots_data[idx] = {
+                    "id": None,
+                    "image": None,
+                    "is_main": (idx == 0),
+                    "slot": f"images_{idx}"
+                }
+                
+        return slots_data
 
     category_id = serializers.PrimaryKeyRelatedField(
         queryset=Category.objects.all(),
