@@ -518,9 +518,22 @@ class VendorOrderStatusUpdateView(APIView):
             logger = logging.getLogger(__name__)
             logger.error(f"Error confirming order #{order_id} for vendor #{vendor.id}: {str(e)}", exc_info=True)
             traceback.print_exc()
+            
+            # Print the detailed HTTP error body from Shiprocket if available
+            error_detail = None
+            if hasattr(e, 'response') and e.response is not None:
+                print("=== SHIPROCKET API ERROR RESPONSE ===")
+                print(e.response.text)
+                print("=====================================")
+                try:
+                    error_detail = e.response.json()
+                except Exception:
+                    error_detail = e.response.text
+
             return Response({
                 "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket API call failed",
-                "error": str(e)
+                "error": str(e),
+                "shiprocket_error_detail": error_detail
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
