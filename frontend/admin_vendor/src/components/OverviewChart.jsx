@@ -28,7 +28,7 @@ export default function OverviewChart({ title, total, breakdown }) {
   let currentAngle = Math.PI;
 
   return (
-    <div className="bg-white rounded-[1rem] p-9 shadow border border-[#D8D8D8] max-w-xl w-full">
+    <div className="bg-white rounded-[1rem] p-6 shadow border border-[#D8D8D8] max-w-xl w-full">
       {/* Chart */}
       <div className="flex flex-col items-center">
         <svg viewBox="0 0 200 110" className="w-full max-w-xs">
@@ -63,7 +63,7 @@ export default function OverviewChart({ title, total, breakdown }) {
         </div>
 
         {/* Breakdown List */}
-        <div className="mt-6 w-full px-4 space-y-4 text-sm text-gray-700">
+        <div className="mt-6 w-full px-4 space-y-2 text-sm text-gray-700">
           {safeBreakdown.map((item, index) => (
             <div className="flex justify-between items-center" key={index}>
               <div className="flex items-center gap-2">

@@ -137,6 +137,10 @@ const AddProduct = () => {
         formData.price &&
         formData.category &&
         formData.tags.length > 0 &&
+        formData.length &&
+        formData.breadth &&
+        formData.height &&
+        formData.weight &&
         atLeastOneImageSelected;
 
     const handleSave = async (e) => {
@@ -189,9 +193,9 @@ const AddProduct = () => {
             console.log(pair[0], pair[1]);
         }
 
-        imageKeys.forEach((key) => {
+        imageKeys.forEach((key, index) => {
             if (formData.images?.[key]) {
-                formDataToSend.append("images", formData.images[key]);
+                formDataToSend.append(`images_${index}`, formData.images[key]);
             }
         });
 
@@ -262,14 +266,14 @@ const AddProduct = () => {
 
     return (
         <>
-            <div className="flex justify-between items-end gap-4 mb-4">
-                <h1 className="text-2xl font-semibold mb-3">
+            <div className="flex justify-between items-end gap-4 mb-1">
+                <h1 className="text-2xl font-semibold mb-1">
                     <Link to="/vendor/products" className="text-[#5737B4] hover:underline pr-3">
                         Product Management
                     </Link>
                     / Add Product
                 </h1>
-                <div className="flex md:flex-row lg:flex-row sm:flex-col gap-2 mb-3 items-center">
+                <div className="flex md:flex-row lg:flex-row sm:flex-col gap-2  items-center">
                     <div className="sm:flex gap-2">
                         <span className="text-sm font-medium text-[#5737B4]">Product Active</span>
                         <div
@@ -307,12 +311,12 @@ const AddProduct = () => {
                 </div>
             </div>
             
-            <div className="flex flex-col lg:flex-row gap-6 mt-3">
+            <div className="flex flex-col lg:flex-row gap-6 mt-2">
                 {/* Left Column */}
                 <div className="flex flex-col gap-6 flex-1">
                     {/* Basic Information */}
-                    <div className="bg-white rounded-xl p-6 space-y-4 shadow">
-                        <h2 className="text-lg font-semibold">Basic Information</h2>
+                    <div className="bg-white rounded-xl p-4 space-y-3 shadow">
+                        <h2 className="text-lg font-semibold underline">Basic Information</h2>
                         <div className="flex flex-col">
                             <label className="font-medium">Product Name</label>
                             <input name="name" value={formData.name || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" />
@@ -324,8 +328,8 @@ const AddProduct = () => {
                     </div>
 
                     {/* Price */}
-                    <div className="bg-white rounded-xl p-6 space-y-4 shadow">
-                        <h2 className="text-lg font-semibold">Price</h2>
+                    <div className="bg-white rounded-xl p-4 space-y-1 shadow">
+                        <h2 className="text-lg font-semibold underline">Price</h2>
                         <div className="flex gap-4 flex-col ">
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Stock</label>
@@ -339,9 +343,9 @@ const AddProduct = () => {
                     </div>
 
                     {/* Others */}
-                    <div className="bg-white rounded-xl p-6 space-y-4 shadow">
-                        <h2 className="text-lg font-semibold">Others</h2>
-                        <div className="flex gap-4 flex-col ">
+                    <div className="bg-white rounded-xl p-4 space-y-1 shadow">
+                        <h2 className="text-lg font-semibold underline">Others</h2>
+                        <div className="flex gap-2 flex-col ">
                             <div className="flex flex-col flex-1">
                                 <label className="font-medium">Sizes Available</label>
                                 <select name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" >
@@ -352,7 +356,7 @@ const AddProduct = () => {
                                     <option value="X-Large">X-Large</option>
                                 </select>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 gap-2">
                                 {/* First row: Length and weight */}
                                 <div className="flex flex-col">
                                     <label htmlFor="length" className="font-medium">Length </label>
@@ -431,10 +435,10 @@ const AddProduct = () => {
                 </div>
 
                 {/* Right Column */}
-                <div className="flex flex-col gap-6 w-full lg:w-[45%]">
+                <div className="flex flex-col gap-4 w-full lg:w-[45%]">
                     {/* Product Images */}
-                    <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-4">Product Images</h2>
+                    <div className="bg-white rounded-xl p-4 shadow">
+                        <h2 className="text-lg font-semibold mb-2 underline">Product Images</h2>
                         <div className="grid grid-cols-2 gap-4">
                             {["Main Image", "Close View", "Other Image 1", "Other Image 2", "Other Image 3", "Other Image 4"].map((label, index) => (
                                 <div key={index} className="flex flex-col gap-2">
@@ -480,6 +484,14 @@ const AddProduct = () => {
                                                             const newPreviews = [...imagePreviews];
                                                             newPreviews[index] = null;
                                                             setImagePreviews(newPreviews);
+                                                            const key = imageKeys[index];
+                                                            if (key) {
+                                                                setFormData((prev) => {
+                                                                    const updatedImages = { ...prev.images };
+                                                                    delete updatedImages[key];
+                                                                    return { ...prev, images: updatedImages };
+                                                                });
+                                                            }
                                                         }}
                                                         className="flex flex-col items-center text-white"
                                                     >
@@ -511,9 +523,9 @@ const AddProduct = () => {
                     </div>
 
                     {/* Tags */}
-                    <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-2">Tags</h2>
-                        <label className="text-sm">Type and search</label>
+                    <div className="bg-white rounded-xl p-4 shadow">
+                        <h2 className="text-lg font-semibold ">Tags</h2>
+                        <label className="text-sm mb-2">Type and enter tags</label>
                         <TagInput
                             value={formData.tags}
                             onChange={(newTags) =>
@@ -523,7 +535,7 @@ const AddProduct = () => {
                     </div>
 
                     {/* Stock */}
-                    <div className="bg-white rounded-xl p-6 shadow overflow-y-auto max-h-30 scrollbar-none">
+                    <div className="bg-white rounded-xl p-4 shadow overflow-y-auto max-h-30 scrollbar-none">
                         <h2 className="text-lg font-semibold mb-2">Compatible Variant Years</h2>
 
                         {Array.isArray(varientYears) && varientYears.length > 0 ? (
@@ -570,7 +582,7 @@ const AddProduct = () => {
             </div>
 
             {/* Buttons */}
-            <div className="flex justify-end gap-4 mt-10">
+            <div className="flex justify-end gap-4 mt-5">
                 <button
                     onClick={() => navigate('/vendor/products')}
                     className="border border-[#5737B4] text-[#5737B4] px-16 py-2 rounded-md text-sm font-medium hover:bg-[#f1edff] transition">Cancel</button>

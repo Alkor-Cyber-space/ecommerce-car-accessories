@@ -63,6 +63,24 @@ const ProductList = () => {
     }
   };
 
+  const getPageNumbers = () => {
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      if (
+        i === 1 ||
+        i === totalPages ||
+        (i >= currentPage - 1 && i <= currentPage + 1) ||
+        (currentPage <= 3 && i <= 4) ||
+        (currentPage >= totalPages - 2 && i >= totalPages - 3)
+      ) {
+        pages.push(i);
+      } else if (pages[pages.length - 1] !== "...") {
+        pages.push("...");
+      }
+    }
+    return pages;
+  };
+
   const baseSizes = [1, 10, 20, 50];
   const extraSizes = [100, 500];
   const productCount = products.length;
@@ -86,7 +104,7 @@ const ProductList = () => {
 
   const stats = [
     { icon: <IoPricetagOutline />, title: "Total Products", value: totalProducts },
-    { icon: <PiToolboxLight />, title: "Total Orders", value: totalOrders },
+    { icon: <PiToolboxLight />, title: "Total Orders", value: null },
     { icon: <CiBadgeDollar />, title: "Stocks", value: totalStocks },
   ];
 
@@ -98,9 +116,9 @@ const ProductList = () => {
 
   return (
     <>
-      <h1 className="text-2xl font-semibold mb-6">Product Management</h1>
+      <h1 className="text-xl md:text-2xl font-bold text-[#5737B4] mb-4">Product Management</h1>
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-3">
         {stats.map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl shadow p-4 flex flex-col justify-between">
             <div className="flex items-center gap-2">
@@ -115,7 +133,7 @@ const ProductList = () => {
       </div>
 
       {/* Search & Actions */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-3">
         {/* Search */}
         <div className="relative w-full md:w-[50%] lg:w-[60%]">
           <BsSearch className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -140,7 +158,7 @@ const ProductList = () => {
       </div>
 
       {/* Table */}
-      <div className="w-full overflow-x-auto bg-white py-4 sm:py-8 px-2 sm:px-6 rounded-xl shadow-sm">
+      <div className="w-full overflow-x-auto bg-white py-4 sm:py-4 md:py-3 lg:py-3 px-2 sm:px-6 md:px-2 lg:px-2 rounded-xl shadow-sm">
         <table className="min-w-full text-sm">
           <thead className="text-gray-700 text-left border-b border-gray-100">
             <tr>
@@ -201,26 +219,54 @@ const ProductList = () => {
         </table>
       </div>
 
-      {/* Pagination + Page Size Selector */}
-      <div className="mt-6 flex justify-end items-center gap-4 text-sm">
-        {/* Prev / Next */}
-        <div className="flex gap-2">
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="mt-6 flex justify-end items-center gap-3 text-sm">
+          {/* Prev Button */}
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-4 py-2 rounded-md border border-gray-200 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="px-3 py-1.5 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             Prev
           </button>
+
+          {/* Page numbers */}
+          <div className="flex items-center gap-1.5">
+            {getPageNumbers().map((page, index) => {
+              if (page === "...") {
+                return (
+                  <span key={`dots-${index}`} className="px-2 text-gray-400">
+                    ...
+                  </span>
+                );
+              }
+              return (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(page)}
+                  className={`w-8 h-8 rounded-md flex items-center justify-center font-medium border transition-all ${
+                    currentPage === page
+                      ? "bg-[#5737B4] border-[#5737B4] text-white"
+                      : "border-gray-200 hover:bg-gray-50 text-gray-700"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Next Button */}
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 rounded-md border border-gray-200 disabled:opacity-50 hover:bg-gray-50 transition-colors"
+            className="px-3 py-1.5 rounded-md border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
           >
             Next
           </button>
         </div>
-      </div>
+      )}
     </>
   );
 };

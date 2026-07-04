@@ -116,8 +116,8 @@ const PaymentsEarnings = () => {
   };
 
   return (
-    <div className="bg-gray-100 px-6 py-6 rounded-2xl relative">
-      <div className='flex mb-5 justify-between items-center'>
+    <div className="bg-gray-100 p-4 rounded-2xl relative">
+      <div className='flex mb-2  justify-between items-center'>
         <h1 className="text-[#5737B4] text-xl md:text-2xl font-bold">Payments & Earnings</h1>
         <div className="relative">
           <button
@@ -136,7 +136,7 @@ const PaymentsEarnings = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-white mb-4 w-full rounded-3xl p-1 shadow-md">
+      <div className="flex bg-white mb-2 w-full rounded-3xl p-1 shadow-md">
         <button
           className={`px-4 py-2 font-medium rounded-3xl w-1/2 ${activeTab === "sales" ? "bg-[#5737B4] text-white" : "bg-white text-gray-700"}`}
           onClick={() => { setActiveTab("sales"); setCurrentPage(1); }}
@@ -152,7 +152,7 @@ const PaymentsEarnings = () => {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg max-h-[90vh] overflow-y-auto mt-10">
+      <div className="overflow-x-auto rounded-lg max-h-[90vh] overflow-y-auto mt-5 shadow ">
         <table className="min-w-full divide-gray-200">
           <thead className="bg-gray-50 sticky top-0 z-10">
             <tr>

@@ -125,7 +125,7 @@ const VendorHome = () => {
           }`}
       >
         <div
-          className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? "px-3 py-2 w-67" : "w-12 justify-center"
+          className={`flex items-center gap-2 bg-white transition-all duration-500 ease-in-out ${showSidebar ? "px-3 py-2 w-60" : "w-12 justify-center"
             }`}
         >
           <img src={logo} alt="Logo" className="h-8" />
@@ -135,10 +135,10 @@ const VendorHome = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-white text-slate-800 p-6 overflow-y-auto scrollbar-none z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 h-full w-70 bg-white text-slate-800 p-6 overflow-y-auto scrollbar-none z-40 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"
           }`}
       >
-        <ul className="space-y-4 text-md py-10 font-medium">
+        <ul className="space-y-3 text-md py-10 font-medium">
           <SidebarItem
             to="/vendor/dashboard"
             label="Dashboard"

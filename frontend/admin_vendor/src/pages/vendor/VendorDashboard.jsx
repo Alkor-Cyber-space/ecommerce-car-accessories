@@ -159,11 +159,11 @@ const VendorDashboard = () => {
   };
 
   return (
-    <div className='bg-gray-100 px-6 py-6 rounded-2xl'>
+    <div className='bg-gray-100 p-4 rounded-2xl'>
       {/* Banner */}
       {shouldShowBanner && (
         <div>
-          <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-6">
+          <div className="bg-[#E2DBF4] border border-[#E0D0FF] text-[#5737B4] rounded-lg p-6 flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
               <AiOutlineInfoCircle className="text-3xl md:text-4xl" />
               <div>
@@ -206,7 +206,7 @@ const VendorDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 md:grid-cols-4 gap-4 mt-9 ">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mt-2 ">
         {stats.map((stat, i) => (
           <div key={i} className="bg-white rounded-2xl shadow p-2 md:p-4">
             <div className="flex items-center gap-2">
@@ -221,7 +221,7 @@ const VendorDashboard = () => {
       </div>
 
       {/* Sales & Profit */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 bg-white my-6 w-full p-1 border border-[#D8D8D8] rounded-2xl shadow-lg">
+      <div className="grid grid-cols-1 lg:grid-cols-3 bg-white my-4 w-full p-1 border border-[#D8D8D8] rounded-2xl shadow-lg">
         <div className="lg:col-span-2 text-white w-full">
           <SalesTrends
             title="Sales Trends"
@@ -246,7 +246,7 @@ const VendorDashboard = () => {
       </div>
 
       {/* Users Overview with Download Dropdown */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-2">
         <h2 className="text-xl font-semibold text-gray-800">Products Overview</h2>
         <div className="relative">
           <button

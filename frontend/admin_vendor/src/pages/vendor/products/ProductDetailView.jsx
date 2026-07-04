@@ -1,20 +1,35 @@
 import React, { useEffect, useState } from "react";
-import { toggleActive } from "../../../store/productFormSlice";
 import { Link, Outlet, useNavigate, useParams } from "react-router-dom";
 import { FiEdit3 } from "react-icons/fi";
-import { getProductByIdApi } from "../../../services/allAPI";
+import { getProductByIdApi, updateProductApi } from "../../../services/allAPI";
+import { toast } from "react-toastify";
 
 const ProductDetailView = () => {
     const { id } = useParams();
     const [product, setProduct] = useState(null);
 
-    const handleToggle = () => {
-        setProduct((prev) => ({
-            ...prev,
-            // flip both flags so UI stays consistent with Add/Edit behaviour
-            isActive: !prev.isActive,
-            is_available: !(prev.is_available ?? prev.isActive),
-        }));
+    const handleToggle = async () => {
+        if (!product) return;
+        const nextStatus = !(product.is_available ?? product.isActive);
+        
+        const form = new FormData();
+        form.append("is_available", nextStatus ? "true" : "false");
+        form.append("isActive", nextStatus ? "true" : "false");
+        
+        try {
+            const response = await updateProductApi(id, form);
+            if (response) {
+                setProduct((prev) => ({
+                    ...prev,
+                    isActive: nextStatus,
+                    is_available: nextStatus,
+                }));
+                toast.success(`Product status updated to ${nextStatus ? "Active" : "Inactive"}`);
+            }
+        } catch (err) {
+            console.error("Error updating product status:", err);
+            toast.error("Failed to update product status");
+        }
     };
 
 
@@ -56,9 +71,9 @@ const ProductDetailView = () => {
                             // prefer explicit is_available when present, otherwise fall back to isActive
                         }
                         <div
-                            onClick={!canEdit ? handleToggle : undefined}
+                            onClick={handleToggle}
                             className={`w-14 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ${(product.is_available ?? product.isActive) ? "bg-[#5737B4]" : "bg-gray-300"
-                                } ${!canEdit ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}
+                                } cursor-pointer`}
                         >
                             <div
                                 className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ${(product.is_available ?? product.isActive) ? "translate-x-8" : "translate-x-0"

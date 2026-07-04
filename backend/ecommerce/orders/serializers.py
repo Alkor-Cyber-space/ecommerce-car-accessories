@@ -63,14 +63,36 @@ class VendorOrderSerializer(serializers.ModelSerializer):
     vendor_total_price = serializers.SerializerMethodField()
     vendor_tax = serializers.SerializerMethodField()
     vendor_shipping_cost = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
+    customer_email = serializers.CharField(source='user.email', read_only=True)
+    customer_phone = serializers.CharField(source='user.phone_number', read_only=True)
+    shipping_address_details = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
         fields = [
             'id', 'user', 'payment_method', 'status',
             'courier_name', 'awb_code', 'tracking_url', 'created_at',
-            'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost'
+            'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost',
+            'customer_name', 'customer_email', 'customer_phone', 'shipping_address_details'
         ]
+
+    def get_customer_name(self, obj):
+        name = f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return name if name else obj.user.username
+
+    def get_shipping_address_details(self, obj):
+        addr = obj.shipping_address
+        if addr:
+            return {
+                'line1': addr.line1,
+                'line2': addr.line2,
+                'city': addr.city,
+                'state': addr.state,
+                'postal_code': addr.postal_code,
+                'country': addr.country,
+            }
+        return None
 
     def get_items(self, obj):
         vendor = self.context['request'].user
