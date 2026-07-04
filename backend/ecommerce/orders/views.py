@@ -513,6 +513,11 @@ class VendorOrderStatusUpdateView(APIView):
                 }, status=status.HTTP_200_OK)
 
         except Exception as e:
+            import logging
+            import traceback
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error confirming order #{order_id} for vendor #{vendor.id}: {str(e)}", exc_info=True)
+            traceback.print_exc()
             return Response({
                 "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket API call failed",
                 "error": str(e)
