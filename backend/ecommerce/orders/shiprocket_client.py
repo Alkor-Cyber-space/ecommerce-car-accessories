@@ -14,9 +14,13 @@ RATE_CALCULATOR_URL = "https://apiv2.shiprocket.in/v1/external/courier/serviceab
 def get_shiprocket_token(force_refresh=False):
     """Get cached Shiprocket token or fetch new one."""
     if not force_refresh:
-        token = cache.get("shiprocket_token")
-        if token:
-            return token
+        try:
+            token = cache.get("shiprocket_token")
+            if token:
+                return token
+        except Exception:
+            # Redis unavailable - proceed without cache
+            pass
 
     # Request new token
     data = {
@@ -31,7 +35,11 @@ def get_shiprocket_token(force_refresh=False):
         raise Exception("Failed to fetch Shiprocket token")
 
     # cache for 9 days (token valid 10 days)
-    cache.set("shiprocket_token", token, 9 * 24 * 3600)
+    try:
+        cache.set("shiprocket_token", token, 9 * 24 * 3600)
+    except Exception:
+        # Redis unavailable - continue without caching
+        pass
     return token
 
 

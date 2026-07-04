@@ -84,14 +84,14 @@ class CartItemViewSet(viewsets.ModelViewSet):
         cart, created = Cart.objects.get_or_create(user=self.request.user)
         serializer.save(cart=cart)
     
-    @action(detail=False, methods=['post'], url_path='remove-product/(?P<product_id>[^/.]+)')
+    @action(detail=False, methods=['post'], url_path=r'remove-product/(?P<product_id>\d+)')
     def remove_from_cart(self, request, product_id=None):
         try:
             cart = Cart.objects.get(user=request.user)
-            cart_item = CartItem.objects.get(cart=cart, product__id=product_id)
-            cart_item.delete()
+            # Use filter().delete() to remove all CartItem entries for this product
+            deleted_count, _ = CartItem.objects.filter(cart=cart, product__id=product_id).delete()
+            if deleted_count == 0:
+                return Response({'error': 'Product not in cart.'}, status=status.HTTP_404_NOT_FOUND)
             return Response({'message': 'Product removed from cart.'}, status=status.HTTP_200_OK)
         except Cart.DoesNotExist:
             return Response({'error': 'Cart not found.'}, status=status.HTTP_404_NOT_FOUND)
-        except CartItem.DoesNotExist:
-            return Response({'error': 'Product not in cart.'}, status=status.HTTP_404_NOT_FOUND)

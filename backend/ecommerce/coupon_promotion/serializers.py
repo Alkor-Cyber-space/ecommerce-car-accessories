@@ -54,7 +54,7 @@ class ApplyCouponSerializer(serializers.Serializer):
     
     def validate(self, data):
         try:
-            coupon=Coupon.objects.get(name=data['coupon_code'])
+            coupon=Coupon.objects.get(code=data['coupon_code'])
         except Coupon.DoesNotExist:
             raise serializers.ValidationError({"coupon_code": "Invalid coupon code."})
         try:

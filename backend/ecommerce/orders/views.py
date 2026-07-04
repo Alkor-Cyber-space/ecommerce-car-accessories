@@ -254,7 +254,7 @@ class CheckoutViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request):
-        serializer = OrderSerializer(data=request.data, context={'request': request})
+        serializer = OrderCreateSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
 
         validated = serializer.validated_data
