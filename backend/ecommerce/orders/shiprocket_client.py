@@ -103,7 +103,7 @@ def calculate_shipping_rate(payload):
       - cod (1 for COD, 0 for prepaid)
       - declared_value (for insurance)
     """
-    return call_shiprocket_api(RATE_CALCULATOR_URL, method="GET", payload =payload)
+    return call_shiprocket_api(RATE_CALCULATOR_URL, method="GET", params=payload)
 
 def create_shiprocket_order(order_payload):
     """
