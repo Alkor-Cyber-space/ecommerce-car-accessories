@@ -916,3 +916,10 @@ class AdminUserSerializer(serializers.ModelSerializer):
     class Meta:
         model=CustomUser
         fields = ["id", "email", "username", "phone_number", "is_admin_staff"]
+
+
+class UserLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
+    fcm_token = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+

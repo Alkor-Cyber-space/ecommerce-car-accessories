@@ -150,9 +150,10 @@ class UserViewSet(viewsets.ViewSet):
         }, status=status.HTTP_200_OK)    
 
 
+    @extend_schema(request=UserLoginSerializer)
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
-        email_or_username = request.data.get('email_or_username')
+        email_or_username = request.data.get('email_or_username') or request.data.get('email')
         password = request.data.get('password')
         fcm_token = request.data.get('fcm_token')
 
