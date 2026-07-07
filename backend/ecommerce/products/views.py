@@ -175,12 +175,27 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         product = serializer.validated_data['product']
-        user = self.request.user
-        if Review.objects.filter(product=product, user=user).exists():
-            raise ValidationError({"detail": "You have already reviewed this product."})
-        serializer.save(user=user)
+        user = request.user
+        
+        # Check if the user already reviewed this product
+        review = Review.objects.filter(product=product, user=user).first()
+        if review:
+            # Update the existing review instead of failing
+            review.rating = serializer.validated_data.get('rating', review.rating)
+            review.comment = serializer.validated_data.get('comment', review.comment)
+            review.save()
+            return Response(self.get_serializer(review).data, status=status.HTTP_200_OK)
+            
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['get'], url_path='product/(?P<product_id>[^/.]+)')
     def reviews_by_product(self, request, product_id=None):

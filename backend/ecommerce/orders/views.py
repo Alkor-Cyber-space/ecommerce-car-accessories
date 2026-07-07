@@ -427,13 +427,25 @@ class VendorOrderStatusUpdateView(APIView):
             subtotal = sum(item.price * item.quantity for item in vendor_items)
             total_tax = subtotal * tax_rate
             shipping_fee = order.shipping_cost  # shared or per vendor if you decide to split
-            total_amount = subtotal + total_tax + shipping_fee
-
-            # Customer and shipping info
+            total_amount = subtotal + total_tax + shipping_fee            # Customer and shipping info
             shipping_address = order.shipping_address
             customer = order.user
 
-            # Prepare Shiprocket payload for this vendor’s portion
+            if not shipping_address:
+                return Response({
+                    "error": "Order has no shipping address. Cannot create Shiprocket shipment.",
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Debug: log the address fields being sent
+            print(f"[DEBUG] Shipping address for order #{order.id}:")
+            print(f"  line1: '{shipping_address.line1}'")
+            print(f"  line2: '{shipping_address.line2}'")
+            print(f"  city: '{shipping_address.city}'")
+            print(f"  state: '{shipping_address.state}'")
+            print(f"  postal_code: '{shipping_address.postal_code}'")
+            print(f"  country: '{shipping_address.country}'")
+
+            # Prepare Shiprocket payload for this vendor's portion
             order_payload = {
                 "order_id": f"{order.id}_V{vendor.id}",  # unique per vendor
                 "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
@@ -443,18 +455,28 @@ class VendorOrderStatusUpdateView(APIView):
                 # Billing / Shipping info
                 "billing_customer_name": customer.first_name or customer.username,
                 "billing_last_name": customer.last_name or "",
-                "billing_address": shipping_address.line1,
+                "billing_address": shipping_address.line1 or "",
                 "billing_address_2": shipping_address.line2 or "",
-                "billing_city": shipping_address.city,
-                "billing_pincode": shipping_address.postal_code,
-                "billing_state": shipping_address.state,
-                "billing_country": shipping_address.country,
+                "billing_city": shipping_address.city or "",
+                "billing_pincode": shipping_address.postal_code or "",
+                "billing_state": shipping_address.state or "",
+                "billing_country": shipping_address.country or "",
                 "billing_email": customer.email,
-                "billing_phone": getattr(customer, "phone_number", "9999999999"),
+                "billing_phone": getattr(customer, "phone_number", "9999999999") or "9999999999",
+                
                 "shipping_is_billing": True,
+                "shipping_customer_name": customer.first_name or customer.username,
+                "shipping_last_name": customer.last_name or "",
+                "shipping_address": shipping_address.line1 or "",
+                "shipping_address_2": shipping_address.line2 or "",
+                "shipping_city": shipping_address.city or "",
+                "shipping_pincode": shipping_address.postal_code or "",
+                "shipping_country": shipping_address.country or "",
+                "shipping_state": shipping_address.state or "",
+                "shipping_email": customer.email,
+                "shipping_phone": getattr(customer, "phone_number", "9999999999") or "9999999999",
 
-                # Courier and payment info
-                "courier_company_id": str(order.courier_company_id or ""),
+                # Payment info
                 "payment_method": "COD" if order.payment_method == "cod" else "Prepaid",
 
                 # Vendor’s products only
@@ -466,7 +488,7 @@ class VendorOrderStatusUpdateView(APIView):
                         "selling_price": float(item.price),
                         "discount": 0,
                         "hsn": getattr(item.product, "hsn", "8708"),
-                        "tax": ""
+                        "tax": 0
                     }
                     for item in vendor_items
                 ],
@@ -488,6 +510,13 @@ class VendorOrderStatusUpdateView(APIView):
             sr_response = create_shiprocket_order(order_payload)
             print("Shiprocket response:", sr_response)
 
+            # ✅ Check if Shiprocket returned an error
+            if sr_response.get("error"):
+                return Response({
+                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket order creation failed",
+                    "shiprocket_error": sr_response.get("details"),
+                }, status=status.HTTP_400_BAD_REQUEST)
+
             # ✅ Save shipment details if successful
             if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
                 order.shiprocket_order_id = str(sr_response.get("order_id", ""))
@@ -508,11 +537,16 @@ class VendorOrderStatusUpdateView(APIView):
 
             else:
                 return Response({
-                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket order creation failed",
+                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket order creation incomplete",
                     "shiprocket_response": sr_response
                 }, status=status.HTTP_200_OK)
 
         except Exception as e:
+            import logging
+            import traceback
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error confirming order #{order_id} for vendor #{vendor.id}: {str(e)}", exc_info=True)
+            traceback.print_exc()
             return Response({
                 "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket API call failed",
                 "error": str(e)
