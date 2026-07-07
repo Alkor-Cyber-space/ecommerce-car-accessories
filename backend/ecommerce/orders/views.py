@@ -333,6 +333,14 @@ class UserOrderViewSet(viewsets.ViewSet):
         else:
             orders = Order.objects.filter(user=request.user).order_by('-created_at')
 
+        from rest_framework.pagination import PageNumberPagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        page = paginator.paginate_queryset(orders, request)
+        if page is not None:
+            serializer = OrderSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data)
 

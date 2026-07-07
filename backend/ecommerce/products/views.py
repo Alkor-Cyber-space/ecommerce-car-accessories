@@ -92,7 +92,16 @@ class ProductListAPIView(APIView):
     def get(self, request):
         products = Product.objects.select_related('vendor').prefetch_related(
             Prefetch('vendor__addresses', queryset=Address.objects.filter(is_pickup=True))
-        )
+        ).order_by('-created_at')
+
+        from rest_framework.pagination import PageNumberPagination
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        page = paginator.paginate_queryset(products, request)
+        if page is not None:
+            serializer = ProductSerializer(page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
+
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
 
