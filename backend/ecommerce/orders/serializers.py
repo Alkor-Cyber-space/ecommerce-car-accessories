@@ -177,11 +177,8 @@ class VendorOrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'user', 'payment_method', 'status',
-            #             'courier_name', 'awb_code', 'tracking_url', 'created_at',
-            # 'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost',
-            # 'customer_name', 'customer_email', 'customer_phone', 'shipping_address_details'
-
-
+             'tracking_url', 'created_at',
+             'customer_name', 'customer_email', 'customer_phone', 'shipping_address_details'
             'courier_company_id', 'shiprocket_order_id', 'shipment_id', 'shipping_cost', 'courier_name', 'awb_code', 'tracking_url', 'created_at',
             'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost'
         ]

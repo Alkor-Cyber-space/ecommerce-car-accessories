@@ -501,37 +501,38 @@ class AdminVehicleCreate(APIView):
                 }
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-
 class VendorViewProductAPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
-    def post(self,request):
-        pk=request.data.get('pk')
-        # print(pk)
+    def post(self, request):
+        pk = request.data.get('pk')
         if not pk:
             return Response({
-                "status" : "failed",
+                "status": "failed",
                 "code": status.HTTP_400_BAD_REQUEST,
                 "message": "pk is mandatory"
-            },status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        custom_user=Product.objects.filter(vendor_id=pk)
-        if not custom_user:
+        try:
+            vendor_group = Group.objects.get(name="Vendor")
+            user_exists = CustomUser.objects.filter(id=pk, groups=vendor_group).exists()
+        except Group.DoesNotExist:
+            user_exists = CustomUser.objects.filter(id=pk).exists()
+
+        if not user_exists:
             return Response({
-                "status" : "failed",
+                "status": "failed",
                 "code": status.HTTP_400_BAD_REQUEST,
                 "message": "user does not exist"
-            },status=status.HTTP_400_BAD_REQUEST)
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        serializer=VendorViewProductSerilizer(custom_user , many=True)
+        products = Product.objects.filter(vendor_id=pk)
+        serializer = VendorViewProductSerilizer(products, many=True)
         return Response({
-            "status" : "success",
+            "status": "success",
             "code": status.HTTP_200_OK,
             "data": serializer.data
-        },status=status.HTTP_200_OK)
-
+        }, status=status.HTTP_200_OK)
 
 # class UnverifiedVendorsAPIView(APIView):
 #     permission_classes = [IsAuthenticated, IsAdmin]

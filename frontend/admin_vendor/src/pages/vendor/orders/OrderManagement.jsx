@@ -37,9 +37,10 @@ const OrderManagement = ({ order }) => {
   const fetchOrders = async () => {
     try {
       const response = await getOrdersApi();
-      setUserOrders(response);
-      setFilteredOrders(response);
-      console.log(response);
+      const sorted = response ? [...response].sort((a, b) => b.id - a.id) : [];
+      setUserOrders(sorted);
+      setFilteredOrders(sorted);
+      console.log(sorted);
     } catch (error) {
       console.error("Error fetching orders", error);
       toast.error("Failed to fetch orders");
@@ -56,7 +57,15 @@ const OrderManagement = ({ order }) => {
       const response = await ConfirmOrderStatusApi(order.id);
       console.log(response);
 
-      toast.success("Order status confirmed successfully");
+      if (response && response.message) {
+        if (response.message.includes("failed")) {
+          toast.warning(response.message);
+        } else {
+          toast.success(response.message);
+        }
+      } else {
+        toast.success("Order status confirmed successfully");
+      }
 
       if (fetchOrders) fetchOrders();
     } catch (error) {
