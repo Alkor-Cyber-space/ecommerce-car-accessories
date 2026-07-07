@@ -360,6 +360,16 @@ class UserOrderViewSet(viewsets.ViewSet):
         """Cancel order before shipping"""
         order = get_object_or_404(Order, pk=pk, user=request.user)
         if order.status in ['pending', 'paid']:
+            if order.shiprocket_order_id:
+                try:
+                    cancel_shiprocket_order([int(order.shiprocket_order_id)])
+                except Exception as e:
+                    import logging
+                    import traceback
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Failed to cancel order #{order.id} on Shiprocket during customer cancellation: {str(e)}", exc_info=True)
+                    traceback.print_exc()
+
             order.status = 'cancelled'
             order.save()
             return Response({'message': 'Order cancelled successfully.'})
@@ -589,6 +599,17 @@ class VendorOrderCancelView(APIView):
             order = Order.objects.get(id=order_id, items__product__vendor=user)
         except Order.DoesNotExist:
             return Response({"error": "Order not found or access denied"}, status=status.HTTP_404_NOT_FOUND)
+
+        # If order is confirmed and pushed to Shiprocket, cancel it there
+        if order.shiprocket_order_id:
+            try:
+                cancel_shiprocket_order([int(order.shiprocket_order_id)])
+            except Exception as e:
+                import logging
+                import traceback
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to cancel order #{order.id} on Shiprocket during vendor cancellation: {str(e)}", exc_info=True)
+                traceback.print_exc()
 
         # Update order status to cancelled
         order.status = "cancelled"

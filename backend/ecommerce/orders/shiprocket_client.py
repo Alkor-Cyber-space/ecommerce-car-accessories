@@ -131,3 +131,13 @@ def track_shiprocket_order(awb_code):
     TRACK_URL = f"https://apiv2.shiprocket.in/v1/external/courier/track/awb/{awb_code}"
     response = call_shiprocket_api(TRACK_URL, method="GET")
     return response
+
+
+def cancel_shiprocket_order(shiprocket_order_ids):
+    """
+    Cancel orders on Shiprocket.
+    Endpoint: POST /v1/external/orders/cancel
+    """
+    CANCEL_URL = "https://apiv2.shiprocket.in/v1/external/orders/cancel"
+    payload = {"ids": shiprocket_order_ids}
+    return call_shiprocket_api(CANCEL_URL, payload=payload, method="POST")
