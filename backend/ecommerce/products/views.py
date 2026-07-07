@@ -8,11 +8,12 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError 
 from vehicles.models import *
 from rest_framework.views import APIView
+from rest_framework.pagination import PageNumberPagination
 from coupon_promotion.models import Promotion
 from vehicles.models import SavedVehicle
 from django.utils import timezone
 from products.models import Product
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from accounts.permissions import IsVendor
 
 class UserDashboardView(APIView):
@@ -94,7 +95,6 @@ class ProductListAPIView(APIView):
             Prefetch('vendor__addresses', queryset=Address.objects.filter(is_pickup=True))
         ).order_by('-created_at')
 
-        from rest_framework.pagination import PageNumberPagination
         paginator = PageNumberPagination()
         paginator.page_size = 10
         page = paginator.paginate_queryset(products, request)
@@ -104,6 +104,53 @@ class ProductListAPIView(APIView):
 
         serializer = ProductSerializer(products, many=True, context={'request': request})
         return Response(serializer.data)
+
+
+class VehicleCategoryProductsAPIView(APIView):
+    """
+    Return products for a vehicle category such as sedan or coupe.
+    Accepts either vehicle_category (name) or vehicle_category_id (ID).
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        vehicle_category = request.query_params.get('vehicle_category', '').strip()
+        vehicle_category_id = request.query_params.get('vehicle_category_id', '').strip()
+
+        category = None
+        if vehicle_category_id:
+            try:
+                category = Category.objects.get(id=vehicle_category_id)
+            except Category.DoesNotExist:
+                available_categories = list(Category.objects.values_list('id', 'name'))
+                return Response({
+                    'message': 'No matching vehicle category found for the provided ID.',
+                    'available_categories': [{'id': category_id, 'name': name} for category_id, name in available_categories]
+                }, status=status.HTTP_400_BAD_REQUEST)
+        elif vehicle_category:
+            category = Category.objects.filter(name__iexact=vehicle_category).first()
+            if not category:
+                category = Category.objects.filter(name__icontains=vehicle_category).first()
+
+        if not category:
+            available_categories = list(Category.objects.values_list('id', 'name'))
+            return Response({
+                'message': f"No category matched '{vehicle_category or vehicle_category_id}'. Use an existing category name or ID.",
+                'available_categories': [{'id': category_id, 'name': name} for category_id, name in available_categories]
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        products = Product.objects.filter(category=category).filter(is_available=True).order_by('-created_at')
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 10
+        page = paginator.paginate_queryset(products, request)
+        if page is not None:
+            serializer = ProductSerializer(page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = ProductSerializer(products, many=True, context={'request': request})
+        return Response(serializer.data)
+
 
 class CategoryListAPIView(APIView):
     """

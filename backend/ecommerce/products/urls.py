@@ -13,6 +13,7 @@ router.register(r'reviews', ReviewViewSet, basename='reviews')
 urlpatterns = [
     path('', include(router.urls)),
     path('products/', ProductListAPIView.as_view(), name='product-list'),
+    path('vehicle-category-products/', VehicleCategoryProductsAPIView.as_view(), name='vehicle-category-products'),
     path('dashboard/', UserDashboardView.as_view(), name='user-dashboard'),
     path('category/', CategoryListAPIView.as_view(), name='product-list'),
     path('search/', ProductSearchAPIView.as_view(), name='product-search'),
