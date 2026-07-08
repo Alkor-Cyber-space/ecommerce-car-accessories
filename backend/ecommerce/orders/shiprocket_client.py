@@ -1,3 +1,4 @@
+import re
 import requests
 from django.core.cache import cache
 from django.conf import settings
@@ -8,6 +9,26 @@ CREATE_PICKUP_URL = "https://apiv2.shiprocket.in/v1/external/settings/company/ad
 CREATE_ORDER_URL = "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc"
 RATE_CALCULATOR_URL = "https://apiv2.shiprocket.in/v1/external/courier/serviceability"
 
+
+
+def normalize_phone_for_shiprocket(phone):
+    """Return a Shiprocket-compatible Indian phone number or a safe fallback."""
+    if not phone:
+        return "919999999999"
+
+    digits = re.sub(r'\D', '', str(phone))
+    if not digits:
+        return "919999999999"
+
+    if len(digits) == 10:
+        digits = "91" + digits
+    elif len(digits) > 12:
+        digits = digits[-12:]
+
+    if len(digits) != 12:
+        return "919999999999"
+
+    return digits
 
 
 # ---------------- AUTH ---------------- #

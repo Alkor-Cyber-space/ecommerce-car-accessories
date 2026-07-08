@@ -829,7 +829,7 @@ class VendorDocumentsFinalApprovalView(APIView):
 
     def post(self, request, vendor_profile_id):
         try:
-            vendor_profile = VendorProfile.objects.get(id=vendor_profile_id)
+            vendor_profile = VendorProfile.objects.get(user_id=vendor_profile_id)
             print(vendor_profile)
             
             

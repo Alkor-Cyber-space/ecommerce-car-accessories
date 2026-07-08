@@ -307,6 +307,7 @@ class Address(models.Model):
      state = models.CharField(max_length=100)
      postal_code = models.CharField(max_length=20)
      country = models.CharField(max_length=100)
+     phone_number = models.CharField(max_length=15, blank=True, null=True)
      is_primary = models.BooleanField(default=True)
      is_pickup = models.BooleanField(default=True)
 

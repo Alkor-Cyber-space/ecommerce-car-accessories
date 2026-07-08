@@ -20,8 +20,24 @@ from .shiprocket_client import *
 from datetime import datetime
 from rest_framework import generics, permissions
 from django.db.models import Q
+import re
 # from accounts.utils import generate_invoice_pdf
 # from accounts.utils import send_order_invoice_email
+
+
+def format_phone_number(phone):
+    """Format phone number for Shiprocket API."""
+    if not phone:
+        return None
+
+    cleaned = re.sub(r'\D', '', str(phone))
+
+    if len(cleaned) == 10:
+        cleaned = '91' + cleaned
+    elif len(cleaned) != 12:
+        return None
+
+    return cleaned
 
 
 class ShippingOptionsView(APIView):
@@ -435,10 +451,6 @@ class VendorOrderStatusUpdateView(APIView):
                 status=status.HTTP_403_FORBIDDEN
             )
 
-        # Mark this vendor’s portion as confirmed
-        order.status = "confirmed"
-        order.save()
-
         try:
             # Calculate subtotal, tax, shipping, totals for this vendor only
             tax_rate = Decimal("0.18")
@@ -464,11 +476,19 @@ class VendorOrderStatusUpdateView(APIView):
             print(f"  country: '{shipping_address.country}'")
 
             # Prepare Shiprocket payload for this vendor's portion
+            vendor_profile = getattr(vendor, 'vendor_profile', None)
+            if not vendor_profile or not vendor_profile.pickup_location:
+                return Response({
+                    "error": f"Vendor {vendor.username} does not have a configured Shiprocket pickup location."
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            pickup_location = vendor_profile.pickup_location
+
             order_payload = {
-                "order_id": f"{order.id}_V{vendor.id}",  # unique per vendor
+                "order_id": f"{order.id}_V{vendor_profile.id}",  # unique per vendor
                 "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
-                "pickup_location": f"VENDOR_{vendor.id}",
-                "comment": f"Order #{order.id} (Vendor #{vendor.id}) from {customer.email}",
+                "pickup_location": pickup_location,
+                "comment": f"Order #{order.id} (Vendor #{vendor_profile.id}) from {customer.email}",
 
                 # Billing / Shipping info
                 "billing_customer_name": customer.first_name or customer.username,
@@ -480,7 +500,7 @@ class VendorOrderStatusUpdateView(APIView):
                 "billing_state": shipping_address.state or "",
                 "billing_country": shipping_address.country or "",
                 "billing_email": customer.email,
-                "billing_phone": getattr(customer, "phone_number", "9999999999") or "9999999999",
+                "billing_phone": format_phone_number(getattr(shipping_address, "phone_number", None) or getattr(customer, "phone_number", None)) or "919999999999",
                 
                 "shipping_is_billing": True,
                 "shipping_customer_name": customer.first_name or customer.username,
@@ -492,7 +512,7 @@ class VendorOrderStatusUpdateView(APIView):
                 "shipping_country": shipping_address.country or "",
                 "shipping_state": shipping_address.state or "",
                 "shipping_email": customer.email,
-                "shipping_phone": getattr(customer, "phone_number", "9999999999") or "9999999999",
+                "shipping_phone": format_phone_number(getattr(shipping_address, "phone_number", None) or getattr(customer, "phone_number", None)) or "919999999999",
 
                 # Payment info
                 "payment_method": "COD" if order.payment_method == "cod" else "Prepaid",
@@ -531,12 +551,13 @@ class VendorOrderStatusUpdateView(APIView):
             # ✅ Check if Shiprocket returned an error
             if sr_response.get("error"):
                 return Response({
-                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket order creation failed",
+                    "message": f"Vendor {vendor.id} items for Order #{order.id} could not be confirmed with Shiprocket",
                     "shiprocket_error": sr_response.get("details"),
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             # ✅ Save shipment details if successful
             if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
+                order.status = "confirmed"
                 order.shiprocket_order_id = str(sr_response.get("order_id", ""))
                 order.awb_code = sr_response.get("awb_code", "")
                 order.courier_name = sr_response.get("courier_name", "")
