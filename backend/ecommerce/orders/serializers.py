@@ -177,50 +177,64 @@ class VendorOrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = [
             'id', 'user', 'payment_method', 'status',
-             'tracking_url', 'created_at',
-             'customer_name', 'customer_email', 'customer_phone', 'shipping_address_details'
+            'customer_name', 'customer_email', 'customer_phone', 'shipping_address_details',
             'courier_company_id', 'shiprocket_order_id', 'shipment_id', 'shipping_cost', 'courier_name', 'awb_code', 'tracking_url', 'created_at',
             'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost'
         ]
 
+
+    def _get_vendor(self, obj):
+        request = self.context.get('request')
+        if request is not None:
+            return getattr(request, 'user', None)
+        return None
+
     def get_customer_name(self, obj):
-        name = f"{obj.user.first_name} {obj.user.last_name}".strip()
-        return name if name else obj.user.username
+        user = obj.user
+        name = f"{user.first_name} {user.last_name}".strip()
+        return name if name else getattr(user, 'username', None)
 
     def get_shipping_address_details(self, obj):
         addr = obj.shipping_address
         if addr:
             return {
-                'line1': addr.line1,
-                'line2': addr.line2,
-                'city': addr.city,
-                'state': addr.state,
-                'postal_code': addr.postal_code,
-                'country': addr.country,
+
+                'line1': getattr(addr, 'line1', None),
+                'line2': getattr(addr, 'line2', None),
+                'city': getattr(addr, 'city', None),
+                'state': getattr(addr, 'state', None),
+                'postal_code': getattr(addr, 'postal_code', None),
+                'country': getattr(addr, 'country', None),
             }
         return None
 
     def get_items(self, obj):
-        vendor = self.context['request'].user
+        vendor = self._get_vendor(obj)
+        if vendor is None:
+            return []
         items = obj.items.filter(product__vendor=vendor)
         return VendorOrderItemSerializer(items, many=True, context=self.context).data
 
     def get_vendor_total_price(self, obj):
-        vendor = self.context['request'].user
+        vendor = self._get_vendor(obj)
+        if vendor is None:
+            return Decimal('0.00')
         items = obj.items.filter(product__vendor=vendor)
         total = sum(item.price * item.quantity for item in items)
         return round(total, 2)
 
     def get_vendor_tax(self, obj):
-        # Example logic: assume 18% tax on vendor subtotal
-        vendor = self.context['request'].user
+        vendor = self._get_vendor(obj)
+        if vendor is None:
+            return Decimal('0.00')
         items = obj.items.filter(product__vendor=vendor)
         subtotal = sum(item.price * item.quantity for item in items)
-        tax = subtotal * Decimal('0.18')  # 18% GST, adjust as needed
+        tax = subtotal * Decimal('0.18')
         return round(tax, 2)
 
     def get_vendor_shipping_cost(self, obj):
-        vendor = self.context['request'].user
+        vendor = self._get_vendor(obj)
+        if vendor is None:
+            return Decimal('0.00')
         items = obj.items.filter(product__vendor=vendor)
-        # You can modify this rule as per your logic (flat rate, per item, etc.)
         return Decimal('100.00') if items.exists() else Decimal('0.00')

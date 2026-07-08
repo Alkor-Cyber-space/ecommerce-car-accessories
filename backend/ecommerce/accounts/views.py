@@ -787,7 +787,7 @@ class ResendOptVerification(GenericAPIView):
     
 
 class VendorProfileUpdateView(APIView):
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self, pk):
         try:
@@ -827,6 +827,8 @@ class VendorProfileUpdateView(APIView):
 
 import traceback
 class VendorDocumentsFinalApprovalView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+    authentication_classes = [JWTAuthentication]
 
     def post(self, request, vendor_profile_id):
         try:
@@ -956,7 +958,7 @@ class VendorDocumentsFinalApprovalView(APIView):
         }, status=status.HTTP_200_OK)
     
 class VendorAuditLogAll(APIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsAdmin]
     def get(self,request):
         data=VendorAuditLog.objects.all()
         if not data:
@@ -973,6 +975,7 @@ class VendorAuditLogAll(APIView):
         })    
     
 class VendorDocumentCheck(APIView):
+    permission_classes = [IsAuthenticated]
     
     def get_object(self, pk):
         try:
@@ -998,6 +1001,7 @@ class VendorDocumentCheck(APIView):
         }, status=status.HTTP_200_OK)
     
 class AdminProfileEdit(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
     
     def post(self,request,pk):
         try:
@@ -1046,8 +1050,7 @@ class GenerateRazorpayContactsView(APIView):
     """
     Create Razorpay contact IDs for all vendors who don't have one yet.
     """
-
-    # permission_classes = [IsAdminUser]  # Uncomment if you want only admin access
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def post(self, request, *args, **kwargs):
         vendors = CustomUser.objects.filter(vendor_profile__isnull=False)
@@ -1112,7 +1115,7 @@ razorpay_client = razorpay.Client(auth=(settings.RAZORPAY_TEST_KEY_ID, settings.
 
 
 class ProcessPayoutsView(APIView):
-    permission_classes = [IsAdminUser]  # Uncomment to restrict to admins
+    permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request, *args, **kwargs):
         payouts_result = []
@@ -1263,6 +1266,8 @@ class ProcessPayoutsView(APIView):
 
 
 class ExportReportView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+    
     def post(self, request):
         report_type = request.data.get("report_type")  # e.g. 'sales'
         format_type = request.data.get("format")  # 'excel' or 'pdf'
