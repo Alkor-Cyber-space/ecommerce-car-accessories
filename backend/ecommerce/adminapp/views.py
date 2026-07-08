@@ -532,6 +532,28 @@ class VendorViewProductAPIView(APIView):
             "status": "success",
             "code": status.HTTP_200_OK,
             "data": serializer.data
+        },status=status.HTTP_200_OK)
+
+class AdminAllVendorsProductsAPIView(APIView):
+    permission_classes = [IsAuthenticated, IsAdmin]
+
+    def get(self, request):
+        vendors = CustomUser.objects.filter(groups__name="Vendor")
+        data = []
+        for vendor in vendors:
+            products = Product.objects.filter(vendor=vendor)
+            if products.exists():
+                serializer = VendorViewProductSerilizer(products, many=True)
+                data.append({
+                    "vendor_id": vendor.id,
+                    "vendor_name": vendor.username,
+                    "vendor_email": vendor.email,
+                    "products": serializer.data
+                })
+        return Response({
+            "status": "success",
+            "code": status.HTTP_200_OK,
+            "data": data
         }, status=status.HTTP_200_OK)
 
 # class UnverifiedVendorsAPIView(APIView):

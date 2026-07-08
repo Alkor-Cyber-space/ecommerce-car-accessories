@@ -26,6 +26,7 @@ urlpatterns = [
     path('vehicle-create/', AdminVehicleCreate.as_view(), name='vehicle-entry'),
 
     path('list-vendor-products/',VendorViewProductAPIView.as_view(),name='list-vendor-products'),
+    path('all-vendors-products/', AdminAllVendorsProductsAPIView.as_view(), name='all-vendors-products'),
 
     path('vehicles/<int:pk>/update/', AdminVehicleUpdate.as_view(), name='vehicle-update'),
     path('vehicles/<int:pk>/delete/', AdminVehicleDelete.as_view(), name='vehicle-delete'),
