@@ -150,24 +150,26 @@ const OrderDetailView = () => {
               <h2 className="font-medium mb-4 text-lg">Customer Details</h2>
               <div className=" grid grid-cols-2 gap-y-5">
                 <p className="font-medium">Name</p>
-                <p>Rahul Mehta</p>
+                <p>{order.customer_name || "N/A"}</p>
                 <p className="font-medium">Email</p>
-                <p className='text-[#5737B4] underline cursor-pointer'>rahulmehta@gmail.com</p>
+                <p className='text-[#5737B4] underline cursor-pointer'>{order.customer_email || "N/A"}</p>
                 <p className="font-medium">Phone</p>
-                <p>+91 8879654231</p>
+                <p>{order.customer_phone || "N/A"}</p>
               </div>
             </div>
             <div className='bg-white mt-4 p-6 rounded shadow'>
               <h2 className="font-medium mb-4 text-lg">Delivery Address</h2>
               <div className="grid grid-cols-2 gap-y-5  ">
                 <p className="font-medium">Address Line 1</p>
-                <p>Manjakkara (h)</p>
+                <p>{order.shipping_address_details?.line1 || "N/A"}</p>
                 <p className="font-medium">Address Line 2</p>
-                <p>Koothattukulam PO</p>
-                <p className="font-medium">Landmark</p>
-                <p>Kallushaap Road</p>
+                <p>{order.shipping_address_details?.line2 || "N/A"}</p>
+                <p className="font-medium">City</p>
+                <p>{order.shipping_address_details?.city || "N/A"}</p>
+                <p className="font-medium">State / Country</p>
+                <p>{order.shipping_address_details ? `${order.shipping_address_details.state}, ${order.shipping_address_details.country}` : "N/A"}</p>
                 <p className="font-medium">Pincode</p>
-                <p>685541</p>
+                <p>{order.shipping_address_details?.postal_code || "N/A"}</p>
               </div>
             </div>
           </div>
@@ -304,42 +306,39 @@ const OrderDetailView = () => {
           <tbody>
             <tr>
               <td className="py-2 pr-4 font-medium text-gray-700">Payment Method:</td>
-              <td className="py-2 text-left text-gray-800">{order.payment_method}- **** 1234</td>
+              <td className="py-2 text-left text-gray-800" style={{ textTransform: 'uppercase' }}>
+                {order.payment_method || "N/A"}
+              </td>
             </tr>
-            {orderItems
-              .map(item => item.quantity * item.product_price)
-              .reduce((acc, total) => acc + total, 0) !== parseFloat(order.total_price) && (
-                <tr>
-                  <td className="py-2 pr-4 font-medium text-gray-700">Subtotal:</td>
-                  <td className="py-2 text-left text-gray-800">
-                    ₹{
-                      orderItems
-                        .map(item => item.quantity * item.product_price)
-                        .reduce((acc, total) => acc + total, 0)
-                    }
-                  </td>
-                </tr>
-              )}
-
             <tr>
-              <td className="py-2 pr-4 font-medium text-gray-700">Discount:</td>
-              <td className="py-2 text-left text-gray-600">-₹{discount}</td>
+              <td className="py-2 pr-4 font-medium text-gray-700">Subtotal:</td>
+              <td className="py-2 text-left text-gray-800">
+                ₹{order.vendor_total_price || "0.00"}
+              </td>
             </tr>
             <tr>
               <td className="py-2 pr-4 font-medium text-gray-700">Delivery Charges:</td>
-              <td className="py-2 text-left text-gray-800">₹{order.shipping_cost}</td>
+              <td className="py-2 text-left text-gray-800">
+                ₹{order.vendor_shipping_cost || "0.00"}
+              </td>
             </tr>
             <tr>
-              <td className="py-2 pr-4 font-medium text-gray-700">Tax :</td>
-              <td className="py-2 text-left text-gray-800">₹{order.tax}</td>
-            </tr>
-            <tr>
-              <td className="py-2 pr-4 font-medium text-gray-700">Platform Charges:</td>
-              <td className="py-2 text-left text-gray-800">₹{platform}</td>
+              <td className="py-2 pr-4 font-medium text-gray-700">Tax:</td>
+              <td className="py-2 text-left text-gray-800">
+                ₹{order.vendor_tax || "0.00"}
+              </td>
             </tr>
             <tr className="border-t border-gray-200 text-base font-bold">
               <td className="py-3 pr-4">Total</td>
-              <td className="py-3 text-left">₹{order.total_price}</td>
+              <td className="py-3 text-left">
+                ₹{
+                  (
+                    parseFloat(order.vendor_total_price || 0) +
+                    parseFloat(order.vendor_tax || 0) +
+                    parseFloat(order.vendor_shipping_cost || 0)
+                  ).toFixed(2)
+                }
+              </td>
             </tr>
           </tbody>
         </table>

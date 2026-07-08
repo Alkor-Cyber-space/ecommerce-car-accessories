@@ -55,8 +55,8 @@ export default function EditProduct() {
       setFormData({
         name: productDetails.name || "",
         description: productDetails.description || "",
-        price: productDetails.price || "",
-        stock: productDetails.stock || "",
+        price: productDetails.price !== undefined && productDetails.price !== null ? productDetails.price : "",
+        stock: productDetails.stock !== undefined && productDetails.stock !== null ? productDetails.stock : "",
         category: productDetails.category || null,
         size: productDetails.size || "",
         manufacturing_date: productDetails.manufacturing_date || "",
@@ -228,6 +228,18 @@ export default function EditProduct() {
     }
   };
 
+  const isFormComplete =
+    formData.name &&
+    formData.description &&
+    formData.price &&
+    formData.category &&
+    formData.tag &&
+    formData.tag.length > 0 &&
+    formData.length &&
+    formData.breadth &&
+    formData.height &&
+    formData.weight;
+
   const handleSave = async () => {
     const form = new FormData();
     form.append("name", formData.name || "");
@@ -237,7 +249,11 @@ export default function EditProduct() {
     form.append("category_id", formData.category?.id || "");
     form.append("size", formData.size || "");
     form.append("manufacturing_date", formData.manufacturing_date || "");
-    form.append("tag", formData.tag || "");
+    if (Array.isArray(formData.tag) && formData.tag.length > 0) {
+      form.append("tag", formData.tag.join(","));
+    } else {
+      form.append("tag", "");
+    }
     form.append("isActive", formData.isActive ? "true" : "false");
     // include availability flag (mirror AddProduct behaviour)
     form.append("is_available", formData.is_available ? "true" : "false");
@@ -263,9 +279,10 @@ export default function EditProduct() {
       });
     }
 
-    Object.values(productImages).forEach((file) => {
+    Object.keys(productImages).forEach((index) => {
+      const file = productImages[index];
       if (file) {
-        form.append("images", file);
+        form.append(`images_${index}`, file);
       }
     });
 
@@ -380,9 +397,9 @@ export default function EditProduct() {
   );
 
   return (
-    <div className="bg-[#ECECF0] min-h-screen">
-      <div className="flex justify-between mb-3">
-        <h1 className="text-2xl font-semibold mb-6">
+    <div className="min-h-screen">
+      <div className="flex justify-between mb-2">
+        <h1 className="text-2xl font-semibold mb-2">
           <Link
             to="/vendor/products"
             className="text-[#5737B4] hover:underline pr-3"
@@ -426,16 +443,13 @@ export default function EditProduct() {
         {/* Left Column */}
         <div className="flex flex-col gap-6 flex-1">
           {/* Basic Info */}
-          <div className="bg-white rounded-xl p-6 space-y-4 shadow">
-            <h2 className="text-lg font-semibold">Basic Information</h2>
+          <div className="bg-white rounded-xl p-4 space-y-2 shadow">
+            <h2 className="text-lg font-semibold underline">Basic Information</h2>
             <div>
               <label className="font-medium">Product Name</label>
               <input
                 name="name"
-                value={
-                  formData.name ||
-                  "LumoBeam X9 LED Car Headlight -  6000K Cool White (H4, 60W) "
-                }
+                value={formData.name || ""}
                 onChange={handleChange}
                 type="text"
                 className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -454,16 +468,16 @@ export default function EditProduct() {
           </div>
 
           {/* Price */}
-          <div className="bg-white rounded-xl p-6 space-y-4 shadow">
-            <h2 className="text-lg font-semibold">Price</h2>
+          <div className="bg-white rounded-xl p-4 space-y-2 shadow">
+            <h2 className="text-lg font-semibold underline">Price</h2>
             <div className="flex gap-4 md:flex-col sm:flex-row">
               <div className="flex-1">
                 <label className="text-sm font-medium">Stock Number</label>
                 <input
                   name="stock"
-                  value={formData.stock || "h667h"}
+                  value={formData.stock}
                   onChange={handleChange}
-                  type="text"
+                  type="number"
                   className="mt-1 border px-3 py-2 rounded-md w-full"
                 />
               </div>
@@ -471,7 +485,7 @@ export default function EditProduct() {
                 <label className="font-medium">Unit Price</label>
                 <input
                   name="price"
-                  value={formData.price || "5600"}
+                  value={formData.price}
                   onChange={handleChange}
                   type="number"
                   className="mt-1 border px-3 py-2 rounded-md w-full"
@@ -481,8 +495,8 @@ export default function EditProduct() {
           </div>
 
           {/* Others */}
-          <div className="bg-white rounded-xl p-6 space-y-4 shadow">
-            <h2 className="text-lg font-semibold">Others</h2>
+          <div className="bg-white rounded-xl p-4 space-y-2 shadow">
+            <h2 className="text-lg font-semibold underline">Others</h2>
             <div className="flex gap-4 md:flex-col sm:flex-row">
               <div className="flex gap-4 flex-col ">
                 <div className="flex flex-col flex-1">
@@ -500,7 +514,7 @@ export default function EditProduct() {
                     <option value="X-Large">X-Large</option>
                   </select>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2">
                   {/* First row: Length and weight */}
                   <div className="flex flex-col">
                     <label htmlFor="length" className="font-medium">
@@ -579,7 +593,12 @@ export default function EditProduct() {
                 name="category"
                 value={formData.category?.id || ""}
                 onChange={(e) => {
-                  const selectedId = parseInt(e.target.value);
+                  const val = e.target.value;
+                  if (!val) {
+                    setFormData((prev) => ({ ...prev, category: null }));
+                    return;
+                  }
+                  const selectedId = parseInt(val);
                   const selectedName =
                     e.target.options[e.target.selectedIndex].text;
                   setFormData((prev) => ({
@@ -589,6 +608,7 @@ export default function EditProduct() {
                 }}
                 className="mt-1 border px-3 py-2 rounded-md w-full"
               >
+                <option value="" disabled>Select Category</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -600,9 +620,9 @@ export default function EditProduct() {
         </div>
 
         {/* Right Column */}
-        <div className="flex flex-col gap-6 w-full lg:w-[45%]">
+        <div className="flex flex-col gap-4 w-full lg:w-[45%]">
           {/* Product Images */}
-          <div className="bg-white rounded-xl p-6 shadow">
+          <div className="bg-white rounded-xl p-4 shadow">
             <h2 className="text-lg font-semibold mb-4">Product Images</h2>
             <div className="grid grid-cols-2 gap-4">
               {[...Array(6)].map((_, i) => (
@@ -661,22 +681,6 @@ export default function EditProduct() {
           </div>
 
           {/* Tags */}
-          {/* <div className="bg-white rounded-xl p-6 shadow">
-                        <h2 className="text-lg font-semibold mb-2">Tags</h2>
-                        <input
-                            name="tags"
-                            value={Array.isArray(formData.tag) ? formData.tag.join(", ") : formData.tag || ""}
-                            onChange={(e) =>
-                                setFormData({
-                                    ...formData,
-                                    tag: e.target.value.split(",").map((tag) => tag.trim()),
-                                })
-                            }
-                            placeholder=" tags"
-                            className="mt-1 border px-3 py-2 rounded-md w-full"
-                        />
-                    </div> */}
-          {/* Tags */}
           <div className="border bg-white rounded-md px-3 py-2 flex flex-wrap gap-2 w-full min-h-[45px]">
             {Array.isArray(formData.tag) &&
               formData.tag.map((tag, index) => (
@@ -705,7 +709,7 @@ export default function EditProduct() {
             />
           </div>
           {/* Compatible Variant Years */}
-          <div className="bg-white rounded-xl p-6 shadow overflow-y-auto max-h-30 scrollbar-none">
+          <div className="bg-white rounded-xl p-4 shadow overflow-y-auto max-h-30 scrollbar-none">
             <h2 className="text-lg font-semibold mb-2">
               Compatible Variant Years
             </h2>
@@ -759,7 +763,7 @@ export default function EditProduct() {
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-6 flex sm:flex-col md:flex-row justify-end gap-4">
+      <div className="mt-5 flex sm:flex-col md:flex-row justify-end gap-4">
         <button
           className="border border-[#FF5A65] text-[#FF5A65] bg-[#FFDEE0] rounded-sm px-5 py-1"
           onClick={handleDeleteConfirm}
@@ -775,8 +779,13 @@ export default function EditProduct() {
         </button>
 
         <button
-          className="border bg-[#5737B4] text-white rounded-sm px-14 py-1"
+          className={`border rounded-sm px-14 py-1 transition-colors ${
+            isFormComplete
+              ? "bg-[#5737B4] text-white hover:bg-[#442f96]"
+              : "bg-[#D8D8D8] text-white cursor-not-allowed"
+          }`}
           onClick={handleSave}
+          disabled={!isFormComplete}
         >
           Save
         </button>

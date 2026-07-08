@@ -179,9 +179,26 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
     def to_internal_value(self, data):
-        tags = data.get('tag', [])
+        if hasattr(data, 'copy'):
+            data = data.copy()
+        
+        if hasattr(data, 'getlist'):
+            tags = data.getlist('tag')
+        else:
+            tags = data.get('tag', [])
+            
         if isinstance(tags, list):
-            data['tag'] = ', '.join(tags)
+            flat_tags = []
+            for t in tags:
+                if isinstance(t, str):
+                    flat_tags.extend([item.strip() for item in t.split(',') if item.strip()])
+                else:
+                    flat_tags.append(str(t))
+            data['tag'] = ', '.join(flat_tags)
+        elif isinstance(tags, str):
+            flat_tags = [item.strip() for item in tags.split(',') if item.strip()]
+            data['tag'] = ', '.join(flat_tags)
+            
         return super().to_internal_value(data)
     
 class ReviewSerializer(serializers.ModelSerializer):

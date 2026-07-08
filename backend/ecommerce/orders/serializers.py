@@ -182,6 +182,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
             'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost'
         ]
 
+
     def _get_vendor(self, obj):
         request = self.context.get('request')
         if request is not None:
@@ -197,6 +198,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
         addr = obj.shipping_address
         if addr:
             return {
+
                 'line1': getattr(addr, 'line1', None),
                 'line2': getattr(addr, 'line2', None),
                 'city': getattr(addr, 'city', None),

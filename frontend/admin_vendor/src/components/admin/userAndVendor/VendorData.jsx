@@ -237,7 +237,7 @@ export default function VendorDataTable() {
       />
 
       {/* Vendors Table */}
-      <div className="overflow-x-auto rounded-xl bg-white shadow-sm scrollbar-none p-3">
+      <div className="overflow-x-auto rounded-xl bg-white shadow-sm scrollbar-none p-3 pb-32">
         <table className="min-w-[800px] w-full text-sm">
           <thead className="text-gray-600">
             <tr>

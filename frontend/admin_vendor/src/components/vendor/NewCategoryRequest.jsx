@@ -37,8 +37,13 @@ const NewCategoryRequest = () => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-6 shadow">
-            <h2 className="text-lg font-semibold mb-2">Category Request</h2>
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl p-4 shadow">
+            <div className=" mb-2">
+                <h2 className="text-lg font-semibold">Category Request</h2>
+                <span className="text-sm text-gray-500">
+                    (Use this section to request a new category if you can't find the appropriate one.)
+                </span>
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
                 <div>

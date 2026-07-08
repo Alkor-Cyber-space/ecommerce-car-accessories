@@ -42,10 +42,10 @@ const ReturnsRefundsTable = () => {
   };
 
   return (
-    <div className="bg-[#ECECF0] rounded-2xl min-h-screen px-4 sm:px-6 py-8">
+    <div className="bg-[#ECECF0] rounded-2xl min-h-screen px-4 sm:px-4 md:px-4 lg:px-4 py-2 sm:py-2 md:py-2 lg:py-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
-        <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-3">
+        <h2 className="text-xl md:text-2xl font-bold text-[#5737B4]">
           Returns & Refunds
         </h2>
         <button className="bg-[#5737B4] text-white text-sm px-4 py-2 rounded-md hover:bg-[#452fa4] transition w-full sm:w-auto">
@@ -54,7 +54,7 @@ const ReturnsRefundsTable = () => {
       </div>
 
       {/* Filter Form */}
-      <div className="bg-white w-full py-4 px-5 sm:px-6 rounded-lg shadow-sm mb-8">
+      <div className="bg-white w-full py-4 px-5 sm:px-6 rounded-lg shadow-sm mb-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Order ID</label>
@@ -111,8 +111,8 @@ const ReturnsRefundsTable = () => {
       </div>
 
       {/* Products Table (Desktop) */}
-      <div className="hidden md:block overflow-x-auto">
-        <table className="min-w-full bg-white rounded-md shadow text-sm">
+      <div className="hidden md:block overflow-x-auto rounded-lg">
+        <table className="min-w-full bg-white  shadow text-sm">
           <thead className="text-gray-600 bg-gray-50">
             <tr>
               <th className="p-3 text-left"></th>
