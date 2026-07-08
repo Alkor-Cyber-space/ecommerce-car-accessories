@@ -1,19 +1,9 @@
 import React from 'react';
 import bmw from '../../../assets/bmw.jpg';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { baseUrl } from "../../../services/serverURL";
 
-const orderHistory = [
-  { label: 'Order placed', date: '24 May 2025', status: 'done' },
-  { label: 'Order Confirmed', date: '24 May 2025', status: 'current' },
-  { label: 'Processing', date: '24 May 2025', status: 'pending' },
-  { label: 'Shipped', date: '24 May 2025', status: 'pending' },
-  { label: 'Out For Delivery', date: '24 May 2025', status: 'pending' },
-  { label: 'Delivered', date: '24 May 2025', status: 'pending' },
-  { label: 'Return Initiated', date: '24 May 2025', status: 'pending' },
-  { label: 'Returned', date: '24 May 2025', status: 'pending' },
-  { label: 'Refund Initiated', date: '24 May 2025', status: 'pending' },
-  { label: 'Refunded', date: '24 May 2025', status: 'pending' },
-];
+
 // const timelineLabels = [
 //   "Order Placed",
 //   "Order Confirmed",
@@ -69,7 +59,7 @@ const OrderDetailView = () => {
   const location = useLocation();
   const { id } = useParams();
   const order = location.state?.order;
-  const serverUrl = "http://127.0.0.1:8000/";
+  const serverUrl = baseUrl;
   if (!order) {
     return (
       <div className="p-6 text-gray-500">
@@ -145,12 +135,12 @@ const OrderDetailView = () => {
         {/* Customer + Address */}
         <div className="lg:col-span-2 space-y-5">
           {/* Info Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className='bg-white mt-4 p-6 rounded shadow'>
               <h2 className="font-medium mb-4 text-lg">Customer Details</h2>
               <div className=" grid grid-cols-2 gap-y-5">
                 <p className="font-medium">Name</p>
-                <p>{order.customer_name || "N/A"}</p>
+                <p>{order.customer_name || "N/A"} </p>
                 <p className="font-medium">Email</p>
                 <p className='text-[#5737B4] underline cursor-pointer'>{order.customer_email || "N/A"}</p>
                 <p className="font-medium">Phone</p>

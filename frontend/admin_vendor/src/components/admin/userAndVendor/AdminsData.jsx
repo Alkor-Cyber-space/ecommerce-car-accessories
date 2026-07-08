@@ -16,6 +16,7 @@ export default function AdminOverview() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const dropdownRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -53,6 +54,8 @@ export default function AdminOverview() {
   //  Download Report Function
   const handleDownloadReport = async (format) => {
     try {
+      setShowDownloadOptions(false);
+      setIsDownloading(true);
       const tableData = filteredAdmins.map((admin) => ({
         id: admin.id,
         username: admin.username || "N/A",
@@ -81,6 +84,8 @@ export default function AdminOverview() {
     } catch (error) {
       console.error("Download failed:", error);
       toast.error("Failed to download report.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -212,7 +217,9 @@ export default function AdminOverview() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDownloadOptions(false);
       }
-      setActiveDropdown(null);
+      if (!event.target.closest('.action-dropdown-container')) {
+        setActiveDropdown(null);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -227,9 +234,22 @@ export default function AdminOverview() {
           <div className="relative">
             <button
               onClick={() => setShowDownloadOptions(!showDownloadOptions)}
-              className="bg-[#5737B4] text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
+              disabled={isDownloading}
+              className={`text-white px-4 py-2 rounded-md text-sm flex items-center gap-2 transition-all ${
+                isDownloading ? "bg-[#462a93] opacity-75 cursor-not-allowed" : "bg-[#5737B4] hover:bg-[#462f91]"
+              }`}
             >
-              Download Report
+              {isDownloading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Downloading...
+                </>
+              ) : (
+                "Download Report"
+              )}
             </button>
             {showDownloadOptions && (
               <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
@@ -320,7 +340,7 @@ export default function AdminOverview() {
                       {admin.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="py-3 px-4 relative">
+                  <td className="py-3 px-4 relative action-dropdown-container">
                     <button
                       onClick={() =>
                         setActiveDropdown(
@@ -333,16 +353,16 @@ export default function AdminOverview() {
                     </button>
 
                     {activeDropdown === admin.id && (
-                      <div className="absolute right-1 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                      <div className="absolute right-8 top-1/2 -translate-y-1/2 flex bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
                         <button
                           onClick={() => handleAction("Edit", admin.id)}
-                          className="w-full px-3 py-2 text-sm hover:bg-gray-50"
+                          className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-r border-gray-200 whitespace-nowrap"
                         >
                           Edit
                         </button>
                         <button
                           onClick={() => handleAction("Delete", admin.id)}
-                          className="w-full px-3 py-2 text-sm hover:bg-gray-50 text-red-600 rounded-b-lg"
+                          className="px-3 py-2 text-sm text-red-600 hover:bg-gray-50 whitespace-nowrap"
                         >
                           Delete
                         </button>

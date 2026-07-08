@@ -17,7 +17,7 @@ const OrderManagement = ({ order }) => {
   const [loading, setLoading] = useState(false);
   const [expandedOrder, setExpandedOrder] = useState(null);
   const [userOrders, setUserOrders] = useState([]);
-  const serverurl = "http://127.0.0.1:8000/";
+  const serverurl = baseUrl;
   const navigate = useNavigate();
 
   const [filteredOrders, setFilteredOrders] = useState([]);
@@ -331,14 +331,14 @@ const OrderManagement = ({ order }) => {
 
                   <div
                     className={`mr-1 text-right font-semibold px-2 py-1 rounded  transition-all duration-200
-      ${order.status?.toLowerCase() !== "pending"
+      ${["shipped", "delivered", "cancelled"].includes(order.status?.toLowerCase())
                         ? "text-gray-400 cursor-not-allowed opacity-60"
                         : "text-[#ee0000] hover:text-[#c70000] cursor-pointer"
                       }
       ${loading ? "opacity-50 pointer-events-none" : ""}
     `}
                     onClick={() => {
-                      if (order.status?.toLowerCase() === "pending" && !loading) {
+                      if (!["shipped", "delivered", "cancelled"].includes(order.status?.toLowerCase()) && !loading) {
                         handleCancelOrder(order);
                       }
                     }}
@@ -362,7 +362,11 @@ const OrderManagement = ({ order }) => {
                   {/* Order details table */}
                   <div className="flex flex-col md:flex-row font-semibold justify-between md:justify-evenly gap-2 md:gap-0 mb-4">
                     <p>
-                      Amount Total : <span>₹ {order.total_price}</span>
+                      Amount Total : <span>₹{(
+                              parseFloat(order.vendor_total_price || 0) +
+                              parseFloat(order.vendor_tax || 0) +
+                              parseFloat(order.vendor_shipping_cost || 0)
+                            ).toFixed(2)}</span>
                     </p>
                     <div className="flex items-center gap-2">
                       <p className="flex gap-1 md:gap-3 items-center">
@@ -380,7 +384,7 @@ const OrderManagement = ({ order }) => {
                       <thead className="bg-gray-100 text-left">
                         <tr>
                           <th className="px-4 py-2">Product</th>
-                          <th className="px-4 py-2"></th>
+                          <th className="px-1 py-2"></th>
                           <th className="px-4 py-2">Qty</th>
                           <th className="px-4 py-2">Price</th>
                           <th className="px-4 py-2">Total</th>
@@ -398,7 +402,7 @@ const OrderManagement = ({ order }) => {
                                 />
                               )}
                             </td>
-                            <td className="px-2 py-2 md:py-8 font-bold text-[#5737B4]">
+                            <td className="px-1 py-2 md:py-3 font-bold text-[#5737B4]">
                               {item.product_name}
                               <span className="block font-semibold text-gray-600">
                                 Size: {item.product_size}
@@ -429,7 +433,7 @@ const OrderManagement = ({ order }) => {
                           >
                             Shipping Cost:
                           </td>
-                          <td className="px-4 py-2">₹{order.shipping_cost}</td>
+                          <td className="px-4 py-2">₹{order.vendor_shipping_cost || "0.00"}</td>
                         </tr>
                         <tr>
                           <td
@@ -438,7 +442,7 @@ const OrderManagement = ({ order }) => {
                           >
                             Tax:
                           </td>
-                          <td className="px-4 py-2">₹{order.tax}</td>
+                          <td className="px-4 py-2">₹{order.vendor_tax || "0.00"}</td>
                         </tr>
                         <tr>
                           <td
@@ -448,7 +452,11 @@ const OrderManagement = ({ order }) => {
                             Grand Total:
                           </td>
                           <td className="px-4 py-2 font-bold text-[#5737B4]">
-                            ₹{order.total_price}
+                            ₹{(
+                              parseFloat(order.vendor_total_price || 0) +
+                              parseFloat(order.vendor_tax || 0) +
+                              parseFloat(order.vendor_shipping_cost || 0)
+                            ).toFixed(2)}
                           </td>
                         </tr>
                       </tfoot>
