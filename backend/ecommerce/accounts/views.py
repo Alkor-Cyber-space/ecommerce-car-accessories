@@ -374,6 +374,9 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
                 print("Password verified for user:", user)
                 # Check if user is in Vendor group
                 if user.groups.filter(name='Vendor').exists():
+                    if not user.is_active:
+                        return Response({"error": "User account is not active. Please verify your OTP."}, status=status.HTTP_403_FORBIDDEN)
+                        
                     refresh = RefreshToken.for_user(user)
                     return Response({
                         "access": str(refresh.access_token),

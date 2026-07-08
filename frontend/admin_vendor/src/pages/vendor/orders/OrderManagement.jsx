@@ -37,9 +37,10 @@ const OrderManagement = ({ order }) => {
   const fetchOrders = async () => {
     try {
       const response = await getOrdersApi();
-      setUserOrders(response);
-      setFilteredOrders(response);
-      console.log(response);
+      const sorted = response ? [...response].sort((a, b) => b.id - a.id) : [];
+      setUserOrders(sorted);
+      setFilteredOrders(sorted);
+      console.log(sorted);
     } catch (error) {
       console.error("Error fetching orders", error);
       toast.error("Failed to fetch orders");
@@ -56,7 +57,15 @@ const OrderManagement = ({ order }) => {
       const response = await ConfirmOrderStatusApi(order.id);
       console.log(response);
 
-      toast.success("Order status confirmed successfully");
+      if (response && response.message) {
+        if (response.message.includes("failed")) {
+          toast.warning(response.message);
+        } else {
+          toast.success(response.message);
+        }
+      } else {
+        toast.success("Order status confirmed successfully");
+      }
 
       if (fetchOrders) fetchOrders();
     } catch (error) {
@@ -191,9 +200,9 @@ const OrderManagement = ({ order }) => {
   const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
+    <div className="min-h-screen bg-gray-100 p-4 rounded-2xl">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-3">
         <h2 className="text-xl md:text-2xl font-bold text-[#5737B4]">
           Order Management
         </h2>
@@ -239,17 +248,17 @@ const OrderManagement = ({ order }) => {
       />
 
       {/* Orders list */}
-      <div className="space-y-4 mt-4">
+      <div className="space-y-3 mt-4">
         {currentOrders.length === 0 ? (
           <p className="text-gray-500">No orders found.</p>
         ) : (
           currentOrders.map((order) => (
             <div key={order.id} className="border-b border-gray-200">
               <div
-                className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-4 hover:bg-gray-50 cursor-pointer"
+                className="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-3 hover:bg-gray-50 cursor-pointer"
                 onClick={() => toggleOrder(order.id)}
               >
-                <div className="flex flex-col md:flex-row flex-wrap sm:gap-2 md:gap-6 lg:gap-12 items-start md:items-center w-full md:w-auto gap-15">
+                <div className="flex flex-col md:flex-row flex-wrap sm:gap-2 md:gap-6 lg:gap-6 items-start md:items-center w-full md:w-auto gap-1">
                   <div className="font-medium">Order Number: {order.id}</div>
                   <div className="font-medium">
                     Order Placed At:{" "}
@@ -274,7 +283,7 @@ const OrderManagement = ({ order }) => {
 
                   <div className="mt-1">
                     <span
-                      className={`inline-block px-2 md:px-4 py-1 md:py-2 text-sm rounded text-left
+                      className={`inline-block px-2 md:px-4 lg:px-4 py-1 md:py-2 text-sm rounded text-left
                   ${order.status?.includes("pending")
                           ? "bg-red-100 text-red-800"
                           : order.status?.includes("returned")
