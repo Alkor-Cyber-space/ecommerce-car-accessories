@@ -1,3 +1,4 @@
+import re
 import requests
 from django.core.cache import cache
 from django.conf import settings
@@ -8,6 +9,26 @@ CREATE_PICKUP_URL = "https://apiv2.shiprocket.in/v1/external/settings/company/ad
 CREATE_ORDER_URL = "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc"
 RATE_CALCULATOR_URL = "https://apiv2.shiprocket.in/v1/external/courier/serviceability"
 
+
+
+def normalize_phone_for_shiprocket(phone):
+    """Return a Shiprocket-compatible Indian phone number or a safe fallback."""
+    if not phone:
+        return "919999999999"
+
+    digits = re.sub(r'\D', '', str(phone))
+    if not digits:
+        return "919999999999"
+
+    if len(digits) == 10:
+        digits = "91" + digits
+    elif len(digits) > 12:
+        digits = digits[-12:]
+
+    if len(digits) != 12:
+        return "919999999999"
+
+    return digits
 
 
 # ---------------- AUTH ---------------- #
@@ -64,8 +85,14 @@ def call_shiprocket_api(url, payload=None, method="POST", params=None):
             method, url, json=payload, params=params, headers=headers, timeout=20
         )
 
-    if resp.status_code == 422:
-        return {"error": True, "details": resp.json()}
+    if resp.status_code in (400, 422):
+        error_body = None
+        try:
+            error_body = resp.json()
+        except Exception:
+            error_body = resp.text
+        print(f"Shiprocket API error ({resp.status_code}): {error_body}")
+        return {"error": True, "status_code": resp.status_code, "details": error_body}
 
     resp.raise_for_status()
     return resp.json()
@@ -90,7 +117,18 @@ def create_pickup_location(pickup_payload):
 
 def create_shiprocket_order(order_payload):
     """Create an order in Shiprocket"""
-    return call_shiprocket_api(CREATE_ORDER_URL, payload=order_payload, method="POST")
+    import json
+    print("==============================")
+    print("SHIPROCKET REQUEST")
+    print(json.dumps(order_payload, indent=2, default=str))
+
+    response = call_shiprocket_api(CREATE_ORDER_URL, payload=order_payload, method="POST")
+
+    print("==============================")
+    print("SHIPROCKET RESPONSE")
+    print(response)
+
+    return response
 
 
 def calculate_shipping_rate(payload):
@@ -104,29 +142,6 @@ def calculate_shipping_rate(payload):
       - declared_value (for insurance)
     """
     return call_shiprocket_api(RATE_CALCULATOR_URL, method="GET", params=payload)
-
-def create_shiprocket_order(order_payload):
-    """
-    Create an order in Shiprocket.
-    order_payload should include:
-      - order_id
-      - order_date (YYYY-MM-DD HH:MM)
-      - pickup_location
-      - billing_customer_name
-      - billing_last_name
-      - billing_address
-      - billing_city
-      - billing_state
-      - billing_country
-      - billing_pincode
-      - billing_email
-      - billing_phone
-      - order_items (list of dicts)
-      - payment_method ("Prepaid" or "COD")
-      - sub_total
-      - length, breadth, height, weight
-    """
-    return call_shiprocket_api(CREATE_ORDER_URL, payload=order_payload, method="POST")
 
 
 def track_shiprocket_order(awb_code):

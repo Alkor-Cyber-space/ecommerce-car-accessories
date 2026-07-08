@@ -48,7 +48,7 @@ TWILIO_VERIFY_SID = env('TWILIO_VERIFY_SID')
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['*', '192.168.1.40', '192.168.1.40:8000', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -238,7 +238,9 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",  # Your React/Vue etc. frontend
+    "http://localhost:8000",
+    "http://192.168.1.40:8000",
+    "http://127.0.0.1:8000",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True

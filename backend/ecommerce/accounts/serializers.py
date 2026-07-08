@@ -261,9 +261,17 @@ class UserSerializer(serializers.ModelSerializer):
         return Order.objects.filter(user=obj).count()
 
 class VendorAddressSerializer(serializers.ModelSerializer):
+    line1 = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = Address
         fields = ['line1', 'line2', 'city', 'state', 'postal_code', 'country', 'is_primary', 'is_pickup']
+
+    def validate_line1(self, value):
+        if value is None:
+            return value
+        value = value.strip()
+        return value
 
 
 class VendorSerializer(serializers.ModelSerializer):
@@ -471,10 +479,24 @@ class ResetPasswordSerializer(serializers.Serializer):
         return data
     
 class AddressSerializer(serializers.ModelSerializer):
+    line1 = serializers.CharField(required=False, allow_blank=True)
+    phone_number = serializers.CharField(required=False, allow_blank=True)
+
     class Meta:
         model = Address
         fields = '__all__'
         read_only_fields = ['user']
+
+    def validate_line1(self, value):
+        if value is None:
+            return value
+        value = value.strip()
+        return value
+
+    def validate_phone_number(self, value):
+        if value in [None, ""]:
+            return value
+        return value.strip()
 
 class VendorRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
