@@ -374,6 +374,9 @@ class VendorRegistrationViewSet(viewsets.ViewSet):
                 print("Password verified for user:", user)
                 # Check if user is in Vendor group
                 if user.groups.filter(name='Vendor').exists():
+                    if not user.is_active:
+                        return Response({"error": "User account is not active. Please verify your OTP."}, status=status.HTTP_403_FORBIDDEN)
+                        
                     refresh = RefreshToken.for_user(user)
                     return Response({
                         "access": str(refresh.access_token),
@@ -830,6 +833,8 @@ class VendorDocumentsFinalApprovalView(APIView):
             vendor_profile = VendorProfile.objects.get(user_id=vendor_profile_id)
             print(vendor_profile)
             
+            
+            
             documents = VendorDocuments.objects.get(vendor_profile=vendor_profile)
         except (VendorProfile.DoesNotExist, VendorDocuments.DoesNotExist):
             return Response({"error": "Vendor profile or documents not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -877,8 +882,7 @@ class VendorDocumentsFinalApprovalView(APIView):
         subject = "Vendor Documents Final Approval Status"
         if final_status == 'approved':
             if not vendor_profile.pickup_location:
-                import uuid
-                pickup_code = f"VENDOR_{vendor_profile.id}_{uuid.uuid4().hex[:6].upper()}"  # must be unique
+                pickup_code = f"VENDOR_{vendor_profile.id}"  # must be unique
                 print("All addresses:", vendor_profile.user.addresses.all())
                 primary_address = vendor_profile.user.addresses.filter(is_primary=True).first()
                 print(primary_address)
@@ -887,33 +891,17 @@ class VendorDocumentsFinalApprovalView(APIView):
                         "status": "failed",
                         "message": "No primary address found for this vendor. Please add one before approval."
                     }, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Sanitize address line 1 to meet Shiprocket's minimum 10 characters requirement
-                address_line1 = primary_address.line1
-                if len(address_line1) < 10:
-                    address_line1 = f"{address_line1} - Warehouse Location"
-                if len(address_line1) < 10:
-                    address_line1 = address_line1.ljust(10, " ")
-
-                # Sanitize phone to ensure exactly 10 digits
-                phone_num = str(vendor_profile.company_number or vendor_profile.contact_number or vendor_profile.user.phone_number or "")
-                phone_num = "".join(filter(str.isdigit, phone_num))
-                if len(phone_num) < 10:
-                    phone_num = phone_num.ljust(10, "0")
-                elif len(phone_num) > 10:
-                    phone_num = phone_num[-10:]
-
                 print("above the pickupload")
                 pickup_payload = {
                     "pickup_location": pickup_code,
                     "name": vendor_profile.company_name or vendor_profile.contact_name or vendor_profile.user.username,
                     "email": vendor_profile.company_email or vendor_profile.contact_email or vendor_profile.user.email,
-                    "phone": phone_num,
-                    "address": address_line1,
+                    "phone": str(vendor_profile.company_number or vendor_profile.contact_number or vendor_profile.user.phone_number or ""),    # added country code
+                    "address": primary_address.line1,
                     "address_2": primary_address.line2 or "",
                     "city": primary_address.city,          
                     "state": primary_address.state,
-                    "country": "India",
+                    "country": primary_address.country,
                     "pin_code":  primary_address.postal_code,
                 }
                 print(pickup_payload)

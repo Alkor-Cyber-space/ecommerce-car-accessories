@@ -16,6 +16,7 @@ import {
 import { add, format } from "date-fns";
 import { toast } from "react-toastify";
 import DocumentCard from "../../components/vendor/DocumentCard";
+import { baseUrl } from "../../services/serverURL";
 
 const documentGroups = {
   kyc: [
@@ -55,7 +56,7 @@ const VendorProfile = () => {
   const [replaceField, setReplaceField] = useState(null);
 
   const fileInputRef = useRef(null);
-  const server_url = "http://localhost:8000";
+  const server_url = baseUrl;
   const [addressForm, setAddressForm] = useState({
     line1: "",
     line2: "",

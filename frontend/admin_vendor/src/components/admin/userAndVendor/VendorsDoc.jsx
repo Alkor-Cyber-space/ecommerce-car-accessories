@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { ApproveorRejectApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 import { BsEye } from "react-icons/bs";
+import { baseUrl } from "../../../services/serverURL";
 
 const getStatusStyle = (status) => {
   const normalized = status === "approved" ? "verified" : status;
@@ -28,7 +29,7 @@ const VendorsDoc = () => {
   const [documents, setDocuments] = useState({});
   const { id } = useParams();
   const navigate = useNavigate();
-  const server_url = "http://localhost:8000";
+  const server_url = baseUrl;
 
   useEffect(() => {
     const fetchVendorDocuments = async () => {

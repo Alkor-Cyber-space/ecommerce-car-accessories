@@ -177,11 +177,10 @@ const AddProduct = () => {
             });
         }
 
-
+        // Send tags as comma-separated string for better compatibility
         if (formData.tags && formData.tags.length > 0) {
-            formData.tags.forEach(tag => {
-                formDataToSend.append("tag", tag);
-            });
+            const tagsString = formData.tags.join(', ');
+            formDataToSend.append("tag", tagsString);
         }
 
         if (formData.sizes) {
