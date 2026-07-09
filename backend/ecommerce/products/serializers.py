@@ -40,8 +40,19 @@ class VendorSerializer(serializers.ModelSerializer):
 class ProductImageSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'image', 'is_main', 'slot']
+        fields = ['id', 'image', 'is_main', 'slot', 'color_name']
 
+
+
+class ProductVariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductVariant
+        fields = [
+            'id', 'size', 'weight_value', 'color_name', 'color_code',
+            'length', 'breadth', 'height',
+            'price', 'stock', 'is_default', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -86,7 +97,8 @@ class ProductSerializer(serializers.ModelSerializer):
                     "id": None,
                     "image": None,
                     "is_main": (idx == 0),
-                    "slot": f"images_{idx}"
+                    "slot": f"images_{idx}",
+                    "color_name": None
                 }
                 
         return slots_data
@@ -106,13 +118,16 @@ class ProductSerializer(serializers.ModelSerializer):
         write_only=True,
         source='compatible_varient_year')   
 
+    variants = ProductVariantSerializer(many=True, read_only=True)
+
     class Meta:
         model = Product
         fields = [
             'id', 'name', 'description', 'price', 'stock', 'created_at', 'updated_at', 'weight', 'length', 'breadth', 'height',
             "manufacturing_date", "tag", "size", 'category', 'category_id',
             "image_list","compatible_varient_year_ids" , 'compatible_varient_year',
-            "length","breadth","height","weight","vendor","is_available"
+            "length","breadth","height","weight","vendor","is_available",
+            "variants"
         ]
         extra_kwargs = {
             'size': {'required': False, 'allow_null': True, 'allow_blank': True},
@@ -170,7 +185,8 @@ class ProductSerializer(serializers.ModelSerializer):
             img.slot: {
                 "id": img.id,
                 "image": img.image.url if img.image else None,
-                "is_main": img.is_main
+                "is_main": img.is_main,
+                "color_name": img.color_name
             }
             for img in instance.images.all()
         }
@@ -220,13 +236,15 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class DashboardProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
+    variants = ProductVariantSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
         fields = [
             "id", "name", "description", "price", "stock",
             "category", "is_featured", "is_best_seller",
-            "is_top_rated", "is_new", "compatible_varient_year","images",
+            "is_top_rated", "is_new", "compatible_varient_year", "images",
+            "variants",
         ]
 
 class ReviewReplySerializer(serializers.ModelSerializer):
