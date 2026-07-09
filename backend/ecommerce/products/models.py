@@ -55,7 +55,48 @@ class ProductImage(models.Model):
     image = models.ImageField(upload_to='products_image/')
     is_main = models.BooleanField(default=False)
     slot = models.CharField(max_length=50, null=True, blank=True)  # "main_image", "close_view", etc.
+    color_name = models.CharField(max_length=100, null=True, blank=True)  # e.g., "Scarlet Red"
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class ProductVariant(models.Model):
+    """
+    Each variant represents a purchasable option for a product.
+    A variant can have any combination of size, weight, and color.
+    Each variant tracks its own dimensions, stock, and optional price override.
+    """
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
+
+    # Variant attributes (all optional — vendor fills what applies)
+    size = models.CharField(max_length=50, blank=True, null=True)            # "Small", "Medium", "Large", "X-Large"
+    weight_value = models.CharField(max_length=100, blank=True, null=True)   # "250g", "500g", "1kg"
+    color_name = models.CharField(max_length=100, blank=True, null=True)     # "Red", "Matte Black"
+    color_code = models.CharField(max_length=7, blank=True, null=True)       # "#FF0000"
+
+    # Dimensions for this variant
+    length = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    breadth = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    height = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    # Price & Stock
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # overrides product base price if set
+    stock = models.PositiveIntegerField(default=0)
+    is_default = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        parts = [self.product.name]
+        if self.size:
+            parts.append(self.size)
+        if self.weight_value:
+            parts.append(self.weight_value)
+        if self.color_name:
+            parts.append(self.color_name)
+        return " - ".join(parts)
 
 
 class Category(models.Model):

@@ -1,7 +1,7 @@
 
 from rest_framework import viewsets, permissions,status
 from rest_framework.response import Response
-from products.models import Product, Category,ProductImage
+from products.models import Product, Category, ProductImage, ProductVariant
 from vehicles.models import *
 from products.serializers import ProductSerializer, CategorySerializer
 from vehicles.serializers import *
@@ -10,6 +10,7 @@ from .serializers import *
 from products.models import Review
 import csv
 import io
+import json
 import pandas as pd
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -184,6 +185,18 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         product = serializer.save(vendor=user)
 
+        # Get image colors mapping
+        image_colors_data = request.data.get('image_colors', '{}')
+        image_colors = {}
+        if image_colors_data:
+            if isinstance(image_colors_data, str):
+                try:
+                    image_colors = json.loads(image_colors_data)
+                except (json.JSONDecodeError, TypeError):
+                    image_colors = {}
+            elif isinstance(image_colors_data, dict):
+                image_colors = image_colors_data
+
         # 1. Handle slot-specific images (e.g. images_0, images_1, etc.)
         for key in request.FILES.keys():
             if key.startswith('images_'):
@@ -193,12 +206,14 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                     slot_index = 0
                 
                 is_main_image = (slot_index == 0)
+                image_color = image_colors.get(key) or request.data.get(f"{key}_color") or request.data.get(f"color_{key}") or None
                 for file in request.FILES.getlist(key):
                     ProductImage.objects.create(
                         product=product,
                         image=file,
                         slot=key,
-                        is_main=is_main_image
+                        is_main=is_main_image,
+                        color_name=image_color
                     )
 
         # 2. Fallback for general 'images' list
@@ -212,12 +227,40 @@ class VendorProductViewSet(viewsets.ModelViewSet):
             while ProductImage.objects.filter(product=product, slot=f"images_{slot_index}").exists():
                 slot_index += 1
                 
+            slot_key = f"images_{slot_index}"
+            image_color = image_colors.get(slot_key) or image_colors.get(str(index)) or request.data.get(f"images_{index}_color") or request.data.get(f"color_images_{index}") or None
             ProductImage.objects.create(
                 product=product,
                 image=image,
-                slot=f"images_{slot_index}",
-                is_main=not has_main and (slot_index == 0)
+                slot=slot_key,
+                is_main=not has_main and (slot_index == 0),
+                color_name=image_color
             )
+
+        # 3. Handle product variants (size, weight, color combinations)
+        variants_data = request.data.get('variants', None)
+        if variants_data:
+            if isinstance(variants_data, str):
+                try:
+                    variants_data = json.loads(variants_data)
+                except (json.JSONDecodeError, TypeError):
+                    variants_data = []
+            
+            if isinstance(variants_data, list):
+                for variant in variants_data:
+                    ProductVariant.objects.create(
+                        product=product,
+                        size=variant.get('size', '') or None,
+                        weight_value=variant.get('weight_value', '') or None,
+                        color_name=variant.get('color_name', '') or None,
+                        color_code=variant.get('color_code', '') or None,
+                        length=variant.get('length') or None,
+                        breadth=variant.get('breadth') or None,
+                        height=variant.get('height') or None,
+                        price=variant.get('price') or None,
+                        stock=variant.get('stock', 0),
+                        is_default=variant.get('is_default', False),
+                    )
 
         return Response(
             {"message": "Product created successfully.", "product": ProductSerializer(product).data},
@@ -232,6 +275,18 @@ class VendorProductViewSet(viewsets.ModelViewSet):
         product = serializer.save()
         new_images = self.request.FILES
 
+        # Get image colors mapping
+        image_colors_data = self.request.data.get('image_colors', '{}')
+        image_colors = {}
+        if image_colors_data:
+            if isinstance(image_colors_data, str):
+                try:
+                    image_colors = json.loads(image_colors_data)
+                except (json.JSONDecodeError, TypeError):
+                    image_colors = {}
+            elif isinstance(image_colors_data, dict):
+                image_colors = image_colors_data
+
         for key in new_images.keys():
             # If the key is slot-specific (e.g. images_0)
             if key.startswith('images_'):
@@ -243,17 +298,20 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                     slot_index = 0
                 
                 is_main_image = (slot_index == 0)
+                image_color = image_colors.get(key) or self.request.data.get(f"{key}_color") or self.request.data.get(f"color_{key}") or None
                 for file in new_images.getlist(key):
                     ProductImage.objects.create(
                         product=product,
                         image=file,
                         slot=key,
-                        is_main=is_main_image
+                        is_main=is_main_image,
+                        color_name=image_color
                     )
             elif key != 'images':
                 # Existing legacy/specific slot keys delete and recreate logic
                 ProductImage.objects.filter(product=product, slot=key).delete()
                 has_main = ProductImage.objects.filter(product=product, is_main=True).exists()
+                image_color = image_colors.get(key) or self.request.data.get(f"{key}_color") or self.request.data.get(f"color_{key}") or None
                 for index, file in enumerate(new_images.getlist(key)):
                     is_main_image = False
                     if key == "main_image":
@@ -265,7 +323,8 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                         product=product,
                         image=file,
                         slot=None if key == "images" else key,
-                        is_main=is_main_image
+                        is_main=is_main_image,
+                        color_name=image_color
                     )
 
         # Fallback for general 'images' list in update
@@ -277,12 +336,43 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                 while ProductImage.objects.filter(product=product, slot=f"images_{slot_index}").exists():
                     slot_index += 1
                 
+                slot_key = f"images_{slot_index}"
+                image_color = image_colors.get(slot_key) or image_colors.get(str(index)) or self.request.data.get(f"images_{index}_color") or self.request.data.get(f"color_images_{index}") or None
                 ProductImage.objects.create(
                     product=product,
                     image=file,
-                    slot=f"images_{slot_index}",
-                    is_main=not has_main and (slot_index == 0)
+                    slot=slot_key,
+                    is_main=not has_main and (slot_index == 0),
+                    color_name=image_color
                 )
+
+        # Handle product variants update (clear and recreate)
+        variants_data = self.request.data.get('variants', None)
+        if variants_data is not None:
+            if isinstance(variants_data, str):
+                try:
+                    variants_data = json.loads(variants_data)
+                except (json.JSONDecodeError, TypeError):
+                    variants_data = []
+            
+            # Delete existing variants and recreate
+            ProductVariant.objects.filter(product=product).delete()
+            
+            if isinstance(variants_data, list):
+                for variant in variants_data:
+                    ProductVariant.objects.create(
+                        product=product,
+                        size=variant.get('size', '') or None,
+                        weight_value=variant.get('weight_value', '') or None,
+                        color_name=variant.get('color_name', '') or None,
+                        color_code=variant.get('color_code', '') or None,
+                        length=variant.get('length') or None,
+                        breadth=variant.get('breadth') or None,
+                        height=variant.get('height') or None,
+                        price=variant.get('price') or None,
+                        stock=variant.get('stock', 0),
+                        is_default=variant.get('is_default', False),
+                    )
 
         return product
 
