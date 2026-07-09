@@ -709,7 +709,7 @@ export default function EditProduct() {
             />
           </div>
           {/* Compatible Variant Years */}
-          <div className="bg-white rounded-xl p-4 shadow overflow-y-auto max-h-30 scrollbar-none">
+          <div className="bg-white rounded-xl p-4 shadow overflow-y-auto max-h-60">
             <h2 className="text-lg font-semibold mb-2">
               Compatible Variant Years
             </h2>
