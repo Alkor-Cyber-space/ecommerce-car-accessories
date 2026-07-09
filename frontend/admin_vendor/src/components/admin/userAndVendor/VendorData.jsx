@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { HiOutlineDotsVertical } from "react-icons/hi";
-import { FiDownload } from "react-icons/fi";
 import SearchFilter from '../../../pages/admin/SearchFilter';
 import { Link } from 'react-router-dom';
 import { exportReportApi, getVendorList } from '../../../services/allAPI';
@@ -9,8 +8,8 @@ export default function VendorDataTable() {
   const [vendors, setVendors] = useState([]);
   const [filteredVendors, setFilteredVendors] = useState([]);
   const [activeDropdown, setActiveDropdown] = useState(null);
-  const [selectedFormat, setSelectedFormat] = useState("pdf");
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const dropdownRef = useRef(null);
 
   const [filters, setFilters] = useState({
@@ -23,13 +22,15 @@ export default function VendorDataTable() {
 
   const handleDownloadReport = async (format) => {
     try {
+      setShowDownloadOptions(false);
+      setIsDownloading(true);
       const tableData = filteredVendors.map((vendor) => ({
         id: vendor.id,
         username: vendor.username,
         email: vendor.email,
         contact_number: vendor.contact_number || "N/A",
         location: vendor.location || "N/A",
-        status: vendor.status || "Pending",
+        status: vendor.is_active ? "Active" : "Inactive",
         date_joined: formatDate(vendor.date_joined),
         totalProducts: vendor.products || 0,
         totalOrders: vendor.orders || 0,
@@ -51,6 +52,8 @@ export default function VendorDataTable() {
       link.remove();
     } catch (error) {
       console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -95,19 +98,21 @@ export default function VendorDataTable() {
 
       const matchesStatus =
         !filters.status ||
-        (filters.status.toLowerCase() === "approved"
-          ? vendor.status.toLowerCase() === "approved"
-          : filters.status.toLowerCase() === "rejected"
-            ? vendor.status.toLowerCase() === "rejected"
-            : filters.status.toLowerCase() === "pending"
-              ? vendor.status.toLowerCase() === "pending"
-              : true);
+        (filters.status.toLowerCase() === "active"
+          ? vendor.is_active === true
+          : vendor.is_active === false);
 
       const matchesRegDateFrom =
         !filters.regDateFrom || (vendorDate && vendorDate >= new Date(filters.regDateFrom));
 
+      let regDateToObj = null;
+      if (filters.regDateTo) {
+        regDateToObj = new Date(filters.regDateTo);
+        regDateToObj.setHours(23, 59, 59, 999);
+      }
+
       const matchesRegDateTo =
-        !filters.regDateTo || (vendorDate && vendorDate <= new Date(filters.regDateTo));
+        !regDateToObj || (vendorDate && vendorDate <= regDateToObj);
 
       return matchesYear && matchesLocation && matchesStatus && matchesRegDateFrom && matchesRegDateTo;
     });
@@ -115,14 +120,6 @@ export default function VendorDataTable() {
     setFilteredVendors(filtered);
   }, [filters, vendors]);
 
-  // const getStatusColor = (status) => {
-  //   switch (status) {
-  //     case 'Approved': return 'bg-green-100 text-green-600';
-  //     case 'Rejected': return 'bg-red-100 text-red-600';
-  //     case 'Pending': return 'bg-yellow-100 text-yellow-600';
-  //     default: return 'bg-gray-100 text-gray-600';
-  //   }
-  // };
   const getStatusColor = (status) => {
     switch (status.toLowerCase()) {
       case "active":
@@ -158,7 +155,9 @@ export default function VendorDataTable() {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setShowDownloadOptions(false);
       }
-      setActiveDropdown(null);
+      if (!event.target.closest('.action-dropdown-container')) {
+        setActiveDropdown(null);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -175,10 +174,22 @@ export default function VendorDataTable() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowDownloadOptions(!showDownloadOptions)}
-            className="bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base flex items-center gap-2"
+            disabled={isDownloading}
+            className={`bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base flex items-center gap-2 transition-all ${
+              isDownloading ? "opacity-75 cursor-not-allowed" : "hover:bg-[#462a93]"
+            }`}
           >
-            Download Report
-            {/* <FiDownload className="text-white text-lg" /> */}
+            {isDownloading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Downloading...
+              </>
+            ) : (
+              "Download Report"
+            )}
           </button>
 
           {showDownloadOptions && (
@@ -281,35 +292,35 @@ export default function VendorDataTable() {
                 <td className="py-3 px-4">{formatDate(vendor.date_joined)}</td>
                 <td className="py-3 px-4 font-medium">{vendor.products || 0}</td>
                 <td className="py-3 px-4 font-medium">{vendor.orders || 0}</td>
-                <td className="py-3 px-4 relative">
+                <td className="py-3 px-4 relative action-dropdown-container">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleActionClick(vendor.id + index);
+                      handleActionClick(`${vendor.id}-${index}`);
                     }}
                     className="p-1 hover:bg-gray-100 rounded-full"
                   >
                     <HiOutlineDotsVertical className="text-gray-500 text-lg" />
                   </button>
 
-                  {activeDropdown === vendor.id + index && (
-                    <div className="absolute right-0 top-0 translate-y-[-10px] w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  {activeDropdown === `${vendor.id}-${index}` && (
+                    <div className="absolute right-8 top-1/2 -translate-y-1/2 flex bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden">
                       <Link
                         to={`/admin/vendor-details/${vendor.id}`}
                         onClick={() => handleAction('View', vendor)}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-t-lg"
+                        className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-r border-gray-200 whitespace-nowrap"
                       >
                         View
                       </Link>
                       <button
                         onClick={() => handleAction('Edit', vendor)}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        className="px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 border-r border-gray-200 whitespace-nowrap"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleAction('Suspend', vendor)}
-                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50 rounded-b-lg"
+                        className="px-3 py-2 text-sm text-red-600 hover:bg-gray-50 whitespace-nowrap"
                       >
                         Suspend
                       </button>
