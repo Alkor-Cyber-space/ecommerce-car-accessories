@@ -35,7 +35,7 @@ class Order(models.Model):
     courier_name = models.CharField(max_length=255, blank=True, null=True)
     awb_code = models.CharField(max_length=255, blank=True, null=True)   # Tracking number
     tracking_url = models.URLField(blank=True, null=True)                # Shiprocket tracking URL
-    shiprocket_order_id = models.CharField(max_length=255, blank=True, null=True)
+    payment_id = models.CharField(max_length=255, blank=True, null=True, help_text="Stripe Payment Intent ID or Razorpay Payment ID")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     stock_deducted = models.BooleanField(default=False)
@@ -84,3 +84,29 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"
+
+
+class ReturnRequest(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending Approval'),
+        ('approved', 'Approved for Return'),
+        ('rejected', 'Rejected'),
+        ('picked_up', 'Picked Up by Courier'),
+        ('received', 'Received at Warehouse'),
+        ('refunded', 'Refunded'),
+    ]
+
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='returns')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    reason = models.TextField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    # Shiprocket return tracking info
+    reverse_shipment_id = models.CharField(max_length=255, blank=True, null=True)
+    reverse_awb = models.CharField(max_length=255, blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Return for Order #{self.order.id} - Status: {self.status}"

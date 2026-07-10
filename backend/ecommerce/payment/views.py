@@ -53,6 +53,10 @@ class VerifyPaymentView(APIView):
 
         if verified:
             order.status = "paid"
+            if payment_method == "stripe":
+                order.payment_id = stripe_payment_id
+            elif payment_method == "razorpay":
+                order.payment_id = razorpay_payment_id
             print(order.status)
             order.save()
             return Response({"status": "success"}, status=status.HTTP_200_OK)
@@ -92,7 +96,8 @@ def stripe_webhook(request):
             shipping_address=address,
             payment_method=metadata["payment_method"],
             total_price=0,
-            status="paid"
+            status="paid",
+            payment_id=intent.get("id")
         )
 
         i = 0

@@ -201,3 +201,12 @@ class VendorOrderSerializer(serializers.ModelSerializer):
         items = obj.items.filter(product__vendor=vendor)
         # You can modify this rule as per your logic (flat rate, per item, etc.)
         return Decimal('100.00') if items.exists() else Decimal('0.00')
+
+
+from .models import ReturnRequest
+
+class ReturnRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReturnRequest
+        fields = ['id', 'order', 'reason', 'status', 'reverse_shipment_id', 'reverse_awb', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'reverse_shipment_id', 'reverse_awb', 'created_at', 'updated_at']

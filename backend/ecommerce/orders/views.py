@@ -386,16 +386,69 @@ class UserOrderViewSet(viewsets.ViewSet):
         })
 
     
+def process_order_refund(order, amount=None):
+    """
+    Trigger Stripe/Razorpay refund for a paid order.
+    """
+    if order.payment_method == "cod":
+        return {"success": True, "method": "cod", "message": "COD order, no gateway refund required."}
+
+    if not order.payment_id:
+        return {"success": False, "error": "No payment_id recorded for this order."}
+
+    refund_amount = amount if amount is not None else order.total_price
+
+    if order.payment_method == "stripe":
+        from payment.refunds import refund_stripe_payment
+        return refund_stripe_payment(order.payment_id, refund_amount)
+    elif order.payment_method == "razorpay":
+        from payment.refunds import refund_razorpay_payment
+        return refund_razorpay_payment(order.payment_id, refund_amount)
+    else:
+        return {"success": False, "error": f"Refund not supported for payment method: {order.payment_method}"}
+
+
 @csrf_exempt
 def shiprocket_webhook(request):
     if request.method != "POST":
         return JsonResponse({"detail":"method not allowed"}, status=405)
     payload = json.loads(request.body.decode("utf-8"))
-    order_id = payload.get("order_id") or payload.get("order")  # check actual key
-    status = payload.get("status")
-    # Update your Order/Shipment models accordingly
-    # Order.objects.filter(order_id=order_id).update(shipment_status=status, last_payload=payload)
-    return JsonResponse({"ok": True})
+    
+    # Check if this webhook corresponds to a reverse pickup / return request
+    awb = payload.get("awb") or payload.get("awb_code")
+    status_name = str(payload.get("status", "")).lower()
+    
+    if awb:
+        ret_req = ReturnRequest.objects.filter(reverse_awb=awb).first()
+        if ret_req:
+            # Map Shiprocket tracking status to ReturnRequest states
+            if status_name in ["delivered", "received"]:
+                if ret_req.status not in ["received", "refunded"]:
+                    ret_req.status = "received"
+                    ret_req.save()
+                    
+                    # Trigger the refund process
+                    refund_res = process_order_refund(ret_req.order)
+                    if refund_res.get("success"):
+                        ret_req.status = "refunded"
+                        ret_req.save()
+            elif status_name in ["picked up", "picked_up", "out for pickup", "out_for_pickup"]:
+                ret_req.status = "picked_up"
+                ret_req.save()
+            return JsonResponse({"ok": True, "handled": "return_request"})
+            
+        # Fallback to forward order update if it matches a forward AWB
+        order = Order.objects.filter(awb_code=awb).first()
+        if order:
+            if status_name in ["delivered", "received"]:
+                order.status = "delivered"
+                order.save()
+            elif status_name in ["shipped", "in transit"]:
+                order.status = "shipped"
+                order.save()
+            return JsonResponse({"ok": True, "handled": "order"})
+
+    return JsonResponse({"ok": True, "handled": "none"})
 
 class VendorOrderListView(generics.ListAPIView):
     serializer_class = VendorOrderSerializer
@@ -621,3 +674,153 @@ class InvoiceDownloadView(APIView):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         pdf_file = generate_invoice_pdf(order)
         return FileResponse(pdf_file, as_attachment=True, filename=pdf_file.name)
+
+
+class ReturnRequestViewSet(viewsets.ModelViewSet):
+    queryset = ReturnRequest.objects.all()
+    serializer_class = ReturnRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return ReturnRequest.objects.all().order_by('-created_at')
+        elif user.groups.filter(name="Vendor").exists():
+            return ReturnRequest.objects.filter(order__items__product__vendor=user).distinct().order_by('-created_at')
+        return ReturnRequest.objects.filter(user=user).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        order = serializer.validated_data['order']
+        user = self.request.user
+
+        # Ensure order belongs to user
+        if order.user != user:
+            raise ValidationError("You cannot request a return for this order.")
+
+        # Ensure order status is delivered
+        if order.status != 'delivered':
+            raise ValidationError("Only delivered orders can be returned.")
+
+        # Check if return request already exists
+        if ReturnRequest.objects.filter(order=order).exists():
+            raise ValidationError("A return request has already been submitted for this order.")
+
+        # Trigger Shiprocket reverse pickup per vendor in the order
+        vendors = {item.product.vendor for item in order.items.all()}
+        
+        for vendor in vendors:
+            vendor_items = order.items.filter(product__vendor=vendor)
+            
+            # Fetch vendor address (reverse shipping destination)
+            from accounts.models import Address as UserAddress
+            vendor_address = UserAddress.objects.filter(user=vendor, is_pickup=True).first() or UserAddress.objects.filter(user=vendor).first()
+            shipping_address = order.shipping_address
+
+            pickup_phone = getattr(user, 'phone_number', '') or '9999999999'
+            shipping_phone = vendor_address.phone_number if vendor_address else '9999999999'
+
+            payload = {
+                "order_id": f"RET_{order.id}_V{vendor.id}",
+                "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
+                
+                # Pickup Info (Customer returning the item)
+                "pickup_customer_name": user.first_name or user.username,
+                "pickup_last_name": user.last_name or "",
+                "pickup_address": shipping_address.line1 if shipping_address else "Customer Address",
+                "pickup_address_2": shipping_address.line2 if (shipping_address and shipping_address.line2) else "",
+                "pickup_city": shipping_address.city if shipping_address else "",
+                "pickup_state": shipping_address.state if shipping_address else "",
+                "pickup_country": shipping_address.country if shipping_address else "India",
+                "pickup_pincode": shipping_address.postal_code if shipping_address else "",
+                "pickup_email": user.email,
+                "pickup_phone": pickup_phone,
+
+                # Shipping Info (Vendor warehouse receiving the item)
+                "shipping_customer_name": vendor.username,
+                "shipping_last_name": "",
+                "shipping_address": vendor_address.line1 if vendor_address else "Vendor Warehouse",
+                "shipping_address_2": vendor_address.line2 if (vendor_address and vendor_address.line2) else "",
+                "shipping_city": vendor_address.city if vendor_address else "",
+                "shipping_state": vendor_address.state if vendor_address else "",
+                "shipping_country": vendor_address.country if vendor_address else "India",
+                "shipping_pincode": vendor_address.postal_code if vendor_address else "",
+                "shipping_email": vendor.email,
+                "shipping_phone": shipping_phone,
+
+                "order_items": [
+                    {
+                        "name": item.product.name,
+                        "sku": f"SKU-{item.product.id}",
+                        "units": item.quantity,
+                        "selling_price": float(item.price),
+                        "discount": 0,
+                        "hsn": getattr(item.product, "hsn", "8708"),
+                        "tax": ""
+                    }
+                    for item in vendor_items
+                ],
+                "payment_method": "Prepaid",
+                "sub_total": float(sum(item.price * item.quantity for item in vendor_items)),
+                "length": float(vendor_items[0].product.length) if vendor_items else 10.0,
+                "breadth": float(vendor_items[0].product.breadth) if vendor_items else 10.0,
+                "height": float(vendor_items[0].product.height) if vendor_items else 10.0,
+                "weight": float(vendor_items[0].product.weight) if vendor_items else 1.0,
+            }
+
+            reverse_shipment_id = None
+            reverse_awb = None
+            
+            try:
+                sr_response = create_shiprocket_return(payload)
+                if sr_response.get("shipment_id"):
+                    reverse_shipment_id = str(sr_response.get("shipment_id"))
+                    reverse_awb = sr_response.get("awb_code")
+            except Exception as e:
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to create Shiprocket return request: {e}", exc_info=True)
+
+            # Create a separate ReturnRequest tracking record for this vendor portion
+            ReturnRequest.objects.create(
+                order=order,
+                user=user,
+                reason=serializer.validated_data['reason'],
+                status='pending',
+                reverse_shipment_id=reverse_shipment_id,
+                reverse_awb=reverse_awb
+            )
+
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve_return(self, request, pk=None):
+        """
+        Manually approve/confirm a return request (vendor/superuser only).
+        Processes the automated refund via Stripe/Razorpay.
+        """
+        ret_req = self.get_object()
+        user = request.user
+        
+        # Ensure only vendor of this order or superuser can approve
+        is_vendor = ret_req.order.items.filter(product__vendor=user).exists()
+        if not (user.is_superuser or is_vendor):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
+            
+        if ret_req.status in ['received', 'refunded']:
+            return Response({"error": "Return request is already completed/refunded."}, status=status.HTTP_400_BAD_REQUEST)
+            
+        ret_req.status = 'received'
+        ret_req.save()
+        
+        # Trigger payment gateway refund
+        refund_res = process_order_refund(ret_req.order)
+        if refund_res.get("success"):
+            ret_req.status = 'refunded'
+            ret_req.save()
+            return Response({
+                "message": "Return request approved and refund processed successfully.",
+                "refund_details": refund_res
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                "message": "Return marked as received, but automated refund failed.",
+                "error": refund_res.get("error")
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

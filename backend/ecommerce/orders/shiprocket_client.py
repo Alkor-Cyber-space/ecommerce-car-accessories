@@ -147,3 +147,12 @@ def cancel_shiprocket_order(shiprocket_order_ids):
     CANCEL_URL = "https://apiv2.shiprocket.in/v1/external/orders/cancel"
     payload = {"ids": shiprocket_order_ids}
     return call_shiprocket_api(CANCEL_URL, payload=payload, method="POST")
+
+
+def create_shiprocket_return(payload):
+    """
+    Call Shiprocket Reverse Order Creation API.
+    Endpoint: POST /v1/external/orders/create/return
+    """
+    RETURN_URL = "https://apiv2.shiprocket.in/v1/external/orders/create/return"
+    return call_shiprocket_api(RETURN_URL, payload=payload, method="POST")
