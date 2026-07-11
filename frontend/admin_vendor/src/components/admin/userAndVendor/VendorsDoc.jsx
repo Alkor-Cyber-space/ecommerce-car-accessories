@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
 import { FinalApproveVendorApi, getVendorProfileDocumentsApi } from "../../../services/allAPI";
 import { format } from "date-fns";
 import { ApproveorRejectApi } from "../../../services/allAPI";
 import { toast } from "react-toastify";
 import { BsEye } from "react-icons/bs";
+import { baseUrl } from "../../../services/serverURL";
 
 const getStatusStyle = (status) => {
   const normalized = status === "approved" ? "verified" : status;
@@ -26,7 +28,8 @@ const getStatusLabel = (status) => {
 const VendorsDoc = () => {
   const [documents, setDocuments] = useState({});
   const { id } = useParams();
-  const server_url = "http://localhost:8000";
+  const navigate = useNavigate();
+  const server_url = baseUrl;
 
   useEffect(() => {
     const fetchVendorDocuments = async () => {
@@ -149,11 +152,20 @@ const VendorsDoc = () => {
   };
   return (
     <div>
-      <div className="bg-gray-100 min-h-screen px-6 py-10">
+      <div className="bg-gray-100 min-h-screen px-3 py-3">
         <div className="flex justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-indigo-700 mb-2"><Link to={`/admin/vendor-details/${id}`}>{`Vendor ${id}`} <span className="text-black">/ View Documents</span></Link></h2>
-            <p className="mb-6 text-sm text-gray-600">Manage vendor business documents.</p>
+          <div className="flex items-start gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="p-2 mt-1 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center bg-white shadow-sm border border-gray-200"
+              title="Go Back"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </button>
+            <div>
+              <h2 className="text-xl font-semibold text-indigo-700 mb-2"><Link to={`/admin/vendor-details/${id}`}>{`Vendor ${id}`} <span className="text-black">/ View Documents</span></Link></h2>
+              <p className="mb-6 text-sm text-gray-600">Manage vendor business documents.</p>
+            </div>
           </div>
 
           <div className="flex gap-3">

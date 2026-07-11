@@ -9,7 +9,7 @@ import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 export default function VendorSignIn() {
   const navigate = useNavigate();
 
-  // 🔐 Form state
+  // Form state
   const [formData, setFormData] = useState({
     email_or_username: '',
     password: '',
@@ -17,7 +17,7 @@ export default function VendorSignIn() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // 🎯 Input change handler
+  // Input change handler
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

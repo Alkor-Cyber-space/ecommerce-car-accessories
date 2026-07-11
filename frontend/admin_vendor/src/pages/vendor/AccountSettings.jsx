@@ -211,16 +211,16 @@ const AccountSettings = () => {
   };
 
   return (
-    <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
+    <div className="bg-[#ECECF0] p-4 rounded-2xl w-full space-y-2">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <h1 className="text-[#232832] text-xl font-semibold">
+        <h1 className="text-[#5737B4] text-xl md:text-2xl font-bold">
           Account Settings
         </h1>
       </div>
 
       {/* Profile Section */}
-      <div className="bg-white p-6 pb-16 rounded-xl shadow-md">
+      <div className="bg-white p-4 rounded-xl shadow-md">
         <div className="flex flex-col lg:flex-row justify-between gap-3 items-start lg:items-center">
           <div className="flex items-center gap-3">
             <img
@@ -270,7 +270,7 @@ const AccountSettings = () => {
         </div>
 
         {/* Profile Form */}
-        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Username
@@ -325,7 +325,7 @@ const AccountSettings = () => {
       {/* Password Section */}
       <div>
         <h3 className="font-medium my-2">Password</h3>
-        <div className="bg-white p-6 rounded-xl mt-6 grid grid-cols-1 md:grid-cols-2 gap-3 shadow-md">
+        <div className="bg-white p-4 rounded-xl mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 shadow-md">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Current Password

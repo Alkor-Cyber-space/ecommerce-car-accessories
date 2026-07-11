@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { GoArrowDownRight, GoArrowUpRight } from 'react-icons/go';
 import { HiOutlineDotsVertical } from 'react-icons/hi';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { getVendorByIdApi } from '../../../services/allAPI';
 import axios from 'axios';
 
@@ -9,8 +10,8 @@ const VendorDetails = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [vendorData, setVendorData] = useState({});
   const [vendorProducts, setVendorProducts] = useState([]);
-
   const { id } = useParams();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchVendorProducts = async () => {
@@ -49,19 +50,23 @@ const VendorDetails = () => {
   };
 
   useEffect(() => {
-    const storedVendor = localStorage.getItem('selected_vendor');
-    if (storedVendor) {
-      try {
-        const parsedVendor = JSON.parse(storedVendor);
-        const vendorId = typeof parsedVendor === 'object' ? parsedVendor.id : parsedVendor;
-        if (vendorId) {
-          fetchVendorDetails(vendorId);
+    if (id) {
+      fetchVendorDetails(Number(id));
+    } else {
+      const storedVendor = localStorage.getItem('selected_vendor');
+      if (storedVendor) {
+        try {
+          const parsedVendor = JSON.parse(storedVendor);
+          const vendorId = typeof parsedVendor === 'object' ? parsedVendor.id : parsedVendor;
+          if (vendorId) {
+            fetchVendorDetails(vendorId);
+          }
+        } catch (error) {
+          console.error("Invalid vendor data in localStorage:", error);
         }
-      } catch (error) {
-        console.error("Invalid vendor data in localStorage:", error);
       }
     }
-  }, []);
+  }, [id]);
 
   const fetchVendorDetails = async (vendorId) => {
     try {
@@ -74,12 +79,21 @@ const VendorDetails = () => {
   };
 
   return (
-    <div className="bg-[#F4F5FA] min-h-screen p-4 md:p-6  text-[#232323] space-y-6">
+    <div className="bg-[#F4F5FA] min-h-screen p-4   text-[#232323] space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <h1 className="text-lg md:text-xl font-semibold">
-          {vendorData?.username || 'Vendor Details'}
-        </h1>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 hover:bg-gray-200 rounded-full transition-colors flex items-center justify-center bg-white shadow-sm border border-gray-200"
+            title="Go Back"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-700" />
+          </button>
+          <h1 className="text-lg md:text-xl font-semibold">
+            {vendorData?.username || 'Vendor Details'}
+          </h1>
+        </div>
         <div className="flex gap-2 ml-auto">
           <Link
             to={`/admin/vendor-documents/${vendorData.id}`}

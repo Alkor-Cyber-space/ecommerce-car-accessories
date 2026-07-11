@@ -195,11 +195,11 @@ export default function VendorStockTable() {
   }, []);
 
   return (
-    <div className="bg-gray-100 px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-6">
+    <div className="bg-gray-100 p-4 rounded-2xl w-full space-y-2">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-[#232832] text-xl font-bold">Stock Overview</h1>
-        <div className="flex items-center gap-4">
+        <h1 className="text-xl md:text-2xl font-bold text-[#5737B4]">Stock Overview</h1>
+        <div className="flex items-center gap-2">
           <FaSyncAlt
             className="text-xl text-[#5737B4] cursor-pointer"
             onClick={() => window.location.reload()}
@@ -234,7 +234,7 @@ export default function VendorStockTable() {
       </div>
 
       {/* Filters */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <input
           type="text"
           placeholder="Search product..."

@@ -70,6 +70,13 @@ import PromotionLayout from "./pages/admin/PromotionLayout";
 
 import { useEffect } from "react";
 
+const parseJwt = (token) => {
+  try {
+    return JSON.parse(atob(token.split('.')[1]));
+  } catch (e) {
+    return null;
+  }
+};
 import {
   generateToken,
   messaging,
@@ -98,20 +105,20 @@ function App() {
     generateToken();
 
     // ✅ Token expiry check
-    const accessToken = localStorage.getItem("accessToken");
+    const accessToken = localStorage.getItem("access_token");
     if (accessToken) {
       try {
-        const decoded = jwtDecode(accessToken);
-        if (decoded.exp * 1000 < Date.now()) {
+        const decoded = parseJwt(accessToken);
+        if (decoded && decoded.exp * 1000 < Date.now()) {
           // Token expired — clear and redirect
-          localStorage.removeItem("accessToken");
-          localStorage.removeItem("refreshToken");
+          localStorage.removeItem("access_token");
+          localStorage.removeItem("refresh_token");
           navigate("/login"); // or "/signin"
         }
       } catch (error) {
         // Invalid token — redirect to login
-        localStorage.removeItem("accessToken");
-        localStorage.removeItem("refreshToken");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
         navigate("/login");
       }
     }

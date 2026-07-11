@@ -17,7 +17,7 @@ const SearchFilter = ({
   };
 
   return (
-    <div className="bg-white rounded-xl px-5 py-6 w-full max-w-6xl mx-auto shadow-sm">
+    <div className="bg-white rounded-xl px-3 py-4 w-full max-w-6xl mx-auto shadow-sm">
       {/* Filter Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {showYear && (

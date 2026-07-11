@@ -56,10 +56,10 @@ const Notification = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6 rounded-2xl">
+    <div className="min-h-screen bg-gray-100 p-4 rounded-2xl">
       <div className="max-w-6xl">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-          <h2 className="text-xl md:text-2xl font-bold text-[#5737B4]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-2 gap-4">
+          <h2 className="text-[#5737B4] text-xl md:text-2xl font-bold">
             Notifications
           </h2>
           <select

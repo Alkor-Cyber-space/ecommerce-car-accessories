@@ -1,6 +1,4 @@
 import { useEffect, useState } from "react";
-import { BsDownload } from "react-icons/bs";
-import { HiOutlineDotsVertical } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import SearchFilter from "../../../pages/admin/SearchFilter";
 import { getUserList, exportReportApi } from "../../../services/allAPI";
@@ -17,6 +15,7 @@ export default function UserDataTable() {
   });
 
   const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Fetch user list
   useEffect(() => {
@@ -53,8 +52,14 @@ export default function UserDataTable() {
       const matchesRegDateFrom =
         !filters.regDateFrom || (userDate && userDate >= new Date(filters.regDateFrom));
 
+      let regDateToObj = null;
+      if (filters.regDateTo) {
+        regDateToObj = new Date(filters.regDateTo);
+        regDateToObj.setHours(23, 59, 59, 999); // Set to end of day
+      }
+
       const matchesRegDateTo =
-        !filters.regDateTo || (userDate && userDate <= new Date(filters.regDateTo));
+        !regDateToObj || (userDate && userDate <= regDateToObj);
 
       return matchesYear && matchesLocation && matchesStatus && matchesRegDateFrom && matchesRegDateTo;
     });
@@ -89,6 +94,8 @@ export default function UserDataTable() {
 
   const handleDownloadReport = async (format) => {
     try {
+      setShowDownloadOptions(false);
+      setIsDownloading(true);
       const tableData = filteredUsers.map((user) => ({
         id: user.id,
         username: user.username || "N/A",
@@ -97,7 +104,7 @@ export default function UserDataTable() {
         location: user.location || "N/A",
         status: user.is_active ? "Active" : "Inactive",
         date_joined: user.date_joined || "N/A",
-        totalOrders: user.totalOrders || 0,
+        totalOrders: user.orders || 0,
       }));
 
       const response = await exportReportApi("users_overview", format, tableData);
@@ -111,9 +118,10 @@ export default function UserDataTable() {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      setShowDownloadOptions(false);
     } catch (error) {
       console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -138,9 +146,22 @@ export default function UserDataTable() {
         <div className="relative download-dropdown">
           <button
             onClick={toggleDownloadOptions}
-            className="flex items-center gap-2 bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base"
+            disabled={isDownloading}
+            className={`flex items-center gap-2 bg-[#5737B4] text-white px-3 py-2 rounded-md text-sm sm:text-base transition-all ${
+              isDownloading ? "opacity-75 cursor-not-allowed" : "hover:bg-[#462a93]"
+            }`}
           >
-            Download Report
+            {isDownloading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Downloading...
+              </>
+            ) : (
+              "Download Report"
+            )}
           </button>
 
           {showDownloadOptions && (
@@ -166,7 +187,7 @@ export default function UserDataTable() {
       <div className="bg-white rounded-xl w-full md:w-[28%] flex flex-col md:flex-row items-center justify-between px-4 py-4">
         <p className="text-base md:text-lg text-gray-700">Total User :</p>
         <h1 className="text-3xl font-semibold text-black mr-5 md:mr-2">
-          {users?.length}
+          {users?.length || 0}
         </h1>
       </div>
 

@@ -16,6 +16,7 @@ import {
 import { add, format } from "date-fns";
 import { toast } from "react-toastify";
 import DocumentCard from "../../components/vendor/DocumentCard";
+import { baseUrl } from "../../services/serverURL";
 
 const documentGroups = {
   kyc: [
@@ -55,7 +56,7 @@ const VendorProfile = () => {
   const [replaceField, setReplaceField] = useState(null);
 
   const fileInputRef = useRef(null);
-  const server_url = "http://localhost:8000";
+  const server_url = baseUrl;
   const [addressForm, setAddressForm] = useState({
     line1: "",
     line2: "",
@@ -414,11 +415,11 @@ const validatePhone = (phone) => {
 
     if (!file) return;
     if (!allowedTypes.includes(file.type)) {
-      alert("Only PDF, JPG, and PNG files are allowed.");
+      toast.error("Only PDF, JPG, and PNG files are allowed.");
       return;
     }
     if (file.size > maxFileSize) {
-      alert("File size must be less than 5MB.");
+      toast.error("File size must be less than 5MB.");
       return;
     }
     if (replaceField) {
@@ -443,30 +444,25 @@ const validatePhone = (phone) => {
       try {
         const response = await updateKycDocuments(vendorId, formData);
         console.log(" Document uploaded successfully:", response);
-        toast.success("Updated!!");
+        toast.success("Updated");
         const updatedKycDocs = await getVendorKycDocuments(vendorId);
         setKycDocuments(updatedKycDocs);
       } catch (error) {
         console.error(" Upload failed:", error);
-        const errorMsg =
-          error.response?.data?.error ||
-          error.response?.data?.message ||
-          error.message ||
-          "Something went wrong. Please try again.";
-        toast.error(errorMsg);
+        toast.error("Failed, try again");
       }
     }
   };
 
   return (
-    <div className="bg-gray-100 p-6 rounded-2xl min-h-screen">
+    <div className="bg-gray-100 p-4 rounded-2xl min-h-screen">
       <h1 className="text-2xl text-[#5737B4] font-bold">Profile & KYC</h1>
       <p className="my-1">Manage your business details and documents.</p>
 
       {/* Contact & Address Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         {/* Business Details */}
-        <div className="bg-white rounded-lg px-5 py-6 shadow">
+        <div className="bg-white rounded-lg px-4 py-4 shadow">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="font-semibold text-lg">Business Details</h2>
             <FiEdit3
@@ -475,7 +471,7 @@ const validatePhone = (phone) => {
               className="cursor-pointer"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 mt-2">
             <p className="font-semibold">Name</p>
             <p>{profileData.company_name || ""}</p>
             <p className="font-semibold">Email</p>
@@ -486,7 +482,7 @@ const validatePhone = (phone) => {
         </div>
 
         {/* Address Details - moved top-right */}
-        <div className="bg-white rounded-lg px-5 py-6 shadow">
+        <div className="bg-white rounded-lg px-4 py-4 shadow">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="font-semibold text-lg">Address Details</h2>
             {addresses?.line1 ? (
@@ -504,7 +500,7 @@ const validatePhone = (phone) => {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 mt-2">
             <p className="font-semibold">Line 1</p>
             <p>{addresses?.line1 || "NA"}</p>
 
@@ -527,8 +523,8 @@ const validatePhone = (phone) => {
       </div>
 
       {/* Contact Details - stays in the second row */}
-      <div className="grid grid-cols-1 gap-4 mt-6">
-        <div className="bg-white rounded-lg px-5 py-6 shadow w-80 sm:w-[550px]">
+      <div className="grid grid-cols-1 gap-4 mt-4">
+        <div className="bg-white rounded-lg px-4 py-4 shadow w-80 sm:w-[550px]">
           <div className="flex justify-between items-center flex-wrap gap-2">
             <h2 className="font-semibold text-lg">Contact Details</h2>
             <FiEdit3
@@ -537,7 +533,7 @@ const validatePhone = (phone) => {
               className="cursor-pointer"
             />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-5 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 mt-2">
             <p className="font-semibold">Contact Name</p>
             <p>{profileData.contact_name || ""}</p>
             <p className="font-semibold">Contact Email</p>

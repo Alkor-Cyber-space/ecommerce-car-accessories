@@ -1037,7 +1037,7 @@ export const deletePromotionBannerApi = async (id) => {
 };
 export const getAdminAccountSettingsApi = async (id) => {
   try {
-    const response = await api.get(`${serverurl}/admin/profile/`);
+    const response = await api.get('/admin/profile/');
     return response.data;
   } catch (error) {
     console.error("Error fetching admin details:", error);
