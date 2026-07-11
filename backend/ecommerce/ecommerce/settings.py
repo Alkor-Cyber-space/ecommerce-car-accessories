@@ -238,7 +238,9 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",  # Your React/Vue etc. frontend
+    "http://localhost:8000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 CORS_ALLOW_ALL_ORIGINS = True
