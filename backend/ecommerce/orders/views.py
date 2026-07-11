@@ -327,6 +327,7 @@ class CheckoutViewSet(viewsets.ViewSet):
                 gateway_handler = get_payment_gateway(payment_method)
                 gateway_response = gateway_handler(user, float(total) / 100, metadata)
             except Exception as e:
+                order.delete()
                 raise ValidationError(str(e))
 
         return Response({
@@ -477,10 +478,62 @@ class VendorOrderStatusUpdateView(APIView):
 
             # Prepare Shiprocket payload for this vendor's portion
             vendor_profile = getattr(vendor, 'vendor_profile', None)
-            if not vendor_profile or not vendor_profile.pickup_location:
+            if not vendor_profile:
                 return Response({
-                    "error": f"Vendor {vendor.username} does not have a configured Shiprocket pickup location."
+                    "error": f"Vendor {vendor.username} does not have a vendor profile configured."
                 }, status=status.HTTP_400_BAD_REQUEST)
+            # Auto-create Shiprocket pickup location if not configured
+            if not vendor_profile.pickup_location:
+                from accounts.models import Address
+                vendor_address = Address.objects.filter(user=vendor).first()
+                if not vendor_address:
+                    return Response({
+                        "error": "Please add your address in Profile & KYC before confirming orders."
+                    }, status=status.HTTP_400_BAD_REQUEST)
+
+                # Generate a unique pickup location name
+                pickup_name = f"VENDOR_{vendor_profile.id}"
+                pickup_payload = {
+                    "pickup_location": pickup_name,
+                    "name": vendor_profile.company_name or vendor.username,
+                    "email": vendor_profile.company_email or vendor.email,
+                    "phone": format_phone_number(
+                        vendor_profile.contact_number or vendor_address.phone_number or getattr(vendor, 'phone_number', None)
+                    ) or "9999999999",
+                    "address": vendor_address.line1 or "",
+                    "address_2": vendor_address.line2 or "",
+                    "city": vendor_address.city or "",
+                    "state": vendor_address.state or "",
+                    "country": vendor_address.country or "India",
+                    "pin_code": vendor_address.postal_code or "",
+                }
+
+                print(f"[AUTO-CREATE] Creating Shiprocket pickup location: {pickup_payload}")
+                try:
+                    sr_pickup_response = create_pickup_location(pickup_payload)
+                    print(f"[AUTO-CREATE] Shiprocket pickup response: {sr_pickup_response}")
+
+                    if sr_pickup_response.get("error"):
+                        error_details = sr_pickup_response.get("details", {})
+                        if isinstance(error_details, dict) and "pickup_location" in str(error_details):
+                            print(f"[AUTO-CREATE] Pickup location might already exist, proceeding with name: {pickup_name}")
+                        else:
+                            return Response({
+                                "error": f"Failed to auto-create Shiprocket pickup location.",
+                                "shiprocket_error": error_details
+                            }, status=status.HTTP_400_BAD_REQUEST)
+
+                    # Save the pickup location name to vendor profile
+                    vendor_profile.pickup_location = pickup_name
+                    vendor_profile.save()
+                    print(f"[AUTO-CREATE] Saved pickup_location='{pickup_name}' to vendor profile #{vendor_profile.id}")
+
+                except Exception as e:
+                    import traceback
+                    traceback.print_exc()
+                    return Response({
+                        "error": f"Failed to register pickup location with Shiprocket: {str(e)}"
+                    }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
             pickup_location = vendor_profile.pickup_location
 
@@ -517,7 +570,7 @@ class VendorOrderStatusUpdateView(APIView):
                 # Payment info
                 "payment_method": "COD" if order.payment_method == "cod" else "Prepaid",
 
-                # Vendor’s products only
+                # Vendor's products only
                 "order_items": [
                     {
                         "name": item.product.name,
@@ -548,7 +601,77 @@ class VendorOrderStatusUpdateView(APIView):
             sr_response = create_shiprocket_order(order_payload)
             print("Shiprocket response:", sr_response)
 
-            # ✅ Check if Shiprocket returned an error
+            # ✅ If Shiprocket says "Wrong Pickup location", auto-detect the correct one and retry
+            sr_message = sr_response.get("message", "")
+            sr_details = sr_response.get("details", {})
+            if not sr_message:
+                if isinstance(sr_details, dict):
+                    sr_message = sr_details.get("message", "")
+                elif isinstance(sr_details, str):
+                    sr_message = sr_details
+
+            if "Wrong Pickup location" in str(sr_message):
+                # Try to find the correct pickup location from Shiprocket's suggested data
+                suggested_locations = []
+                data_block = sr_response.get("data", {})
+                if not data_block and isinstance(sr_details, dict):
+                    data_block = sr_details.get("data", {})
+
+                if isinstance(data_block, dict) and "data" in data_block:
+                    suggested_locations = data_block["data"]
+                elif isinstance(data_block, list):
+                    suggested_locations = data_block
+
+                vendor_email = (vendor_profile.company_email or vendor.email or "").lower()
+                matched_location = None
+
+                # Match by vendor email first
+                for loc in suggested_locations:
+                    if loc.get("email", "").lower() == vendor_email and loc.get("status") == 1 and loc.get("phone_verified") == 1:
+                        matched_location = loc["pickup_location"]
+                        break
+
+                # Match by address line 1
+                from accounts.models import Address
+                vendor_address = Address.objects.filter(user=vendor).first()
+                if not matched_location and vendor_address:
+                    addr_line1 = (vendor_address.line1 or "").lower().strip()
+                    if addr_line1:
+                        for loc in suggested_locations:
+                            loc_addr = loc.get("address", "").lower()
+                            if addr_line1 in loc_addr and loc.get("status") == 1 and loc.get("phone_verified") == 1:
+                                matched_location = loc["pickup_location"]
+                                break
+
+                # Fallback: match by seller_name
+                if not matched_location:
+                    vendor_company = (vendor_profile.company_name or "").lower()
+                    for loc in suggested_locations:
+                        if loc.get("seller_name", "").lower() == vendor_company and loc.get("status") == 1 and loc.get("phone_verified") == 1:
+                            matched_location = loc["pickup_location"]
+                            break
+
+                # Fallback 2: use the first suggested pickup location in the list that is verified and active (line 1 address)
+                if not matched_location and suggested_locations:
+                    for loc in suggested_locations:
+                        if loc.get("status") == 1 and loc.get("phone_verified") == 1:
+                            matched_location = loc["pickup_location"]
+                            break
+
+                if matched_location:
+                    print(f"[AUTO-FIX] Found correct Shiprocket pickup location: {matched_location}")
+                    # Save the correct pickup location to vendor profile
+                    vendor_profile.pickup_location = matched_location
+                    vendor_profile.save()
+
+                    # Retry the order with the correct pickup location
+                    order_payload["pickup_location"] = matched_location
+                    sr_response = create_shiprocket_order(order_payload)
+                    print("Shiprocket retry response:", sr_response)
+                else:
+                    print(f"[AUTO-FIX] Could not match vendor to any Shiprocket pickup location")
+
+            # ✅ Check if Shiprocket returned an error (after possible retry)
             if sr_response.get("error"):
                 return Response({
                     "message": f"Vendor {vendor.id} items for Order #{order.id} could not be confirmed with Shiprocket",
@@ -576,9 +699,9 @@ class VendorOrderStatusUpdateView(APIView):
 
             else:
                 return Response({
-                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed but Shiprocket order creation incomplete",
+                    "message": f"Vendor {vendor.id} items for Order #{order.id} could not be confirmed with Shiprocket (incomplete order creation)",
                     "shiprocket_response": sr_response
-                }, status=status.HTTP_200_OK)
+                }, status=status.HTTP_400_BAD_REQUEST)
 
         except Exception as e:
             import logging
