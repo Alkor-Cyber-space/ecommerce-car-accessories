@@ -36,7 +36,12 @@ class UserOrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product_id', 'product_name', 'product_image', 'product_price', 'unit_price', 'product_sku', 'quantity', 'item_total']
+        fields = [
+            'id', 'product_id', 'product_name', 'product_image', 'product_price', 
+            'unit_price', 'product_sku', 'quantity', 'item_total', 'status', 
+            'shiprocket_order_id', 'shipment_id', 'courier_name', 'awb_code'
+        ]
+
 
     def get_product_image(self, obj):
         """Get main product image or first available image"""
@@ -78,9 +83,11 @@ class OrderSerializer(serializers.ModelSerializer):
     # expose full shipping address for the management UI
     shipping_address = AddressSerializer(read_only=True)
     payment_method = serializers.ChoiceField(choices=Order.PAYMENT_METHOD_CHOICES)
+    courier_company_id = serializers.IntegerField(required=False, allow_null=True)
     # helpful computed/read-only fields for UI
     subtotal = serializers.SerializerMethodField()
     user_info = serializers.SerializerMethodField()
+
     
     class Meta:
         model = Order
@@ -150,7 +157,12 @@ class VendorOrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'product', 'product_name', 'product_image', 'product_size', 'product_price', 'quantity', 'total_price']
+        fields = [
+            'id', 'product', 'product_name', 'product_image', 'product_size', 
+            'product_price', 'quantity', 'total_price', 'status', 
+            'shiprocket_order_id', 'shipment_id', 'courier_name', 'awb_code'
+        ]
+
 
     def get_product_image(self, obj):
         a = obj.product.images.all()
