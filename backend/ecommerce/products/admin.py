@@ -6,7 +6,7 @@ from .models import *
 class ProductVariantInline(admin.TabularInline):
     model = ProductVariant
     extra = 1
-    fields = ['size', 'weight_value', 'color_name', 'color_code', 'length', 'breadth', 'height', 'price', 'stock', 'is_default']
+    fields = ['size', 'weight_value', 'color_image', 'length', 'breadth', 'height', 'price', 'stock', 'is_default']
 
 
 class ProductImageInline(admin.TabularInline):

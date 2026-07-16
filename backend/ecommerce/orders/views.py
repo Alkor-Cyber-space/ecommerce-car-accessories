@@ -428,7 +428,26 @@ class VendorOrderListView(generics.ListAPIView):
         return Order.objects.filter(items__product__vendor=user).distinct()
 
 
+def resolve_shiprocket_pickup_location(current_location, error_details):
+    if isinstance(error_details, dict):
+        data = error_details.get("data", {})
+        if isinstance(data, dict):
+            # Check for nested data list structure from the test
+            locations = data.get("data", [])
+            if isinstance(locations, list) and locations:
+                first_loc = locations[0]
+                if isinstance(first_loc, dict):
+                    pickup = first_loc.get("pickup_location")
+                    if pickup:
+                        return pickup
+            pickup = data.get("pickup_location")
+            if pickup:
+                return pickup
+    return current_location
+
+
 class VendorOrderStatusUpdateView(APIView):
+
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, order_id):
@@ -680,11 +699,25 @@ class VendorOrderStatusUpdateView(APIView):
 
             # ✅ Save shipment details if successful
             if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
-                order.status = "confirmed"
-                order.shiprocket_order_id = str(sr_response.get("order_id", ""))
-                order.awb_code = sr_response.get("awb_code", "")
-                order.courier_name = sr_response.get("courier_name", "")
-                order.save()
+                # Update individual vendor items in this order
+                for item in vendor_items:
+                    item.status = "confirmed"
+                    item.shiprocket_order_id = str(sr_response.get("order_id", ""))
+                    item.shipment_id = str(sr_response.get("shipment_id", ""))
+                    item.awb_code = sr_response.get("awb_code", "")
+                    item.courier_name = sr_response.get("courier_name", "")
+                    item.save()
+
+                # Check if all items in the order are now confirmed
+                all_items_confirmed = not order.items.filter(status="pending").exists()
+                if all_items_confirmed:
+                    order.status = "confirmed"
+                    order.shiprocket_order_id = str(sr_response.get("order_id", ""))
+                    order.shipment_id = str(sr_response.get("shipment_id", ""))
+                    order.awb_code = sr_response.get("awb_code", "")
+                    order.courier_name = sr_response.get("courier_name", "")
+                    order.save()
+
 
                 return Response({
                     "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed and sent to Shiprocket",

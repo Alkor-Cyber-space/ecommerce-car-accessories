@@ -52,6 +52,8 @@ class Coupon(models.Model):
 class Banner(models.Model):
     title=models.CharField(max_length=255)
     image=models.ImageField(upload_to='banners')
+    category=models.ForeignKey('products.Category', on_delete=models.SET_NULL, null=True, blank=True, related_name='banners')
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, default=0.00)
     is_active=models.BooleanField(default=True)
     created_at=models.DateTimeField(auto_now_add=True)
 

@@ -1,10 +1,14 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from rest_framework.exceptions import ValidationError
-from accounts.models import Address
+from rest_framework.test import APIRequestFactory
+from unittest.mock import patch
+from accounts.models import Address, VendorProfile
 from products.models import Product, Category
 from orders.models import Order, OrderItem
 from orders.serializers import OrderSerializer
+from orders.views import resolve_shiprocket_pickup_location, VendorOrderStatusUpdateView
 
 User = get_user_model()
 
@@ -230,3 +234,78 @@ class OrderStockTestCase(TestCase):
         self.assertEqual(self.product1.stock, 10)
         order.refresh_from_db()
         self.assertFalse(order.stock_deducted)
+
+    def test_resolve_shiprocket_pickup_location_from_error_details(self):
+        """Test the helper selects a valid pickup location from Shiprocket error payloads."""
+        error_details = {
+            "message": "Wrong Pickup location entered",
+            "data": {
+                "data": [
+                    {"id": 78480292, "pickup_location": "VENDOR_2"},
+                    {"id": 79631359, "pickup_location": "VENDOR_3"},
+                ]
+            },
+        }
+
+        resolved = resolve_shiprocket_pickup_location("VENDOR_9", error_details)
+
+        self.assertEqual(resolved, "VENDOR_2")
+
+    @patch("orders.views.create_shiprocket_order")
+    def test_vendor_confirmation_does_not_mark_shared_order_confirmed(self, mock_create_order):
+        """Confirming one vendor's items should not flip the shared order status for all vendors."""
+        vendor_group, _ = Group.objects.get_or_create(name="Vendor")
+        other_vendor = User.objects.create_user(
+            username="othervendor",
+            email="othervendor@example.com",
+            password="testpassword123",
+            phone_number="1111111111"
+        )
+        other_vendor.groups.add(vendor_group)
+        VendorProfile.objects.create(user=other_vendor, pickup_location="VENDOR_3")
+
+        self.vendor.groups.add(vendor_group)
+        VendorProfile.objects.create(user=self.vendor, pickup_location="VENDOR_2")
+
+        other_product = Product.objects.create(
+            vendor=other_vendor,
+            category=self.category,
+            name="Other Product",
+            description="Other vendor item",
+            price=300.00,
+            stock=3,
+            weight=1.0,
+            length=20,
+            breadth=20,
+            height=10,
+            is_available=True,
+        )
+
+        order = Order.objects.create(
+            user=self.customer,
+            total_price=1800.00,
+            shipping_address=self.address,
+            payment_method="cod",
+            status="pending",
+            courier_company_id=127,
+        )
+        OrderItem.objects.create(order=order, product=self.product1, quantity=1, price=self.product1.price)
+        OrderItem.objects.create(order=order, product=other_product, quantity=1, price=other_product.price)
+
+        mock_create_order.return_value = {
+            "shipment_id": "SHIP123",
+            "status_code": 1,
+            "order_id": 999,
+            "awb_code": "AWB123",
+            "courier_name": "BlueDart",
+        }
+
+        view = VendorOrderStatusUpdateView()
+        request = APIRequestFactory().post(f"/api/orders/vendor/orders/{order.id}/confirm/", {})
+        request.user = self.vendor
+
+        response = view.post(request, order_id=order.id)
+
+        self.assertEqual(response.status_code, 200)
+        order.refresh_from_db()
+        self.assertEqual(order.status, "pending")

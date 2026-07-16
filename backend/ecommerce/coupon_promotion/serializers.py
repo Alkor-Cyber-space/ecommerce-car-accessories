@@ -48,43 +48,100 @@ class productSerializer(serializers.ModelSerializer):
         model=Product 
         fields=['id','name','price','is_available']
 
-class ApplyCouponSerializer(serializers.Serializer):
-    coupon_code =serializers.CharField(max_length=255)
-    product_id=serializers.IntegerField()
-    
+# ✅ NEW: Cart-based coupon apply — only coupon_code needed, no product_id
+class ApplyCartCouponSerializer(serializers.Serializer):
+    coupon_code = serializers.CharField(max_length=255)
+
     def validate(self, data):
+        from cart_wishlist.models import Cart, CartItem
+
+        # 1. Get coupon
         try:
-            coupon=Coupon.objects.get(code=data['coupon_code'])
+            coupon = Coupon.objects.get(code=data['coupon_code'])
         except Coupon.DoesNotExist:
             raise serializers.ValidationError({"coupon_code": "Invalid coupon code."})
-        try:
-            product=Product.objects.get(id=data['product_id'])
-        except Product.DoesNotExist:
-            raise serializers.ValidationError({"product_id": "Invalid product ID."})
-        
-        if not coupon.is_valid():
-            raise serializers.ValidationError({"coupon_code": "Coupon is not active or has expired."})        
-        
-        if coupon.applicable_products.exists() and product not in coupon.applicable_products.all():
-            raise serializers.ValidationError({"coupon_code": "Coupon is not applicable to this product."})
-        
-        if product.price < coupon.min_purchase_amount:
-            raise serializers.ValidationError({
-                "coupon_code": f"Product price ({product.price}) is less than minimum purchase amount ({coupon.min_purchase_amount})."
-            })
-        
-        data['coupon']=coupon
-        data['product']=product
 
+        # 2. Check coupon validity (active + date range)
+        if not coupon.is_valid():
+            raise serializers.ValidationError({"coupon_code": "Coupon is expired or inactive."})
+
+        # 3. Get the user's cart
+        user = self.context['request'].user
+        try:
+            cart = Cart.objects.get(user=user)
+        except Cart.DoesNotExist:
+            raise serializers.ValidationError({"cart": "Your cart is empty. Add products before applying a coupon."})
+
+        cart_items = CartItem.objects.filter(cart=cart).select_related('product')
+        if not cart_items.exists():
+            raise serializers.ValidationError({"cart": "Your cart is empty."})
+
+        # 4. If coupon restricts to specific products, filter those cart items only
+        applicable_items = []
+        if coupon.applicable_products.exists():
+            allowed_products = coupon.applicable_products.all()
+            applicable_items = [item for item in cart_items if item.product in allowed_products]
+            if not applicable_items:
+                raise serializers.ValidationError({
+                    "coupon_code": "This coupon is not applicable to any product in your cart."
+                })
+        else:
+            applicable_items = list(cart_items)
+
+        # 5. Calculate applicable subtotal
+        applicable_subtotal = sum(
+            (item.variant.price if item.variant and item.variant.price else item.product.price) * item.quantity
+            for item in applicable_items
+        )
+
+        # 6. Check minimum purchase amount
+        if applicable_subtotal < coupon.min_purchase_amount:
+            raise serializers.ValidationError({
+                "coupon_code": (
+                    f"Minimum purchase amount of ₹{coupon.min_purchase_amount} required. "
+                    f"Your applicable cart total is ₹{applicable_subtotal:.2f}."
+                )
+            })
+
+        data['coupon'] = coupon
+        data['cart'] = cart
+        data['cart_items'] = cart_items
+        data['applicable_items'] = applicable_items
+        data['applicable_subtotal'] = applicable_subtotal
         return data
 
     def apply_discount(self):
-        
-        coupon=self.validated_data['coupon']
-        product=self.validated_data['product']
-        discount=(coupon.discount_value/Decimal(100))*product.price
-        discount_price= product.price - discount
-        return max(discount_price,Decimal(0))
+        coupon = self.validated_data['coupon']
+        cart_items = self.validated_data['cart_items']
+        applicable_items = self.validated_data['applicable_items']
+        applicable_subtotal = self.validated_data['applicable_subtotal']
+
+        full_cart_total = sum(
+            (item.variant.price if item.variant and item.variant.price else item.product.price) * item.quantity
+            for item in cart_items
+        )
+
+        discount = (coupon.discount_value / Decimal(100)) * applicable_subtotal
+        discount = min(discount, applicable_subtotal)
+        discounted_price = full_cart_total - discount
+
+        return {
+            "coupon_code": coupon.code,
+            "coupon_name": coupon.name,
+            "discount_percentage": f"{coupon.discount_value:.2f}",
+            "cart_total": f"{full_cart_total:.2f}",
+            "discount_amount": f"{discount:.2f}",
+            "total_after_discount": f"{max(discounted_price, Decimal(0)):.2f}",
+            "applicable_items_count": len(applicable_items),
+            "cart_items": [
+                {
+                    "product_id": item.product.id,
+                    "product_name": item.product.name,
+                    "quantity": item.quantity,
+                    "unit_price": f"{(item.variant.price if item.variant and item.variant.price else item.product.price):.2f}"
+                } for item in cart_items
+            ]
+        }
 
 class ApplyPromotionSerializer(serializers.Serializer):
     promotion_code = serializers.CharField(max_length=255)
@@ -137,8 +194,22 @@ class ApplyPromotionSerializer(serializers.Serializer):
 
         return result
     
+class BannerProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'price', 'stock', 'is_available']
+
 class BannerSerilizer(serializers.ModelSerializer):
-    class  Meta:
+    category_name = serializers.CharField(source='category.name', read_only=True, allow_null=True)
+    category_products = serializers.SerializerMethodField()
+
+    class Meta:
         model = Banner
-        fields= "__all__"
-        read_only_field=['created_at']
+        fields = ['id', 'title', 'image', 'category', 'category_name', 'discount_percentage', 'category_products', 'is_active', 'created_at']
+        read_only_fields = ['created_at']
+
+    def get_category_products(self, obj):
+        if obj.category:
+            products = Product.objects.filter(category=obj.category, is_available=True)
+            return BannerProductSerializer(products, many=True, context=self.context).data
+        return []
