@@ -341,7 +341,7 @@ const VendorsDoc = () => {
       </div>
       <div className="flex items-center  justify-between mt-3">
         <div>
-          <Link to="/admin/user-details">
+          <Link to={`/admin/vendor-details/${id}`}>
             <button className="border border-[#5737B4] text-[#5737B4] px-16 py-1 rounded hover:bg-gray-100">
               Cancel
             </button>

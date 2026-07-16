@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-
+import { exportReportApi } from "../../../services/allAPI";
 export default function ReturnsReport() {
   const [returnsData, setReturnsData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
@@ -8,6 +8,9 @@ export default function ReturnsReport() {
   const [statusFilter, setStatusFilter] = useState("");
   const [vendorFilter, setVendorFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const rowsPerPage = 10;
 
   useEffect(() => {
@@ -23,6 +26,7 @@ export default function ReturnsReport() {
 ];
     setReturnsData(data);
     setFilteredData(data);
+    setIsLoading(false);
   }, []);
 
   const filterDataByDate = () => {
@@ -41,6 +45,43 @@ export default function ReturnsReport() {
     });
     setFilteredData(filtered);
     setCurrentPage(1);
+  };
+
+  const handleDownloadReport = async (format) => {
+    try {
+      setShowDownloadOptions(false);
+      setIsDownloading(true);
+      const tableData = filteredData.map((item) => ({
+        date: item.date,
+        returnId: item.returnId,
+        orderId: item.orderId,
+        product: item.product,
+        buyer: item.buyer,
+        vendor: item.vendor,
+        reason: item.reason,
+        amount: item.amount,
+        status: item.status
+      }));
+
+      const response = await exportReportApi(
+        "returns_report",
+        format,
+        tableData
+      );
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `returns_report.${format === "pdf" ? "pdf" : "xlsx"}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const formatINR = (amount) => `₹${amount.toLocaleString("en-IN")}`;
@@ -154,14 +195,32 @@ export default function ReturnsReport() {
             Apply Filter
           </button>
 
-          <div>
+          <div className="relative">
             <button
-              className="bg-[#5737B4] hover:bg-[#2f093d] text-white font-medium 
-                   px-6 py-2.5 rounded-md shadow-md hover:shadow-lg 
-                   transition-all duration-200 whitespace-nowrap"
+              onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+              disabled={isDownloading}
+              className={`bg-[#5737B4] hover:bg-[#2f093d] text-white font-medium 
+                         px-6 py-2.5 rounded-md shadow-md hover:shadow-lg transition-all ${isDownloading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-              Download Report
+              {isDownloading ? 'Downloading...' : 'Download Report'}
             </button>
+
+            {showDownloadOptions && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-10 border border-gray-100">
+                <button
+                  onClick={() => handleDownloadReport("pdf")}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-md"
+                >
+                  Download as PDF
+                </button>
+                <button
+                  onClick={() => handleDownloadReport("excel")}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 last:rounded-b-md"
+                >
+                  Download as Excel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -183,7 +242,19 @@ export default function ReturnsReport() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td
+                  colSpan="9"
+                  className="text-center py-6 text-gray-500 font-medium"
+                >
+                  <div className="flex justify-center items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-[#5737B4] border-t-transparent rounded-full animate-spin"></div>
+                    Loading data...
+                  </div>
+                </td>
+              </tr>
+            ) : paginatedData.length > 0 ? (
               paginatedData.map((item, index) => (
                 <tr key={index} className="text-left hover:bg-gray-50">
                   <td className="py-3 px-6 min-w-[120px]">{item.date}</td>

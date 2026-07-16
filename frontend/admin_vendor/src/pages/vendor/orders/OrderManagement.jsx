@@ -69,8 +69,22 @@ const OrderManagement = ({ order }) => {
 
       if (fetchOrders) fetchOrders();
     } catch (error) {
-      toast.error("Failed to confirm order status");
-      console.error("Error confirming order status", error);
+      let backendError = "Failed to confirm order status";
+      if (error.response?.data) {
+        if (error.response.data.error) {
+          backendError = typeof error.response.data.error === 'string' 
+            ? error.response.data.error 
+            : JSON.stringify(error.response.data.error);
+        } else if (error.response.data.message && error.response.data.shiprocket_error) {
+          backendError = `${error.response.data.message}: ${JSON.stringify(error.response.data.shiprocket_error)}`;
+        } else if (error.response.data.message) {
+          backendError = error.response.data.message;
+        } else if (error.response.data.shiprocket_error_detail) {
+          backendError = JSON.stringify(error.response.data.shiprocket_error_detail);
+        }
+      }
+      toast.error(backendError);
+      console.error("Error confirming order status:", error.response?.data || error);
     } finally {
       setLoading(false);
     }

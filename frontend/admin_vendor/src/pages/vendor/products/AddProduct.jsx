@@ -82,6 +82,7 @@ const AddProduct = () => {
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
     const [dragActiveIndex, setDragActiveIndex] = useState(null);
     const [isActive, setIsActive] = useState(true);
+    const [variants, setVariants] = useState([]);
     const handleToggle = () => {
         setIsActive(prev => {
             const next = !prev;
@@ -89,6 +90,33 @@ const AddProduct = () => {
             setFormData(f => ({ ...f, is_available: next }));
             return next;
         });
+    };
+
+    const addVariant = () => {
+        setVariants([...variants, {
+            size: '',
+            weight_value: '',
+            color_name: '',
+            color_code: '#000000',
+            length: '',
+            breadth: '',
+            height: '',
+            price: '',
+            stock: 0,
+            is_default: false
+        }]);
+    };
+
+    const updateVariant = (index, field, value) => {
+        const newVariants = [...variants];
+        newVariants[index][field] = value;
+        setVariants(newVariants);
+    };
+
+    const removeVariant = (index) => {
+        const newVariants = [...variants];
+        newVariants.splice(index, 1);
+        setVariants(newVariants);
     };
 
     const inputRefs = useRef([]);
@@ -134,13 +162,8 @@ const AddProduct = () => {
     const isFormComplete =
         formData.name &&
         formData.description &&
-        formData.price &&
         formData.category &&
         formData.tags.length > 0 &&
-        formData.length &&
-        formData.breadth &&
-        formData.height &&
-        formData.weight &&
         atLeastOneImageSelected;
 
     const handleSave = async (e) => {
@@ -155,14 +178,14 @@ const AddProduct = () => {
 
         formDataToSend.append("name", formData.name);
         formDataToSend.append("description", formData.description);
-        formDataToSend.append("price", formData.price);
-        formDataToSend.append("stock", formData.stock);
+        formDataToSend.append("price", formData.price || 0);
+        formDataToSend.append("stock", formData.stock || 0);
         formDataToSend.append("manufacturing_date", formData.manufactureDate);
         formDataToSend.append("category_id", formData.category);
-        formDataToSend.append("length", formData.length);
-        formDataToSend.append("weight", formData.weight);
-        formDataToSend.append("height", formData.height);
-        formDataToSend.append("breadth", formData.breadth);
+        formDataToSend.append("length", formData.length || 0);
+        formDataToSend.append("weight", formData.weight || 0);
+        formDataToSend.append("height", formData.height || 0);
+        formDataToSend.append("breadth", formData.breadth || 0);
         // include availability flag
         formDataToSend.append("is_available", formData.is_available ? "true" : "false");
         // also include isActive for compatibility with edit flow
@@ -185,6 +208,10 @@ const AddProduct = () => {
 
         if (formData.sizes) {
             formDataToSend.append("size", formData.sizes);
+        }
+
+        if (variants.length > 0) {
+            formDataToSend.append("variants", JSON.stringify(variants));
         }
 
 
@@ -222,6 +249,7 @@ const AddProduct = () => {
             });
             setImagePreviews(Array(6).fill(null));
             setIsActive(true);
+            setVariants([]);
             navigate("/vendor/products");
         } catch (error) {
             console.error("Error adding product:", error.response?.data || error.message);
@@ -324,95 +352,9 @@ const AddProduct = () => {
                             <label className="font-medium">Description</label>
                             <textarea name="description" value={formData.description || ''} onChange={handleChange} className="border rounded px-4 py-2 mt-1" />
                         </div>
-                    </div>
-
-                    {/* Price */}
-                    <div className="bg-white rounded-xl p-4 space-y-1 shadow">
-                        <h2 className="text-lg font-semibold underline">Price</h2>
-                        <div className="flex gap-4 flex-col ">
-                            <div className="flex flex-col flex-1">
-                                <label className="font-medium">Stock</label>
-                                <input name="stock" value={formData.stock || ''} onChange={handleChange} type="number" className="border rounded px-4 py-2 mt-1" placeholder="0" />
-                            </div>
-                            <div className="flex flex-col flex-1">
-                                <label className="font-medium">Unit Price</label>
-                                <input name="price" value={formData.price || ''} onChange={handleChange} type="number" className="border rounded px-4 py-2 mt-1" placeholder="₹" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Others */}
-                    <div className="bg-white rounded-xl p-4 space-y-1 shadow">
-                        <h2 className="text-lg font-semibold underline">Others</h2>
-                        <div className="flex gap-2 flex-col ">
-                            <div className="flex flex-col flex-1">
-                                <label className="font-medium">Sizes Available</label>
-                                <select name="sizes" value={formData.sizes || ''} onChange={handleChange} type="text" className="border rounded px-4 py-2 mt-1" placeholder="(Optional)" >
-                                    <option value="" disabled>(Optional)</option>
-                                    <option value="Small">Small</option>
-                                    <option value="Medium">Medium</option>
-                                    <option value="Large">Large</option>
-                                    <option value="X-Large">X-Large</option>
-                                </select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                {/* First row: Length and weight */}
-                                <div className="flex flex-col">
-                                    <label htmlFor="length" className="font-medium">Length </label>
-                                    <input
-                                        id="length"
-                                        name="length"
-                                        value={formData.length || ''}
-                                        onChange={handleChange}
-                                        type="number"
-                                        className="border rounded px-4 py-2 mt-1"
-                                        placeholder="0 cm"
-                                    />
-                                </div>
-                                <div className="flex flex-col">
-                                    <label htmlFor="weight" className="font-medium">weight </label>
-                                    <input
-                                        id="weight"
-                                        name="weight"
-                                        value={formData.weight || ''}
-                                        onChange={handleChange}
-                                        type="number"
-                                        className="border rounded px-4 py-2 mt-1"
-                                        placeholder="0 grams"
-                                    />
-                                </div>
-
-                                {/* Second row: Height and Breadth */}
-                                <div className="flex flex-col">
-                                    <label htmlFor="height" className="font-medium">Height </label>
-                                    <input
-                                        id="height"
-                                        name="height"
-                                        value={formData.height || ''}
-                                        onChange={handleChange}
-                                        type="number"
-                                        className="border rounded px-4 py-2 mt-1"
-                                        placeholder="0 cm"
-                                    />
-                                </div>
-                                <div className="flex flex-col">
-                                    <label htmlFor="breadth" className="font-medium">Breadth </label>
-                                    <input
-                                        id="breadth"
-                                        name="breadth"
-                                        value={formData.breadth || ''}
-                                        onChange={handleChange}
-                                        type="number"
-                                        className="border rounded px-4 py-2 mt-1"
-                                        placeholder="0 cm"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex flex-col flex-1">
-                                <label className="font-medium">Manufacturing Date</label>
-                                <input name="manufactureDate" value={formData.manufactureDate || ''} onChange={handleChange} type="date" className="border rounded px-4 py-2 mt-1" />
-                            </div>
+                        <div className="flex flex-col flex-1">
+                            <label className="font-medium">Manufacturing Date</label>
+                            <input name="manufactureDate" value={formData.manufactureDate || ''} onChange={handleChange} type="date" className="border rounded px-4 py-2 mt-1" />
                         </div>
                         <div className="flex flex-col">
                             <label className="font-medium">Product Category</label>
@@ -431,6 +373,71 @@ const AddProduct = () => {
                             </select>
                         </div>
                     </div>
+
+                    {/* Product Variants */}
+                    <div className="bg-white rounded-xl p-4 space-y-3 shadow">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-lg font-semibold underline">Product Variants (Optional)</h2>
+                            <button type="button" onClick={addVariant} className="bg-[#ECECF0] text-[#5737B4] px-3 py-1 rounded text-sm font-medium hover:bg-gray-200 transition">
+                                + Add Variant
+                            </button>
+                        </div>
+                        {variants.map((variant, index) => (
+                            <div key={index} className="border border-gray-200 rounded p-4 relative space-y-3">
+                                <button type="button" onClick={() => removeVariant(index)} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+                                    <RxCross2 className="w-5 h-5" />
+                                </button>
+                                <h3 className="font-medium text-gray-700">Variant {index + 1}</h3>
+                                
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Size</label>
+                                        <input type="text" value={variant.size} onChange={(e) => updateVariant(index, 'size', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="e.g. Small" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Weight Value</label>
+                                        <input type="text" value={variant.weight_value} onChange={(e) => updateVariant(index, 'weight_value', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="e.g. 500g" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Color Name</label>
+                                        <input type="text" value={variant.color_name} onChange={(e) => updateVariant(index, 'color_name', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="e.g. Red" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Color Code</label>
+                                        <input type="color" value={variant.color_code || '#000000'} onChange={(e) => updateVariant(index, 'color_code', e.target.value)} className="border rounded p-0 mt-1 h-8 w-full cursor-pointer" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Length (cm)</label>
+                                        <input type="number" value={variant.length} onChange={(e) => updateVariant(index, 'length', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="0" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Breadth (cm)</label>
+                                        <input type="number" value={variant.breadth} onChange={(e) => updateVariant(index, 'breadth', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="0" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Height (cm)</label>
+                                        <input type="number" value={variant.height} onChange={(e) => updateVariant(index, 'height', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="0" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Price Override (₹)</label>
+                                        <input type="number" value={variant.price} onChange={(e) => updateVariant(index, 'price', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="0" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Stock</label>
+                                        <input type="number" value={variant.stock} onChange={(e) => updateVariant(index, 'stock', e.target.value)} className="border rounded px-2 py-1 mt-1 text-sm" placeholder="0" />
+                                    </div>
+                                    <div className="flex flex-col justify-center">
+                                        <label className="flex items-center gap-2 mt-4 text-sm cursor-pointer">
+                                            <input type="checkbox" checked={variant.is_default} onChange={(e) => updateVariant(index, 'is_default', e.target.checked)} className="h-4 w-4 text-[#5737B4]" />
+                                            Set as Default
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                        {variants.length === 0 && <p className="text-sm text-gray-500 text-center py-2">No variants added. Base product will be used.</p>}
+                    </div>
+
                 </div>
 
                 {/* Right Column */}

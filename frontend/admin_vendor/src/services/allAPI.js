@@ -778,6 +778,7 @@ export const getVendorKycDocuments = async (vendorId) => {
   }
 };
 
+
 export const getCategoriesByAll = async () => {
   try {
     const token = localStorage.getItem("access_token");

@@ -3,7 +3,7 @@ import { GoArrowDownRight, GoArrowUpRight } from 'react-icons/go';
 import { HiOutlineDotsVertical } from 'react-icons/hi';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
-import { getVendorByIdApi } from '../../../services/allAPI';
+import { getVendorByIdApi, getVendorProductListApi } from '../../../services/allAPI';
 import axios from 'axios';
 
 const VendorDetails = () => {
@@ -17,21 +17,22 @@ const VendorDetails = () => {
     const fetchVendorProducts = async () => {
       try {
         const token = localStorage.getItem("access_token");
-        const payload = { pk: Number(id) };
-        console.log("Vendor ID (pk) sent to API:", id);
+        const vendorId = Number(id);
+        console.log("Vendor ID (pk) sent to API:", vendorId);
 
-        const response = await axios.post(
-          "http://127.0.0.1:8000/api/admin/list-vendor-products/",
-          payload,
-          {
-            headers: {
-              Authorization: `JWT ${token}`,  // or `Bearer ${token}`
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        setVendorProducts(response.data.data);
-        console.log(response);
+        const response = await getVendorProductListApi(vendorId);
+        
+        let products = [];
+        if (Array.isArray(response)) {
+            products = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+            products = response.data;
+        } else if (response?.data?.data && Array.isArray(response.data.data)) {
+            products = response.data.data;
+        }
+        
+        setVendorProducts(products);
+        console.log("Vendor Products:", products);
       } catch (error) {
         console.error("Error fetching vendor products:", error.response || error.message);
       }
@@ -71,7 +72,7 @@ const VendorDetails = () => {
   const fetchVendorDetails = async (vendorId) => {
     try {
       const data = await getVendorByIdApi(vendorId);
-      console.log("vendorrr",data.data);
+      console.log("vendorrr", data.data);
       setVendorData(data.data);
     } catch (error) {
       console.error("Error loading vendor details:", error);
@@ -255,36 +256,50 @@ const VendorDetails = () => {
           <thead>
             <tr className="text-xs md:text-sm text-gray-600">
               <th className="px-3 py-2 font-medium">S.NO</th>
-              <th className="px-3 py-2 font-medium ">Product Name</th>
-              <th className="px-3 py-2 font-medium"></th>
-              <th className="px-3 py-2 font-medium">Stock</th>
-              <th className="px-3 py-2 font-medium">Availability</th>
+              <th className="px-3 py-2 font-medium">Product Name</th>
+              <th className="px-3 py-2 font-medium">Category ID</th>
               <th className="px-3 py-2 font-medium">Price</th>
-              <th className="px-3 py-2 font-medium">Actions</th>
+              <th className="px-3 py-2 font-medium">Stock</th>
+              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">Highlights</th>
+              <th className="px-3 py-2 font-medium">Date Added</th>
+              <th className="px-3 py-2 font-medium text-center">Actions</th>
             </tr>
           </thead>
           <tbody>
             {vendorProducts.map((product, index) => (
-
               <tr key={index} className="hover:bg-gray-50">
                 <td className="px-3 py-2">{index + 1}</td>
-                <td className="px-3 py-2 text-[#5737B4] font-semibold  cursor-pointer">
+                <td className="px-3 py-2 text-[#5737B4] font-semibold cursor-pointer">
                   {product.name}
                 </td>
-                <td className="px-3 py-2">{product.sku}</td>
+                <td className="px-3 py-2 text-gray-500">{product.category || 'N/A'}</td>
+                <td className="px-3 py-2">${product.price}</td>
                 <td className="px-3 py-2">{product.stock}</td>
                 <td className="px-3 py-2">
-                  <div className="flex justify-center items-center">
+                  <div className="flex items-center gap-2">
                     <span
-                      className={`inline-block w-3 h-3 rounded-full ${
-                        product.is_available ? "bg-green-500" : "bg-red-500"
-                      }`}
+                      className={`inline-block w-3 h-3 rounded-full ${product.is_available ? "bg-green-500" : "bg-red-500"
+                        }`}
                       title={product.is_available ? "Available" : "Unavailable"}
                     ></span>
+                    <span className="text-sm">{product.is_available ? "Active" : "Inactive"}</span>
                   </div>
                 </td>
-                <td className="px-3 py-2">{product.price}</td>
-                <td className="px-3 py-2 relative">
+                <td className="px-3 py-2">
+                  <div className="flex gap-1 flex-wrap text-xs">
+                    {product.is_featured && <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Featured</span>}
+                    {product.is_new && <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">New</span>}
+                    {product.is_best_seller && <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded">Best Seller</span>}
+                    {product.is_top_rated && <span className="bg-purple-100 text-purple-800 px-2 py-1 rounded">Top Rated</span>}
+                    {product.is_popular && <span className="bg-pink-100 text-pink-800 px-2 py-1 rounded">Popular</span>}
+                    {(!product.is_featured && !product.is_new && !product.is_best_seller && !product.is_top_rated && !product.is_popular) && <span className="text-gray-400">-</span>}
+                  </div>
+                </td>
+                <td className="px-3 py-2 text-sm text-gray-500">
+                  {product.created_at ? new Date(product.created_at).toLocaleDateString() : 'N/A'}
+                </td>
+                <td className="px-3 py-2 relative flex justify-center mt-2">
                   <button
                     onClick={() => handleDropdownToggle(product.id)}
                     className="p-1 hover:bg-gray-100 rounded"
@@ -293,7 +308,7 @@ const VendorDetails = () => {
                   </button>
 
                   {activeDropdown === product.id && (
-                    <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                    <div className="absolute flex right-0 top-5 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
                       <button
                         onClick={() => handleAction('view', product.id)}
                         className="w-full px-3 py-2 text-sm hover:bg-gray-50 rounded-t-lg"

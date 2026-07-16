@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { transactionReportApi } from "../../../services/allAPI";
+import { transactionReportApi, exportReportApi } from "../../../services/allAPI";
 
 export default function TransactionReport() {
   const [transactions, setTransactions] = useState([]);
@@ -7,17 +7,23 @@ export default function TransactionReport() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchTransactions = async () => {
       try {
+        setIsLoading(true);
         const data = await transactionReportApi();
         setTransactions(data);
         setFilteredData(data);
         console.log("Transaction report data:", data);
       } catch (error) {
         console.error("Transaction report error:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchTransactions();
@@ -59,6 +65,46 @@ export default function TransactionReport() {
         acc + (Number(item.amount || 0) - (Number(item.refund || 0) + Number(item.gateway_fee || 0))),
       0
     );
+
+  const handleDownloadReport = async (format) => {
+    try {
+      setShowDownloadOptions(false);
+      setIsDownloading(true);
+      const tableData = filteredData.map((item) => {
+        const netReceived = Number(item.amount || 0) - (Number(item.refund || 0) + Number(item.gateway_fee || 0));
+        return {
+          date: new Date(item.date).toLocaleDateString("en-GB"),
+          order_id: item.order_id,
+          buyer: item.buyer,
+          payment_method: item.payment_method,
+          status: item.status,
+          amount: item.amount,
+          refund: item.refund,
+          gateway_fee: item.gateway_fee,
+          net_received: netReceived
+        };
+      });
+
+      const response = await exportReportApi(
+        "transaction_report",
+        format,
+        tableData
+      );
+
+      const blob = new Blob([response.data]);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `transaction_report.${format === "pdf" ? "pdf" : "xlsx"}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div className="bg-[#ECECF0] px-4 md:px-6 py-6 md:py-10 rounded-2xl w-full space-y-4">
@@ -102,10 +148,33 @@ export default function TransactionReport() {
             Apply Filter
           </button>
 
-          <button className="bg-[#5737B4] hover:bg-[#2f093d] text-white font-medium 
-                             px-6 py-2.5 rounded-md shadow-md hover:shadow-lg transition-all">
-            Download Report
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+              disabled={isDownloading}
+              className={`bg-[#5737B4] hover:bg-[#2f093d] text-white font-medium 
+                         px-6 py-2.5 rounded-md shadow-md hover:shadow-lg transition-all ${isDownloading ? 'opacity-70 cursor-not-allowed' : ''}`}
+            >
+              {isDownloading ? 'Downloading...' : 'Download Report'}
+            </button>
+
+            {showDownloadOptions && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-xl z-10 border border-gray-100">
+                <button
+                  onClick={() => handleDownloadReport("pdf")}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 first:rounded-t-md"
+                >
+                  Download as PDF
+                </button>
+                <button
+                  onClick={() => handleDownloadReport("excel")}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 last:rounded-b-md"
+                >
+                  Download as Excel
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       {/* Table */}
@@ -125,7 +194,19 @@ export default function TransactionReport() {
             </tr>
           </thead>
           <tbody>
-            {paginatedData.length > 0 ? (
+            {isLoading ? (
+              <tr>
+                <td
+                  colSpan={9}
+                  className="text-center py-6 text-gray-500 font-medium"
+                >
+                  <div className="flex justify-center items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-[#5737B4] border-t-transparent rounded-full animate-spin"></div>
+                    Loading data...
+                  </div>
+                </td>
+              </tr>
+            ) : paginatedData.length > 0 ? (
               paginatedData.map((item, index) => {
                 const netReceived =
                   Number(item.amount || 0) -
