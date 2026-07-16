@@ -162,3 +162,15 @@ def cancel_shiprocket_order(shiprocket_order_ids):
     CANCEL_URL = "https://apiv2.shiprocket.in/v1/external/orders/cancel"
     payload = {"ids": shiprocket_order_ids}
     return call_shiprocket_api(CANCEL_URL, payload=payload, method="POST")
+
+
+def verify_shiprocket_order(shiprocket_order_id):
+    """
+    Confirm/Verify an order in Shiprocket dashboard so it appears as 
+    'Ready to Ship' without manual vendor action in the Shiprocket panel.
+    Endpoint: POST /v1/external/orders/update/verify
+    Payload: { "ids": [<shiprocket_order_id>] }
+    """
+    VERIFY_URL = "https://apiv2.shiprocket.in/v1/external/orders/update/verify"
+    payload = {"ids": [int(shiprocket_order_id)]}
+    return call_shiprocket_api(VERIFY_URL, payload=payload, method="POST")

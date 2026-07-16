@@ -68,10 +68,9 @@ class ProductVariant(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='variants')
 
     # Variant attributes (all optional — vendor fills what applies)
-    size = models.CharField(max_length=50, blank=True, null=True)            # "Small", "Medium", "Large", "X-Large"
-    weight_value = models.CharField(max_length=100, blank=True, null=True)   # "250g", "500g", "1kg"
-    color_name = models.CharField(max_length=100, blank=True, null=True)     # "Red", "Matte Black"
-    color_code = models.CharField(max_length=7, blank=True, null=True)       # "#FF0000"
+    size = models.CharField(max_length=50, blank=True, null=True)
+    weight_value = models.CharField(max_length=100, blank=True, null=True)
+    color_image = models.ImageField(upload_to='variant_colors/', blank=True, null=True)  # ✅ NEW
 
     # Dimensions for this variant
     length = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
@@ -79,7 +78,7 @@ class ProductVariant(models.Model):
     height = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     # Price & Stock
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)  # overrides product base price if set
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     stock = models.PositiveIntegerField(default=0)
     is_default = models.BooleanField(default=False)
 
@@ -94,8 +93,6 @@ class ProductVariant(models.Model):
             parts.append(self.size)
         if self.weight_value:
             parts.append(self.weight_value)
-        if self.color_name:
-            parts.append(self.color_name)
         return " - ".join(parts)
 
 

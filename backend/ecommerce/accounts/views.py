@@ -39,8 +39,9 @@ import json
 from django.http import HttpResponse
 import openpyxl
 from io import BytesIO
-from reportlab.platypus import SimpleDocTemplate, Table
-from reportlab.lib.pagesizes import A4
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.pagesizes import A4, landscape
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 import time
 
 
@@ -1308,13 +1309,55 @@ class ExportReportView(APIView):
         return response
 
     def generate_pdf(self, data, report_type):
+        if not data:
+            data = [{"Message": "No data available for this report"}]
+
         output = BytesIO()
-        doc = SimpleDocTemplate(output, pagesize=A4)
-        table_data = [list(data[0].keys())] + [list(row.values()) for row in data]
+        doc = SimpleDocTemplate(
+            output, 
+            pagesize=landscape(A4),
+            leftMargin=20,
+            rightMargin=20,
+            topMargin=20,
+            bottomMargin=20
+        )
+        
+        headers = list(data[0].keys())
+        styles = getSampleStyleSheet()
+        cell_style = ParagraphStyle(
+            'TableCell',
+            parent=styles['Normal'],
+            fontSize=8,
+            leading=10
+        )
+        header_style = ParagraphStyle(
+            'TableHeader',
+            parent=cell_style,
+            fontName='Helvetica-Bold'
+        )
+
+        table_data = []
+        table_data.append([Paragraph(str(header), header_style) for header in headers])
+        
+        for row in data:
+            row_cells = []
+            for key in headers:
+                val = row.get(key, "")
+                row_cells.append(Paragraph(str(val), cell_style))
+            table_data.append(row_cells)
+
         table = Table(table_data)
+        
+        style = TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+        ])
+        table.setStyle(style)
         doc.build([table])
 
         output.seek(0)
-        response = HttpResponse(output, content_type="application/pdf")
+        response = HttpResponse(output.getvalue(), content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{report_type}.pdf"'
         return response

@@ -6,6 +6,7 @@ from accounts.models import FCMToken
 from .serializers import *
 from rest_framework.generics import GenericAPIView
 from firebase_admin import messaging
+from rest_framework.permissions import IsAuthenticated
 # Create your views here.
 
 class PromotionListCreateAPIView(generics.GenericAPIView):
@@ -272,25 +273,16 @@ class CouponAPIView(generics.GenericAPIView):
                 "message" : str(e)
             },status.HTTP_500_INTERNAL_SERVER_ERROR)            
 
+# ✅ Updated: Cart-based coupon — no product_id needed
 class ApplycouponAPIView(generics.GenericAPIView):
-    serializer_class=ApplyCouponSerializer
+    serializer_class = ApplyCartCouponSerializer
+    permission_classes = [IsAuthenticated]  # requires JWT token
 
-    def post(self,request):
-        serializer=self.get_serializer(data=request.data)
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
-
-        coupon=serializer.validated_data['coupon']
-        product=serializer.validated_data['product']
-        discount_price= serializer.apply_discount()
-
-        response_data = {
-            'product': productSerializer(product).data,
-            'coupon': coupon.name,
-            'original_price': product.price,
-            'discounted_price': discount_price,
-            'discount_value': coupon.discount_value
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
+        result = serializer.apply_discount()
+        return Response(result, status=status.HTTP_200_OK)
     
 class ApplyPromotionApiview(GenericAPIView):
     serializer_class=ApplyPromotionSerializer
@@ -302,25 +294,27 @@ class ApplyPromotionApiview(GenericAPIView):
         return Response(result,status=status.HTTP_200_OK)
     
 
+# ✅ Updated: Only returns active banners with category products
 class BannerAPIview(generics.GenericAPIView):
-    serializer_class=BannerSerilizer
-    queryset = Banner.objects.all()
+    serializer_class = BannerSerilizer
 
-    def get(self,request):
+    def get_queryset(self):
+        return Banner.objects.filter(is_active=True).select_related('category')
 
-        banners=self.get_queryset()
-        if banners:
-            serializer =self.get_serializer(banners,many=True)
+    def get(self, request):
+        banners = self.get_queryset()
+        if banners.exists():
+            serializer = self.get_serializer(banners, many=True, context={'request': request})
             return Response({
                 "status": "success",
-                "code" : status.HTTP_200_OK,
+                "code": status.HTTP_200_OK,
                 "message": serializer.data
             })
         return Response({
-        "status": "Failed",
-        "code": 404,
-        "message": "No banners found"
-    })
+            "status": "Failed",
+            "code": 404,
+            "message": "No active banners found"
+        })
     
     def post(self,request):
         try:
