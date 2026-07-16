@@ -50,10 +50,25 @@ class Coupon(models.Model):
         return f"{self.name} - {self.discount_value}% "
     
 class Banner(models.Model):
-    title=models.CharField(max_length=255)
-    image=models.ImageField(upload_to='banners')
-    is_active=models.BooleanField(default=True)
-    created_at=models.DateTimeField(auto_now_add=True)
+    title = models.CharField(max_length=255)
+    image = models.ImageField(upload_to='banners')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Link to a product category — all products in this category carry the offer
+    category = models.ForeignKey(
+        'products.Category',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='banners'
+    )
+    # Optional discount % to show as the offer on the banner
+    discount_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2,
+        null=True, blank=True,
+        help_text="Discount percentage shown on this banner (e.g. 20 for 20%)"
+    )
 
     def __str__(self):
         return self.title
