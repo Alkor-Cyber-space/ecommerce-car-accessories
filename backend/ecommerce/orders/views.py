@@ -718,10 +718,22 @@ class VendorOrderStatusUpdateView(APIView):
                     order.courier_name = sr_response.get("courier_name", "")
                     order.save()
 
+                # ✅ AUTO-VERIFY: Push order to "Ready to Ship" on Shiprocket dashboard
+                shiprocket_order_id = sr_response.get("order_id")
+                verify_response = None
+                if shiprocket_order_id:
+                    try:
+                        verify_response = verify_shiprocket_order(shiprocket_order_id)
+                        print(f"[VERIFY] Shiprocket verify response for order {shiprocket_order_id}: {verify_response}")
+                        if verify_response.get("error"):
+                            print(f"[VERIFY] Warning: Could not auto-verify order {shiprocket_order_id} on Shiprocket: {verify_response.get('details')}")
+                    except Exception as ve:
+                        print(f"[VERIFY] Warning: verify_shiprocket_order raised exception: {ve}")
 
                 return Response({
                     "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed and sent to Shiprocket",
                     "shiprocket_response": sr_response,
+                    "shiprocket_verify_response": verify_response,
                     "calculation_summary": {
                         "subtotal": float(subtotal),
                         "tax": float(total_tax),
