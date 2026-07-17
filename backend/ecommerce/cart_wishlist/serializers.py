@@ -56,8 +56,20 @@ class CartItemSerializer(serializers.ModelSerializer):
 # Cart Serializer
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
+    total_weight = serializers.SerializerMethodField()
 
     class Meta:
         model = Cart
-        fields = ['id', 'user', 'items', 'created_at', 'updated_at']
+        fields = ['id', 'user', 'items', 'total_weight', 'created_at', 'updated_at']
         read_only_fields = ['user']
+
+    def get_total_weight(self, obj):
+        """Total weight of all items in the cart (kg). Optional — None if no weight data available."""
+        total = 0.0
+        has_weight = False
+        for item in obj.items.all():
+            weight = getattr(item.product, 'weight', None)
+            if weight is not None:
+                total += float(weight) * item.quantity
+                has_weight = True
+        return round(total, 3) if has_weight else None

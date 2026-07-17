@@ -43,44 +43,153 @@ def format_phone_number(phone):
 class ShippingOptionsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+
     def post(self, request):
         """
-        Calculate available shipping rates from Shiprocket.
-        Expects:
+        Calculate available shipping rates from Shiprocket — per vendor.
+        Pickup postcode is auto-resolved from each vendor's saved address.
+
+        Request:
         {
-            "pickup_postcode": "400001",
-            "delivery_postcode": "411001",
-            "weight": 2.0,
-            "cod": 1,
-            "declared_value": 999
+            "product_ids": [1, 2, 3],     ← list of product IDs in the order
+            "delivery_postcode": "411001", ← customer pincode
+            "cod": 1,                      ← 1=COD, 0=Prepaid
+            "quantities": {"1": 2, "2": 1} ← optional: qty per product_id
+        }
+
+        Response:
+        {
+            "vendors": [
+                {
+                    "vendor_id": 3,
+                    "vendor_name": "Auto Parts Co",
+                    "pickup_postcode": "400001",
+                    "total_weight": 4.0,
+                    "options": [
+                        {
+                            "courier_name": "Bluedart",
+                            "rate": 120.0,
+                            "etd": "2026-07-19 23:59:00",
+                            "courier_company_id": 127
+                        }
+                    ]
+                }
+            ]
         }
         """
-        payload = {
-            "pickup_postcode": request.data.get("pickup_postcode"),
-            "delivery_postcode": request.data.get("delivery_postcode"),
-            "weight": float(request.data.get("weight", 0.5)),
-            "cod": int(request.data.get("cod", 0)),
-            "declared_value": float(request.data.get("declared_value", 0)),
-        }
-        print(payload)
+        from products.models import Product
+        from accounts.models import Address
 
-        try:
-            rates = calculate_shipping_rate(payload)
-            if rates.get("data") and "available_courier_companies" in rates["data"]:
+        product_ids = request.data.get("product_ids", [])
+        delivery_postcode = request.data.get("delivery_postcode")
+        cod = int(request.data.get("cod", 0))
+        quantities = request.data.get("quantities", {})  # {"product_id": qty}
+
+        if not product_ids:
+            return Response({"error": "product_ids is required"}, status=status.HTTP_400_BAD_REQUEST)
+        if not delivery_postcode:
+            return Response({"error": "delivery_postcode is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch all products
+        products = Product.objects.filter(id__in=product_ids).select_related("vendor")
+        if not products.exists():
+            return Response({"error": "No valid products found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Group products by vendor
+        vendor_products_map = {}
+        for product in products:
+            vendor = product.vendor
+            if vendor.id not in vendor_products_map:
+                vendor_products_map[vendor.id] = {
+                    "vendor": vendor,
+                    "products": [],
+                }
+            vendor_products_map[vendor.id]["products"].append(product)
+
+        results = []
+        for vendor_id, data in vendor_products_map.items():
+            vendor = data["vendor"]
+            vendor_products = data["products"]
+
+            # Resolve pickup postcode from vendor's saved address
+            vendor_address = Address.objects.filter(user=vendor).first()
+            pickup_postcode = vendor_address.postal_code if vendor_address and vendor_address.postal_code else None
+
+            if not pickup_postcode:
+                results.append({
+                    "vendor_id": vendor.id,
+                    "vendor_name": getattr(getattr(vendor, "vendor_profile", None), "company_name", None) or vendor.username,
+                    "pickup_postcode": None,
+                    "total_weight": None,
+                    "options": [],
+                    "error": "Vendor has no address — pickup postcode unavailable",
+                })
+                continue
+
+            # Calculate total weight from product weights × quantities
+            total_weight = 0.0
+            has_weight = False
+            # Use max dimensions from vendor's products for parcel size
+            max_length = max_breadth = max_height = 10.0
+            for product in vendor_products:
+                qty = int(quantities.get(str(product.id), 1))
+                w = getattr(product, "weight", None)
+                if w is not None:
+                    total_weight += float(w) * qty
+                    has_weight = True
+                l = getattr(product, "length", None)
+                b = getattr(product, "breadth", None)
+                h = getattr(product, "height", None)
+                if l: max_length = max(max_length, float(l))
+                if b: max_breadth = max(max_breadth, float(b))
+                if h: max_height = max(max_height, float(h))
+
+            total_weight = round(total_weight, 3) if has_weight else 0.5  # default 500g
+
+            payload = {
+                "pickup_postcode": pickup_postcode,
+                "delivery_postcode": delivery_postcode,
+                "weight": total_weight,
+                "cod": cod,
+                "length": max_length,
+                "breadth": max_breadth,
+                "height": max_height,
+            }
+            print(f"[ShippingOptions] Vendor #{vendor.id} → pickup: {pickup_postcode}, payload: {payload}")
+
+            try:
+                rates = calculate_shipping_rate(payload)
                 options = []
-                for courier in rates["data"]["available_courier_companies"]:
-                    options.append({
-                        "courier_name": courier["courier_name"],
-                        "rate": Decimal(str(courier["rate"])),
-                        "etd": courier.get("etd"),  # estimated days
-                        "courier_company_id": courier["courier_company_id"],
-                    })
-                return Response({"options": options}, status=status.HTTP_200_OK)
+                if rates.get("data") and "available_courier_companies" in rates["data"]:
+                    for courier in rates["data"]["available_courier_companies"]:
+                        options.append({
+                            "courier_name": courier["courier_name"],
+                            "rate": float(courier["rate"]),
+                            "etd": courier.get("etd"),
+                            "courier_company_id": courier["courier_company_id"],
+                        })
 
-            return Response({"error": "No couriers available"}, status=status.HTTP_400_BAD_REQUEST)
+                results.append({
+                    "vendor_id": vendor.id,
+                    "vendor_name": getattr(getattr(vendor, "vendor_profile", None), "company_name", None) or vendor.username,
+                    "pickup_postcode": pickup_postcode,
+                    "total_weight": total_weight,
+                    "options": options,
+                })
 
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            except Exception as e:
+                results.append({
+                    "vendor_id": vendor.id,
+                    "vendor_name": getattr(getattr(vendor, "vendor_profile", None), "company_name", None) or vendor.username,
+                    "pickup_postcode": pickup_postcode,
+                    "total_weight": total_weight,
+                    "options": [],
+                    "error": str(e),
+                })
+
+        return Response({"vendors": results}, status=status.HTTP_200_OK)
+
+
 
 
 # class CheckoutViewSet(viewsets.ViewSet):
@@ -283,8 +392,7 @@ class CheckoutViewSet(viewsets.ViewSet):
         tax_rate = Decimal("0.18")
         shipping_fee = Decimal(str(request.data.get("shipping_fee", "0.00")))
         courier_company_id = request.data.get("courier_company_id")
-
-        print(shipping_fee)
+        apply_coup_amt = Decimal(str(request.data.get("Apply_coup_Amt", "0.00")))
 
         for item in items:
             product = item['product']
@@ -292,14 +400,17 @@ class CheckoutViewSet(viewsets.ViewSet):
             subtotal += product.price * quantity
 
         tax = subtotal * tax_rate
-        total = subtotal + tax + shipping_fee
-        print(total)
+        total = subtotal + tax + shipping_fee - apply_coup_amt
+        if total < Decimal("0.00"):
+            total = Decimal("0.00")
+
         # Create pending order
         order = Order.objects.create(
             user=user,
             shipping_address=shipping_address,
             tax=tax,
             shipping_cost=shipping_fee,
+            discount=apply_coup_amt,
             total_price=total,
             status="pending",  # initial state
             payment_method=payment_method,
@@ -319,22 +430,175 @@ class CheckoutViewSet(viewsets.ViewSet):
         if payment_method == 'cod':
             order.save()
 
-        # Payment metadata
+        # Shiprocket Order Registration & Courier Slot Reservation
+        sr_response = None
+        if items and shipping_address:
+            first_product = items[0]['product']
+            vendor = first_product.vendor
+            vendor_profile = getattr(vendor, 'vendor_profile', None)
+            pickup_location = "VENDOR_2"
+            if vendor_profile and vendor_profile.pickup_location:
+                pickup_location = vendor_profile.pickup_location
+            else:
+                if vendor_profile:
+                    from accounts.models import Address as UserAddress
+                    vendor_address = UserAddress.objects.filter(user=vendor).first()
+                    if vendor_address:
+                        pickup_name = f"VENDOR_{vendor_profile.id}"
+                        pickup_payload = {
+                            "pickup_location": pickup_name,
+                            "name": vendor_profile.company_name or vendor.username,
+                            "email": vendor_profile.company_email or vendor.email,
+                            "phone": format_phone_number(
+                                vendor_profile.contact_number or vendor_address.phone_number or getattr(vendor, 'phone_number', None)
+                            ) or "9999999999",
+                            "address": vendor_address.line1 or "",
+                            "address_2": vendor_address.line2 or "",
+                            "city": vendor_address.city or "",
+                            "state": vendor_address.state or "",
+                            "country": vendor_address.country or "India",
+                            "pin_code": vendor_address.postal_code or "",
+                        }
+                        try:
+                            sr_pickup_response = create_pickup_location(pickup_payload)
+                            if not sr_pickup_response.get("error"):
+                                vendor_profile.pickup_location = pickup_name
+                                vendor_profile.save()
+                                pickup_location = pickup_name
+                        except Exception:
+                            pass
+
+            sr_items = []
+            for item in items:
+                prod = item['product']
+                sr_items.append({
+                    "name": prod.name,
+                    "sku": f"SKU-{prod.id}",
+                    "units": item['quantity'],
+                    "selling_price": float(prod.price),
+                    "discount": 0,
+                    "tax": 0,
+                    "hsn": getattr(prod, "hsn", "8708")
+                })
+
+            length = float(first_product.length) if getattr(first_product, 'length', None) else 10.0
+            breadth = float(first_product.breadth) if getattr(first_product, 'breadth', None) else 10.0
+            height = float(first_product.height) if getattr(first_product, 'height', None) else 10.0
+            weight = float(first_product.weight) if getattr(first_product, 'weight', None) else 1.0
+
+            billing_phone = format_phone_number(
+                getattr(shipping_address, "phone_number", None) or getattr(user, "phone_number", None)
+            ) or "919999999999"
+
+            order_payload = {
+                "order_id": str(order.id),
+                "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
+                "pickup_location": pickup_location,
+                "comment": f"Order #{order.id} checkout by {user.email}",
+                "billing_customer_name": user.first_name or user.username,
+                "billing_last_name": user.last_name or "",
+                "billing_address": shipping_address.line1 or "",
+                "billing_address_2": shipping_address.line2 or "",
+                "billing_city": shipping_address.city or "",
+                "billing_pincode": shipping_address.postal_code or "",
+                "billing_state": shipping_address.state or "",
+                "billing_country": shipping_address.country or "India",
+                "billing_email": user.email,
+                "billing_phone": billing_phone,
+                
+                "shipping_is_billing": True,
+                "shipping_customer_name": user.first_name or user.username,
+                "shipping_last_name": user.last_name or "",
+                "shipping_address": shipping_address.line1 or "",
+                "shipping_address_2": shipping_address.line2 or "",
+                "shipping_city": shipping_address.city or "",
+                "shipping_pincode": shipping_address.postal_code or "",
+                "shipping_country": shipping_address.country or "India",
+                "shipping_state": shipping_address.state or "",
+                "shipping_email": user.email,
+                "shipping_phone": billing_phone,
+                
+                "payment_method": "COD" if payment_method == "cod" else "Prepaid",
+                "order_items": sr_items,
+                
+                "sub_total": float(subtotal),
+                "tax_total": float(tax),
+                "shipping_charges": float(shipping_fee),
+                "total_amount": float(total),
+                
+                "length": length,
+                "breadth": breadth,
+                "height": height,
+                "weight": weight
+            }
+
+            if courier_company_id:
+                order_payload["courier_company_id"] = str(courier_company_id)
+
+            try:
+                sr_response = create_shiprocket_order(order_payload)
+                sr_message = sr_response.get("message", "")
+                sr_details = sr_response.get("details", {})
+                if not sr_message and isinstance(sr_details, dict):
+                    sr_message = sr_details.get("message", "")
+
+                if "Wrong Pickup location" in str(sr_message) or "Wrong Pickup location" in str(sr_details):
+                    suggested_locations = []
+                    data_block = sr_response.get("data", {})
+                    if not data_block and isinstance(sr_details, dict):
+                        data_block = sr_details.get("data", {})
+
+                    if isinstance(data_block, dict) and "data" in data_block:
+                        suggested_locations = data_block["data"]
+                    elif isinstance(data_block, list):
+                        suggested_locations = data_block
+
+                    matched_location = None
+                    if suggested_locations:
+                        for loc in suggested_locations:
+                            if loc.get("status") == 1 and loc.get("phone_verified") == 1:
+                                matched_location = loc["pickup_location"]
+                                break
+
+                    if matched_location:
+                        if vendor_profile:
+                            vendor_profile.pickup_location = matched_location
+                            vendor_profile.save()
+                        order_payload["pickup_location"] = matched_location
+                        sr_response = create_shiprocket_order(order_payload)
+
+                if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
+                    order.shiprocket_order_id = str(sr_response.get("order_id", ""))
+                    order.shipment_id = str(sr_response.get("shipment_id", ""))
+                    order.awb_code = sr_response.get("awb_code", "")
+                    order.courier_name = sr_response.get("courier_name", "")
+                    order.save()
+            except Exception as e:
+                sr_response = {"error": True, "message": str(e)}
+
+        # Payment metadata & gateway trigger
         gateway_response = None
         if payment_method != 'cod':
             metadata = {"order_id": str(order.id)}
             try:
                 gateway_handler = get_payment_gateway(payment_method)
-                gateway_response = gateway_handler(user, float(total) / 100, metadata)
+                gateway_response = gateway_handler(user, float(total), metadata)
+                if payment_method == 'razorpay':
+                    order.payment_id = gateway_response.get("order_id")
+                elif payment_method == 'stripe':
+                    order.payment_id = gateway_response.get("id")
+                order.save()
             except Exception as e:
                 order.delete()
                 raise ValidationError(str(e))
 
         return Response({
-            "amount": float(total),
-            "payment_gateway_response": gateway_response,
             "order_id": order.id,
-            "message": "Order created successfully and awaiting vendor confirmation"
+            "amount": round(float(total)),
+            "payment_method": payment_method,
+            "payment_gateway_response": gateway_response,
+            "shiprocket_response": sr_response,
+            "message": "Checkout initiated successfully."
         }, status=status.HTTP_200_OK)
  
 

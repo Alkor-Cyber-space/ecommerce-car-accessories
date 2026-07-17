@@ -9,7 +9,8 @@ def initiate_payment_intent(user,amount, metadata):
         currency="inr",  # Change to your desired currency
         metadata=metadata,
     )
-    return{
+    return {
+        "id": intent.id,
         "client_secret": intent.client_secret,
     }
 

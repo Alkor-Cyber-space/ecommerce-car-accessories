@@ -252,8 +252,6 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                         product=product,
                         size=variant.get('size', '') or None,
                         weight_value=variant.get('weight_value', '') or None,
-                        color_name=variant.get('color_name', '') or None,
-                        color_code=variant.get('color_code', '') or None,
                         length=variant.get('length') or None,
                         breadth=variant.get('breadth') or None,
                         height=variant.get('height') or None,
@@ -261,6 +259,7 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                         stock=variant.get('stock', 0),
                         is_default=variant.get('is_default', False),
                     )
+
 
         return Response(
             {"message": "Product created successfully.", "product": ProductSerializer(product).data},
