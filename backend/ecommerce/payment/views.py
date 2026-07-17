@@ -12,20 +12,53 @@ from rest_framework import status
 from orders.models import Order
 from rest_framework import permissions
 from rest_framework.response import Response
-from .factory import get_gateway_verifier
+from .factory import get_gateway_verifier, get_payment_gateway
 from payment.razorpay_payment import verify_razorpay_payment
 
-# Create your views here.
-stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
 
+class InitiatePaymentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
 
+    def post(self, request):
+        order_id = request.data.get("order_id") or request.data.get("internal_order_id")
+        payment_method = request.data.get("payment_method")
+
+        if not order_id or not payment_method:
+            return Response({"error": "order_id and payment_method are required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.filter(id=order_id, user=request.user).first()
+        if not order:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            gateway_handler = get_payment_gateway(payment_method)
+            metadata = {"order_id": str(order.id)}
+            gateway_response = gateway_handler(request.user, float(order.total_price), metadata)
+            
+            # Save the payment ID/Order ID to the model
+            if payment_method == "razorpay":
+                order.payment_id = gateway_response.get("order_id")
+            elif payment_method == "stripe":
+                order.payment_id = gateway_response.get("id")
+            
+            order.payment_method = payment_method
+            order.save()
+
+            return Response({
+                "order_id": order.id,
+                "amount": float(order.total_price),
+                "payment_method": payment_method,
+                "payment_gateway_response": gateway_response
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class VerifyPaymentView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        internal_order_id = request.data.get("internal_order_id")  # Our DB order
+        internal_order_id = request.data.get("internal_order_id") or request.data.get("order_id")
         payment_method = request.data.get("payment_method")
 
         # Gateway-specific payment details
@@ -35,15 +68,12 @@ class VerifyPaymentView(APIView):
         stripe_payment_id = request.data.get("stripe_payment_id")
 
         print(f"Verifying payment for order {internal_order_id} with method {payment_method}")
-        print(f"Razorpay Order ID: {razorpay_order_id}, Payment ID: {razorpay_payment_id}, Signature: {razorpay_signature}")
 
         order = Order.objects.filter(id=internal_order_id, user=request.user).first()
-        print(f"Order found: {order}")
         if not order:
             return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
         verifier = get_gateway_verifier(payment_method)
-        print(f"Using verifier: {verifier}")
         if payment_method == "razorpay":
             verified = verifier(razorpay_order_id, razorpay_payment_id, razorpay_signature)
         elif payment_method == "stripe":
@@ -53,13 +83,115 @@ class VerifyPaymentView(APIView):
 
         if verified:
             order.status = "paid"
-            print(order.status)
             order.save()
             return Response({"status": "success"}, status=status.HTTP_200_OK)
         else:
-            order.status = "failed"
+            order.status = "cancelled"
             order.save()
             return Response({"status": "failed"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PaymentStatusView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, order_id=None, payment_id=None):
+        # Support lookups via URL kwargs, or query parameters
+        order_id = order_id or request.query_params.get("order_id") or request.query_params.get("internal_order_id")
+        payment_id = payment_id or request.query_params.get("payment_id")
+
+        order = None
+        if order_id:
+            order = Order.objects.filter(id=order_id, user=request.user).first()
+        elif payment_id:
+            order = Order.objects.filter(payment_id=payment_id, user=request.user).first()
+
+        if not order:
+            return Response({"error": "Order/Payment not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Dynamically sync payment status with the gateway if currently pending
+        if order.status == "pending" and order.payment_id:
+            if order.payment_method == "stripe":
+                try:
+                    import stripe
+                    stripe.api_key = settings.STRIPE_TEST_SECRET_KEY
+                    intent = stripe.PaymentIntent.retrieve(order.payment_id)
+                    if intent.status == "succeeded":
+                        order.status = "paid"
+                        order.save()
+                    elif intent.status in ["canceled", "requires_payment_method"]:
+                        order.status = "cancelled"
+                        order.save()
+                except Exception as e:
+                    print(f"Error auto-verifying Stripe payment {order.payment_id}: {e}")
+
+            elif order.payment_method == "razorpay":
+                try:
+                    import razorpay
+                    client = razorpay.Client(auth=(settings.RAZORPAY_TEST_KEY_ID, settings.RAZORPAY_TEST_KEY_SECRET))
+                    rz_order = client.order.fetch(order.payment_id)
+                    if rz_order.get("status") == "paid":
+                        order.status = "paid"
+                        order.save()
+                except Exception as e:
+                    print(f"Error auto-verifying Razorpay order {order.payment_id}: {e}")
+
+        return Response({
+            "order_id": order.id,
+            "payment_id": order.payment_id,
+            "payment_method": order.payment_method,
+            "status": order.status,
+            "total_price": float(order.total_price)
+        }, status=status.HTTP_200_OK)
+
+
+class InitiateCODPaymentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        order_id = request.data.get("order_id") or request.data.get("internal_order_id")
+        if not order_id:
+            return Response({"error": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.filter(id=order_id, user=request.user).first()
+        if not order:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        order.payment_method = 'cod'
+        order.status = 'pending'
+        order.save()  # Triggers stock deduction if COD by saving the order again
+
+        return Response({
+            "order_id": order.id,
+            "payment_method": order.payment_method,
+            "status": order.status,
+            "total_price": float(order.total_price),
+            "message": "COD payment initiated/selected successfully."
+        }, status=status.HTTP_200_OK)
+
+
+class ConfirmCODPaymentView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        order_id = request.data.get("order_id") or request.data.get("internal_order_id")
+        if not order_id:
+            return Response({"error": "order_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.filter(id=order_id, user=request.user).first()
+        if not order:
+            return Response({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.payment_method != 'cod':
+            return Response({"error": "Not a COD order"}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.status = 'paid'
+        order.save()
+
+        return Response({
+            "order_id": order.id,
+            "status": order.status,
+            "message": "COD payment/order confirmed successfully."
+        }, status=status.HTTP_200_OK)
 
 @csrf_exempt
 def stripe_webhook(request):

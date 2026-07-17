@@ -89,6 +89,8 @@ class OrderSerializer(serializers.ModelSerializer):
     user_info = serializers.SerializerMethodField()
 
     
+    status = serializers.SerializerMethodField()
+    
     class Meta:
         model = Order
         fields = [
@@ -97,6 +99,15 @@ class OrderSerializer(serializers.ModelSerializer):
             'courier_company_id', 'shiprocket_order_id', 'shipment_id', 'courier_name', 'awb_code', 'tracking_url', 'stock_deducted'
         ]
         read_only_fields = ['user', 'user_info', 'status', 'created_at', 'updated_at', 'total_price', 'tax', 'shipping_cost', 'items', 'shiprocket_order_id', 'shipment_id', 'courier_name', 'awb_code', 'tracking_url', 'stock_deducted', 'subtotal']
+
+    def get_status(self, obj):
+        if obj.status == 'pending' and obj.payment_method != 'cod':
+            return 'cancelled'
+        if obj.status == 'paid':
+            return 'processing'
+        if obj.status == 'confirmed':
+            return 'paid'
+        return obj.status
 
     def get_subtotal(self, obj):
         try:
@@ -184,6 +195,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
     customer_email = serializers.CharField(source='user.email', read_only=True)
     customer_phone = serializers.CharField(source='user.phone_number', read_only=True)
     shipping_address_details = serializers.SerializerMethodField()
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -193,6 +205,15 @@ class VendorOrderSerializer(serializers.ModelSerializer):
             'courier_company_id', 'shiprocket_order_id', 'shipment_id', 'shipping_cost', 'courier_name', 'awb_code', 'tracking_url', 'created_at',
             'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost'
         ]
+
+    def get_status(self, obj):
+        if obj.status == 'pending' and obj.payment_method != 'cod':
+            return 'cancelled'
+        if obj.status == 'paid':
+            return 'processing'
+        if obj.status == 'confirmed':
+            return 'paid'
+        return obj.status
 
 
     def _get_vendor(self, obj):
