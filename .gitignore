@@ -192,3 +192,14 @@ sketch
 
 serviceAccountKey.json
 /migrations/
+venv/
+.env
+db.sqlite3
+__pycache__/
+*.pyc
+media/
+node_modules/
+dist/
+.vscode/
+.idea/
+*.log
