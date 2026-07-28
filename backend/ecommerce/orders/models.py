@@ -29,7 +29,7 @@ class Order(models.Model):
     shipping_address = models.ForeignKey(Address, on_delete=models.SET_NULL, null=True, blank=True)
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cod')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
-    courier_company_id= models.IntegerField()
+    courier_company_id = models.IntegerField(null=True, blank=True)
     shipment_id = models.CharField(max_length=255, blank=True, null=True)
     courier_name = models.CharField(max_length=255, blank=True, null=True)
     awb_code = models.CharField(max_length=255, blank=True, null=True)   # Tracking number

@@ -48,7 +48,7 @@ class ProductVariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductVariant
         fields = [
-            'id', 'size', 'weight_value', 'color_image',
+            'id', 'size', 'weight_value', 'color_name', 'color_code', 'color_image',
             'length', 'breadth', 'height',
             'price', 'stock', 'is_default', 'created_at'
         ]

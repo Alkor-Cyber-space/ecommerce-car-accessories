@@ -191,6 +191,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
     vendor_total_price = serializers.SerializerMethodField()
     vendor_tax = serializers.SerializerMethodField()
     vendor_shipping_cost = serializers.SerializerMethodField()
+    vendor_total_weight = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
     customer_email = serializers.CharField(source='user.email', read_only=True)
     customer_phone = serializers.CharField(source='user.phone_number', read_only=True)
@@ -203,7 +204,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
             'id', 'user', 'payment_method', 'status',
             'customer_name', 'customer_email', 'customer_phone', 'shipping_address_details',
             'courier_company_id', 'shiprocket_order_id', 'shipment_id', 'shipping_cost', 'courier_name', 'awb_code', 'tracking_url', 'created_at',
-            'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost'
+            'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost', 'vendor_total_weight'
         ]
 
     def get_status(self, obj):
@@ -271,3 +272,17 @@ class VendorOrderSerializer(serializers.ModelSerializer):
             return Decimal('0.00')
         items = obj.items.filter(product__vendor=vendor)
         return Decimal('100.00') if items.exists() else Decimal('0.00')
+
+    def get_vendor_total_weight(self, obj):
+        vendor = self._get_vendor(obj)
+        if vendor is None:
+            return 0.0
+        items = obj.items.filter(product__vendor=vendor)
+        total_weight = 0.0
+        for item in items:
+            try:
+                w = float(item.product.weight) if getattr(item.product, 'weight', None) else 0.0
+            except (ValueError, TypeError):
+                w = 0.0
+            total_weight += w * item.quantity
+        return round(total_weight, 2)

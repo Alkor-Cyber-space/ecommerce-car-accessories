@@ -46,148 +46,226 @@ class ShippingOptionsView(APIView):
 
     def post(self, request):
         """
-        Calculate available shipping rates from Shiprocket — per vendor.
-        Pickup postcode is auto-resolved from each vendor's saved address.
+        Calculate available shipping rates from Shiprocket — resolved from user's cart.
 
-        Request:
+        Frontend sends:
         {
-            "product_ids": [1, 2, 3],     ← list of product IDs in the order
-            "delivery_postcode": "411001", ← customer pincode
-            "cod": 1,                      ← 1=COD, 0=Prepaid
-            "quantities": {"1": 2, "2": 1} ← optional: qty per product_id
+            "delivery_postcode": "411001",  ← customer destination pincode
+            "weight": 2.0,                  ← total parcel weight in kg
+            "cod": 1,                       ← 1=COD, 0=Prepaid
+            "user_id": 5,                   ← optional, defaults to logged-in user
+            "length": 30,                   ← optional parcel dimensions
+            "breadth": 20,
+            "height": 15
         }
 
-        Response:
-        {
-            "vendors": [
-                {
-                    "vendor_id": 3,
-                    "vendor_name": "Auto Parts Co",
-                    "pickup_postcode": "400001",
-                    "total_weight": 4.0,
-                    "options": [
-                        {
-                            "courier_name": "Bluedart",
-                            "rate": 120.0,
-                            "etd": "2026-07-19 23:59:00",
-                            "courier_company_id": 127
-                        }
-                    ]
-                }
-            ]
-        }
+        Backend auto-resolves:
+        - The user's active cart items
+        - Groups products by vendor
+        - Resolves each vendor's pickup_postcode from their saved Address
+        - Calls Shiprocket serviceability API per vendor
         """
-        from products.models import Product
-        from accounts.models import Address
+        from accounts.models import Address, CustomUser
+        from cart_wishlist.models import Cart, CartItem
 
-        product_ids = request.data.get("product_ids", [])
         delivery_postcode = request.data.get("delivery_postcode")
-        cod = int(request.data.get("cod", 0))
-        quantities = request.data.get("quantities", {})  # {"product_id": qty}
-
-        if not product_ids:
-            return Response({"error": "product_ids is required"}, status=status.HTTP_400_BAD_REQUEST)
         if not delivery_postcode:
             return Response({"error": "delivery_postcode is required"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Fetch all products
-        products = Product.objects.filter(id__in=product_ids).select_related("vendor")
-        if not products.exists():
-            return Response({"error": "No valid products found"}, status=status.HTTP_400_BAD_REQUEST)
+        # Resolve user: frontend can pass user_id, fallback to authenticated user
+        user_id = request.data.get("user_id")
+        if user_id:
+            try:
+                target_user = CustomUser.objects.get(id=user_id)
+            except CustomUser.DoesNotExist:
+                return Response({"error": "User not found"}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            target_user = request.user
 
-        # Group products by vendor
-        vendor_products_map = {}
-        for product in products:
-            vendor = product.vendor
-            if vendor.id not in vendor_products_map:
-                vendor_products_map[vendor.id] = {
+        # Parse weight and cod
+        try:
+            weight = float(request.data.get("weight", 0.5))
+            cod = int(request.data.get("cod", 0))
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid format for weight or cod"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Parse optional dimensions
+        extra_dims = {}
+        try:
+            for dim in ["length", "breadth", "height"]:
+                val = request.data.get(dim)
+                if val is not None:
+                    extra_dims[dim] = float(val)
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid format for length, breadth, or height"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Fetch user's cart and cart items
+        cart = Cart.objects.filter(user=target_user).first()
+        if not cart:
+            return Response({"error": "No active cart found for this user"}, status=status.HTTP_400_BAD_REQUEST)
+
+        cart_items = CartItem.objects.filter(cart=cart).select_related("product", "product__vendor")
+        if not cart_items.exists():
+            return Response({"error": "Cart is empty"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Group cart items by vendor
+        vendor_items_map = {}
+        for item in cart_items:
+            vendor = item.product.vendor
+            if vendor.id not in vendor_items_map:
+                vendor_items_map[vendor.id] = {
                     "vendor": vendor,
-                    "products": [],
+                    "items": [],
                 }
-            vendor_products_map[vendor.id]["products"].append(product)
+            vendor_items_map[vendor.id]["items"].append(item)
 
         results = []
-        for vendor_id, data in vendor_products_map.items():
+        total_shipping_cost = Decimal("0.00")
+        for vendor_id, data in vendor_items_map.items():
             vendor = data["vendor"]
-            vendor_products = data["products"]
+            vendor_profile = getattr(vendor, "vendor_profile", None)
+            vendor_name = getattr(vendor_profile, "company_name", None) or vendor.username
 
-            # Resolve pickup postcode from vendor's saved address
+            # Resolve pickup postcode from vendor's saved Address
             vendor_address = Address.objects.filter(user=vendor).first()
             pickup_postcode = vendor_address.postal_code if vendor_address and vendor_address.postal_code else None
 
             if not pickup_postcode:
+                cheapest_option = {
+                    "courier_name": "Default Courier",
+                    "rate": 50.0,
+                    "etd": None,
+                    "corrected_etd": None,
+                    "estimated_delivery_days": "3-5 days",
+                    "courier_company_id": 127
+                }
+                total_shipping_cost += Decimal("50.00")
                 results.append({
                     "vendor_id": vendor.id,
-                    "vendor_name": getattr(getattr(vendor, "vendor_profile", None), "company_name", None) or vendor.username,
+                    "vendor_name": vendor_name,
                     "pickup_postcode": None,
                     "total_weight": None,
+                    "pickup_location": getattr(vendor_profile, "pickup_location", None),
+                    "selected_courier": cheapest_option,
                     "options": [],
                     "error": "Vendor has no address — pickup postcode unavailable",
                 })
                 continue
 
-            # Calculate total weight from product weights × quantities
-            total_weight = 0.0
-            has_weight = False
-            # Use max dimensions from vendor's products for parcel size
-            max_length = max_breadth = max_height = 10.0
-            for product in vendor_products:
-                qty = int(quantities.get(str(product.id), 1))
-                w = getattr(product, "weight", None)
-                if w is not None:
-                    total_weight += float(w) * qty
-                    has_weight = True
-                l = getattr(product, "length", None)
-                b = getattr(product, "breadth", None)
-                h = getattr(product, "height", None)
-                if l: max_length = max(max_length, float(l))
-                if b: max_breadth = max(max_breadth, float(b))
-                if h: max_height = max(max_height, float(h))
+            # Calculate total weight for this vendor's items in the cart
+            vendor_total_weight = 0.0
+            for item in data["items"]:
+                try:
+                    w = float(item.product.weight) if getattr(item.product, 'weight', None) else 0.0
+                except (ValueError, TypeError):
+                    w = 0.0
+                vendor_total_weight += w * item.quantity
 
-            total_weight = round(total_weight, 3) if has_weight else 0.5  # default 500g
+            if vendor_total_weight <= 0.0:
+                vendor_total_weight = weight
 
             payload = {
                 "pickup_postcode": pickup_postcode,
                 "delivery_postcode": delivery_postcode,
-                "weight": total_weight,
+                "weight": vendor_total_weight,
                 "cod": cod,
-                "length": max_length,
-                "breadth": max_breadth,
-                "height": max_height,
+                **extra_dims,
             }
-            print(f"[ShippingOptions] Vendor #{vendor.id} → pickup: {pickup_postcode}, payload: {payload}")
+            print(f"[ShippingOptions] Vendor #{vendor.id} ({vendor_name}) -> pickup: {pickup_postcode}, payload: {payload}")
 
             try:
                 rates = calculate_shipping_rate(payload)
                 options = []
                 if rates.get("data") and "available_courier_companies" in rates["data"]:
                     for courier in rates["data"]["available_courier_companies"]:
+                        etd_str = courier.get("etd")
+                        corrected_etd = etd_str
+                        estimated_days = "3-5 days"
+                        
+                        if etd_str:
+                            try:
+                                from datetime import datetime, date, timedelta
+                                etd_date = None
+                                for fmt in ("%Y-%m-%d", "%b %d, %Y", "%B %d, %Y"):
+                                    try:
+                                        etd_date = datetime.strptime(etd_str.strip(), fmt).date()
+                                        break
+                                    except ValueError:
+                                        continue
+
+                                if etd_date:
+                                    today = date.today()
+                                    transit_days = (etd_date - today).days
+                                    if transit_days < 1:
+                                        transit_days = 2
+                                        
+                                    total_days = transit_days + 2
+                                    corrected_date_obj = today + timedelta(days=total_days)
+                                    corrected_etd = corrected_date_obj.strftime("%b %d, %Y")
+                                    estimated_days = f"{total_days} days"
+                            except Exception:
+                                pass
+
                         options.append({
                             "courier_name": courier["courier_name"],
                             "rate": float(courier["rate"]),
-                            "etd": courier.get("etd"),
+                            "etd": etd_str,
+                            "corrected_etd": corrected_etd,
+                            "estimated_delivery_days": estimated_days,
                             "courier_company_id": courier["courier_company_id"],
                         })
 
+                # Determine cheapest courier option
+                cheapest_option = None
+                if options:
+                    cheapest_option = min(options, key=lambda x: x["rate"])
+                    total_shipping_cost += Decimal(str(cheapest_option["rate"]))
+                else:
+                    cheapest_option = {
+                        "courier_name": "Default Courier",
+                        "rate": 50.0,
+                        "etd": None,
+                        "corrected_etd": None,
+                        "estimated_delivery_days": "3-5 days",
+                        "courier_company_id": 127
+                    }
+                    total_shipping_cost += Decimal("50.00")
+
                 results.append({
                     "vendor_id": vendor.id,
-                    "vendor_name": getattr(getattr(vendor, "vendor_profile", None), "company_name", None) or vendor.username,
+                    "vendor_name": vendor_name,
                     "pickup_postcode": pickup_postcode,
-                    "total_weight": total_weight,
+                    "pickup_location": getattr(vendor_profile, "pickup_location", None),
+                    "total_weight": vendor_total_weight,
+                    "selected_courier": cheapest_option,
                     "options": options,
                 })
 
             except Exception as e:
+                cheapest_option = {
+                    "courier_name": "Default Courier",
+                    "rate": 50.0,
+                    "etd": None,
+                    "corrected_etd": None,
+                    "estimated_delivery_days": "3-5 days",
+                    "courier_company_id": 127
+                }
+                total_shipping_cost += Decimal("50.00")
                 results.append({
                     "vendor_id": vendor.id,
-                    "vendor_name": getattr(getattr(vendor, "vendor_profile", None), "company_name", None) or vendor.username,
+                    "vendor_name": vendor_name,
                     "pickup_postcode": pickup_postcode,
-                    "total_weight": total_weight,
+                    "pickup_location": getattr(vendor_profile, "pickup_location", None),
+                    "total_weight": vendor_total_weight,
+                    "selected_courier": cheapest_option,
                     "options": [],
                     "error": str(e),
                 })
 
-        return Response({"vendors": results}, status=status.HTTP_200_OK)
+        return Response({
+            "total_shipping_cost": float(total_shipping_cost),
+            "vendors": results
+        }, status=status.HTTP_200_OK)
 
 
 
@@ -390,8 +468,6 @@ class CheckoutViewSet(viewsets.ViewSet):
 
         subtotal = Decimal("0.00")
         tax_rate = Decimal("0.18")
-        shipping_fee = Decimal(str(request.data.get("shipping_fee", "0.00")))
-        courier_company_id = request.data.get("courier_company_id")
         apply_coup_amt = Decimal(str(request.data.get("Apply_coup_Amt", "0.00")))
 
         for item in items:
@@ -400,6 +476,103 @@ class CheckoutViewSet(viewsets.ViewSet):
             subtotal += product.price * quantity
 
         tax = subtotal * tax_rate
+
+        # Group items by vendor to calculate weight and call Shiprocket serviceability API
+        vendor_items_map = {}
+        for item in items:
+            prod = item['product']
+            v = prod.vendor
+            if v.id not in vendor_items_map:
+                vendor_items_map[v.id] = {
+                    "vendor": v,
+                    "items": []
+                }
+            vendor_items_map[v.id]["items"].append(item)
+
+        dynamic_shipping_fee = Decimal("0.00")
+        selected_courier_company_id = None
+        vendor_couriers = {}
+
+        for v_id, vdata in vendor_items_map.items():
+            vendor = vdata["vendor"]
+            from accounts.models import Address as UserAddress
+            vendor_address = UserAddress.objects.filter(user=vendor).first()
+            pickup_postcode = vendor_address.postal_code if vendor_address and vendor_address.postal_code else None
+
+            # Calculate total weight for this vendor's items
+            v_weight = 0.0
+            for it in vdata["items"]:
+                prod = it['product']
+                qty = it['quantity']
+                try:
+                    w = float(prod.weight) if getattr(prod, 'weight', None) else 0.0
+                except (ValueError, TypeError):
+                    w = 0.0
+                v_weight += w * qty
+            if v_weight <= 0.0:
+                v_weight = 1.0
+
+            cheapest_rate = None
+            cheapest_courier_id = None
+
+            if pickup_postcode and shipping_address.postal_code:
+                # Prepare payload for rate calculator
+                first_prod = vdata["items"][0]['product']
+                payload = {
+                    "pickup_postcode": pickup_postcode,
+                    "delivery_postcode": shipping_address.postal_code,
+                    "weight": v_weight,
+                    "cod": 1 if payment_method == "cod" else 0,
+                }
+                if getattr(first_prod, 'length', None):
+                    payload["length"] = float(first_prod.length)
+                if getattr(first_prod, 'breadth', None):
+                    payload["breadth"] = float(first_prod.breadth)
+                if getattr(first_prod, 'height', None):
+                    payload["height"] = float(first_prod.height)
+
+                try:
+                    rates = calculate_shipping_rate(payload)
+                    if rates.get("data") and "available_courier_companies" in rates["data"]:
+                        for courier in rates["data"]["available_courier_companies"]:
+                            rate_val = float(courier["rate"])
+                            if cheapest_rate is None or rate_val < cheapest_rate:
+                                cheapest_rate = rate_val
+                                cheapest_courier_id = courier["courier_company_id"]
+                except Exception as e:
+                    print(f"[CheckoutViewSet] Error calculating shipping rate for vendor {v_id}: {e}")
+
+            # Accumulate cheapest rate or apply fallback of ₹50.00
+            if cheapest_rate is not None:
+                dynamic_shipping_fee += Decimal(str(cheapest_rate))
+                if selected_courier_company_id is None:
+                    selected_courier_company_id = cheapest_courier_id
+                
+                courier_name = "Courier"
+                if rates.get("data") and "available_courier_companies" in rates["data"]:
+                    for c in rates["data"]["available_courier_companies"]:
+                        if c["courier_company_id"] == cheapest_courier_id:
+                            courier_name = c["courier_name"]
+                            break
+
+                vendor_couriers[v_id] = {
+                    "courier_company_id": cheapest_courier_id,
+                    "courier_name": courier_name,
+                    "rate": cheapest_rate
+                }
+            else:
+                dynamic_shipping_fee += Decimal("50.00")
+                if selected_courier_company_id is None:
+                    selected_courier_company_id = 127  # Safe default fallback courier ID
+                vendor_couriers[v_id] = {
+                    "courier_company_id": 127,
+                    "courier_name": "Default Courier",
+                    "rate": 50.0
+                }
+
+        shipping_fee = dynamic_shipping_fee
+        courier_company_id = selected_courier_company_id
+
         total = subtotal + tax + shipping_fee - apply_coup_amt
         if total < Decimal("0.00"):
             total = Decimal("0.00")
@@ -418,163 +591,209 @@ class CheckoutViewSet(viewsets.ViewSet):
         )
 
         # Save order items
+        order_item_objects = []
         for item in items:
-            OrderItem.objects.create(
+            oi = OrderItem.objects.create(
                 order=order,
                 product=item['product'],
                 quantity=item['quantity'],
                 price=item['product'].price
             )
+            order_item_objects.append(oi)
 
         # Trigger stock deduction if COD by saving the order again
         if payment_method == 'cod':
             order.save()
 
-        # Shiprocket Order Registration & Courier Slot Reservation
-        sr_response = None
+        # Shiprocket Order Registration & Courier Slot Reservation per vendor
         if items and shipping_address:
-            first_product = items[0]['product']
-            vendor = first_product.vendor
-            vendor_profile = getattr(vendor, 'vendor_profile', None)
-            pickup_location = "VENDOR_2"
-            if vendor_profile and vendor_profile.pickup_location:
-                pickup_location = vendor_profile.pickup_location
-            else:
-                if vendor_profile:
-                    from accounts.models import Address as UserAddress
-                    vendor_address = UserAddress.objects.filter(user=vendor).first()
-                    if vendor_address:
-                        pickup_name = f"VENDOR_{vendor_profile.id}"
-                        pickup_payload = {
-                            "pickup_location": pickup_name,
-                            "name": vendor_profile.company_name or vendor.username,
-                            "email": vendor_profile.company_email or vendor.email,
-                            "phone": format_phone_number(
-                                vendor_profile.contact_number or vendor_address.phone_number or getattr(vendor, 'phone_number', None)
-                            ) or "9999999999",
-                            "address": vendor_address.line1 or "",
-                            "address_2": vendor_address.line2 or "",
-                            "city": vendor_address.city or "",
-                            "state": vendor_address.state or "",
-                            "country": vendor_address.country or "India",
-                            "pin_code": vendor_address.postal_code or "",
-                        }
-                        try:
-                            sr_pickup_response = create_pickup_location(pickup_payload)
-                            if not sr_pickup_response.get("error"):
-                                vendor_profile.pickup_location = pickup_name
-                                vendor_profile.save()
-                                pickup_location = pickup_name
-                        except Exception:
-                            pass
+            # Group created OrderItems by vendor
+            vendor_oi_map = {}
+            for oi in order_item_objects:
+                v = oi.product.vendor
+                if v.id not in vendor_oi_map:
+                    vendor_oi_map[v.id] = []
+                vendor_oi_map[v.id].append(oi)
 
-            sr_items = []
-            for item in items:
-                prod = item['product']
-                sr_items.append({
-                    "name": prod.name,
-                    "sku": f"SKU-{prod.id}",
-                    "units": item['quantity'],
-                    "selling_price": float(prod.price),
-                    "discount": 0,
-                    "tax": 0,
-                    "hsn": getattr(prod, "hsn", "8708")
-                })
-
-            length = float(first_product.length) if getattr(first_product, 'length', None) else 10.0
-            breadth = float(first_product.breadth) if getattr(first_product, 'breadth', None) else 10.0
-            height = float(first_product.height) if getattr(first_product, 'height', None) else 10.0
-            weight = float(first_product.weight) if getattr(first_product, 'weight', None) else 1.0
-
+            first_vendor_registered = False
             billing_phone = format_phone_number(
                 getattr(shipping_address, "phone_number", None) or getattr(user, "phone_number", None)
             ) or "919999999999"
 
-            order_payload = {
-                "order_id": str(order.id),
-                "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
-                "pickup_location": pickup_location,
-                "comment": f"Order #{order.id} checkout by {user.email}",
-                "billing_customer_name": user.first_name or user.username,
-                "billing_last_name": user.last_name or "",
-                "billing_address": shipping_address.line1 or "",
-                "billing_address_2": shipping_address.line2 or "",
-                "billing_city": shipping_address.city or "",
-                "billing_pincode": shipping_address.postal_code or "",
-                "billing_state": shipping_address.state or "",
-                "billing_country": shipping_address.country or "India",
-                "billing_email": user.email,
-                "billing_phone": billing_phone,
+            for v_id, v_items in vendor_oi_map.items():
+                first_product = v_items[0].product
+                vendor = first_product.vendor
+                vendor_profile = getattr(vendor, 'vendor_profile', None)
+                pickup_location = "VENDOR_2"
                 
-                "shipping_is_billing": True,
-                "shipping_customer_name": user.first_name or user.username,
-                "shipping_last_name": user.last_name or "",
-                "shipping_address": shipping_address.line1 or "",
-                "shipping_address_2": shipping_address.line2 or "",
-                "shipping_city": shipping_address.city or "",
-                "shipping_pincode": shipping_address.postal_code or "",
-                "shipping_country": shipping_address.country or "India",
-                "shipping_state": shipping_address.state or "",
-                "shipping_email": user.email,
-                "shipping_phone": billing_phone,
+                if vendor_profile and vendor_profile.pickup_location:
+                    pickup_location = vendor_profile.pickup_location
+                else:
+                    if vendor_profile:
+                        from accounts.models import Address as UserAddress
+                        vendor_address = UserAddress.objects.filter(user=vendor).first()
+                        if vendor_address:
+                            pickup_name = f"VENDOR_{vendor_profile.id}"
+                            pickup_payload = {
+                                "pickup_location": pickup_name,
+                                "name": vendor_profile.company_name or vendor.username,
+                                "email": vendor_profile.company_email or vendor.email,
+                                "phone": format_phone_number(
+                                    vendor_profile.contact_number or vendor_address.phone_number or getattr(vendor, 'phone_number', None)
+                                ) or "9999999999",
+                                "address": vendor_address.line1 or "",
+                                "address_2": vendor_address.line2 or "",
+                                "city": vendor_address.city or "",
+                                "state": vendor_address.state or "",
+                                "country": vendor_address.country or "India",
+                                "pin_code": vendor_address.postal_code or "",
+                            }
+                            try:
+                                sr_pickup_response = create_pickup_location(pickup_payload)
+                                if not sr_pickup_response.get("error"):
+                                    vendor_profile.pickup_location = pickup_name
+                                    vendor_profile.save()
+                                    pickup_location = pickup_name
+                            except Exception:
+                                pass
+
+                # Prepare items payload for this vendor's portion of the order
+                sr_items = []
+                v_subtotal = Decimal("0.00")
+                for oi in v_items:
+                    prod = oi.product
+                    sr_items.append({
+                        "name": prod.name,
+                        "sku": f"SKU-{prod.id}",
+                        "units": oi.quantity,
+                        "selling_price": float(oi.price),
+                        "discount": 0,
+                        "tax": 0,
+                        "hsn": getattr(prod, "hsn", "8708")
+                    })
+                    v_subtotal += prod.price * oi.quantity
+
+                v_tax = v_subtotal * Decimal("0.18")
                 
-                "payment_method": "COD" if payment_method == "cod" else "Prepaid",
-                "order_items": sr_items,
+                v_courier_info = vendor_couriers.get(v_id, {})
+                v_shipping_charge = float(v_courier_info.get("rate", 50.0))
+                v_courier_company_id = v_courier_info.get("courier_company_id")
                 
-                "sub_total": float(subtotal),
-                "tax_total": float(tax),
-                "shipping_charges": float(shipping_fee),
-                "total_amount": float(total),
+                v_total_amount = float(v_subtotal + v_tax + Decimal(str(v_shipping_charge)))
+
+                length = float(first_product.length) if getattr(first_product, 'length', None) else 10.0
+                breadth = float(first_product.breadth) if getattr(first_product, 'breadth', None) else 10.0
+                height = float(first_product.height) if getattr(first_product, 'height', None) else 10.0
                 
-                "length": length,
-                "breadth": breadth,
-                "height": height,
-                "weight": weight
-            }
+                total_weight = 0.0
+                for oi in v_items:
+                    prod = oi.product
+                    qty = oi.quantity
+                    try:
+                        w = float(prod.weight) if getattr(prod, 'weight', None) else 0.0
+                    except (ValueError, TypeError):
+                        w = 0.0
+                    total_weight += w * qty
+                if total_weight <= 0.0:
+                    total_weight = 1.0
 
-            if courier_company_id:
-                order_payload["courier_company_id"] = str(courier_company_id)
+                order_payload = {
+                    "order_id": f"{order.id}_V{vendor.id}",
+                    "order_date": order.created_at.strftime("%Y-%m-%d %H:%M"),
+                    "pickup_location": pickup_location,
+                    "comment": f"Order #{order.id} (Vendor #{vendor.id}) checkout by {user.email}",
+                    "billing_customer_name": user.first_name or user.username,
+                    "billing_last_name": user.last_name or "",
+                    "billing_address": shipping_address.line1 or "",
+                    "billing_address_2": shipping_address.line2 or "",
+                    "billing_city": shipping_address.city or "",
+                    "billing_pincode": shipping_address.postal_code or "",
+                    "billing_state": shipping_address.state or "",
+                    "billing_country": shipping_address.country or "India",
+                    "billing_email": user.email,
+                    "billing_phone": billing_phone,
+                    
+                    "shipping_is_billing": True,
+                    "shipping_customer_name": user.first_name or user.username,
+                    "shipping_last_name": user.last_name or "",
+                    "shipping_address": shipping_address.line1 or "",
+                    "shipping_address_2": shipping_address.line2 or "",
+                    "shipping_city": shipping_address.city or "",
+                    "shipping_pincode": shipping_address.postal_code or "",
+                    "shipping_country": shipping_address.country or "India",
+                    "shipping_state": shipping_address.state or "",
+                    "shipping_email": user.email,
+                    "shipping_phone": billing_phone,
+                    
+                    "payment_method": "COD" if payment_method == "cod" else "Prepaid",
+                    "order_items": sr_items,
+                    
+                    "sub_total": float(v_subtotal),
+                    "tax_total": float(v_tax),
+                    "shipping_charges": v_shipping_charge,
+                    "total_amount": v_total_amount,
+                    
+                    "length": length,
+                    "breadth": breadth,
+                    "height": height,
+                    "weight": total_weight
+                }
 
-            try:
-                sr_response = create_shiprocket_order(order_payload)
-                sr_message = sr_response.get("message", "")
-                sr_details = sr_response.get("details", {})
-                if not sr_message and isinstance(sr_details, dict):
-                    sr_message = sr_details.get("message", "")
+                if v_courier_company_id:
+                    order_payload["courier_company_id"] = str(v_courier_company_id)
 
-                if "Wrong Pickup location" in str(sr_message) or "Wrong Pickup location" in str(sr_details):
-                    suggested_locations = []
-                    data_block = sr_response.get("data", {})
-                    if not data_block and isinstance(sr_details, dict):
-                        data_block = sr_details.get("data", {})
+                try:
+                    sr_response = create_shiprocket_order(order_payload)
+                    sr_message = sr_response.get("message", "")
+                    sr_details = sr_response.get("details", {})
+                    if not sr_message and isinstance(sr_details, dict):
+                        sr_message = sr_details.get("message", "")
 
-                    if isinstance(data_block, dict) and "data" in data_block:
-                        suggested_locations = data_block["data"]
-                    elif isinstance(data_block, list):
-                        suggested_locations = data_block
+                    if "Wrong Pickup location" in str(sr_message) or "Wrong Pickup location" in str(sr_details):
+                        suggested_locations = []
+                        data_block = sr_response.get("data", {})
+                        if not data_block and isinstance(sr_details, dict):
+                            data_block = sr_details.get("data", {})
 
-                    matched_location = None
-                    if suggested_locations:
-                        for loc in suggested_locations:
-                            if loc.get("status") == 1 and loc.get("phone_verified") == 1:
-                                matched_location = loc["pickup_location"]
-                                break
+                        if isinstance(data_block, dict) and "data" in data_block:
+                            suggested_locations = data_block["data"]
+                        elif isinstance(data_block, list):
+                            suggested_locations = data_block
 
-                    if matched_location:
-                        if vendor_profile:
-                            vendor_profile.pickup_location = matched_location
-                            vendor_profile.save()
-                        order_payload["pickup_location"] = matched_location
-                        sr_response = create_shiprocket_order(order_payload)
+                        matched_location = None
+                        if suggested_locations:
+                            for loc in suggested_locations:
+                                if loc.get("status") == 1 and loc.get("phone_verified") == 1:
+                                    matched_location = loc["pickup_location"]
+                                    break
 
-                if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
-                    order.shiprocket_order_id = str(sr_response.get("order_id", ""))
-                    order.shipment_id = str(sr_response.get("shipment_id", ""))
-                    order.awb_code = sr_response.get("awb_code", "")
-                    order.courier_name = sr_response.get("courier_name", "")
-                    order.save()
-            except Exception as e:
-                sr_response = {"error": True, "message": str(e)}
+                        if matched_location:
+                            if vendor_profile:
+                                vendor_profile.pickup_location = matched_location
+                                vendor_profile.save()
+                            order_payload["pickup_location"] = matched_location
+                            sr_response = create_shiprocket_order(order_payload)
+
+                    if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
+                        # Save tracking details to all order items for this vendor
+                        for oi in v_items:
+                            oi.shiprocket_order_id = str(sr_response.get("order_id", ""))
+                            oi.shipment_id = str(sr_response.get("shipment_id", ""))
+                            oi.awb_code = sr_response.get("awb_code", "")
+                            oi.courier_name = sr_response.get("courier_name", "")
+                            oi.save()
+
+                        # For backwards compatibility with single-shipment assumptions,
+                        # populate the top-level Order fields with the first vendor's shipment details
+                        if not first_vendor_registered:
+                            order.shiprocket_order_id = str(sr_response.get("order_id", ""))
+                            order.shipment_id = str(sr_response.get("shipment_id", ""))
+                            order.awb_code = sr_response.get("awb_code", "")
+                            order.courier_name = sr_response.get("courier_name", "")
+                            order.save()
+                            first_vendor_registered = True
+                except Exception as e:
+                    print(f"Error registering Shiprocket order for vendor {v_id}: {e}")
 
         # Payment metadata & gateway trigger
         gateway_response = None
@@ -741,7 +960,20 @@ class VendorOrderStatusUpdateView(APIView):
             subtotal = sum(item.price * item.quantity for item in vendor_items)
             total_tax = subtotal * tax_rate
             shipping_fee = order.shipping_cost  # shared or per vendor if you decide to split
-            total_amount = subtotal + total_tax + shipping_fee            # Customer and shipping info
+            total_amount = subtotal + total_tax + shipping_fee
+            
+            # Calculate total weight for vendor items
+            vendor_total_weight = 0.0
+            for item in vendor_items:
+                try:
+                    w = float(item.product.weight) if getattr(item.product, 'weight', None) else 0.0
+                except (ValueError, TypeError):
+                    w = 0.0
+                vendor_total_weight += w * item.quantity
+            if vendor_total_weight <= 0.0:
+                vendor_total_weight = 1.0
+
+            # Customer and shipping info
             shipping_address = order.shipping_address
             customer = order.user
 
@@ -877,7 +1109,7 @@ class VendorOrderStatusUpdateView(APIView):
                 "length": float(vendor_items[0].product.length) if vendor_items else 10.0,
                 "breadth": float(vendor_items[0].product.breadth) if vendor_items else 10.0,
                 "height": float(vendor_items[0].product.height) if vendor_items else 10.0,
-                "weight": float(vendor_items[0].product.weight) if vendor_items else 1.0,
+                "weight": vendor_total_weight,
             }
 
             # ✅ Send to Shiprocket
@@ -1002,7 +1234,8 @@ class VendorOrderStatusUpdateView(APIView):
                         "subtotal": float(subtotal),
                         "tax": float(total_tax),
                         "shipping": float(shipping_fee),
-                        "total": float(total_amount)
+                        "total": float(total_amount),
+                        "total_weight": vendor_total_weight
                     }
                 }, status=status.HTTP_200_OK)
 

@@ -13,4 +13,7 @@ router.register(r'product-reviews', VendorReviewViewSet, basename='vendor-review
 urlpatterns = [
     path('', include(router.urls)),
     path('payments/', VendorTransactionListView.as_view(), name='vendor-transactions'),
+    # Product variant management endpoints
+    path('products/<int:product_id>/variants/', ProductVariantManageView.as_view(), name='product-variants-list'),
+    path('products/<int:product_id>/variants/<int:variant_id>/', ProductVariantManageView.as_view(), name='product-variants-detail'),
 ]
