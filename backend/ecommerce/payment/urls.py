@@ -1,8 +1,17 @@
 from django.urls import path
-from .views import stripe_webhook
-from .views import VerifyPaymentView
+from . import views
 
 urlpatterns = [
-    path('stripe/webhook/', stripe_webhook),
-    path('verify-payment/', VerifyPaymentView.as_view(), name='verify-payment'),
+    # Payment Initiation and Verification
+    path('initiate/', views.InitiatePaymentView.as_view(), name='initiate-payment'),
+    path('verify/', views.VerifyPaymentView.as_view(), name='verify-payment'),
+    
+    # Payment Status - multiple lookup options
+    path('status/', views.PaymentStatusView.as_view(), name='payment-status'),
+    path('status/order/<str:order_id>/', views.PaymentStatusView.as_view(), name='payment-status-by-order'),
+    path('status/payment/<str:payment_id>/', views.PaymentStatusView.as_view(), name='payment-status-by-payment-id'),
+    
+    # Cash on Delivery (COD) Payment
+    path('cod/initiate/', views.InitiateCODPaymentView.as_view(), name='initiate-cod'),
+    path('cod/confirm/', views.ConfirmCODPaymentView.as_view(), name='confirm-cod'),
 ]

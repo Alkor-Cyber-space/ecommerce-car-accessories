@@ -95,6 +95,8 @@ class ProductVariant(models.Model):
             parts.append(self.size)
         if self.weight_value:
             parts.append(self.weight_value)
+        if self.color_name:
+            parts.append(self.color_name)
         return " - ".join(parts)
 
 

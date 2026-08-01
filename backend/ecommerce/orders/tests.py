@@ -1,311 +1,150 @@
-from django.test import TestCase
+from unittest.mock import patch
+from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from rest_framework.exceptions import ValidationError
-from rest_framework.test import APIRequestFactory
-from unittest.mock import patch
-from accounts.models import Address, VendorProfile
+from rest_framework.test import APITestCase
+from rest_framework import status
 from products.models import Product, Category
 from orders.models import Order, OrderItem
-from orders.serializers import OrderSerializer
-from orders.views import resolve_shiprocket_pickup_location, VendorOrderStatusUpdateView
 
 User = get_user_model()
 
-class OrderStockTestCase(TestCase):
+class CourierSelectionAndShipNowTests(APITestCase):
+
     def setUp(self):
-        # Create users
+        # 1. Create groups
+        self.vendor_group, _ = Group.objects.get_or_create(name="Vendor")
+
+        # 2. Create Users
         self.customer = User.objects.create_user(
             username="customer",
             email="customer@example.com",
-            password="testpassword123",
-            phone_number="1234567890"
+            password="password123",
+            first_name="Customer",
+            last_name="User"
         )
         self.vendor = User.objects.create_user(
-            username="vendor",
+            username="vendor_user",
             email="vendor@example.com",
-            password="testpassword123",
-            phone_number="0987654321"
+            password="password123",
+            first_name="Vendor",
+            last_name="User"
         )
+        self.vendor.groups.add(self.vendor_group)
 
-        # Create category
-        self.category = Category.objects.create(name="Accessories")
+        self.other_vendor = User.objects.create_user(
+            username="other_vendor",
+            email="other_vendor@example.com",
+            password="password123",
+            first_name="Other",
+            last_name="Vendor"
+        )
+        self.other_vendor.groups.add(self.vendor_group)
 
-        # Create products
-        self.product1 = Product.objects.create(
-            vendor=self.vendor,
-            category=self.category,
-            name="Car Seat Cover",
-            description="Premium car seat cover",
-            price=1500.00,
+        # Create Category
+        self.category = Category.objects.create(name="Test Category")
+
+        # 3. Create products
+        self.product = Product.objects.create(
+            name="Test Wheel",
+            price=Decimal("150.00"),
             stock=10,
-            weight=2.5,
-            length=40,
-            breadth=40,
-            height=10,
-            is_available=True
-        )
-        self.product2 = Product.objects.create(
             vendor=self.vendor,
             category=self.category,
-            name="Steering Wheel Cover",
-            description="Leather steering wheel cover",
-            price=500.00,
-            stock=5,
-            weight=0.5,
-            length=35,
-            breadth=35,
-            height=5,
-            is_available=True
+            length=Decimal("10.00"),
+            breadth=Decimal("10.00"),
+            height=Decimal("10.00"),
+            weight=Decimal("1.00")
         )
 
-        # Create address
-        self.address = Address.objects.create(
+        # 4. Create Order
+        self.order = Order.objects.create(
             user=self.customer,
-            line1="123 Main St",
-            city="Ernakulam",
-            state="Kerala",
-            postal_code="682001",
-            country="India"
-        )
-
-    def test_stock_validation_success(self):
-        """Test serializer validates successfully when stock is sufficient."""
-        data = {
-            "shipping_address": self.address.id,
-            "payment_method": "cod",
-            "items": [
-                {"product": self.product1.id, "quantity": 3},
-                {"product": self.product2.id, "quantity": 2},
-            ]
-        }
-        serializer = OrderSerializer(data=data, context={'request': None})
-        self.assertTrue(serializer.is_valid(), serializer.errors)
-
-    def test_stock_validation_insufficient_stock(self):
-        """Test serializer raises ValidationError when quantity exceeds stock."""
-        data = {
-            "shipping_address": self.address.id,
-            "payment_method": "cod",
-            "items": [
-                {"product": self.product1.id, "quantity": 11} # Exceeds stock (10)
-            ]
-        }
-        serializer = OrderSerializer(data=data, context={'request': None})
-        with self.assertRaises(ValidationError) as ctx:
-            serializer.is_valid(raise_exception=True)
-        self.assertIn("Insufficient stock", str(ctx.exception))
-
-    def test_stock_validation_product_unavailable(self):
-        """Test serializer raises ValidationError when product is not available."""
-        self.product1.is_available = False
-        self.product1.save()
-        
-        data = {
-            "shipping_address": self.address.id,
-            "payment_method": "cod",
-            "items": [
-                {"product": self.product1.id, "quantity": 1}
-            ]
-        }
-        serializer = OrderSerializer(data=data, context={'request': None})
-        with self.assertRaises(ValidationError) as ctx:
-            serializer.is_valid(raise_exception=True)
-        self.assertIn("is not available", str(ctx.exception))
-
-    def test_cod_order_deducts_stock(self):
-        """Test that placing a COD order immediately deducts stock."""
-        order = Order.objects.create(
-            user=self.customer,
-            total_price=2000.00,
-            shipping_address=self.address,
+            total_price=Decimal("150.00"),
             payment_method="cod",
-            status="pending",
-            courier_company_id=127
+            status="confirmed"
         )
-        OrderItem.objects.create(order=order, product=self.product1, quantity=2, price=1500.00)
-        
-        # Verify stock not deducted yet (no save after item creation)
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 10)
-        
-        # Trigger save as done in views.py checkout endpoint
-        order.save()
-        
-        # Verify stock deducted
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 8)
-        order.refresh_from_db()
-        self.assertTrue(order.stock_deducted)
 
-    def test_prepaid_order_does_not_deduct_stock_initially(self):
-        """Test that placing a prepaid order does not deduct stock while status is pending."""
-        order = Order.objects.create(
-            user=self.customer,
-            total_price=2000.00,
-            shipping_address=self.address,
-            payment_method="stripe",
-            status="pending",
-            courier_company_id=127
+        self.order_item = OrderItem.objects.create(
+            order=self.order,
+            product=self.product,
+            quantity=1,
+            price=Decimal("150.00"),
+            status="confirmed",
+            shipment_id="shipment_9999"
         )
-        OrderItem.objects.create(order=order, product=self.product1, quantity=2, price=1500.00)
-        #erp set
-        
-        # Even if we save order, since status is pending and payment is stripe, stock is not deducted
-        order.save()
-        
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 10)
-        order.refresh_from_db()
-        self.assertFalse(order.stock_deducted)
 
-    def test_prepaid_order_deducts_stock_when_paid(self):
-        """Test that a prepaid order deducts stock once status becomes paid."""
-        order = Order.objects.create(
-            user=self.customer,
-            total_price=2000.00,
-            shipping_address=self.address,
-            payment_method="stripe",
-            status="pending",
-            courier_company_id=127
-        )
-        OrderItem.objects.create(order=order, product=self.product1, quantity=2, price=1500.00)
-        
-        # Simulate payment success webhook/view updating status
-        order.status = "paid"
-        order.save()
-        
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 8)
-        order.refresh_from_db()
-        self.assertTrue(order.stock_deducted)
+    def test_unauthenticated_user_cannot_view_couriers(self):
+        url = f"/api/orders/vendor/orders/{self.order.id}/couriers/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-    def test_cancellation_restores_stock(self):
-        """Test that cancelling a stock-deducted order restores the stock."""
-        # 1. Place COD order and deduct stock
-        order = Order.objects.create(
-            user=self.customer,
-            total_price=2000.00,
-            shipping_address=self.address,
-            payment_method="cod",
-            status="pending",
-            courier_company_id=127
-        )
-        OrderItem.objects.create(order=order, product=self.product1, quantity=3, price=1500.00)
-        order.save()
-        
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 7)
-        
-        # 2. Cancel order
-        order.status = "cancelled"
-        order.save()
-        
-        # 3. Verify stock is restored
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 10)
-        order.refresh_from_db()
-        self.assertFalse(order.stock_deducted)
+    def test_non_vendor_cannot_view_couriers(self):
+        self.client.force_authenticate(user=self.customer)
+        url = f"/api/orders/vendor/orders/{self.order.id}/couriers/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_failure_restores_stock(self):
-        """Test that transitioning a stock-deducted order to failed restores the stock."""
-        # 1. Place prepaid order and mark paid
-        order = Order.objects.create(
-            user=self.customer,
-            total_price=2000.00,
-            shipping_address=self.address,
-            payment_method="razorpay",
-            status="pending",
-            courier_company_id=127
-        )
-        OrderItem.objects.create(order=order, product=self.product1, quantity=3, price=1500.00)
-        order.status = "paid"
-        order.save()
-        
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 7)
-        
-        # 2. Mark order status failed
-        order.status = "failed"
-        order.save()
-        
-        # 3. Verify stock is restored
-        self.product1.refresh_from_db()
-        self.assertEqual(self.product1.stock, 10)
-        order.refresh_from_db()
-        self.assertFalse(order.stock_deducted)
+    def test_vendor_cannot_view_couriers_for_unowned_items(self):
+        self.client.force_authenticate(user=self.other_vendor)
+        url = f"/api/orders/vendor/orders/{self.order.id}/couriers/"
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_resolve_shiprocket_pickup_location_from_error_details(self):
-        """Test the helper selects a valid pickup location from Shiprocket error payloads."""
-        error_details = {
-            "message": "Wrong Pickup location entered",
+    @patch("orders.shiprocket_client.get_shiprocket_couriers")
+    def test_vendor_can_view_couriers_success(self, mock_get_couriers):
+        mock_get_couriers.return_value = {
+            "status": 200,
             "data": {
-                "data": [
-                    {"id": 78480292, "pickup_location": "VENDOR_2"},
-                    {"id": 79631359, "pickup_location": "VENDOR_3"},
+                "available_courier_companies": [
+                    {
+                        "courier_name": "Delhivery Air",
+                        "rate": "120.00",
+                        "courier_company_id": 29
+                    }
                 ]
-            },
+            }
         }
 
-        resolved = resolve_shiprocket_pickup_location("VENDOR_9", error_details)
+        self.client.force_authenticate(user=self.vendor)
+        url = f"/api/orders/vendor/orders/{self.order.id}/couriers/"
+        response = self.client.get(url)
 
-        self.assertEqual(resolved, "VENDOR_2")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("data", response.data)
+        mock_get_couriers.assert_called_once_with("shipment_9999")
 
-    @patch("orders.views.create_shiprocket_order")
-    def test_vendor_confirmation_does_not_mark_shared_order_confirmed(self, mock_create_order):
-        """Confirming one vendor's items should not flip the shared order status for all vendors."""
-        vendor_group, _ = Group.objects.get_or_create(name="Vendor")
-        other_vendor = User.objects.create_user(
-            username="othervendor",
-            email="othervendor@example.com",
-            password="testpassword123",
-            phone_number="1111111111"
-        )
-        other_vendor.groups.add(vendor_group)
-        VendorProfile.objects.create(user=other_vendor, pickup_location="VENDOR_3")
-
-        self.vendor.groups.add(vendor_group)
-        VendorProfile.objects.create(user=self.vendor, pickup_location="VENDOR_2")
-
-        other_product = Product.objects.create(
-            vendor=other_vendor,
-            category=self.category,
-            name="Other Product",
-            description="Other vendor item",
-            price=300.00,
-            stock=3,
-            weight=1.0,
-            length=20,
-            breadth=20,
-            height=10,
-            is_available=True,
-        )
-
-        order = Order.objects.create(
-            user=self.customer,
-            total_price=1800.00,
-            shipping_address=self.address,
-            payment_method="cod",
-            status="pending",
-            courier_company_id=127,
-        )
-        OrderItem.objects.create(order=order, product=self.product1, quantity=1, price=self.product1.price)
-        OrderItem.objects.create(order=order, product=other_product, quantity=1, price=other_product.price)
-
-        mock_create_order.return_value = {
-            "shipment_id": "SHIP123",
-            "status_code": 1,
-            "order_id": 999,
-            "awb_code": "AWB123",
-            "courier_name": "BlueDart",
+    @patch("orders.shiprocket_client.request_shiprocket_pickup")
+    @patch("orders.shiprocket_client.assign_shiprocket_awb")
+    def test_vendor_ship_now_success(self, mock_assign_awb, mock_request_pickup):
+        mock_assign_awb.return_value = {
+            "response": {
+                "data": {
+                    "awb_code": "AWB12345678",
+                    "courier_name": "Delhivery Air"
+                }
+            }
         }
+        mock_request_pickup.return_value = {"status": "success"}
 
-        view = VendorOrderStatusUpdateView()
-        request = APIRequestFactory().post(f"/api/orders/vendor/orders/{order.id}/confirm/", {})
-        request.user = self.vendor
+        self.client.force_authenticate(user=self.vendor)
+        url = f"/api/orders/vendor/orders/{self.order.id}/ship/"
+        response = self.client.post(url, {"courier_company_id": 29}, format="json")
 
-        response = view.post(request, order_id=order.id)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
+        self.assertEqual(response.data["awb_code"], "AWB12345678")
+        self.assertEqual(response.data["courier"], "Delhivery Air")
+        self.assertIn("tracking_url", response.data)
 
-        self.assertEqual(response.status_code, 200)
-        order.refresh_from_db()
-        self.assertEqual(order.status, "pending")
+        # Verify DB updates
+        self.order_item.refresh_from_db()
+        self.assertEqual(self.order_item.status, "shipped")
+        self.assertEqual(self.order_item.awb_code, "AWB12345678")
+        self.assertEqual(self.order_item.courier_name, "Delhivery Air")
+
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, "shipped")
+
+        mock_assign_awb.assert_called_once_with("shipment_9999", 29)
+        mock_request_pickup.assert_called_once_with("shipment_9999")

@@ -263,3 +263,6 @@ RAZORPAY_FUND=env("RAZORPAY_FUND")
 SHIPROCKET_API_EMAIL = env("SHIPROCKET_API_EMAIL")
 SHIPROCKET_API_PASSWORD = env("SHIPROCKET_API_PASSWORD")
 
+# Fallback reverse pickup charge (₹) deducted from refund when Shiprocket
+# does not include freight_charges in the webhook payload.
+SHIPROCKET_RETURN_CHARGE = 100
