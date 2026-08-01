@@ -128,12 +128,14 @@ class CourierSelectionAndShipNowTests(APITestCase):
         mock_request_pickup.return_value = {"status": "success"}
 
         self.client.force_authenticate(user=self.vendor)
-        url = f"/api/orders/vendor/orders/{self.order.id}/ship-now/"
+        url = f"/api/orders/vendor/orders/{self.order.id}/ship/"
         response = self.client.post(url, {"courier_company_id": 29}, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["success"])
         self.assertEqual(response.data["awb_code"], "AWB12345678")
-        self.assertEqual(response.data["courier_name"], "Delhivery Air")
+        self.assertEqual(response.data["courier"], "Delhivery Air")
+        self.assertIn("tracking_url", response.data)
 
         # Verify DB updates
         self.order_item.refresh_from_db()

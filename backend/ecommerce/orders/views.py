@@ -1910,17 +1910,22 @@ class VendorOrderShipNowView(APIView):
             return Response({"error": "Only vendors can ship orders"}, status=status.HTTP_403_FORBIDDEN)
 
         raw_courier_id = request.data.get("courier_company_id")
-        if not raw_courier_id:
-            return Response({"error": "courier_company_id is required"}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            courier_company_id = int(raw_courier_id)
-        except (ValueError, TypeError):
-            return Response({"error": "courier_company_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+        courier_company_id = None
+        if raw_courier_id:
+            try:
+                courier_company_id = int(raw_courier_id)
+            except (ValueError, TypeError):
+                return Response({"error": "courier_company_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
 
         # Get vendor order items
         vendor_items = OrderItem.objects.filter(order_id=order_id, product__vendor=vendor)
         if not vendor_items.exists():
             return Response({"error": "No items found for this vendor in this order"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get parent order to read customer choice
+        order = Order.objects.get(id=order_id)
+        if not courier_company_id:
+            courier_company_id = order.courier_company_id
 
         shipment_id = None
         for item in vendor_items:
@@ -1931,7 +1936,23 @@ class VendorOrderShipNowView(APIView):
         if not shipment_id:
             return Response({"error": "Shipment ID not found. Confirm the order first."}, status=status.HTTP_400_BAD_REQUEST)
 
-        from .shiprocket_client import assign_shiprocket_awb, request_shiprocket_pickup
+        from .shiprocket_client import get_shiprocket_couriers, assign_shiprocket_awb, request_shiprocket_pickup
+
+        # If we still don't have a courier_company_id, retrieve available options and select cheapest
+        if not courier_company_id:
+            try:
+                couriers_data = get_shiprocket_couriers(shipment_id)
+                if couriers_data and not couriers_data.get("error"):
+                    available_couriers = couriers_data.get("data", {}).get("available_courier_companies", [])
+                    if available_couriers:
+                        cheapest_courier = min(available_couriers, key=lambda x: float(x.get("rate", 999999)))
+                        courier_company_id = cheapest_courier.get("courier_company_id")
+            except Exception as e:
+                print(f"[SHIP] Failed to retrieve fallback couriers: {e}")
+
+        if not courier_company_id:
+            return Response({"error": "Could not determine a courier partner for this shipment."}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             # 1. Assign AWB
             awb_response = assign_shiprocket_awb(shipment_id, courier_company_id)
@@ -1946,14 +1967,12 @@ class VendorOrderShipNowView(APIView):
             courier_name = awb_data.get("courier_name") or awb_response.get("courier_name") or "Courier"
 
             if not awb_code:
-                # Fallback check of nested structures
                 awb_code = awb_response.get("response", {}).get("awb_code")
 
             # 2. Request Pickup
             pickup_response = request_shiprocket_pickup(shipment_id)
-            # Log warning if pickup scheduling fails, but don't block since AWB is generated
             if pickup_response.get("error"):
-                print(f"[SHIP NOW] Warning: Pickup scheduling failed for shipment {shipment_id}: {pickup_response.get('details')}")
+                print(f"[SHIP] Warning: Pickup scheduling failed for shipment {shipment_id}: {pickup_response.get('details')}")
 
             # 3. Update Database
             for item in vendor_items:
@@ -1964,8 +1983,6 @@ class VendorOrderShipNowView(APIView):
                     item.courier_name = courier_name
                 item.save()
 
-            # If all items in this order are now confirmed or shipped, mark the parent order as shipped
-            order = Order.objects.get(id=order_id)
             all_shipped_or_confirmed = not order.items.filter(status="pending").exists()
             if all_shipped_or_confirmed:
                 order.status = "shipped"
@@ -1976,14 +1993,12 @@ class VendorOrderShipNowView(APIView):
                 order.save()
 
             return Response({
-                "message": "Order shipped successfully and pickup requested.",
-                "awb_code": awb_code,
-                "courier_name": courier_name,
-                "shiprocket_awb_response": awb_response,
-                "shiprocket_pickup_response": pickup_response
+                "success": True,
+                "message": "Shipment created successfully.",
+                "awb_code": awb_code or "",
+                "courier": courier_name,
+                "tracking_url": f"https://shiprocket.co/tracking/{awb_code}" if awb_code else ""
             }, status=status.HTTP_200_OK)
 
         except Exception as e:
             return Response({"error": f"Error calling Shiprocket: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-
