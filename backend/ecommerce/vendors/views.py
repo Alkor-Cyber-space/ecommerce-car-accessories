@@ -247,11 +247,21 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                     variants_data = []
             
             if isinstance(variants_data, list):
-                for variant in variants_data:
+                for index, variant in enumerate(variants_data):
+                    # Resolve color_image from request.FILES
+                    color_image_file = None
+                    for f_key in [f"variants_{index}_color_image", f"variants[{index}][color_image]", f"variant_{index}_color_image"]:
+                        if f_key in request.FILES:
+                            color_image_file = request.FILES[f_key]
+                            break
+
                     ProductVariant.objects.create(
                         product=product,
                         size=variant.get('size', '') or None,
                         weight_value=variant.get('weight_value', '') or None,
+                        color_name=variant.get('color_name', '') or None,
+                        color_code=variant.get('color_code', '') or None,
+                        color_image=color_image_file or None,
                         length=variant.get('length') or None,
                         breadth=variant.get('breadth') or None,
                         height=variant.get('height') or None,
@@ -261,13 +271,34 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                     )
 
 
+        # Re-fetch product to ensure images and variants are included in response
+        product.refresh_from_db()
         return Response(
-            {"message": "Product created successfully.", "product": ProductSerializer(product).data},
+            {
+                "message": "Product created successfully.",
+                "product": ProductSerializer(product, context={'request': request}).data
+            },
             status=status.HTTP_201_CREATED
-            
         )
 
 
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        product = self.perform_update(serializer)
+
+        # Re-fetch to get fresh images, variants, vendor, category
+        product.refresh_from_db()
+        return Response(
+            {
+                "message": "Product updated successfully.",
+                "product": ProductSerializer(product, context={'request': request}).data
+            },
+            status=status.HTTP_200_OK
+        )
 
     def perform_update(self, serializer):
         print("reached update")
@@ -345,7 +376,7 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                     color_name=image_color
                 )
 
-        # Handle product variants update (clear and recreate)
+        # Handle product variants update (robust update)
         variants_data = self.request.data.get('variants', None)
         if variants_data is not None:
             if isinstance(variants_data, str):
@@ -354,24 +385,52 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                 except (json.JSONDecodeError, TypeError):
                     variants_data = []
             
-            # Delete existing variants and recreate
-            ProductVariant.objects.filter(product=product).delete()
-            
             if isinstance(variants_data, list):
-                for variant in variants_data:
-                    ProductVariant.objects.create(
-                        product=product,
-                        size=variant.get('size', '') or None,
-                        weight_value=variant.get('weight_value', '') or None,
-                        color_name=variant.get('color_name', '') or None,
-                        color_code=variant.get('color_code', '') or None,
-                        length=variant.get('length') or None,
-                        breadth=variant.get('breadth') or None,
-                        height=variant.get('height') or None,
-                        price=variant.get('price') or None,
-                        stock=variant.get('stock', 0),
-                        is_default=variant.get('is_default', False),
-                    )
+                keep_variant_ids = []
+                for index, variant in enumerate(variants_data):
+                    variant_id = variant.get('id')
+                    
+                    # Resolve color_image from request.FILES
+                    color_image_file = None
+                    for f_key in [f"variants_{index}_color_image", f"variants[{index}][color_image]", f"variant_{index}_color_image"]:
+                        if f_key in self.request.FILES:
+                            color_image_file = self.request.FILES[f_key]
+                            break
+
+                    variant_defaults = {
+                        'size': variant.get('size', '') or None,
+                        'weight_value': variant.get('weight_value', '') or None,
+                        'color_name': variant.get('color_name', '') or None,
+                        'color_code': variant.get('color_code', '') or None,
+                        'length': variant.get('length') or None,
+                        'breadth': variant.get('breadth') or None,
+                        'height': variant.get('height') or None,
+                        'price': variant.get('price') or None,
+                        'stock': variant.get('stock', 0),
+                        'is_default': variant.get('is_default', False),
+                    }
+                    if color_image_file:
+                        variant_defaults['color_image'] = color_image_file
+
+                    if variant_id:
+                        # Update existing variant
+                        try:
+                            v_obj = ProductVariant.objects.get(id=variant_id, product=product)
+                            for attr, val in variant_defaults.items():
+                                setattr(v_obj, attr, val)
+                            v_obj.save()
+                            keep_variant_ids.append(v_obj.id)
+                        except ProductVariant.DoesNotExist:
+                            # If ID doesn't exist, create it as new
+                            v_obj = ProductVariant.objects.create(product=product, **variant_defaults)
+                            keep_variant_ids.append(v_obj.id)
+                    else:
+                        # Create new variant
+                        v_obj = ProductVariant.objects.create(product=product, **variant_defaults)
+                        keep_variant_ids.append(v_obj.id)
+                
+                # Delete any variants that were not in the payload list
+                ProductVariant.objects.filter(product=product).exclude(id__in=keep_variant_ids).delete()
 
         return product
 
@@ -477,7 +536,117 @@ class VendorCategoryViewSet(viewsets.ModelViewSet):
 
 #         return Response({'message': f'{len(products_created)} products uploaded successfully.'}, status=status.HTTP_201_CREATED)
     
-    
+
+
+class ProductVariantManageView(APIView):
+    """
+    Manage product variants for a vendor-owned product.
+
+    GET  /vendor/products/{product_id}/variants/          → list all variants
+    POST /vendor/products/{product_id}/variants/          → add a new variant
+    PATCH /vendor/products/{product_id}/variants/{id}/   → edit a variant
+    DELETE /vendor/products/{product_id}/variants/{id}/  → delete a variant
+    """
+    permission_classes = [permissions.IsAuthenticated, IsVendor]
+
+    def _get_product(self, request, product_id):
+        try:
+            return Product.objects.get(pk=product_id, vendor=request.user)
+        except Product.DoesNotExist:
+            return None
+
+    def get(self, request, product_id):
+        product = self._get_product(request, product_id)
+        if not product:
+            return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+        from products.serializers import ProductVariantSerializer
+        serializer = ProductVariantSerializer(
+            product.variants.all(), many=True, context={'request': request}
+        )
+        return Response({'variants': serializer.data}, status=status.HTTP_200_OK)
+
+    def post(self, request, product_id):
+        """Add a new variant to a product."""
+        product = self._get_product(request, product_id)
+        if not product:
+            return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from products.serializers import ProductVariantSerializer
+        serializer = ProductVariantSerializer(data=request.data, context={'request': request})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        variant = serializer.save(product=product)
+
+        # Handle color_image file upload
+        color_image = request.FILES.get('color_image')
+        if color_image:
+            variant.color_image = color_image
+            variant.save(update_fields=['color_image'])
+
+        return Response(
+            {
+                'message': 'Variant added successfully.',
+                'variant': ProductVariantSerializer(variant, context={'request': request}).data
+            },
+            status=status.HTTP_201_CREATED
+        )
+
+    def patch(self, request, product_id, variant_id=None):
+        """Edit an existing variant (partial update)."""
+        product = self._get_product(request, product_id)
+        if not product:
+            return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not variant_id:
+            return Response({'error': 'variant_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            variant = ProductVariant.objects.get(pk=variant_id, product=product)
+        except ProductVariant.DoesNotExist:
+            return Response({'error': 'Variant not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        from products.serializers import ProductVariantSerializer
+        serializer = ProductVariantSerializer(
+            variant, data=request.data, partial=True, context={'request': request}
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        variant = serializer.save()
+
+        # Handle color_image file upload
+        color_image = request.FILES.get('color_image')
+        if color_image:
+            variant.color_image = color_image
+            variant.save(update_fields=['color_image'])
+
+        return Response(
+            {
+                'message': 'Variant updated successfully.',
+                'variant': ProductVariantSerializer(variant, context={'request': request}).data
+            },
+            status=status.HTTP_200_OK
+        )
+
+    def delete(self, request, product_id, variant_id=None):
+        """Delete a specific variant."""
+        product = self._get_product(request, product_id)
+        if not product:
+            return Response({'error': 'Product not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not variant_id:
+            return Response({'error': 'variant_id is required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            variant = ProductVariant.objects.get(pk=variant_id, product=product)
+        except ProductVariant.DoesNotExist:
+            return Response({'error': 'Variant not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        variant.delete()
+        return Response({'message': 'Variant deleted successfully.'}, status=status.HTTP_200_OK)
+
+
 class InventoryUpdateViewSet(viewsets.ViewSet):
     permission_classes = [permissions.IsAuthenticated, IsVendor]
 

@@ -70,6 +70,8 @@ class ProductVariant(models.Model):
     # Variant attributes (all optional — vendor fills what applies)
     size = models.CharField(max_length=50, blank=True, null=True)
     weight_value = models.CharField(max_length=100, blank=True, null=True)
+    color_name = models.CharField(max_length=100, blank=True, null=True)
+    color_code = models.CharField(max_length=50, blank=True, null=True)
     color_image = models.ImageField(upload_to='variant_colors/', blank=True, null=True)  # ✅ NEW
 
     # Dimensions for this variant
@@ -93,6 +95,8 @@ class ProductVariant(models.Model):
             parts.append(self.size)
         if self.weight_value:
             parts.append(self.weight_value)
+        if self.color_name:
+            parts.append(self.color_name)
         return " - ".join(parts)
 
 

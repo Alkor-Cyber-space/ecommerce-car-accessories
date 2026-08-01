@@ -1,6 +1,6 @@
 from decimal import Decimal
 from rest_framework import serializers
-from .models import Order, OrderItem
+from .models import Order, OrderItem, ReturnRequest
 from accounts.models import Address
 from accounts.serializers import AddressSerializer
 from products.models import Product,ProductImage
@@ -102,12 +102,18 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def get_status(self, obj):
         if obj.status == 'pending' and obj.payment_method != 'cod':
+            from django.utils import timezone
+            from datetime import timedelta
+            # Allow new orders to stay 'pending' for 15 minutes so the user can complete payment
+            if timezone.now() - obj.created_at < timedelta(minutes=15):
+                return 'pending'
             return 'cancelled'
         if obj.status == 'paid':
             return 'processing'
         if obj.status == 'confirmed':
             return 'paid'
         return obj.status
+
 
     def get_subtotal(self, obj):
         try:
@@ -191,6 +197,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
     vendor_total_price = serializers.SerializerMethodField()
     vendor_tax = serializers.SerializerMethodField()
     vendor_shipping_cost = serializers.SerializerMethodField()
+    vendor_total_weight = serializers.SerializerMethodField()
     customer_name = serializers.SerializerMethodField()
     customer_email = serializers.CharField(source='user.email', read_only=True)
     customer_phone = serializers.CharField(source='user.phone_number', read_only=True)
@@ -203,7 +210,7 @@ class VendorOrderSerializer(serializers.ModelSerializer):
             'id', 'user', 'payment_method', 'status',
             'customer_name', 'customer_email', 'customer_phone', 'shipping_address_details',
             'courier_company_id', 'shiprocket_order_id', 'shipment_id', 'shipping_cost', 'courier_name', 'awb_code', 'tracking_url', 'created_at',
-            'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost'
+            'items', 'vendor_total_price', 'vendor_tax', 'vendor_shipping_cost', 'vendor_total_weight'
         ]
 
     def get_status(self, obj):
@@ -271,3 +278,98 @@ class VendorOrderSerializer(serializers.ModelSerializer):
             return Decimal('0.00')
         items = obj.items.filter(product__vendor=vendor)
         return Decimal('100.00') if items.exists() else Decimal('0.00')
+
+    def get_vendor_total_weight(self, obj):
+        vendor = self._get_vendor(obj)
+        if vendor is None:
+            return 0.0
+        items = obj.items.filter(product__vendor=vendor)
+        total_weight = 0.0
+        for item in items:
+            try:
+                w = float(item.product.weight) if getattr(item.product, 'weight', None) else 0.0
+            except (ValueError, TypeError):
+                w = 0.0
+            total_weight += w * item.quantity
+        return round(total_weight, 2)
+
+
+# ──────────────────────────────────────────────────────────────
+# Return Request Serializers
+# ──────────────────────────────────────────────────────────────
+
+class ReturnRequestCreateSerializer(serializers.Serializer):
+    """Used by the customer to submit a return request."""
+    order_item_id = serializers.IntegerField()
+    reason = serializers.CharField(max_length=1000)
+
+    def validate_order_item_id(self, value):
+        try:
+            OrderItem.objects.get(pk=value)
+        except OrderItem.DoesNotExist:
+            raise serializers.ValidationError("Order item not found.")
+        return value
+
+
+class ReturnRequestSerializer(serializers.ModelSerializer):
+    """Read-only serializer for a return request (customer & vendor list/detail)."""
+    order_id = serializers.IntegerField(source='order.id', read_only=True)
+    order_item_id = serializers.IntegerField(source='order_item.id', read_only=True)
+    product_name = serializers.CharField(source='order_item.product.name', read_only=True)
+    item_price = serializers.DecimalField(
+        source='order_item.price', max_digits=10, decimal_places=2, read_only=True
+    )
+    item_quantity = serializers.IntegerField(source='order_item.quantity', read_only=True)
+
+    class Meta:
+        model = ReturnRequest
+        fields = [
+            'id', 'order_id', 'order_item_id', 'product_name',
+            'item_price', 'item_quantity',
+            'reason', 'status',
+            'return_awb_code', 'return_shiprocket_order_id', 'return_shipment_id',
+            'shiprocket_shipping_charge', 'refund_amount', 'refund_id',
+            'requested_at', 'updated_at',
+        ]
+        read_only_fields = fields
+
+
+class VendorReturnRequestSerializer(serializers.ModelSerializer):
+    """Vendor-facing serializer with customer & shipping address details."""
+    order_id = serializers.IntegerField(source='order.id', read_only=True)
+    order_item_id = serializers.IntegerField(source='order_item.id', read_only=True)
+    product_name = serializers.CharField(source='order_item.product.name', read_only=True)
+    item_price = serializers.DecimalField(
+        source='order_item.price', max_digits=10, decimal_places=2, read_only=True
+    )
+    item_quantity = serializers.IntegerField(source='order_item.quantity', read_only=True)
+    customer_email = serializers.EmailField(source='order.user.email', read_only=True)
+    customer_phone = serializers.CharField(source='order.user.phone_number', read_only=True)
+    pickup_address = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReturnRequest
+        fields = [
+            'id', 'order_id', 'order_item_id', 'product_name',
+            'item_price', 'item_quantity',
+            'customer_email', 'customer_phone', 'pickup_address',
+            'reason', 'status',
+            'return_awb_code', 'return_shiprocket_order_id', 'return_shipment_id',
+            'shiprocket_shipping_charge', 'refund_amount', 'refund_id',
+            'requested_at', 'updated_at',
+        ]
+        read_only_fields = fields
+
+    def get_pickup_address(self, obj):
+        addr = obj.order.shipping_address
+        if not addr:
+            return None
+        return {
+            'line1': addr.line1,
+            'line2': addr.line2,
+            'city': addr.city,
+            'state': addr.state,
+            'postal_code': addr.postal_code,
+            'country': addr.country,
+            'phone': addr.phone_number,
+        }
