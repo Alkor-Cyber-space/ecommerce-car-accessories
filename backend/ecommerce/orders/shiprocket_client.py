@@ -8,6 +8,7 @@ AUTH_URL = "https://apiv2.shiprocket.in/v1/external/auth/login"
 CREATE_PICKUP_URL = "https://apiv2.shiprocket.in/v1/external/settings/company/addpickup"
 CREATE_ORDER_URL = "https://apiv2.shiprocket.in/v1/external/orders/create/adhoc"
 RATE_CALCULATOR_URL = "https://apiv2.shiprocket.in/v1/external/courier/serviceability"
+RETURN_ORDER_URL = "https://apiv2.shiprocket.in/v1/external/orders/create/return"
 
 
 
@@ -174,3 +175,75 @@ def verify_shiprocket_order(shiprocket_order_id):
     VERIFY_URL = "https://apiv2.shiprocket.in/v1/external/orders/update/verify"
     payload = {"ids": [int(shiprocket_order_id)]}
     return call_shiprocket_api(VERIFY_URL, payload=payload, method="POST")
+
+
+def create_shiprocket_return_order(return_payload):
+    """
+    Create a return (reverse pickup) order in Shiprocket.
+
+    Endpoint: POST /v1/external/orders/create/return
+
+    The payload mirrors the forward-order schema but roles are swapped:
+      - pickup_* fields  → customer's delivery address (where item is now)
+      - shipping_* fields → vendor's registered pickup location (destination)
+
+    Expected payload keys:
+      order_id, order_date,
+      pickup_customer_name, pickup_last_name, pickup_address, pickup_address_2,
+      pickup_city, pickup_state, pickup_country, pickup_pincode,
+      pickup_email, pickup_phone, pickup_isd_code,
+      shipping_customer_name, shipping_last_name,
+      shipping_address, shipping_city, shipping_country,
+      shipping_pincode, shipping_state, shipping_email, shipping_phone,
+      order_items, payment_method,
+      sub_total, length, breadth, height, weight
+    """
+    import json
+    print("=" * 60)
+    print("SHIPROCKET RETURN REQUEST")
+    print(json.dumps(return_payload, indent=2, default=str))
+
+    response = call_shiprocket_api(RETURN_ORDER_URL, payload=return_payload, method="POST")
+
+    print("=" * 60)
+    print("SHIPROCKET RETURN RESPONSE")
+    print(response)
+
+    return response
+
+
+# ---------------- COURIER ASSIGNMENT & PICKUP (SHIP NOW) ---------------- #
+
+def get_shiprocket_couriers(shipment_id):
+    """
+    Get list of available courier partners and rates for a confirmed shipment ID.
+    Endpoint: GET /v1/external/courier/serviceability/
+    """
+    url = "https://apiv2.shiprocket.in/v1/external/courier/serviceability/"
+    params = {"shipment_id": int(shipment_id)}
+    return call_shiprocket_api(url, method="GET", params=params)
+
+
+def assign_shiprocket_awb(shipment_id, courier_company_id):
+    """
+    Assign a specific courier partner and generate AWB code.
+    Endpoint: POST /v1/external/courier/assign/awb
+    """
+    url = "https://apiv2.shiprocket.in/v1/external/courier/assign/awb"
+    payload = {
+        "shipment_id": int(shipment_id),
+        "courier_company_id": int(courier_company_id)
+    }
+    return call_shiprocket_api(url, payload=payload, method="POST")
+
+
+def request_shiprocket_pickup(shipment_id):
+    """
+    Schedule pickup for the assigned shipment.
+    Endpoint: POST /v1/external/courier/generate/pickup
+    """
+    url = "https://apiv2.shiprocket.in/v1/external/courier/generate/pickup"
+    payload = {
+        "shipment_id": [int(shipment_id)]
+    }
+    return call_shiprocket_api(url, payload=payload, method="POST")

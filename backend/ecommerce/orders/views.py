@@ -2,7 +2,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions
 from rest_framework.exceptions import ValidationError
-from .models import Order,OrderItem
+from .models import Order, OrderItem, ReturnRequest
 from .serializers import *
 from rest_framework.decorators import action
 from rest_framework import status
@@ -616,7 +616,9 @@ class CheckoutViewSet(viewsets.ViewSet):
                 vendor_oi_map[v.id].append(oi)
 
             first_vendor_registered = False
+            sr_response = {}
             billing_phone = format_phone_number(
+
                 getattr(shipping_address, "phone_number", None) or getattr(user, "phone_number", None)
             ) or "919999999999"
 
@@ -810,6 +812,8 @@ class CheckoutViewSet(viewsets.ViewSet):
             except Exception as e:
                 order.delete()
                 raise ValidationError(str(e))
+
+
 
         return Response({
             "order_id": order.id,
@@ -1194,42 +1198,82 @@ class VendorOrderStatusUpdateView(APIView):
                 }, status=status.HTTP_400_BAD_REQUEST)
 
             # ✅ Save shipment details if successful
-            if sr_response.get("shipment_id") and sr_response.get("status_code") == 1:
-                # Update individual vendor items in this order
+            shipment_id = sr_response.get("shipment_id")
+            shiprocket_order_id = sr_response.get("order_id")
+
+            if shipment_id and sr_response.get("status_code") == 1:
+                from .shiprocket_client import get_shiprocket_couriers, assign_shiprocket_awb, request_shiprocket_pickup
+                
+                awb_code = sr_response.get("awb_code") or ""
+                courier_name = sr_response.get("courier_name") or ""
+                shipped_successfully = False
+
+                # Try to automatically assign courier and schedule pickup (Ship Now)
+                try:
+                    couriers_data = get_shiprocket_couriers(shipment_id)
+                    if couriers_data and not couriers_data.get("error"):
+                        available_couriers = couriers_data.get("data", {}).get("available_courier_companies", [])
+                        if available_couriers:
+                            # Pick cheapest courier
+                            cheapest_courier = min(available_couriers, key=lambda x: float(x.get("rate", 999999)))
+                            courier_company_id = cheapest_courier.get("courier_company_id")
+                            
+                            # Assign AWB
+                            awb_response = assign_shiprocket_awb(shipment_id, courier_company_id)
+                            if not awb_response.get("error"):
+                                awb_data = awb_response.get("response", {}).get("data", {})
+                                awb_code = awb_data.get("awb_code") or awb_response.get("awb_code") or awb_code
+                                courier_name = awb_data.get("courier_name") or awb_response.get("courier_name") or courier_name
+                                
+                                # Request Pickup
+                                pickup_response = request_shiprocket_pickup(shipment_id)
+                                if not pickup_response.get("error"):
+                                    shipped_successfully = True
+                                    print(f"[AUTO-SHIP] Order #{order.id} automatically shipped using courier ID {courier_company_id} AWB={awb_code}")
+                except Exception as ex:
+                    print(f"[AUTO-SHIP] Warning: Automatic ship-now flow encountered an error: {ex}")
+
+                # Update database items
+                target_status = "shipped" if shipped_successfully else "confirmed"
                 for item in vendor_items:
-                    item.status = "confirmed"
-                    item.shiprocket_order_id = str(sr_response.get("order_id", ""))
-                    item.shipment_id = str(sr_response.get("shipment_id", ""))
-                    item.awb_code = sr_response.get("awb_code", "")
-                    item.courier_name = sr_response.get("courier_name", "")
+                    item.status = target_status
+                    item.shiprocket_order_id = str(shiprocket_order_id)
+                    item.shipment_id = str(shipment_id)
+                    if awb_code:
+                        item.awb_code = awb_code
+                    if courier_name:
+                        item.courier_name = courier_name
                     item.save()
 
-                # Check if all items in the order are now confirmed
-                all_items_confirmed = not order.items.filter(status="pending").exists()
-                if all_items_confirmed:
-                    order.status = "confirmed"
-                    order.shiprocket_order_id = str(sr_response.get("order_id", ""))
-                    order.shipment_id = str(sr_response.get("shipment_id", ""))
-                    order.awb_code = sr_response.get("awb_code", "")
-                    order.courier_name = sr_response.get("courier_name", "")
+                # Update parent order
+                order_status_check = "shipped" if target_status == "shipped" else "confirmed"
+                all_updated = not order.items.filter(status="pending").exists()
+                if all_updated:
+                    order.status = order_status_check
+                    order.shiprocket_order_id = str(shiprocket_order_id)
+                    order.shipment_id = str(shipment_id)
+                    if awb_code:
+                        order.awb_code = awb_code
+                    if courier_name:
+                        order.courier_name = courier_name
                     order.save()
 
-                # ✅ AUTO-VERIFY: Push order to "Ready to Ship" on Shiprocket dashboard
-                shiprocket_order_id = sr_response.get("order_id")
+                # If auto-shipping wasn't successful, call verify_shiprocket_order to mark it as ready to ship
                 verify_response = None
-                if shiprocket_order_id:
+                if not shipped_successfully and shiprocket_order_id:
                     try:
                         verify_response = verify_shiprocket_order(shiprocket_order_id)
                         print(f"[VERIFY] Shiprocket verify response for order {shiprocket_order_id}: {verify_response}")
-                        if verify_response.get("error"):
-                            print(f"[VERIFY] Warning: Could not auto-verify order {shiprocket_order_id} on Shiprocket: {verify_response.get('details')}")
                     except Exception as ve:
                         print(f"[VERIFY] Warning: verify_shiprocket_order raised exception: {ve}")
 
+                msg_status = "confirmed and automatically shipped" if shipped_successfully else "confirmed and sent to Shiprocket"
                 return Response({
-                    "message": f"Vendor {vendor.id} items for Order #{order.id} confirmed and sent to Shiprocket",
+                    "message": f"Vendor {vendor.id} items for Order #{order.id} {msg_status}",
                     "shiprocket_response": sr_response,
-                    "shiprocket_verify_response": verify_response,
+                    "auto_shipped": shipped_successfully,
+                    "awb_code": awb_code,
+                    "courier_name": courier_name,
                     "calculation_summary": {
                         "subtotal": float(subtotal),
                         "tax": float(total_tax),
@@ -1336,3 +1380,610 @@ class InvoiceDownloadView(APIView):
         order = get_object_or_404(Order, id=order_id, user=request.user)
         pdf_file = generate_invoice_pdf(order)
         return FileResponse(pdf_file, as_attachment=True, filename=pdf_file.name)
+
+
+# ═══════════════════════════════════════════════════════════════
+# RETURN & REFUND WORKFLOW
+# ═══════════════════════════════════════════════════════════════
+
+class CustomerReturnRequestView(APIView):
+    """
+    POST /api/orders/returns/
+    Customer submits a return request for a delivered order item.
+
+    Body:
+        {
+            "order_item_id": <int>,
+            "reason": "<string>"
+        }
+
+    Validations:
+        - order belongs to the authenticated user
+        - order status is 'delivered'
+        - request is within the 7-day return window
+        - no existing pending/approved return for this item
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        from datetime import timedelta
+        from django.utils import timezone
+
+        serializer = ReturnRequestCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        order_item_id = serializer.validated_data["order_item_id"]
+        reason = serializer.validated_data["reason"]
+
+        # Fetch item and verify ownership
+        try:
+            order_item = OrderItem.objects.select_related('order__user', 'order__shipping_address').get(
+                pk=order_item_id,
+                order__user=request.user,
+            )
+        except OrderItem.DoesNotExist:
+            return Response(
+                {"error": "Order item not found or does not belong to you."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        order = order_item.order
+
+        # Must be delivered
+        if order.status != "delivered":
+            return Response(
+                {"error": f"Returns are only allowed for delivered orders. Current status: '{order.status}'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # 7-day return window
+        RETURN_WINDOW_DAYS = 7
+        deadline = order.updated_at + timedelta(days=RETURN_WINDOW_DAYS)
+        if timezone.now() > deadline:
+            return Response(
+                {"error": f"Return window has closed. Returns must be requested within {RETURN_WINDOW_DAYS} days of delivery."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Check for existing active return
+        existing = ReturnRequest.objects.filter(
+            order_item=order_item,
+            status__in=["pending", "approved", "picked_up"],
+        ).first()
+        if existing:
+            return Response(
+                {"error": f"A return request already exists for this item (status: '{existing.status}')."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Create the return request
+        return_request = ReturnRequest.objects.create(
+            order=order,
+            order_item=order_item,
+            reason=reason,
+            status="pending",
+        )
+
+        # Mark order as return_request
+        order.status = "return_request"
+        order.save(update_fields=["status"])
+
+        return Response(
+            ReturnRequestSerializer(return_request).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    def get(self, request):
+        """List all return requests for the authenticated customer."""
+        returns = ReturnRequest.objects.filter(order__user=request.user).select_related(
+            'order', 'order_item__product'
+        )
+        return Response(ReturnRequestSerializer(returns, many=True).data)
+
+
+class VendorReturnActionView(APIView):
+    """
+    POST /api/orders/returns/<return_id>/action/
+    Vendor approves or rejects a customer return request.
+
+    Body:
+        { "action": "approve" | "reject" }
+
+    On approve:
+        1. Calls Shiprocket's return-order API to schedule reverse pickup.
+        2. Stores return AWB code, order_id, shipment_id on ReturnRequest.
+        3. Sets ReturnRequest.status = 'approved'.
+
+    On reject:
+        1. Sets ReturnRequest.status = 'rejected'.
+        2. Reverts order.status back to 'delivered'.
+
+    GET /api/orders/returns/vendor/ — lists pending return requests for this vendor.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        """List pending return requests for the authenticated vendor."""
+        vendor = request.user
+        if not vendor.groups.filter(name="Vendor").exists():
+            return Response({"error": "Only vendors can access this endpoint."}, status=status.HTTP_403_FORBIDDEN)
+
+        returns = ReturnRequest.objects.filter(
+            order_item__product__vendor=vendor,
+        ).select_related('order__user', 'order__shipping_address', 'order_item__product')
+
+        return Response(VendorReturnRequestSerializer(returns, many=True).data)
+
+    def post(self, request, return_id):
+        vendor = request.user
+
+        if not vendor.groups.filter(name="Vendor").exists():
+            return Response({"error": "Only vendors can action return requests."}, status=status.HTTP_403_FORBIDDEN)
+
+        action_value = request.data.get("action", "").lower()
+        if action_value not in ("approve", "reject"):
+            return Response(
+                {"error": "action must be 'approve' or 'reject'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Fetch return request and validate vendor ownership
+        try:
+            return_req = ReturnRequest.objects.select_related(
+                'order__user', 'order__shipping_address', 'order_item__product'
+            ).get(pk=return_id, order_item__product__vendor=vendor)
+        except ReturnRequest.DoesNotExist:
+            return Response(
+                {"error": "Return request not found or you don't have access."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if return_req.status != "pending":
+            return Response(
+                {"error": f"Return request is already '{return_req.status}'. Only pending requests can be actioned."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # ── REJECT ──
+        if action_value == "reject":
+            return_req.status = "rejected"
+            return_req.save(update_fields=["status", "updated_at"])
+
+            # Revert order back to delivered
+            return_req.order.status = "delivered"
+            return_req.order.save(update_fields=["status"])
+
+            return Response(
+                {"message": "Return request rejected.", "return": ReturnRequestSerializer(return_req).data},
+                status=status.HTTP_200_OK,
+            )
+
+        # ── APPROVE: call Shiprocket return order API ──
+        order = return_req.order
+        order_item = return_req.order_item
+        product = order_item.product
+        customer = order.user
+        shipping_address = order.shipping_address
+
+        if not shipping_address:
+            return Response(
+                {"error": "Order has no shipping address. Cannot schedule reverse pickup."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Vendor profile and address
+        vendor_profile = getattr(vendor, 'vendor_profile', None)
+        if not vendor_profile:
+            return Response(
+                {"error": f"Vendor {vendor.username} does not have a vendor profile configured."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from accounts.models import Address
+        vendor_address = Address.objects.filter(user=vendor).first()
+        if not vendor_address:
+            return Response(
+                {"error": "Vendor has no registered address. Cannot schedule reverse pickup."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Build product weight/dimensions
+        try:
+            weight = float(getattr(product, 'weight', None) or 0.5)
+            if weight <= 0:
+                weight = 0.5
+        except (ValueError, TypeError):
+            weight = 0.5
+
+        try:
+            length = float(getattr(product, 'length', None) or 10.0)
+            breadth = float(getattr(product, 'breadth', None) or 10.0)
+            height = float(getattr(product, 'height', None) or 10.0)
+        except (ValueError, TypeError):
+            length = breadth = height = 10.0
+
+        subtotal = float(order_item.price * order_item.quantity)
+
+        # Shiprocket return payload:
+        #   pickup = customer's current address (where the item is)
+        #   shipping (destination) = vendor's registered pickup location
+        return_payload = {
+            "order_id": f"RETURN-{return_req.id}-O{order.id}",
+            "order_date": return_req.requested_at.strftime("%Y-%m-%d %H:%M"),
+
+            # Customer (pickup — where the item currently is)
+            "pickup_customer_name": customer.first_name or customer.username,
+            "pickup_last_name": customer.last_name or "",
+            "pickup_address": shipping_address.line1 or "",
+            "pickup_address_2": shipping_address.line2 or "",
+            "pickup_city": shipping_address.city or "",
+            "pickup_state": shipping_address.state or "",
+            "pickup_country": shipping_address.country or "India",
+            "pickup_pincode": shipping_address.postal_code or "",
+            "pickup_email": customer.email,
+            "pickup_phone": format_phone_number(
+                getattr(shipping_address, "phone_number", None) or getattr(customer, "phone_number", None)
+            ) or "919999999999",
+            "pickup_isd_code": "91",
+
+            # Vendor (destination — their pickup/warehouse location)
+            "shipping_customer_name": vendor_profile.company_name or vendor.username,
+            "shipping_last_name": "",
+            "shipping_address": vendor_address.line1 or "",
+            "shipping_address_2": vendor_address.line2 or "",
+            "shipping_city": vendor_address.city or "",
+            "shipping_state": vendor_address.state or "",
+            "shipping_country": vendor_address.country or "India",
+            "shipping_pincode": vendor_address.postal_code or "",
+            "shipping_email": vendor_profile.company_email or vendor.email,
+            "shipping_phone": format_phone_number(
+                vendor_profile.contact_number or getattr(vendor, "phone_number", None)
+            ) or "919999999999",
+
+            "order_items": [
+                {
+                    "name": product.name,
+                    "sku": f"SKU-{product.id}",
+                    "units": order_item.quantity,
+                    "selling_price": float(order_item.price),
+                    "discount": 0,
+                    "hsn": getattr(product, "hsn", "8708"),
+                    "tax": 0,
+                }
+            ],
+            "payment_method": "Prepaid",
+            "sub_total": subtotal,
+            "length": length,
+            "breadth": breadth,
+            "height": height,
+            "weight": weight * order_item.quantity,
+        }
+
+        try:
+            sr_response = create_shiprocket_return_order(return_payload)
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response(
+                {"error": f"Shiprocket API call failed: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        if sr_response.get("error"):
+            return Response(
+                {"error": "Shiprocket rejected the return order.", "details": sr_response.get("details")},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Save Shiprocket reverse-pickup details
+        return_req.return_shiprocket_order_id = str(sr_response.get("order_id", ""))
+        return_req.return_shipment_id = str(sr_response.get("shipment_id", ""))
+        return_req.return_awb_code = sr_response.get("awb_code", "")
+        return_req.status = "approved"
+        return_req.save(update_fields=[
+            "return_shiprocket_order_id", "return_shipment_id",
+            "return_awb_code", "status", "updated_at",
+        ])
+
+        return Response(
+            {
+                "message": "Return approved. Reverse pickup scheduled with Shiprocket.",
+                "return_awb_code": return_req.return_awb_code,
+                "shiprocket_response": sr_response,
+                "return": ReturnRequestSerializer(return_req).data,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class ShiprocketReturnWebhookView(APIView):
+    """
+    POST /api/orders/shiprocket-return-webhook/
+    No authentication — called by Shiprocket when shipment status changes.
+
+    Workflow triggered when Shiprocket fires a 'Picked Up' status event:
+        1. Match AWB code → ReturnRequest
+        2. Extract freight_charges from payload (fallback: settings.SHIPROCKET_RETURN_CHARGE)
+        3. Compute refund_amount = item_total - freight_charges
+        4. Issue refund via Razorpay (pay_xxx) or Stripe (pi_xxx)
+        5. Update ReturnRequest: status='refunded', refund_id, amounts
+        6. Update Order: status='refunded'
+
+    Shiprocket webhook payload (simplified):
+        {
+            "awb": "<awb_code>",
+            "current_status": "Picked Up",
+            "freight_charges": 85.0,   ← Shiprocket's reverse shipping charge
+            ...
+        }
+    """
+    permission_classes = []  # Public endpoint called by Shiprocket
+
+    # Shiprocket status strings that indicate the item has been collected from the customer
+    PICKED_UP_STATUSES = {"Picked Up", "picked up", "PICKED UP", "PickedUp"}
+
+    def post(self, request):
+        payload = request.data
+
+        awb_code = payload.get("awb") or payload.get("awb_code") or payload.get("AWB")
+        current_status = payload.get("current_status") or payload.get("status") or ""
+
+        if not awb_code:
+            return Response({"error": "AWB code missing in webhook payload."}, status=status.HTTP_400_BAD_REQUEST)
+
+        print(f"[RETURN WEBHOOK] AWB={awb_code!r} status={current_status!r}")
+
+        # Only act on "Picked Up"
+        if current_status not in self.PICKED_UP_STATUSES:
+            return Response({"message": f"Status '{current_status}' acknowledged, no action taken."}, status=status.HTTP_200_OK)
+
+        # Find the ReturnRequest by AWB
+        try:
+            return_req = ReturnRequest.objects.select_related(
+                'order__user', 'order_item'
+            ).get(return_awb_code=awb_code)
+        except ReturnRequest.DoesNotExist:
+            print(f"[RETURN WEBHOOK] No ReturnRequest found for AWB {awb_code!r}")
+            return Response({"error": "Return request not found for this AWB."}, status=status.HTTP_404_NOT_FOUND)
+
+        if return_req.status in ("picked_up", "refunded"):
+            return Response({"message": "Already processed."}, status=status.HTTP_200_OK)
+
+        # ── Mark as picked up immediately ──
+        return_req.status = "picked_up"
+        return_req.save(update_fields=["status", "updated_at"])
+
+        # ── Compute Shiprocket charge (from payload or settings fallback) ──
+        from decimal import Decimal
+        from django.conf import settings as django_settings
+
+        raw_freight = payload.get("freight_charges") or payload.get("freight_charge") or 0
+        try:
+            shiprocket_charge = Decimal(str(raw_freight))
+        except Exception:
+            shiprocket_charge = Decimal("0")
+
+        if shiprocket_charge <= 0:
+            # Fallback to a settings-defined default
+            fallback = getattr(django_settings, "SHIPROCKET_RETURN_CHARGE", 100)
+            shiprocket_charge = Decimal(str(fallback))
+            print(f"[RETURN WEBHOOK] freight_charges not in payload; using fallback Rs.{shiprocket_charge}")
+
+        # ── Compute refund amount ──
+        item_total = Decimal(str(return_req.order_item.price)) * return_req.order_item.quantity
+        refund_amount = max(item_total - shiprocket_charge, Decimal("0"))
+
+        print(f"[RETURN WEBHOOK] item_total=Rs.{item_total} charge=Rs.{shiprocket_charge} refund=Rs.{refund_amount}")
+
+        if refund_amount <= 0:
+            print(f"[RETURN WEBHOOK] Refund amount is zero after deducting Shiprocket charge. Skipping refund.")
+            return_req.shiprocket_shipping_charge = shiprocket_charge
+            return_req.refund_amount = Decimal("0")
+            return_req.status = "refunded"
+            return_req.save(update_fields=["shiprocket_shipping_charge", "refund_amount", "status", "updated_at"])
+            return_req.order.status = "refunded"
+            return_req.order.save(update_fields=["status"])
+            return Response({"message": "Pickup confirmed. Refund amount is Rs.0 after deducting Shiprocket charge."}, status=status.HTTP_200_OK)
+
+        # ── Issue the refund ──
+        order = return_req.order
+        payment_method = order.payment_method
+        payment_id = order.payment_id  # Razorpay: order_id / Stripe: pi_xxx
+        amount_paise = int(refund_amount * 100)
+
+        refund_id = None
+        refund_error = None
+
+        try:
+            if payment_method == "razorpay":
+                from payment.razorpay_payment import issue_razorpay_refund, razorpay_client as rz_client
+                # Razorpay refunds need the payment ID (pay_xxx), not the order ID.
+                # Fetch the payment linked to the order to get pay_xxx.
+                rz_order = rz_client.order.fetch(payment_id)
+                payments = rz_client.order.payments(payment_id)
+                pay_id = None
+                for p in payments.get("items", []):
+                    if p.get("status") == "captured":
+                        pay_id = p["id"]
+                        break
+                if not pay_id:
+                    raise ValueError(f"No captured Razorpay payment found for order {payment_id}")
+
+                refund_obj = issue_razorpay_refund(pay_id, amount_paise)
+                refund_id = refund_obj.get("id")
+
+            elif payment_method == "stripe":
+                from payment.stripe_payment import issue_stripe_refund
+                refund_obj = issue_stripe_refund(payment_id, amount_paise)
+                refund_id = refund_obj.get("id")
+
+            elif payment_method == "cod":
+                # COD orders — refund via bank transfer / manual process
+                # We log and mark as refunded; actual transfer is done offline
+                refund_id = f"MANUAL-COD-{return_req.id}"
+                print(f"[RETURN WEBHOOK] COD order — manual bank transfer required for Rs.{refund_amount}")
+
+            else:
+                refund_error = f"Unsupported payment method: {payment_method}"
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            refund_error = str(e)
+
+        if refund_error:
+            print(f"[RETURN WEBHOOK] Refund failed: {refund_error}")
+            return Response(
+                {"error": f"Pickup confirmed but refund failed: {refund_error}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        # ── Persist final state ──
+        return_req.shiprocket_shipping_charge = shiprocket_charge
+        return_req.refund_amount = refund_amount
+        return_req.refund_id = refund_id
+        return_req.status = "refunded"
+        return_req.save(update_fields=[
+            "shiprocket_shipping_charge", "refund_amount", "refund_id", "status", "updated_at",
+        ])
+
+        order.status = "refunded"
+        order.save(update_fields=["status"])
+
+        print(f"[RETURN WEBHOOK] Refund issued. ID={refund_id} amount=Rs.{refund_amount}")
+
+        return Response(
+            {
+                "message": "Item picked up. Refund issued successfully.",
+                "refund_id": refund_id,
+                "refund_amount": float(refund_amount),
+                "shiprocket_charge_deducted": float(shiprocket_charge),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class VendorOrderCourierListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, order_id):
+        vendor = request.user
+        if not vendor.groups.filter(name="Vendor").exists():
+            return Response({"error": "Only vendors can view courier options"}, status=status.HTTP_403_FORBIDDEN)
+
+        # Get vendor order items
+        vendor_items = OrderItem.objects.filter(order_id=order_id, product__vendor=vendor)
+        if not vendor_items.exists():
+            return Response({"error": "No items found for this vendor in this order"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Find first non-empty shipment ID
+        shipment_id = None
+        for item in vendor_items:
+            if item.shipment_id:
+                shipment_id = item.shipment_id
+                break
+
+        if not shipment_id:
+            return Response({"error": "Shipment ID not found. Confirm the order first to create the shipment in Shiprocket."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Call Shiprocket serviceability
+        from .shiprocket_client import get_shiprocket_couriers
+        try:
+            couriers_data = get_shiprocket_couriers(shipment_id)
+            if couriers_data.get("error"):
+                return Response({
+                    "error": "Failed to get courier serviceability from Shiprocket",
+                    "details": couriers_data.get("details")
+                }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(couriers_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": f"Error calling Shiprocket: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class VendorOrderShipNowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, order_id):
+        vendor = request.user
+        if not vendor.groups.filter(name="Vendor").exists():
+            return Response({"error": "Only vendors can ship orders"}, status=status.HTTP_403_FORBIDDEN)
+
+        raw_courier_id = request.data.get("courier_company_id")
+        if not raw_courier_id:
+            return Response({"error": "courier_company_id is required"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            courier_company_id = int(raw_courier_id)
+        except (ValueError, TypeError):
+            return Response({"error": "courier_company_id must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get vendor order items
+        vendor_items = OrderItem.objects.filter(order_id=order_id, product__vendor=vendor)
+        if not vendor_items.exists():
+            return Response({"error": "No items found for this vendor in this order"}, status=status.HTTP_404_NOT_FOUND)
+
+        shipment_id = None
+        for item in vendor_items:
+            if item.shipment_id:
+                shipment_id = item.shipment_id
+                break
+
+        if not shipment_id:
+            return Response({"error": "Shipment ID not found. Confirm the order first."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from .shiprocket_client import assign_shiprocket_awb, request_shiprocket_pickup
+        try:
+            # 1. Assign AWB
+            awb_response = assign_shiprocket_awb(shipment_id, courier_company_id)
+            if awb_response.get("error"):
+                return Response({
+                    "error": "Failed to assign AWB in Shiprocket",
+                    "details": awb_response.get("details")
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            awb_data = awb_response.get("response", {}).get("data", {})
+            awb_code = awb_data.get("awb_code") or awb_response.get("awb_code")
+            courier_name = awb_data.get("courier_name") or awb_response.get("courier_name") or "Courier"
+
+            if not awb_code:
+                # Fallback check of nested structures
+                awb_code = awb_response.get("response", {}).get("awb_code")
+
+            # 2. Request Pickup
+            pickup_response = request_shiprocket_pickup(shipment_id)
+            # Log warning if pickup scheduling fails, but don't block since AWB is generated
+            if pickup_response.get("error"):
+                print(f"[SHIP NOW] Warning: Pickup scheduling failed for shipment {shipment_id}: {pickup_response.get('details')}")
+
+            # 3. Update Database
+            for item in vendor_items:
+                item.status = "shipped"
+                if awb_code:
+                    item.awb_code = awb_code
+                if courier_name:
+                    item.courier_name = courier_name
+                item.save()
+
+            # If all items in this order are now confirmed or shipped, mark the parent order as shipped
+            order = Order.objects.get(id=order_id)
+            all_shipped_or_confirmed = not order.items.filter(status="pending").exists()
+            if all_shipped_or_confirmed:
+                order.status = "shipped"
+                if awb_code:
+                    order.awb_code = awb_code
+                if courier_name:
+                    order.courier_name = courier_name
+                order.save()
+
+            return Response({
+                "message": "Order shipped successfully and pickup requested.",
+                "awb_code": awb_code,
+                "courier_name": courier_name,
+                "shiprocket_awb_response": awb_response,
+                "shiprocket_pickup_response": pickup_response
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": f"Error calling Shiprocket: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
