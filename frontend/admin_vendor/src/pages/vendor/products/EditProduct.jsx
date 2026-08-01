@@ -138,9 +138,9 @@ export default function EditProduct() {
       [name]:
         name === "tag"
           ? value
-              .split(",")
-              .map((tag) => tag.trim())
-              .filter(Boolean)
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean)
           : value,
     }));
   };
@@ -294,8 +294,8 @@ export default function EditProduct() {
       console.error("Update error:", err);
       toast.error(
         err.response?.data?.compatible_varient_year_ids?.[0] ||
-          err.response?.data?.detail ||
-          "Failed to update product."
+        err.response?.data?.detail ||
+        "Failed to update product."
       );
     }
   };
@@ -421,19 +421,17 @@ export default function EditProduct() {
                 is_available: !(prev.is_available ?? prev.isActive),
               }))
             }
-            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${
-              formData.is_available ?? formData.isActive
+            className={`w-14 h-7 flex items-center rounded-full p-1 cursor-pointer transition-colors duration-300 ${formData.is_available ?? formData.isActive
                 ? "bg-[#5737B4]"
                 : "bg-gray-300"
-            }`}
+              }`}
           >
             {/* reflect combined availability for visual position */}
             <div
-              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${
-                formData.is_available ?? formData.isActive
+              className={`bg-white w-5 h-5 rounded-full shadow-md transform transition-transform duration-300 ${formData.is_available ?? formData.isActive
                   ? "translate-x-7"
                   : "translate-x-0"
-              }`}
+                }`}
             />
           </div>
         </div>
@@ -779,11 +777,10 @@ export default function EditProduct() {
         </button>
 
         <button
-          className={`border rounded-sm px-14 py-1 transition-colors ${
-            isFormComplete
+          className={`border rounded-sm px-14 py-1 transition-colors ${isFormComplete
               ? "bg-[#5737B4] text-white hover:bg-[#442f96]"
               : "bg-[#D8D8D8] text-white cursor-not-allowed"
-          }`}
+            }`}
           onClick={handleSave}
           disabled={!isFormComplete}
         >

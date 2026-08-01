@@ -62,29 +62,31 @@ const OrderManagement = ({ order }) => {
           toast.warning(response.message);
         } else {
           toast.success(response.message);
+          // ✅ Optimistically update local state so UI reflects "confirmed" instantly
+          // without waiting for the full refetch to complete
+          const updateOrders = (prev) =>
+            prev.map((o) => {
+              if (o.id !== order.id) return o;
+              return {
+                ...o,
+                // Mark all items for this vendor as confirmed
+                items: o.items
+                  ? o.items.map((item) => ({ ...item, status: "confirmed" }))
+                  : o.items,
+              };
+            });
+          setUserOrders(updateOrders);
+          setFilteredOrders(updateOrders);
         }
       } else {
         toast.success("Order status confirmed successfully");
       }
 
-      if (fetchOrders) fetchOrders();
+      // Re-fetch in the background to get the real server state
+      fetchOrders();
     } catch (error) {
-      let backendError = "Failed to confirm order status";
-      if (error.response?.data) {
-        if (error.response.data.error) {
-          backendError = typeof error.response.data.error === 'string' 
-            ? error.response.data.error 
-            : JSON.stringify(error.response.data.error);
-        } else if (error.response.data.message && error.response.data.shiprocket_error) {
-          backendError = `${error.response.data.message}: ${JSON.stringify(error.response.data.shiprocket_error)}`;
-        } else if (error.response.data.message) {
-          backendError = error.response.data.message;
-        } else if (error.response.data.shiprocket_error_detail) {
-          backendError = JSON.stringify(error.response.data.shiprocket_error_detail);
-        }
-      }
-      toast.error(backendError);
-      console.error("Error confirming order status:", error.response?.data || error);
+      toast.error("Failed to confirm order status");
+      console.error("Error confirming order status", error);
     } finally {
       setLoading(false);
     }
@@ -328,14 +330,14 @@ const OrderManagement = ({ order }) => {
 
                   <div
                     className={`text-right font-semibold px-2 py-1 rounded  transition-all duration-200
-      ${order.status?.toLowerCase() !== "pending"
+      ${!["pending", "processing"].includes(order.status?.toLowerCase())
                         ? "text-gray-400 cursor-not-allowed opacity-60"
                         : "text-[#5737B4] hover:text-[#3c10c1] cursor-pointer"
                       }
       ${loading ? "opacity-50 pointer-events-none" : ""}
     `}
                     onClick={() => {
-                      if (order.status?.toLowerCase() === "pending" && !loading) {
+                      if (["pending", "processing"].includes(order.status?.toLowerCase()) && !loading) {
                         handleConfirmOrder(order);
                       }
                     }}
@@ -377,10 +379,10 @@ const OrderManagement = ({ order }) => {
                   <div className="flex flex-col md:flex-row font-semibold justify-between md:justify-evenly gap-2 md:gap-0 mb-4">
                     <p>
                       Amount Total : <span>₹{(
-                              parseFloat(order.vendor_total_price || 0) +
-                              parseFloat(order.vendor_tax || 0) +
-                              parseFloat(order.vendor_shipping_cost || 0)
-                            ).toFixed(2)}</span>
+                        parseFloat(order.vendor_total_price || 0) +
+                        parseFloat(order.vendor_tax || 0) +
+                        parseFloat(order.vendor_shipping_cost || 0)
+                      ).toFixed(2)}</span>
                     </p>
                     <div className="flex items-center gap-2">
                       <p className="flex gap-1 md:gap-3 items-center">

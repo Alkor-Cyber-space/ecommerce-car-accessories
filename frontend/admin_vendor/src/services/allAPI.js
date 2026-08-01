@@ -213,11 +213,7 @@ export const uploadAgreementsApi = async (vendorId, formData) => {
 
 // vendor product
 export const addProductApi = async (productData) => {
-  const response = await api.post("/vendor/products/", productData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
+  const response = await api.post("/vendor/products/", productData);
   return response.data;
 };
 

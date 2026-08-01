@@ -82,7 +82,19 @@ const AddProduct = () => {
     const [imagePreviews, setImagePreviews] = useState(Array(6).fill(null));
     const [dragActiveIndex, setDragActiveIndex] = useState(null);
     const [isActive, setIsActive] = useState(true);
-    const [variants, setVariants] = useState([]);
+    const [variants, setVariants] = useState([{
+        size: '',
+        weight_value: '',
+        color_name: '',
+        color_code: '#000000',
+        color_image: null,
+        length: '',
+        breadth: '',
+        height: '',
+        price: '',
+        stock: 0,
+        is_default: true
+    }]);
     const handleToggle = () => {
         setIsActive(prev => {
             const next = !prev;
@@ -98,6 +110,7 @@ const AddProduct = () => {
             weight_value: '',
             color_name: '',
             color_code: '#000000',
+            color_image: null,
             length: '',
             breadth: '',
             height: '',
@@ -109,7 +122,7 @@ const AddProduct = () => {
 
     const updateVariant = (index, field, value) => {
         const newVariants = [...variants];
-        newVariants[index][field] = value;
+        newVariants[index] = { ...newVariants[index], [field]: value };
         setVariants(newVariants);
     };
 
@@ -163,6 +176,9 @@ const AddProduct = () => {
         formData.name &&
         formData.description &&
         formData.category &&
+        variants.length > 0 &&
+        variants[0].price &&
+        variants[0].weight_value &&
         formData.tags.length > 0 &&
         atLeastOneImageSelected;
 
@@ -178,14 +194,21 @@ const AddProduct = () => {
 
         formDataToSend.append("name", formData.name);
         formDataToSend.append("description", formData.description);
-        formDataToSend.append("price", formData.price || 0);
-        formDataToSend.append("stock", formData.stock || 0);
+        const basePrice = variants.length > 0 ? variants[0].price : 0;
+        const baseStock = variants.length > 0 ? variants[0].stock : 0;
+        const baseWeight = variants.length > 0 ? variants[0].weight_value : "";
+        const baseLength = variants.length > 0 ? variants[0].length : 0;
+        const baseBreadth = variants.length > 0 ? variants[0].breadth : 0;
+        const baseHeight = variants.length > 0 ? variants[0].height : 0;
+
+        formDataToSend.append("price", basePrice);
+        formDataToSend.append("stock", baseStock);
         formDataToSend.append("manufacturing_date", formData.manufactureDate);
         formDataToSend.append("category_id", formData.category);
-        formDataToSend.append("length", formData.length || 0);
-        formDataToSend.append("weight", formData.weight || 0);
-        formDataToSend.append("height", formData.height || 0);
-        formDataToSend.append("breadth", formData.breadth || 0);
+        formDataToSend.append("length", baseLength);
+        formDataToSend.append("weight", baseWeight);
+        formDataToSend.append("height", baseHeight);
+        formDataToSend.append("breadth", baseBreadth);
         // include availability flag
         formDataToSend.append("is_available", formData.is_available ? "true" : "false");
         // also include isActive for compatibility with edit flow
@@ -211,7 +234,14 @@ const AddProduct = () => {
         }
 
         if (variants.length > 0) {
-            formDataToSend.append("variants", JSON.stringify(variants));
+            const variantsForJson = variants.map(({ color_image, ...rest }) => rest);
+            formDataToSend.append("variants", JSON.stringify(variantsForJson));
+            
+            variants.forEach((v, index) => {
+                if (v.color_image) {
+                    formDataToSend.append(`variant_color_image_${index}`, v.color_image);
+                }
+            });
         }
 
 
@@ -405,6 +435,19 @@ const AddProduct = () => {
                                     <div className="flex flex-col">
                                         <label className="text-sm">Color Code</label>
                                         <input type="color" value={variant.color_code || '#000000'} onChange={(e) => updateVariant(index, 'color_code', e.target.value)} className="border rounded p-0 mt-1 h-8 w-full cursor-pointer" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <label className="text-sm">Color Image</label>
+                                        <input type="file" accept="image/*" onChange={(e) => {
+                                            if (e.target.files && e.target.files.length > 0) {
+                                                updateVariant(index, 'color_image', e.target.files[0]);
+                                            }
+                                        }} className="border rounded px-2 py-1 mt-1 text-sm" />
+                                        {variant.color_image && (
+                                            <div className="mt-2">
+                                                <img src={URL.createObjectURL(variant.color_image)} alt="Preview" className="w-12 h-12 object-cover rounded border" />
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex flex-col">
                                         <label className="text-sm">Length (cm)</label>

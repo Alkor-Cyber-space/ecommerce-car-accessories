@@ -247,13 +247,15 @@ class VendorProductViewSet(viewsets.ModelViewSet):
                     variants_data = []
             
             if isinstance(variants_data, list):
-                for variant in variants_data:
+                for index, variant in enumerate(variants_data):
+                    color_image = request.FILES.get(f"variant_color_image_{index}")
                     ProductVariant.objects.create(
                         product=product,
                         size=variant.get('size', '') or None,
                         weight_value=variant.get('weight_value', '') or None,
                         color_name=variant.get('color_name', '') or None,
                         color_code=variant.get('color_code', '') or None,
+                        color_image=color_image,
                         length=variant.get('length') or None,
                         breadth=variant.get('breadth') or None,
                         height=variant.get('height') or None,
@@ -359,13 +361,15 @@ class VendorProductViewSet(viewsets.ModelViewSet):
             ProductVariant.objects.filter(product=product).delete()
             
             if isinstance(variants_data, list):
-                for variant in variants_data:
+                for index, variant in enumerate(variants_data):
+                    color_image = self.request.FILES.get(f"variant_color_image_{index}")
                     ProductVariant.objects.create(
                         product=product,
                         size=variant.get('size', '') or None,
                         weight_value=variant.get('weight_value', '') or None,
                         color_name=variant.get('color_name', '') or None,
                         color_code=variant.get('color_code', '') or None,
+                        color_image=color_image,
                         length=variant.get('length') or None,
                         breadth=variant.get('breadth') or None,
                         height=variant.get('height') or None,

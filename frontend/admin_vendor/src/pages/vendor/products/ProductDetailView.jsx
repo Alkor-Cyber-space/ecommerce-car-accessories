@@ -166,13 +166,82 @@ const ProductDetailView = () => {
                                 <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">{product.manufacturing_date}</p>
                             </div>
                         </div>
-                        <div>
-                            <label className="font-medium">Product Category</label>
-                            <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">
-                                {product.category?.name || "N/A"}
-                            </p>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="font-medium">Product Category</label>
+                                <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">
+                                    {product.category?.name || "N/A"}
+                                </p>
+                            </div>
+                            <div>
+                                <label className="font-medium">Created On</label>
+                                <p className="mt-1 border px-2 py-2 text-[#7F7F7F] rounded-md">
+                                    {product.created_at ? new Date(product.created_at).toLocaleDateString("en-GB") : "N/A"}
+                                </p>
+                            </div>
                         </div>
                     </div>
+
+                    {/* Product Variants */}
+                    {product.variants && product.variants.length > 0 && (
+                        <div className="bg-white rounded-xl p-6 shadow space-y-4">
+                            <h2 className="text-lg font-semibold">Product Variants</h2>
+                            <div className="space-y-4">
+                                {product.variants.map((variant, index) => (
+                                    <div key={variant.id || index} className="border p-4 rounded-md relative bg-gray-50">
+                                        {variant.is_default && (
+                                            <span className="absolute top-2 right-2 bg-[#5737B4] text-white text-xs px-2 py-1 rounded">Default</span>
+                                        )}
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {variant.size && (
+                                                <div>
+                                                    <p className="text-xs text-gray-500 font-medium">Size</p>
+                                                    <p className="font-medium mt-1">{variant.size}</p>
+                                                </div>
+                                            )}
+                                            {variant.weight_value && (
+                                                <div>
+                                                    <p className="text-xs text-gray-500 font-medium">Weight Value</p>
+                                                    <p className="font-medium mt-1">{variant.weight_value}</p>
+                                                </div>
+                                            )}
+                                            {(variant.color_name || variant.color_code || variant.color_image) && (
+                                                <div>
+                                                    <p className="text-xs text-gray-500 font-medium">Color</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        {variant.color_image ? (
+                                                            <img src={variant.color_image} alt="Color" className="w-6 h-6 rounded object-cover border" />
+                                                        ) : variant.color_code ? (
+                                                            <span className="w-5 h-5 rounded-full border shadow-sm" style={{ backgroundColor: variant.color_code }}></span>
+                                                        ) : null}
+                                                        <span className="font-medium">{variant.color_name || "N/A"}</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {variant.price && (
+                                                <div>
+                                                    <p className="text-xs text-gray-500 font-medium">Price Override</p>
+                                                    <p className="font-medium mt-1 text-[#5737B4]">₹{variant.price}</p>
+                                                </div>
+                                            )}
+                                            <div>
+                                                <p className="text-xs text-gray-500 font-medium">Stock</p>
+                                                <p className="font-medium mt-1">{variant.stock}</p>
+                                            </div>
+                                            {(variant.length || variant.breadth || variant.height) && (
+                                                <div className="col-span-2 md:col-span-1">
+                                                    <p className="text-xs text-gray-500 font-medium">Dimensions (L×B×H)</p>
+                                                    <p className="font-medium mt-1">
+                                                        {variant.length || 0} × {variant.breadth || 0} × {variant.height || 0} cm
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Column */}

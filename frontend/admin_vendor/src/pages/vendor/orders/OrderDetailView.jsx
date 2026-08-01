@@ -73,29 +73,23 @@ const OrderDetailView = () => {
     completed: "done",
     refunded: "done",
   };
+
   const timelineLabels = [
     "Pending",
-    "Paid",
-    "Processing",
     "Confirmed",
     "Shipped",
     "Delivered",
-    "Cancelled",
   ];
 
   const statusOrder = [
     "pending",
-    "paid",
-    "processing",
     "confirmed",
     "shipped",
     "delivered",
-    "cancelled",
   ];
 
   // Find current order index in timeline
   const currentIndex = statusOrder.indexOf(order.status);
-
 
 
   const grandTotal = orderItems.reduce(
@@ -135,7 +129,7 @@ const OrderDetailView = () => {
         {/* Customer + Address */}
         <div className="lg:col-span-2 space-y-5">
           {/* Info Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className='bg-white mt-4 p-6 rounded shadow'>
               <h2 className="font-medium mb-4 text-lg">Customer Details</h2>
               <div className=" grid grid-cols-2 gap-y-5">
@@ -147,13 +141,36 @@ const OrderDetailView = () => {
                 <p>{order.customer_phone || "N/A"}</p>
               </div>
             </div>
+            
             <div className='bg-white mt-4 p-6 rounded shadow'>
+              <h2 className="font-medium mb-4 text-lg">Shipping Details</h2>
+              <div className="grid grid-cols-2 gap-y-5">
+                <p className="font-medium">Courier Name</p>
+                <p>{order.courier_name || "N/A"}</p>
+                <p className="font-medium">AWB Code</p>
+                <p>{order.awb_code || "N/A"}</p>
+                <p className="font-medium">Tracking Link</p>
+                <p>
+                  {order.tracking_url ? (
+                    <a href={order.tracking_url} target="_blank" rel="noopener noreferrer" className="text-[#5737B4] hover:underline">
+                      Track Order
+                    </a>
+                  ) : "N/A"}
+                </p>
+                <p className="font-medium">Shiprocket Order ID</p>
+                <p>{order.shiprocket_order_id || "N/A"}</p>
+                <p className="font-medium">Shipment ID</p>
+                <p>{order.shipment_id || "N/A"}</p>
+              </div>
+            </div>
+
+            <div className='bg-white p-6 rounded shadow md:col-span-2'>
               <h2 className="font-medium mb-4 text-lg">Delivery Address</h2>
-              <div className="grid grid-cols-2 gap-y-5  ">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-y-5">
                 <p className="font-medium">Address Line 1</p>
-                <p>{order.shipping_address_details?.line1 || "N/A"}</p>
+                <p className="md:col-span-3">{order.shipping_address_details?.line1 || "N/A"}</p>
                 <p className="font-medium">Address Line 2</p>
-                <p>{order.shipping_address_details?.line2 || "N/A"}</p>
+                <p className="md:col-span-3">{order.shipping_address_details?.line2 || "N/A"}</p>
                 <p className="font-medium">City</p>
                 <p>{order.shipping_address_details?.city || "N/A"}</p>
                 <p className="font-medium">State / Country</p>
@@ -184,7 +201,10 @@ const OrderDetailView = () => {
                         <img src={`${serverUrl}${item.product_image}`} alt="product" className="w-14 h-14 object-cover rounded" />
                         <div>
                           <p className="font-medium text-[#5737B4]">{item.product_name}</p>
-                          <p className="text-sm text-gray-500">{item.description}</p>
+                          {item.product_size && (
+                            <p className="text-sm text-gray-500">Size: {item.product_size}</p>
+                          )}
+                          <p className="text-xs text-gray-400">Status: {item.status || 'N/A'}</p>
                         </div>
                       </td>
                       <td className="py-3">{item.quantity}</td>
@@ -226,28 +246,24 @@ const OrderDetailView = () => {
         </div> */}
 
         <div className="bg-white p-6 rounded shadow h-fit">
-          <h2 className="font-semibold mb-2 text-lg">Order- History</h2>
+          <h2 className="font-semibold mb-2 text-lg">Order History</h2>
           <ul className="relative border-l-2 border-gray-200 ml-2 space-y-4">
             {timelineLabels.map((label, idx) => {
-              const statusKey = statusOrder[idx];
               let statusClass = "bg-gray-300";
               let labelColor = "text-gray-700";
+              let showDate = false;
+              let dateToUse = order.updated_at || order.created_at;
 
               // Determine behavior if cancelled
               const isCancelled = order.status === "cancelled";
-              const cancelledIndex = statusOrder.indexOf("cancelled");
 
               if (isCancelled) {
-                if (idx < cancelledIndex) {
-                  // Before cancelled - grey (not completed)
-                  statusClass = "bg-gray-300";
-                  labelColor = "text-gray-500";
-                } else if (idx === cancelledIndex) {
-                  // Cancelled step
-                  statusClass = "bg-red-500";
-                  labelColor = "text-red-600 font-semibold";
+                if (idx === 0) {
+                  statusClass = "bg-green-500";
+                  labelColor = "text-green-600 font-medium";
+                  showDate = true;
+                  dateToUse = order.created_at;
                 } else {
-                  // After cancelled - grey (not applicable)
                   statusClass = "bg-gray-300";
                   labelColor = "text-gray-400";
                 }
@@ -256,9 +272,17 @@ const OrderDetailView = () => {
                 if (idx < currentIndex) {
                   statusClass = "bg-green-500";
                   labelColor = "text-green-600 font-medium";
+                  showDate = true;
+                  // We don't have history, so just use updated_at for past steps
                 } else if (idx === currentIndex) {
                   statusClass = "bg-[#5737B4]";
                   labelColor = "text-[#5737B4] font-semibold";
+                  showDate = true;
+                }
+                
+                // Pending always uses created_at
+                if (idx === 0) {
+                  dateToUse = order.created_at;
                 }
               }
 
@@ -270,22 +294,45 @@ const OrderDetailView = () => {
                     ></span>
                     <div>
                       <p className={`${labelColor}`}>{label}</p>
-                      <p className="text-xs text-gray-500">
-                        {new Date(order.updated_at || order.created_at).toLocaleDateString("en-GB", {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric",
-                        })}{" "}
-                        {new Date(order.updated_at || order.created_at).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
+                      {showDate && (
+                        <p className="text-xs text-gray-500">
+                          {new Date(dateToUse).toLocaleDateString("en-GB", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}{" "}
+                          {new Date(dateToUse).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </li>
               );
             })}
+            {order.status === "cancelled" && (
+              <li className="ml-4">
+                <div className="flex items-start gap-2">
+                  <span className="w-3 h-3 rounded-full mt-1 transition-all duration-300 bg-red-500"></span>
+                  <div>
+                    <p className="text-red-600 font-semibold">Cancelled</p>
+                    <p className="text-xs text-gray-500">
+                      {new Date(order.updated_at || order.created_at).toLocaleDateString("en-GB", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}{" "}
+                      {new Date(order.updated_at || order.created_at).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            )}
           </ul>
         </div>
       </div>
