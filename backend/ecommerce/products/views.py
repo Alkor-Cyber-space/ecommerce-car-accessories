@@ -37,13 +37,32 @@ class UserDashboardView(APIView):
         )
         big_savings_qs = Product.objects.filter(promotions__in=promotions, is_available=True).distinct()[:7]
 
+        # Smart Picks For Your Garage (Compatible with user's saved vehicles)
         picks_for_you_qs = []
         if user:
             saved_variants = SavedVehicle.objects.filter(user=user).values_list('vehicle_variant', flat=True)
-            picks_for_you_qs = Product.objects.filter(
-                compatible_varient_year__in=saved_variants,
-                is_available=True
-            ).distinct()[:10]
+            if saved_variants.exists():
+                picks_for_you_qs = list(Product.objects.filter(
+                    compatible_varient_year__in=saved_variants,
+                    is_available=True
+                ).distinct()[:10])
+
+        if not picks_for_you_qs:
+            picks_for_you_qs = list(Product.objects.filter(is_available=True).order_by('?')[:10])
+
+        # Pickup Where You Left Off (Active Shopping Session)
+        pickup_where_you_left_off_qs = []
+        if user:
+            from cart_wishlist.models import CartItem
+            cart_product_ids = CartItem.objects.filter(cart__user=user).values_list('product_id', flat=True).distinct()
+            if cart_product_ids.exists():
+                pickup_where_you_left_off_qs = list(Product.objects.filter(
+                    id__in=cart_product_ids,
+                    is_available=True
+                )[:7])
+
+        if not pickup_where_you_left_off_qs:
+            pickup_where_you_left_off_qs = list(Product.objects.filter(is_available=True).order_by('?')[:7])
 
         # Serialize all
         data = {
@@ -51,10 +70,9 @@ class UserDashboardView(APIView):
             "best_sellers_top_rated": DashboardProductSerializer(best_sellers_top_rated_qs, many=True, context={'request': request}).data,
             "new_products": DashboardProductSerializer(new_products_qs, many=True, context={'request': request}).data,
             "big_savings": DashboardProductSerializer(big_savings_qs, many=True, context={'request': request}).data,
+            "pickup_where_you_left_off": DashboardProductSerializer(pickup_where_you_left_off_qs, many=True, context={'request': request}).data,
+            "picks_for_you": DashboardProductSerializer(picks_for_you_qs, many=True, context={'request': request}).data,
         }
-
-        if user:
-            data["picks_for_you"] = DashboardProductSerializer(picks_for_you_qs, many=True, context={'request': request}).data
 
         return Response(data)
 

@@ -625,12 +625,15 @@ class NotificationViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
 
-        # notifications assigned directly to user
+        # 1. Notifications assigned directly to this user
         qs = Notification.objects.filter(users=user)
 
-        
+        # 2. Notifications sent to one of the user's groups
         group_ids = user.groups.values_list("id", flat=True)
         qs |= Notification.objects.filter(group_id__in=group_ids)
+
+        # 3. Broadcast notifications (no specific group, no specific users)
+        qs |= Notification.objects.filter(group__isnull=True, users__isnull=True)
 
         return qs.distinct().order_by("-created_at")
 
@@ -657,12 +660,13 @@ class NotificationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="mark-as-read")
     def mark_as_read(self, request, pk=None):
         """
-        Mark a single notification as read
+        Mark a single notification as read.
+        Looks up from the user's accessible notifications (direct, group, or broadcast).
         """
         try:
             notification = self.get_queryset().get(pk=pk)
         except Notification.DoesNotExist:
-            return Response({"detail": "Notification not found."}, status=status.HTTP_404_NOT_FOUND)
+            return Response({"detail": "Notification not found or not accessible."}, status=status.HTTP_404_NOT_FOUND)
 
         notification.is_read = True
         notification.save()
@@ -679,6 +683,15 @@ class NotificationViewSet(viewsets.ModelViewSet):
             {"detail": f"{updated_count} notifications marked as read."},
             status=status.HTTP_200_OK
         )
+
+    @action(detail=False, methods=["get"], url_path="unread-count")
+    def unread_count(self, request):
+        """
+        Returns the count of unread notifications for the current user.
+        Used for badge/counter display in the customer app.
+        """
+        count = self.get_queryset().filter(is_read=False).count()
+        return Response({"unread_count": count}, status=status.HTTP_200_OK)
 
 
 class AdminProfileView(APIView):

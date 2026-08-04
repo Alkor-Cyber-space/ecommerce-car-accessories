@@ -281,70 +281,88 @@ const OrderManagement = ({ order }) => {
                     </span>
                   </div>
 
-                  <div className="mt-1">
-                    <span
-                      className={`inline-block px-2 md:px-4 lg:px-4 py-1 md:py-2 text-sm rounded text-left
-                  ${order.status?.includes("pending")
-                          ? "bg-red-100 text-red-800"
-                          : order.status?.includes("returned")
-                            ? "bg-green-100 text-green-800"
-                            : order.status?.includes("confirmed")
-                              ? "bg-green-200 text-green-900"
-                              : order.status?.includes("expired")
-                                ? "bg-orange-100 text-orange-800"
-                                : "bg-gray-100 text-black"
-                        }`}
-                    >
-                      <span className="mr-1">•</span>
-                      {order.status}
-                    </span>
-                  </div>
+                  {(() => {
+                    const isVendorConfirmed = order.items && order.items.length > 0 && order.items.every(item => item.status === "confirmed");
+                    const displayStatus = isVendorConfirmed ? "confirmed" : order.status;
+
+                    return (
+                      <>
+                        <div className="mt-1">
+                          <span
+                            className={`inline-block px-2 md:px-4 lg:px-4 py-1 md:py-2 text-sm rounded text-left
+                              ${displayStatus?.includes("pending")
+                                ? "bg-red-100 text-red-800"
+                                : displayStatus?.includes("returned")
+                                  ? "bg-green-100 text-green-800"
+                                  : displayStatus?.includes("confirmed")
+                                    ? "bg-green-200 text-green-900"
+                                    : displayStatus?.includes("expired")
+                                      ? "bg-orange-100 text-orange-800"
+                                      : "bg-gray-100 text-black"
+                              }`}
+                          >
+                            <span className="mr-1">•</span>
+                            {displayStatus}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
                 <div className="flex items-center mt-2 md:mt-0 gap-3">
-                  <div
-                    onClick={() =>
-                      navigate(`/vendor/orders/${order.id}`, {
-                        state: { order },
-                      })
-                    }
-                    className="hover:text-[#3c10c1] hover:underline cursor-pointer"
-                  >
-                    View Details
-                  </div>
+                  {(() => {
+                    const isVendorConfirmed = order.items && order.items.length > 0 && order.items.every(item => item.status === "confirmed");
+                    const displayStatus = isVendorConfirmed ? "confirmed" : order.status;
 
-                  <div
-                    className={`text-right font-semibold px-2 py-1 rounded  transition-all duration-200
-      ${order.status?.toLowerCase() !== "pending"
-                        ? "text-gray-400 cursor-not-allowed opacity-60"
-                        : "text-[#5737B4] hover:text-[#3c10c1] cursor-pointer"
-                      }
-      ${loading ? "opacity-50 pointer-events-none" : ""}
-    `}
-                    onClick={() => {
-                      if (order.status?.toLowerCase() === "pending" && !loading) {
-                        handleConfirmOrder(order);
-                      }
-                    }}
-                  >
-                    {loading ? "Updating..." : "Confirm Order"}
-                  </div>
+                    return (
+                      <>
+                        <div
+                          onClick={() =>
+                            navigate(`/vendor/orders/${order.id}`, {
+                              state: { order: { ...order, status: displayStatus } },
+                            })
+                          }
+                          className="hover:text-[#3c10c1] hover:underline cursor-pointer"
+                        >
+                          View Details
+                        </div>
 
-                  <div
-                    className={`mr-1 text-right font-semibold px-2 py-1 rounded  transition-all duration-200
-      ${["shipped", "delivered", "cancelled"].includes(order.status?.toLowerCase())
-                        ? "text-gray-400 cursor-not-allowed opacity-60"
-                        : "text-[#ee0000] hover:text-[#c70000] cursor-pointer"
-                      }
-      ${loading ? "opacity-50 pointer-events-none" : ""}
-    `}
-                    onClick={() => {
-                      if (!["shipped", "delivered", "cancelled"].includes(order.status?.toLowerCase()) && !loading) {
-                        handleCancelOrder(order);
-                      }
-                    }}
-                  >
-                    {loading ? "Updating..." : "Cancel"}
-                  </div>
+                        <div
+                          className={`text-right font-semibold px-2 py-1 rounded  transition-all duration-200
+                            ${isVendorConfirmed || order.status?.toLowerCase() !== "pending"
+                              ? "text-gray-400 cursor-not-allowed opacity-60"
+                              : "text-[#5737B4] hover:text-[#3c10c1] cursor-pointer"
+                            }
+                            ${loading ? "opacity-50 pointer-events-none" : ""}
+                          `}
+                          onClick={() => {
+                            if (!isVendorConfirmed && order.status?.toLowerCase() === "pending" && !loading) {
+                              handleConfirmOrder(order);
+                            }
+                          }}
+                        >
+                          {loading ? "Updating..." : isVendorConfirmed ? "Confirmed" : "Confirm Order"}
+                        </div>
+
+                        <div
+                          className={`mr-1 text-right font-semibold px-2 py-1 rounded  transition-all duration-200
+                            ${["shipped", "delivered", "cancelled"].includes(order.status?.toLowerCase())
+                              ? "text-gray-400 cursor-not-allowed opacity-60"
+                              : "text-[#ee0000] hover:text-[#c70000] cursor-pointer"
+                            }
+                            ${loading ? "opacity-50 pointer-events-none" : ""}
+                          `}
+                          onClick={() => {
+                            if (!["shipped", "delivered", "cancelled"].includes(order.status?.toLowerCase()) && !loading) {
+                              handleCancelOrder(order);
+                            }
+                          }}
+                        >
+                          {loading ? "Updating..." : "Cancel"}
+                        </div>
+                      </>
+                    );
+                  })()}
 
                   {/* Expand/Collapse Icon */}
                   {expandedOrder === order.id ? (
@@ -363,10 +381,10 @@ const OrderManagement = ({ order }) => {
                   <div className="flex flex-col md:flex-row font-semibold justify-between md:justify-evenly gap-2 md:gap-0 mb-4">
                     <p>
                       Amount Total : <span>₹{(
-                              parseFloat(order.vendor_total_price || 0) +
-                              parseFloat(order.vendor_tax || 0) +
-                              parseFloat(order.vendor_shipping_cost || 0)
-                            ).toFixed(2)}</span>
+                        parseFloat(order.vendor_total_price || 0) +
+                        parseFloat(order.vendor_tax || 0) +
+                        parseFloat(order.vendor_shipping_cost || 0)
+                      ).toFixed(2)}</span>
                     </p>
                     <div className="flex items-center gap-2">
                       <p className="flex gap-1 md:gap-3 items-center">

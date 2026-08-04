@@ -93,8 +93,12 @@ const OrderDetailView = () => {
     "cancelled",
   ];
 
+  const isVendorConfirmed = orderItems && orderItems.length > 0 && orderItems.every(item => item.status === "confirmed");
+  const displayStatus = isVendorConfirmed ? "confirmed" : order.status;
+
   // Find current order index in timeline
-  const currentIndex = statusOrder.indexOf(order.status);
+  const currentIndex = statusOrder.indexOf(displayStatus);
+
 
 
 
