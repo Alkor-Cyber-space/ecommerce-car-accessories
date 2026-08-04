@@ -1315,6 +1315,58 @@ class VendorOrderStatusUpdateView(APIView):
 
 
 
+class MarkOrderDeliveredView(APIView):
+    """
+    POST /api/orders/orders/<order_id>/mark-delivered/
+    Vendor or Admin manually marks an order as delivered.
+    Used when Shiprocket webhook does not fire or for COD orders.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, order_id):
+        user = request.user
+        is_vendor = user.groups.filter(name="Vendor").exists()
+        is_admin = user.groups.filter(name="Admin").exists() or user.is_staff
+
+        if not (is_vendor or is_admin):
+            return Response(
+                {"error": "Only vendors or admins can mark an order as delivered."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Vendors can only mark orders that contain their products
+        if is_vendor and not is_admin:
+            has_items = OrderItem.objects.filter(order=order, product__vendor=user).exists()
+            if not has_items:
+                return Response(
+                    {"error": "You don't have any products in this order."},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+
+        # Only allow transition from valid pre-delivered statuses
+        allowed_from = ["shipped", "confirmed", "processing", "paid"]
+        if order.status not in allowed_from:
+            return Response(
+                {"error": f"Cannot mark as delivered. Current status is '{order.status}'."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        order.status = "delivered"
+        order.save(update_fields=["status"])
+
+        return Response({
+            "success": True,
+            "message": f"Order #{order.id} has been marked as delivered.",
+            "order_id": order.id,
+            "status": order.status,
+        }, status=status.HTTP_200_OK)
+
+
 class VendorOrderCancelView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 

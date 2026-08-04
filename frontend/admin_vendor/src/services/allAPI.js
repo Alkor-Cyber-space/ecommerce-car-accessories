@@ -1318,7 +1318,7 @@ export const exportReportApi = async (reportType, format, data) => {
   }
 };
 
-    export const InventorystatsAPi = async () => {
+export const InventorystatsAPi = async () => {
   try {
     const response = await api.get("/admin/inventory/stats/");
     return response.data;
@@ -1396,11 +1396,11 @@ export const revenueTrendsApi = async () => {
 
 export const inventoryStatsApi = async () => {
   try {
-    const response = await api.post("/api/admin/inventory/stats/");   
+    const response = await api.post("/api/admin/inventory/stats/");
     return response.data;
   } catch (error) {
     console.error("Error fetching inventory stats:", error);
-    throw error;    
+    throw error;
   }
 };
 
@@ -1422,7 +1422,7 @@ export const updatereplyToReviewApi = async (reviewId, replyData) => {
   } catch (error) {
     console.error("Error replying to review:", error);
     throw error;
-  } 
+  }
 };
 
 
