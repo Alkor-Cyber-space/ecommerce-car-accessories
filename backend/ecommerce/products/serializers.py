@@ -234,17 +234,13 @@ class ReviewSerializer(serializers.ModelSerializer):
         return value
 
 
-class DashboardProductSerializer(serializers.ModelSerializer):
-    images = ProductImageSerializer(many=True, read_only=True)
-    variants = ProductVariantSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Product
-        fields = [
-            "id", "name", "description", "price", "stock",
-            "category", "is_featured", "is_best_seller",
-            "is_top_rated", "is_new", "compatible_varient_year", "images",
-            "variants",
+class DashboardProductSerializer(ProductSerializer):
+    class Meta(ProductSerializer.Meta):
+        fields = ProductSerializer.Meta.fields + [
+            "is_featured",
+            "is_best_seller",
+            "is_top_rated",
+            "is_new",
         ]
 
 class ReviewReplySerializer(serializers.ModelSerializer):
