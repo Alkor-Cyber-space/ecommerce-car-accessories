@@ -27,6 +27,12 @@ class WishlistItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'wishlist', 'product', 'variant_id', 'variant', 'added_at']
         read_only_fields = ['wishlist', 'added_at']
 
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        from products.serializers import ProductSerializer
+        ret['product'] = ProductSerializer(instance.product, context=self.context).data
+        return ret
+
 # Wishlist Serializer
 class WishlistSerializer(serializers.ModelSerializer):
     items = WishlistItemSerializer(many=True, read_only=True)
@@ -52,6 +58,12 @@ class CartItemSerializer(serializers.ModelSerializer):
         model = CartItem
         fields = ['id', 'cart', 'product', 'variant_id', 'variant', 'quantity']
         read_only_fields = ['cart']
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        from products.serializers import ProductSerializer
+        ret['product'] = ProductSerializer(instance.product, context=self.context).data
+        return ret
 
 # Cart Serializer
 class CartSerializer(serializers.ModelSerializer):
