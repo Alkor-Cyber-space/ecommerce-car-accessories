@@ -249,6 +249,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        product_id = self.request.query_params.get('product') or self.request.query_params.get('product_id')
+        if product_id:
+            queryset = queryset.filter(product_id=product_id)
+        return queryset
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
@@ -273,7 +280,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='product/(?P<product_id>[^/.]+)')
     def reviews_by_product(self, request, product_id=None):
-        reviews = self.queryset.filter(product__id=product_id)
+        reviews = self.get_queryset().filter(product__id=product_id)
         serializer = self.get_serializer(reviews, many=True)
         return Response(serializer.data)
 
