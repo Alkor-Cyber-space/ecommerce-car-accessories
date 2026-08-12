@@ -238,12 +238,14 @@ EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = env('EMAIL_HOST_USER')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://192.168.1.40:8000",
-    "http://127.0.0.1:8000",
+    "https://carooa.com",
+    "http://carooa.com",
+    "http://localhost:3000",
 ]
-
-CORS_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = [
+    "https://carooa.com",
+    "http://carooa.com",
+]
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
