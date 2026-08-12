@@ -246,6 +246,9 @@ CSRF_TRUSTED_ORIGINS = [
     "https://carooa.com",
     "http://carooa.com",
 ]
+# Trust proxy headers to build correct absolute media URLs behind Nginx
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
