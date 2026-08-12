@@ -48,7 +48,7 @@ TWILIO_VERIFY_SID = env('TWILIO_VERIFY_SID')
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['api.carooa.com', '13.233.157.90']
 
 
 # Application definition
@@ -237,10 +237,15 @@ EMAIL_HOST_USER = env('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Your React/Vue etc. frontend
+    "https://carooa.com",
+    "http://carooa.com",
+    "http://localhost:3000",
+]
+CSRF_TRUSTED_ORIGINS = [
+    "https://carooa.com",
+    "http://carooa.com",
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
 
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
