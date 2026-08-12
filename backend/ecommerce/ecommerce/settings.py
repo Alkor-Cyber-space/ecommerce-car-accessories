@@ -48,7 +48,7 @@ TWILIO_VERIFY_SID = env('TWILIO_VERIFY_SID')
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 
-ALLOWED_HOSTS = ['*', '192.168.1.40', '192.168.1.40:8000', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['api.carooa.com', '13.233.157.90']
 
 
 # Application definition
